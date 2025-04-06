@@ -1,0 +1,48 @@
+// This file contains the default color variables for Quasar.
+$primary   : #f5d444;
+$secondary : #cc28be;
+$accent    : #9C27B0;
+
+$transparent: transparent;
+$light : #000000aa;
+$dark  : #000000bb;
+$darker: #000000cc;
+$darkest: #000000dd;
+
+$white  : #FFFFFF;
+
+$positive  : #21BA45;
+$negative  : #C10015;
+$info      : #31CCEC;
+$warning   : #F2C037;
+
+// Font definitions
+$phantom-muff-empty: 'PhantomMuffEmpty';
+$phantom-muff-full: 'PhantomMuffFull';
+$phantom-muff-display: 'PhantomMuffDisplay';
+
+// Font imports
+@font-face {
+  font-family: $phantom-muff-empty;
+  src: url('../assets/fonts/PhantomMuffEmpty.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: $phantom-muff-full;
+  src: url('../assets/fonts/PhantomMuffFull.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: $phantom-muff-display;
+  src: url('../assets/fonts/PhantomMuffDisplay.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.phantom-font {
+  font-family: 'PhantomMuffFull', sans-serif;
+}
