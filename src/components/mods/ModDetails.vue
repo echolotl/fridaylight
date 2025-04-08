@@ -40,6 +40,7 @@
     <div class="mod-path" v-if="showDetails">
       <p>Location: {{ mod.path }}</p>
       <p v-if="mod.executable_path">Executable: {{ mod.executable_path }}</p>
+      <p v-if="mod.version">Version: {{ mod.version }}</p>
       <p v-if="mod.engine_type">Engine: {{ formatEngineType(mod.engine_type) }}</p>
     </div>
   </div>
@@ -55,9 +56,21 @@
 import { ref } from 'vue';
 import ModBanner from './ModBanner.vue';
 
+interface Mod {
+  id: string;
+  name: string;
+  path: string;
+  executable_path?: string;
+  icon_data?: string;
+  banner_data?: string;
+  logo_data?: string;
+  version?: string;
+  engine_type?: string;
+}
+
 const props = defineProps({
   mod: {
-    type: Object,
+    type: Object as () => Mod | null,
     default: null
   },
   error: {
@@ -69,15 +82,15 @@ const props = defineProps({
 const showDetails = ref(false);
 const emit = defineEmits(['update:mod', 'launch-mod', 'open-settings']);
 
-const updateTitle = (newTitle) => {
+const updateTitle = (newTitle: string) => {
   if (props.mod) {
     const updatedMod = { ...props.mod, name: newTitle };
     emit('update:mod', updatedMod);
   }
 };
 
-const formatEngineType = (engineType) => {
-  const engineTypes = {
+const formatEngineType = (engineType: string) => {
+  const engineTypes: Record<string, string> = {
     'vanilla': 'Vanilla',
     'psych': 'Psych Engine',
     'codename': 'Codename Engine',
@@ -109,7 +122,6 @@ const formatEngineType = (engineType) => {
 }
 
 .play-button {
-  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -1,0 +1,12 @@
+flixel/tweens/misc/VarTween.hx (line 99)
+flixel/tweens/misc/VarTween.hx (line 55)
+flixel/tweens/FlxTween.hx (line 1263)
+flixel/FlxGame.hx (line 747)
+flixel/FlxGame.hx (line 679)
+flixel/FlxGame.hx (line 552)
+openfl/events/EventDispatcher.hx (line 426)
+openfl/display/DisplayObject.hx (line 1398)
+
+Uncaught Error: The object does not have the property "alpha"
+
+> Crash Handler written by: sqirra-rng

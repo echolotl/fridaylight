@@ -37,6 +37,12 @@
           ref="titleInput"
         />
       </div>
+      
+      <!-- Show version and engine type if available -->
+      <div class="mod-info-overlay" v-if="mod.version || mod.engine_type">
+        <span v-if="mod.version" class="version-tag">{{ mod.version }}</span>
+        <span v-if="mod.engine_type" class="engine-tag"><img :src="'/images/engine_icons/' + formatEngineType(mod.engine_type) + '.webp'"></span>
+      </div>
     </div>
   </div>
 </template>
@@ -64,6 +70,10 @@ const startTitleEdit = () => {
 const saveTitle = () => {
   emit('update:title', editedTitle.value);
   isEditingTitle.value = false;
+};
+
+const formatEngineType = (engineType: string) => {
+  return engineType.charAt(0).toUpperCase() + engineType.slice(1);
 };
 </script>
 
@@ -111,6 +121,7 @@ const saveTitle = () => {
   font-size: 2.5rem;
   margin: 0;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+  line-height: 1.2;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -156,5 +167,32 @@ const saveTitle = () => {
 
 .mod-logo:hover {
   transform: scale(1.02);
+}
+
+.mod-info-overlay {
+  margin-top: 10px;
+  display: flex;
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  gap: 10px;
+  align-items: center;
+}
+
+.engine-tag {
+  color: var(--q-primary);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  object-fit: contain;
+  img {
+    max-height: 2rem;
+    width: auto;
+  }
+}
+.version-tag {
+  color: var(--q-primary);
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.9rem;
 }
 </style>

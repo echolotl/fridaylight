@@ -30,4 +30,14 @@ base64 = "0.21.0"
 image = "0.24.6"
 winapi = { version = "0.3.9", features = ["winuser", "shellapi"] }
 tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+reqwest = { version = "0.11", features = ["json", "stream"] }
+chrono = "0.4"
+log = "0.4"
+env_logger = "0.10"
+simplelog = "0.12"
+zip = "0.6"
+futures-util = "0.3.31"
+bytes = "1.10.1"
+sevenz-rust = "0.5.3"
+unrar = "0.5.2"
 

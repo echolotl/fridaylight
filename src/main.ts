@@ -3,7 +3,7 @@ import App from "./App.vue";
 import router from "./router";
 
 // Import Quasar
-import { Quasar } from 'quasar';
+import { Quasar, Notify } from 'quasar';
 
 // Import Quasar CSS
 import 'quasar/src/css/index.sass';
@@ -17,19 +17,20 @@ const app = createApp(App);
 // Use plugins
 app.use(router);
 app.use(Quasar, {
-  plugins: {}, // import Quasar plugins you need
+  plugins: { Notify }, // import Quasar plugins you need
   config: {
     brand: {
-      primary: '#1976d2',
-      // ... other brand colors
     },
-    extras: {
-      font: {
-        phantomMuffEmpty: 'PhantomMuffEmpty',
-        phantomMuffFull: 'PhantomMuffFull'
-      }
+    notify: {
+      position: 'bottom-right',
+      timeout: 3000,
+      textColor: 'white'
     }
-  }
+  },
+  extras: [
+    'material-icons', // Add other extras if needed
+    // Example: 'fontawesome-v6'
+  ]
 });
 
 // Mount the app

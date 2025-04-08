@@ -83,7 +83,7 @@
         <div class="logo-upload q-mb-md">
           <div class="text-subtitle2 q-mb-sm">Logo Image (Replaces Title)</div>
           <div class="logo-preview" v-if="logoPreview || form.logo_data">
-            <img :src="logoPreview || form.logo_data" alt="Logo Preview" />
+            <img :src="(logoPreview || form.logo_data) || ''" alt="Logo Preview" />
           </div>
           <div class="logo-placeholder" v-else>
             <q-icon name="image" size="48px" />
@@ -102,7 +102,7 @@
             </template>
           </q-file>
           <q-btn 
-            v-if="form.logo_data" 
+            v-if="logoPreview || form.logo_data" 
             flat 
             color="negative" 
             label="Remove Logo" 
@@ -123,20 +123,32 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 
+interface Mod {
+  id: string;
+  name: string;
+  path: string;
+  executable_path?: string;
+  icon_data?: string;
+  banner_data?: string;
+  logo_data?: string | null;
+  version?: string;
+  engine_type?: string;
+}
+
 const props = defineProps({
   modelValue: {
     type: Boolean,
     default: false
   },
   mod: {
-    type: Object,
+    type: Object as () => Mod | null,
     default: null
   }
 });
 
 const emit = defineEmits(['update:modelValue', 'save', 'change-folder', 'select-executable']);
 
-const form = ref({
+const form = ref<Mod>({
   id: '',
   name: '',
   path: '',
@@ -148,10 +160,10 @@ const form = ref({
   engine_type: ''
 });
 
-const bannerFile = ref(null);
-const bannerPreview = ref(null);
-const logoFile = ref(null);
-const logoPreview = ref(null);
+const bannerFile = ref<File | null>(null);
+const bannerPreview = ref<string | null>(null);
+const logoFile = ref<File | null>(null);
+const logoPreview = ref<string | null>(null);
 
 const engineTypes = [
   { label: 'Vanilla', value: 'vanilla' },
@@ -179,11 +191,11 @@ watch(() => props.modelValue, (newVal) => {
   }
 });
 
-const handleBannerFileChange = (file) => {
+const handleBannerFileChange = (file: File) => {
   if (file) {
     const reader = new FileReader();
     reader.onload = (e) => {
-      bannerPreview.value = e.target?.result;
+      bannerPreview.value = e.target?.result as string;
     };
     reader.readAsDataURL(file);
   } else {
@@ -191,11 +203,11 @@ const handleBannerFileChange = (file) => {
   }
 };
 
-const handleLogoFileChange = (file) => {
+const handleLogoFileChange = (file: File) => {
   if (file) {
     const reader = new FileReader();
     reader.onload = (e) => {
-      logoPreview.value = e.target?.result;
+      logoPreview.value = e.target?.result as string;
     };
     reader.readAsDataURL(file);
   } else {
