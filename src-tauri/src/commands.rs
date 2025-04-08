@@ -33,6 +33,70 @@ pub async fn select_mod_folder(app: tauri::AppHandle) -> Result<String, String> 
     }
 }
 
+// Command to open a folder dialog and select a folder containing multiple mods
+#[tauri::command]
+pub async fn select_mods_parent_folder(app: tauri::AppHandle, mods_state: State<'_, ModsState>) -> Result<Vec<ModInfo>, String> {
+    debug!("Opening parent folder selection dialog for multiple mods");
+    let folder = app
+        .dialog()
+        .file()
+        .set_title("Select Folder Containing Mods")
+        .blocking_pick_folder();
+
+    match folder {
+        Some(path) => {
+            info!("Parent folder selected: {}", path);
+            let path_str = path.to_string();
+            
+            // Read all subdirectories and add each as a mod
+            match std::fs::read_dir(&path_str) {
+                Ok(entries) => {
+                    let mut added_mods = Vec::new();
+                    
+                    for entry in entries.filter_map(|e| e.ok()) {
+                        let entry_path = entry.path();
+                        
+                        // Only process directories
+                        if entry_path.is_dir() {
+                            let subdir_path = entry_path.to_string_lossy().to_string();
+                            debug!("Processing potential mod directory: {}", subdir_path);
+                            
+                            // Try to add this directory as a mod
+                            match create_mod_info(&subdir_path) {
+                                Ok(mod_info) => {
+                                    let id = mod_info.id.clone();
+                                    added_mods.push(mod_info.clone());
+                                    
+                                    // Add to our state
+                                    let mut mods = mods_state.0.lock().unwrap();
+                                    mods.insert(id, mod_info);
+                                    info!("Added mod: {} ({})", entry_path.display(), subdir_path);
+                                },
+                                Err(e) => {
+                                    warn!("Failed to add directory as mod: {} - {}", subdir_path, e);
+                                    // Continue to next directory
+                                }
+                            }
+                        }
+                    }
+                    
+                    info!("Added {} mods from parent folder", added_mods.len());
+                    Ok(added_mods)
+                },
+                Err(e) => {
+                    let err_msg = format!("Failed to read directory contents: {}", e);
+                    error!("{}", err_msg);
+                    Err(err_msg)
+                }
+            }
+        },
+        None => {
+            warn!("No folder selected");
+            Err("No folder selected".to_string())
+        },
+    }
+}
+
 // Command to open a folder dialog and get the selected settings folder path
 #[tauri::command]
 pub async fn select_settings_folder(app: tauri::AppHandle) -> Result<String, String> {
@@ -217,7 +281,8 @@ pub fn run() {
             launch_mod,
             fetch_gamebanana_mods_command,
             download_gamebanana_mod_command,
-            sync_mods_from_database
+            sync_mods_from_database,
+            select_mods_parent_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

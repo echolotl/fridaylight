@@ -10,6 +10,7 @@
         :selectedModId="selectedMod?.id"
         @select-mod="selectMod"
         @add-mod="selectModFolder"
+        @add-mods-folder="selectModsParentFolder"
         @delete-mod="deleteMod"
         @open-settings="openAppSettings"
         @reorder-mods="handleModsReorder"
@@ -36,21 +37,23 @@
         <div class="resize-handle-indicator"></div>
       </div>
     </div>
-    
-    <!-- Main content area -->
-    <div class="main-content-area">
-      <!-- Show ModDetails when a mod is selected and GameBanana is not shown -->
-      <ModDetails 
-        v-if="!showGameBanana"
-        :mod="selectedMod" 
-        :error="launchError || ''"
-        @update:mod="updateModDetails"
-        @launch-mod="launchMod"
-        @open-settings="openSettingsModal"
-      />
-      
-      <!-- Show GameBanana browser when GameBanana tab is selected -->
-      <GameBananaBrowser v-else />
+      <!-- Main content area -->
+    <div class="main-content-area">      <!-- Use transition group for switching between components -->
+      <transition name="fade" mode="out-in">
+        <!-- Show ModDetails when a mod is selected and GameBanana is not shown -->
+        <ModDetails 
+          v-if="!showGameBanana"
+          :mod="selectedMod" 
+          :error="launchError || ''"
+          @update:mod="updateModDetails"
+          @launch-mod="launchMod"
+          @open-settings="openSettingsModal"
+          :key="selectedMod?.id || 'no-mod'"
+        />
+        
+        <!-- Show GameBanana browser when GameBanana tab is selected -->
+        <GameBananaBrowser v-else key="gamebanana-browser" />
+      </transition>
     </div>
 
     <!-- Settings Modal -->
@@ -255,6 +258,29 @@ const selectModFolder = async () => {
     }
   } catch (error) {
     console.error('Failed to select mod folder:', error);
+  }
+};
+
+const selectModsParentFolder = async () => {
+  try {
+    // Call the Rust command to select a folder containing multiple mods
+    const addedMods = await invoke<ModInfo[]>('select_mods_parent_folder');
+    
+    if (addedMods && addedMods.length > 0) {
+      // Add each mod to the mods array
+      for (const modInfo of addedMods) {
+        mods.value.push(modInfo);
+        await saveModToDatabase(modInfo);
+      }
+      
+      // Select the first added mod
+      selectMod(addedMods[0]);
+      
+      // Show a success message
+      console.log(`Successfully added ${addedMods.length} mods`);
+    }
+  } catch (error) {
+    console.error('Failed to select mods parent folder:', error);
   }
 };
 

@@ -1,12 +1,12 @@
 <template>
   <div>
     <q-scroll-area style="height: 100%">
-      <q-list padding class="text-white phantom-font">
-        <q-item-label header class="flex justify-between items-center">
+      <q-list padding class="text-white phantom-font">        <q-item-label header class="flex justify-between items-center">
           Mods
           <div class="flex">
             <q-btn flat round dense icon="settings" @click="$emit('open-settings')" class="q-mr-xs" />
-            <q-btn flat round dense icon="add" @click="$emit('add-mod')" />
+            <q-btn flat round dense icon="add" @click="$emit('add-mod')" class="q-mr-xs" />
+            <q-btn flat round dense icon="folder_open" @click="$emit('add-mods-folder')" tooltip="Import Folder of Mods" />
           </div>
         </q-item-label>
         
@@ -182,7 +182,7 @@ watch(() => props.mods, (newMods) => {
   }
 }, { immediate: true, deep: true });
 
-const emit = defineEmits(['select-mod', 'add-mod', 'delete-mod', 'open-settings', 'reorder-mods']);
+const emit = defineEmits(['select-mod', 'add-mod', 'add-mods-folder', 'delete-mod', 'open-settings', 'reorder-mods']);
 
 const showDeleteDialog = ref(false);
 const modToDelete = ref<Mod | null>(null);

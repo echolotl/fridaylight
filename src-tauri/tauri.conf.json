@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Friday Night Funkin' Mod Loader",
+  "productName": "Fridaylight",
   "version": "0.1.0",
-  "identifier": "com.echolotl.fnfml",
+  "identifier": "com.echolotl.fridaylight",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Friday Night Funkin' Mod Loader",
+        "title": "Fridaylight",
         "width": 800,
         "minWidth": 800,
         "height": 600,
