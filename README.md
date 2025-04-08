@@ -1,16 +1,42 @@
-# Tauri + Vue + TypeScript
+# Fridaylight ![](https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vue.js&logoColor=4FC08D)
+A mod manager for Friday Night Funkin mods! Built using Tauri and Vue.
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Features
 
-## Recommended IDE Setup
+- An organized UI, including a mod list sidebar and a dedicated mod page.
+- Integrated GameBanana browsing + downloading
+- UI Customization*
+  - Currently limited to accent color
+- Mod metadata support
+- Mod launching
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+### WIP Features
 
-## Type Support For `.vue` Imports in TS
+- [ ] Engine mod management
+- [ ] Folder organization
+- [ ] Custom CSS/Themes
+- [ ] More metadata support *(feel free to recommend ideas in the Issues tab)*
+- [ ] Gamebanana download version picker
+- [ ] Gamebanana deep linking
+- [ ] Non-Gamebanana download links
+- [ ] Import folder of FNF mod folders *(for migration)*
+- [ ] Linux/Mac builds
+- [ ] More unique UI, with same organization
+- [ ] Psych engine achievement display
 
-Since TypeScript cannot handle type information for `.vue` imports, they are shimmed to be a generic Vue component type by default. In most cases this is fine if you don't really care about component prop types outside of templates. However, if you wish to get actual prop types in `.vue` imports (for example to get props validation when using manual `h(...)` calls), you can enable Volar's Take Over mode by following these steps:
+## Metadata Structure
+Located in the same directory as the mod's executable, mod creators have the ability to provide additional metadata to be used and displayed on its mod page by creating a folder with the name `.flight` and including any of these files:
+| File | Purpose |
+|------|---------|
+|`banner.png`, `banner.webp`| Image file used for the mods' display banner|
+|`logo.png`, `logo.webp`| Image file used for the mods' logo, displayed instead of its name|
+|`metadata.json`| JSON Schema used for including mod metadata to be shown on the sidebar and mod page|
 
-1. Run `Extensions: Show Built-in Extensions` from VS Code's command palette, look for `TypeScript and JavaScript Language Features`, then right click and select `Disable (Workspace)`. By default, Take Over mode will enable itself if the default TypeScript extension is disabled.
-2. Reload the VS Code window by running `Developer: Reload Window` from the command palette.
-
-You can learn more about Take Over mode [here](https://github.com/johnsoncodehk/volar/discussions/471).
+### Example `metadata.json`
+```json
+{
+  "name": "VS Impostor V4",
+  "version": "4.1.0",
+  "engine_type": "Psych Engine"
+}
+```
