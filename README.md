@@ -37,6 +37,7 @@ Located in the same directory as the mod's executable, mod creators have the abi
 {
   "name": "VS Impostor V4",
   "version": "4.1.0",
-  "engine_type": "Psych Engine"
+  "engine_type": "Psych"
 }
 ```
+<sub>`engine_type`'s fields can be `psych`, `kade`, `codename`, `pre-vslice`, `vanilla`</sub>
