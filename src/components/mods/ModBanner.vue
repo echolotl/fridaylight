@@ -113,7 +113,7 @@ const formatEngineType = (engineType: string) => {
   bottom: 20px;
   left: 20px;
   right: 20px;
-  color: white;
+  color: var(--theme-text);
   z-index: 2;
 }
 
@@ -140,8 +140,8 @@ const formatEngineType = (engineType: string) => {
 .title-input {
   width: 100%;
   font-size: 2rem;
-  color: white;
-  background: rgba(0, 0, 0, 0.5);
+  color: var(--theme-text);
+  background: var(--theme-surface);
   border-radius: 4px;
 }
 

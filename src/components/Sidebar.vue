@@ -37,22 +37,23 @@
         <div class="resize-handle-indicator"></div>
       </div>
     </div>
-      <!-- Main content area -->
-    <div class="main-content-area">      <!-- Use transition group for switching between components -->
-      <transition name="fade" mode="out-in">
+    <!-- Main content area -->    <div class="main-content-area">
+      <!-- Use transition for switching between components -->
+      <transition name="fade" mode="out-in" :duration="200">
         <!-- Show ModDetails when a mod is selected and GameBanana is not shown -->
-        <ModDetails 
-          v-if="!showGameBanana"
-          :mod="selectedMod" 
-          :error="launchError || ''"
-          @update:mod="updateModDetails"
-          @launch-mod="launchMod"
-          @open-settings="openSettingsModal"
-          :key="selectedMod?.id || 'no-mod'"
+        <component 
+          :is="!showGameBanana ? ModDetails : GameBananaBrowser"
+          v-bind="!showGameBanana ? {
+            mod: selectedMod,
+            error: launchError || '',
+            'onUpdate:mod': updateModDetails,
+            'onLaunch-mod': launchMod,
+            'onOpen-settings': openSettingsModal,
+            key: selectedMod?.id || 'no-mod'
+          } : {
+            key: 'gamebanana-browser'
+          }"
         />
-        
-        <!-- Show GameBanana browser when GameBanana tab is selected -->
-        <GameBananaBrowser v-else key="gamebanana-browser" />
       </transition>
     </div>
 
@@ -285,7 +286,9 @@ const selectModsParentFolder = async () => {
 };
 
 const selectMod = (mod: ModInfo) => {
+  console.log('selectMod called with mod:', mod);
   selectedMod.value = mod;
+  console.log('selectedMod.value after setting:', selectedMod.value);
   launchError.value = null;
   showGameBanana.value = false; // Switch to mod details view when selecting a mod
 };
@@ -553,10 +556,10 @@ onUnmounted(() => {
   padding: 16px;
   box-sizing: border-box;
   overflow: auto;
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--theme-surface);
   border-radius: 1rem 1rem 0 0;
   margin: 8px;
-}
+  }
 
 .resize-handle {
   position: absolute;
@@ -581,7 +584,7 @@ onUnmounted(() => {
 
 .resize-handle:hover .resize-handle-indicator,
 .resize-handle:active .resize-handle-indicator {
-  border-right: 1px dashed rgba(0, 0, 0, 0.25);
+  border-right: 1px dashed var(--theme-border);
 }
 
 .modlist {
@@ -592,7 +595,7 @@ onUnmounted(() => {
 .gamebanana-button-container {
   padding: 12px;
   text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--theme-border);
   margin-top: auto;
 }
 

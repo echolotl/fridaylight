@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import Database from '@tauri-apps/plugin-sql';
 import Sidebar from './components/Sidebar.vue';
@@ -25,6 +25,76 @@ const sidebarWidth = ref(250);
 
 const handleSidebarResize = (width: number) => {
   sidebarWidth.value = width;
+};
+
+// Get the current system theme (light or dark)
+const getSystemTheme = (): boolean => {
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+};
+
+// Apply theme based on system or user preference
+const applyTheme = async (useLightTheme: boolean) => {
+  console.log('Applying theme:', useLightTheme ? 'light' : 'dark');
+  
+  // Apply CSS classes for theme
+  if (useLightTheme) {
+    document.body.classList.add('light-theme');
+  } else {
+    document.body.classList.remove('light-theme');
+  }
+  
+  // Apply Mica effect based on theme (Windows only)
+  try {
+    await invoke('change_mica_theme', { 
+      window: 'main',
+      dark: !useLightTheme
+    });
+    console.log('Applied Mica theme effect:', !useLightTheme ? 'dark' : 'light');
+  } catch (error) {
+    console.error('Failed to apply Mica effect:', error);
+  }
+};
+
+// Handle system theme changes
+const handleSystemThemeChange = async (event: MediaQueryListEvent) => {
+  // Only react to system theme changes if that setting is enabled
+  const useSystemTheme = await getUseSystemThemeSetting();
+  if (useSystemTheme) {
+    const isLightTheme = event.matches;
+    applyTheme(isLightTheme);
+  }
+};
+
+// Get the current "use system theme" setting from the database
+const getUseSystemThemeSetting = async (): Promise<boolean> => {
+  if (!window.db) return true; // Default to true if DB isn't available
+  
+  try {
+    const result = await window.db.select('SELECT value FROM settings WHERE key = $1', ['useSystemTheme']);
+    if (result && result.length > 0) {
+      return result[0].value === 'true';
+    }
+    return true; // Default to true if setting doesn't exist
+  } catch (error) {
+    console.error('Error fetching useSystemTheme setting:', error);
+    return true; // Default to true on error
+  }
+};
+
+// Get the manually set theme preference (only used if not using system theme)
+const getThemePreference = async (): Promise<boolean> => {
+  if (!window.db) return false; // Default to dark if DB isn't available
+  
+  try {
+    const result = await window.db.select('SELECT value FROM settings WHERE key = $1', ['enableLightTheme']);
+    if (result && result.length > 0) {
+      return result[0].value === 'true';
+    }
+    return false; // Default to dark if setting doesn't exist
+  } catch (error) {
+    console.error('Error fetching theme preference:', error);
+    return false; // Default to dark on error
+  }
 };
 
 // Initialize the app
@@ -122,10 +192,25 @@ onMounted(async () => {
       console.log('No mods found in database');
     }
     
+    // Apply initial theme based on system or user preference
+    const useSystemTheme = await getUseSystemThemeSetting();
+    const useLightTheme = useSystemTheme ? getSystemTheme() : await getThemePreference();
+    applyTheme(useLightTheme);
+    
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
+    
     console.log('App initialized and database tables updated');
   } catch (error) {
     console.error('Failed to initialize database:', error);
   }
+});
+
+onUnmounted(() => {
+  // Clean up the event listener for system theme changes
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+  mediaQuery.removeEventListener('change', handleSystemThemeChange);
 });
 </script>
 
@@ -137,6 +222,7 @@ html, body {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  color: var(--theme-text);
 }
 
 .transparent-bg {

@@ -827,7 +827,7 @@ const formatPeriod = (period: string): string => {
 }
 
 .mod-card {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--theme-card);
   border-radius: 8px;
   overflow: hidden;
   display: flex;
@@ -853,12 +853,12 @@ const formatPeriod = (period: string): string => {
   font-weight: bold;
   font-size: 1.1rem;
   margin-bottom: 4px;
-  color: white;
+  color: var(--theme-text);
 }
 
 .mod-author {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--theme-text-secondary);
   margin-bottom: 8px;
 }
 
@@ -866,7 +866,7 @@ const formatPeriod = (period: string): string => {
   display: flex;
   gap: 12px;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--theme-text-secondary);
 }
 
 .download-btn {
@@ -879,7 +879,7 @@ const formatPeriod = (period: string): string => {
   align-items: center;
   justify-content: center;
   height: 200px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--theme-text-secondary);
 }
 
 .pagination {
@@ -896,7 +896,7 @@ const formatPeriod = (period: string): string => {
 }
 
 .text-subtitle1 {
-    color: white;
+    color: var(--theme-text);
     font-size: 1.5rem;
 }
 </style>

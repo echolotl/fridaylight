@@ -16,6 +16,21 @@ $negative  : #C10015;
 $info      : #31CCEC;
 $warning   : #F2C037;
 
+// Theme colors
+$theme-dark-bg: rgba(0, 0, 0, 0.87);
+$theme-dark-card: rgba(0, 0, 0, 0.5);
+$theme-dark-surface: rgba(0, 0, 0, 0.25);
+$theme-dark-text: #ffffff;
+$theme-dark-text-secondary: rgba(255, 255, 255, 0.7);
+$theme-dark-border: rgba(255, 255, 255, 0.12);
+
+$theme-light-bg: rgba(255, 255, 255, 0.87);
+$theme-light-card: rgba(255, 255, 255, 0.5);
+$theme-light-surface: rgba(255, 255, 255, 0.25);
+$theme-light-text: #212121;
+$theme-light-text-secondary: rgba(0, 0, 0, 0.7);
+$theme-light-border: rgba(0, 0, 0, 0.12);
+
 // Font definitions
 $phantom-muff-empty: 'PhantomMuffEmpty';
 $phantom-muff-full: 'PhantomMuffFull';
@@ -36,8 +51,7 @@ $phantom-muff-display: 'PhantomMuffDisplay';
   font-style: normal;
 }
 
-@font-face {
-  font-family: $phantom-muff-display;
+@font-face {  font-family: $phantom-muff-display;
   src: url('../assets/fonts/PhantomMuffDisplay.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
@@ -49,11 +63,59 @@ $phantom-muff-display: 'PhantomMuffDisplay';
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease-in, transform 0.2s ease-in;
+  transition: opacity 0.2s ease-in, transform 0.2s ease-in-out;
 }
 
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-  transform: translateY(1rem);
+  transform: translateY(2rem);
+}
+
+// Theme classes for light/dark mode
+body {
+  --theme-bg: #{$theme-dark-bg};
+  --theme-card: #{$theme-dark-card};
+  --theme-surface: #{$theme-dark-surface};
+  --theme-text: #{$theme-dark-text};
+  --theme-text-secondary: #{$theme-dark-text-secondary};
+  --theme-border: #{$theme-dark-border};
+}
+
+body.light-theme {
+  --theme-bg: #{$theme-light-bg};
+  --theme-card: #{$theme-light-card};
+  --theme-surface: #{$theme-light-surface};
+  --theme-text: #{$theme-light-text};
+  --theme-text-secondary: #{$theme-light-text-secondary};
+  --theme-border: #{$theme-light-border};
+}
+
+.q-card {
+  background-color: var(--theme-card);
+  color: var(--theme-text);
+}
+
+.text-subtitle1, .text-subtitle2, .text-h6, .text-body1, .text-body2 {
+  color: var(--theme-text);
+}
+
+.q-item__label--caption {
+  color: var(--theme-text-secondary);
+}
+
+.q-input, .q-select {
+  color: var(--theme-text) !important;
+}
+
+.q-input .q-field__native, .q-select .q-field__native {
+  color: var(--theme-text);
+}
+
+.q-field--outlined .q-field__control:before {
+  border-color: var(--theme-border) !important;
+}
+
+.q-field--float .q-field__label {
+  color: var(--theme-text-secondary) !important;
 }

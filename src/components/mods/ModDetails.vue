@@ -30,7 +30,7 @@
       <q-btn
         flat
         round
-        color="white"
+        color="var(--theme-text)"
         icon="settings"
         class="settings-button"
         @click="$emit('open-settings')"
@@ -106,7 +106,7 @@ const formatEngineType = (engineType: string) => {
 <style scoped>
 .mod-details {
   padding: 0;
-  color: white;
+  color: var(--theme-text);
 }
 
 .mod-actions {
@@ -134,7 +134,7 @@ const formatEngineType = (engineType: string) => {
 .mod-path {
   margin: 0 20px;
   font-size: 1rem;
-  color: white;
+  color: var(--theme-text);
 }
 
 .welcome-message {
@@ -144,7 +144,7 @@ const formatEngineType = (engineType: string) => {
   justify-content: center;
   height: 100%;
   text-align: center;
-  color: white;
+  color: var(--theme-text);
 }
 
 .welcome-message h2 {

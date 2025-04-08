@@ -4,11 +4,13 @@ use crate::gamebanana::fetch_gamebanana_mods;
 use crate::logger;
 use crate::models::{ModInfo, ModsState, GameBananaResponse};
 use log::{debug, error, info, warn};
+use tauri::utils::config::WindowEffectsConfig;
+use tauri::window::{Effect, EffectsBuilder};
 use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
 // Command to open a folder dialog and get the selected folder path
@@ -252,10 +254,35 @@ pub async fn sync_mods_from_database(mods_data: Vec<ModInfo>, mods_state: State<
     Ok(())
 }
 
-// Simple hello world command
 #[tauri::command]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+fn change_mica_theme(app_handle: tauri::AppHandle, window: String, dark: bool) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        let window = app_handle.get_webview_window(&window).ok_or_else(|| {
+            let err = format!("Window with ID {} not found", window);
+            error!("{}", err);
+            err
+        })?;
+        if dark {
+            window.set_effects(
+                EffectsBuilder::new()
+                .effect(Effect::MicaDark)
+                .build()
+            ).map_err(|e| e.to_string())?;
+            Ok(())
+        } else {
+            window.set_effects(
+                EffectsBuilder::new()
+                .effect(Effect::MicaLight)
+                .build()
+            ).map_err(|e| e.to_string())?;
+            Ok(())
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Unsupported platform! 'apply_mica' is only supported on Windows".into())
+    }
 }
 
 // Setup function for Tauri application
@@ -272,7 +299,6 @@ pub fn run() {
             })?)
         })
         .invoke_handler(tauri::generate_handler![
-            greet,
             select_mod_folder,
             select_settings_folder,
             select_executable,
@@ -282,7 +308,8 @@ pub fn run() {
             fetch_gamebanana_mods_command,
             download_gamebanana_mod_command,
             sync_mods_from_database,
-            select_mods_parent_folder
+            select_mods_parent_folder,
+            change_mica_theme
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

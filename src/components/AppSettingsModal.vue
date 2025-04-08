@@ -1,5 +1,4 @@
-<template>
-  <q-dialog v-model="showModal" persistent>
+<template>  <q-dialog v-model="showModal" persistent>
     <q-card class="settings-modal phantom-font">
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6">App Settings</div>
@@ -7,78 +6,135 @@
         <q-btn icon="close" flat round dense v-close-popup />
       </q-card-section>
 
-      <q-card-section>
-        <div class="text-subtitle1 q-mb-md">Appearance</div>
-        
-        <q-select
-          v-model="settings.accentColor"
-          :options="accentColorOptions"
-          label="Accent Color"
-          outlined
-          class="q-mb-md"
-        >
-          <template v-slot:option="scope">
-            <q-item v-bind="scope.itemProps">
+      <div class="settings-layout">
+        <!-- Sidebar Navigation -->
+        <div class="settings-sidebar">
+          <q-list padding>
+            <q-item 
+              v-for="section in settingsSections" 
+              :key="section.id"
+              clickable 
+              :active="activeSection === section.id"
+              @click="activeSection = section.id"
+              active-class="settings-active-item"
+            >
               <q-item-section avatar>
-                <div class="color-preview" :style="{ backgroundColor: scope.opt.value }"></div>
+                <q-icon :name="section.icon" />
               </q-item-section>
               <q-item-section>
-                <q-item-label>{{ scope.opt.label }}</q-item-label>
+                {{ section.label }}
               </q-item-section>
             </q-item>
-          </template>
-          
-          <template v-slot:selected>
-            <div class="row items-center">
-              <div class="color-preview q-mr-sm" :style="{ 
-                backgroundColor: typeof settings.accentColor === 'string' ? 
-                  settings.accentColor : 
-                  settings.accentColor?.value || '#FF0088'
-              }"></div>
-              <div>
-                {{ 
-                  typeof settings.accentColor === 'string' ? 
-                  accentColorOptions.find(opt => opt.value === settings.accentColor)?.label : 
-                  settings.accentColor?.label || 'Custom'
-                }}
-              </div>
+          </q-list>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="settings-content">
+          <!-- Appearance Section -->
+          <q-card-section v-show="activeSection === 'appearance'">
+            <div class="text-subtitle1 q-mb-md">Appearance</div>
+            
+            <div class="theme-toggle-container row q-mb-md">
+              <q-item tag="label" class="full-width">
+                <q-item-section>
+                  <q-item-label>Use System Theme</q-item-label>
+                  <q-item-label caption>Automatically match your OS theme</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-toggle v-model="settings.useSystemTheme" color="primary" />
+                </q-item-section>
+              </q-item>
             </div>
-          </template>
-        </q-select>
-        
-        <div class="text-subtitle1 q-mt-lg q-mb-md">Installation</div>
-        
-        <q-input 
-          v-model="settings.installLocation" 
-          label="Default Install Location" 
-          outlined 
-          readonly
-          class="q-mb-md"
-        >
-          <template v-slot:append>
-            <q-btn round flat icon="folder" @click="selectInstallLocation" />
-          </template>
-        </q-input>
-        
-        <div class="text-subtitle1 q-mt-lg q-mb-md">About</div>
-        
-        <div class="text-body2 q-mb-sm">
-          FNF Mod Launcher v1.0.0
+            
+            <div class="theme-toggle-container row q-mb-md" v-if="!settings.useSystemTheme">
+              <q-item tag="label" class="full-width">
+                <q-item-section>
+                  <q-item-label>Enable Light Theme</q-item-label>
+                  <q-item-label caption>Switch between light and dark mode</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-toggle v-model="settings.enableLightTheme" color="primary" />
+                </q-item-section>
+              </q-item>
+            </div>
+
+            <q-select
+              v-model="settings.accentColor"
+              :options="accentColorOptions"
+              label="Accent Color"
+              outlined
+              class="q-mb-md selector"
+            >
+              <template v-slot:option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section avatar>
+                    <div class="color-preview" :style="{ backgroundColor: scope.opt.value }"></div>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label text-color="var(--theme-text)">{{ scope.opt.label }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </template>
+              
+              <template v-slot:selected>
+                <div class="row items-center">
+                  <div class="color-preview q-mr-sm" :style="{ 
+                    backgroundColor: typeof settings.accentColor === 'string' ? 
+                      settings.accentColor : 
+                      settings.accentColor?.value || '#FF0088'
+                  }"></div>
+                  <div>
+                    {{ 
+                      typeof settings.accentColor === 'string' ? 
+                      accentColorOptions.find(opt => opt.value === settings.accentColor)?.label : 
+                      settings.accentColor?.label || 'Custom'
+                    }}
+                  </div>
+                </div>
+              </template>
+            </q-select>
+          </q-card-section>
+          
+          <!-- Installation Section -->
+          <q-card-section v-show="activeSection === 'installation'">
+            <div class="text-subtitle1 q-mb-md">Installation</div>
+            
+            <q-input 
+              v-model="settings.installLocation" 
+              label="Default Install Location" 
+              outlined 
+              readonly
+              class="q-mb-md"
+            >
+              <template v-slot:append>
+                <q-btn round flat icon="folder" color="var(--theme-text)" @click="selectInstallLocation" />
+              </template>
+            </q-input>
+          </q-card-section>
+          
+          <!-- About Section -->
+          <q-card-section v-show="activeSection === 'about'">
+            <div class="text-subtitle1 q-mb-md">About</div>
+            
+            <div class="text-body2 q-mb-sm">
+              FNF Mod Launcher v1.0.0
+            </div>
+            
+            <div class="text-subtitle1 q-mt-lg q-mb-md">Acknowledgements</div>
+            
+            <div class="acknowledgements q-pa-md">
+              <p>This application uses the following open source projects:</p>
+              <ul>
+                <li><strong>Tauri</strong> - Cross-platform app framework</li>
+                <li><strong>Vue.js</strong> - Frontend framework</li>
+                <li><strong>Quasar</strong> - UI component library</li>
+                <li><strong>Rust</strong> - Backend language</li>
+              </ul>
+              <p>Special thanks to the Friday Night Funkin' community!</p>
+            </div>
+          </q-card-section>
         </div>
-        
-        <div class="text-subtitle1 q-mt-lg q-mb-md">Acknowledgements</div>
-        
-        <div class="acknowledgements q-pa-md">
-          <p>This application uses the following open source projects:</p>
-          <ul>
-            <li><strong>Tauri</strong> - Cross-platform app framework</li>
-            <li><strong>Vue.js</strong> - Frontend framework</li>
-            <li><strong>Quasar</strong> - UI component library</li>
-            <li><strong>Rust</strong> - Backend language</li>
-          </ul>
-          <p>Special thanks to the Friday Night Funkin' community!</p>
-        </div>
-      </q-card-section>
+      </div>
 
       <q-card-actions align="right">
         <q-btn flat label="Cancel" color="primary" v-close-popup @click="cancel" />
@@ -100,6 +156,8 @@ interface ColorOption {
 interface AppSettings {
   accentColor: string | ColorOption;
   installLocation: string;
+  enableLightTheme: boolean;
+  useSystemTheme: boolean;
 }
 
 const props = defineProps({
@@ -113,8 +171,20 @@ const emit = defineEmits(['update:modelValue', 'save']);
 
 const settings = ref<AppSettings>({
   accentColor: '#DB2955', // Default magenta color
-  installLocation: 'C:\\Users\\Public\\Documents\\FNF Mods'
+  installLocation: 'C:\\Users\\Public\\Documents\\FNF Mods',
+  enableLightTheme: false, // Default to dark theme
+  useSystemTheme: true // Default to using system theme
 });
+
+// Sidebar navigation sections
+const settingsSections = [
+  { id: 'appearance', label: 'Appearance', icon: 'format_paint' },
+  { id: 'installation', label: 'Installation', icon: 'folder' },
+  { id: 'about', label: 'About', icon: 'info' }
+];
+
+// Track the active section
+const activeSection = ref('appearance');
 
 const accentColorOptions = [
   { label: 'Pink', value: '#DB2955' },
@@ -168,10 +238,25 @@ const loadSettings = async () => {
       }
     }
     
-    const installLocationResult = await window.db.select('SELECT value FROM settings WHERE key = $1', ['installLocation']);
-    if (installLocationResult && installLocationResult.length > 0) {
+    const installLocationResult = await window.db.select('SELECT value FROM settings WHERE key = $1', ['installLocation']);    if (installLocationResult && installLocationResult.length > 0) {
       settings.value.installLocation = installLocationResult[0].value;
     }
+      // Load theme setting
+    const themeResult = await window.db.select('SELECT value FROM settings WHERE key = $1', ['enableLightTheme']);
+    if (themeResult && themeResult.length > 0) {
+      // Convert string 'true'/'false' to boolean
+      settings.value.enableLightTheme = themeResult[0].value === 'true';
+    }
+    
+    // Load system theme preference
+    const systemThemeResult = await window.db.select('SELECT value FROM settings WHERE key = $1', ['useSystemTheme']);
+    if (systemThemeResult && systemThemeResult.length > 0) {
+      // Convert string 'true'/'false' to boolean
+      settings.value.useSystemTheme = systemThemeResult[0].value === 'true';
+    }
+    
+    // Apply theme immediately upon loading
+    await updateTheme();
     
     console.log('Settings loaded from database:', settings.value);
   } catch (error) {
@@ -189,6 +274,51 @@ const selectInstallLocation = async () => {
   } catch (error) {
     console.error('Failed to select install location:', error);
   }
+};
+
+// Get the current system theme (light or dark)
+const getSystemTheme = (): boolean => {
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+};
+
+// Apply theme function
+const updateTheme = async () => {
+  // Determine if we should use light theme based on settings
+  let useLightTheme = settings.value.enableLightTheme;
+  
+  // If using system theme, override with the system preference
+  if (settings.value.useSystemTheme) {
+    useLightTheme = getSystemTheme();
+  }
+  
+  console.log('Applying theme:', useLightTheme ? 'light' : 'dark');
+  
+  // Apply CSS classes for theme
+  if (useLightTheme) {
+    document.body.classList.add('light-theme');
+  } else {
+    document.body.classList.remove('light-theme');
+  }
+  
+  // Call the Rust backend to apply Mica effect (Windows only)
+  try {
+    await invoke('change_mica_theme', { 
+      window: 'main',  // Main window label
+      dark: !useLightTheme  // Invert because true = dark theme in the Rust function
+    });
+    console.log('Applied Mica theme effect:', !useLightTheme ? 'dark' : 'light');
+  } catch (error) {
+    console.error('Failed to apply Mica effect:', error);
+    // Non-fatal error, the app will still work without Mica
+  }
+  
+  // Dispatch an event so other components can know about theme changes
+  window.dispatchEvent(new CustomEvent('theme-changed', { 
+    detail: { 
+      isLightTheme: useLightTheme,
+      useSystemTheme: settings.value.useSystemTheme
+    } 
+  }));
 };
 
 const save = async () => {
@@ -210,10 +340,19 @@ const save = async () => {
       'INSERT OR REPLACE INTO settings (key, value) VALUES ($1, $2)',
       ['accentColor', accentColorValue]
     );
+      await window.db.execute(
+      'INSERT OR REPLACE INTO settings (key, value) VALUES ($1, $2)',
+      ['installLocation', settings.value.installLocation]
+    );
+      // Save theme settings
+    await window.db.execute(
+      'INSERT OR REPLACE INTO settings (key, value) VALUES ($1, $2)',
+      ['enableLightTheme', String(settings.value.enableLightTheme)]
+    );
     
     await window.db.execute(
       'INSERT OR REPLACE INTO settings (key, value) VALUES ($1, $2)',
-      ['installLocation', settings.value.installLocation]
+      ['useSystemTheme', String(settings.value.useSystemTheme)]
     );
     
     // Apply the accent color to CSS custom properties
@@ -221,8 +360,10 @@ const save = async () => {
     const colorValue = typeof settings.value.accentColor === 'string' 
       ? settings.value.accentColor 
       : (settings.value.accentColor?.value || '#FF0088');
+      document.documentElement.style.setProperty('--q-primary', colorValue);
     
-    document.documentElement.style.setProperty('--q-primary', colorValue);
+    // Apply theme
+    await updateTheme();
     
     console.log('Settings saved to database:', settings.value);
     emit('save', settings.value);
@@ -242,19 +383,57 @@ loadSettings();
 
 <style scoped>
 .settings-modal {
-  width: 500px;
+  width: 700px;
+  height: 500px;
   max-width: 90vw;
+  max-height: 90vh;
+  background-color: var(--theme-card);
+  color: var(--theme-text);
+  border: var(--theme-border) 2px solid;
+  backdrop-filter: blur(10px);
+  scrollbar-width: none;
+}
+
+.settings-layout {
+  display: flex;
+  height: calc(100% - 100px); /* Account for header and footer */
+  overflow: hidden;
+}
+
+.settings-sidebar {
+  width: 200px;
+  border-right: 1px solid var(--theme-border);
+  overflow-y: auto;
+}
+
+.settings-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.settings-active-item {
+  background-color: var(--q-primary) !important;
+  color: white !important;
+}
+
+.settings-sidebar .q-icon {
+  color: var(--theme-text-secondary) !important;
+}
+
+.settings-active-item .q-icon {
+  color: white !important;
 }
 
 .color-preview {
   width: 24px;
   height: 24px;
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--theme-border);
 }
 
 .acknowledgements {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: var(--theme-surface);
   border-radius: 4px;
   max-height: 200px;
   overflow-y: auto;
@@ -266,5 +445,9 @@ loadSettings();
 
 .acknowledgements li {
   margin-bottom: 4px;
+}
+
+.text-caption {
+  color: var(--theme-text-secondary);
 }
 </style>

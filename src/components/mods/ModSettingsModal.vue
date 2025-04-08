@@ -169,6 +169,7 @@ const engineTypes = [
   { label: 'Vanilla', value: 'vanilla' },
   { label: 'Psych Engine', value: 'psych' },
   { label: 'Codename Engine', value: 'codename' },
+  { label: 'FPS Plus', value: 'fps-plus' },
   { label: 'Kade Engine', value: 'kade' },
   { label: 'Pre-VSlice', value: 'pre-vslice' },
   { label: 'Other', value: 'other' }
@@ -249,6 +250,8 @@ const cancel = () => {
 .settings-modal {
   width: 500px;
   max-width: 90vw;
+  background-color: var(--theme-card);
+  color: var(--theme-text);
 }
 
 .banner-upload, .logo-upload {
@@ -269,8 +272,8 @@ const cancel = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.7);
-  border: 1px dashed rgba(255, 255, 255, 0.7);
+  color: var(--theme-text-secondary);
+  border: 1px dashed var(--theme-border);
   border-radius: 4px;
   padding: 16px;
 }

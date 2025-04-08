@@ -1,7 +1,7 @@
 <template>
   <div>
     <q-scroll-area style="height: 100%">
-      <q-list padding class="text-white phantom-font">        <q-item-label header class="flex justify-between items-center">
+      <q-list padding class="phantom-font" style="color: var(--theme-text);">        <q-item-label header class="flex justify-between items-center">
           Mods
           <div class="flex">
             <q-btn flat round dense icon="settings" @click="$emit('open-settings')" class="q-mr-xs" />
@@ -116,11 +116,9 @@
           </q-item-section>
         </q-item>
       </q-list>
-    </q-scroll-area>
-
-    <!-- Delete confirmation dialog -->
+    </q-scroll-area>    <!-- Delete confirmation dialog -->
     <q-dialog v-model="showDeleteDialog" persistent>
-      <q-card class="phantom-font">
+      <q-card class="phantom-font" style="background-color: var(--theme-card); color: var(--theme-text);">
         <q-card-section class="row items-center">
           <q-avatar icon="warning" color="negative" text-color="white" />
           <span class="q-ml-sm">Are you sure you want to delete this mod?</span>
@@ -229,14 +227,19 @@ const onDragEnd = () => {
 
 <style scoped>
 .active-mod {
-  background-color: rgba(0, 0, 0, 0.25);
+  background-color: var(--theme-surface);
   border-radius: 0 1rem 1rem 0;
 }
 
 .default-icon {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--theme-text-secondary) !important;
   background-color: transparent;
   border-radius: 4px;
+}
+
+/* Target the inner icon within the q-avatar */
+.default-icon .q-icon {
+  color: var(--theme-text-secondary) !important;
 }
 
 .q-avatar img {
@@ -256,7 +259,7 @@ const onDragEnd = () => {
 }
 
 .draggable-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--theme-surface);
 }
 
 .draggable-item * {
@@ -274,15 +277,15 @@ const onDragEnd = () => {
 
 /* Add styles for when an item is being dragged */
 .sortable-ghost {
-  background-color: rgba(70, 70, 70, 0.5) !important;
+  background-color: var(--theme-surface) !important;
   border-radius: 0 1rem 1rem 0;
   opacity: 0.5;
 }
 
 /* Add styles for when an item is being dropped */
 .sortable-chosen {
-  background-color: rgba(40, 40, 40, 0.7) !important;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+  background-color: var(--theme-surface) !important;
+  box-shadow: 0 0 10px var(--theme-border);
 }
 
 .delete-btn {
