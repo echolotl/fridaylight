@@ -104,7 +104,7 @@ const formatEngineType = (engineType: string) => {
   left: 0;
   width: 100%;
   height: 70%;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  background: linear-gradient(to top, var(--theme-bg), transparent);
   pointer-events: none;
 }
 
