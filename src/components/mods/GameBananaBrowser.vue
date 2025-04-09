@@ -180,7 +180,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useQuasar, Notify } from 'quasar';
@@ -295,14 +295,6 @@ const totalPages = ref(1);
 const itemsPerPage = 20;
 const activeView = ref('all'); // 'all', 'search'
 const currentFeaturedSlide = ref(0); // For carousel
-
-// Computed property to determine which mods to display
-const displayedMods = computed(() => {
-  if (activeView.value === 'search') {
-    return searchResults.value;
-  }
-  return [];  // When in 'all' view, we show featured and latest separately
-});
 
 onMounted(async () => {
   fetchFeaturedMods();
@@ -741,12 +733,6 @@ const formatPeriod = (period: string): string => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-
-.mod-thumbnail img {
-  /* Apply mask only to the mod thumbnails in the grid */
-  
 }
 
 .featured-overlay {

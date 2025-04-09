@@ -37,9 +37,9 @@
         <div class="resize-handle-indicator"></div>
       </div>
     </div>
-    <!-- Main content area -->    <div class="main-content-area">
+     <div class="main-content-area">
       <!-- Use transition for switching between components -->
-      <transition name="fade" mode="out-in" :duration="200">
+      <Transition name="fade" mode="out-in" :duration="200">
         <!-- Show ModDetails when a mod is selected and GameBanana is not shown -->
         <component 
           :is="!showGameBanana ? ModDetails : GameBananaBrowser"
@@ -54,7 +54,7 @@
             key: 'gamebanana-browser'
           }"
         />
-      </transition>
+      </Transition>
     </div>
 
     <!-- Settings Modal -->

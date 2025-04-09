@@ -17,7 +17,7 @@ pub async fn fetch_gamebanana_mods(query: String, page: i64) -> Result<GameBanan
             format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=15&_aFilters[Generic_Category]=3827&_nPage={}", page)
         } else {
             // Search endpoint
-            format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=15&_aFilters[Generic_Category]=3827&_sName={}&_nPage={}", query, page)
+            format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=15&_aFilters[Generic_Category]=3827&_aFilters[Generic_Name]=contains,{}&_nPage={}", query, page)
         }
     };
     
