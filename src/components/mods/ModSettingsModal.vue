@@ -7,110 +7,157 @@
         <q-btn icon="close" flat round dense v-close-popup />
       </q-card-section>
 
-      <q-card-section v-if="mod">
-        <q-input 
-          v-model="form.name" 
-          label="Mod Name" 
-          outlined 
-          class="q-mb-md"
-        />
-        
-        <q-input 
-          v-model="form.version" 
-          label="Version" 
-          outlined 
-          class="q-mb-md"
-          placeholder="e.g. 1.0.0"
-        />
-        
-        <q-select
-          v-model="form.engine_type"
-          :options="engineTypes"
-          label="Engine Type"
-          outlined
-          class="q-mb-md"
-          emit-value
-          map-options
-        />
-        
-        <q-input 
-          v-model="form.path" 
-          label="Folder Location" 
-          outlined 
-          readonly
-          class="q-mb-md"
-        >
-          <template v-slot:append>
-            <q-btn round flat icon="folder" @click="$emit('change-folder')" />
-          </template>
-        </q-input>
-        
-        <q-input 
-          v-model="form.executable_path" 
-          label="Executable Path" 
-          outlined 
-          readonly
-          class="q-mb-md"
-        >
-          <template v-slot:append>
-            <q-btn round flat icon="file_open" @click="$emit('select-executable')" />
-          </template>
-        </q-input>
-        
-        <div class="banner-upload q-mb-md">
-          <div class="text-subtitle2 q-mb-sm">Banner Image</div>
-          <div class="banner-preview" v-if="bannerPreview || form.banner_data">
-            <img :src="bannerPreview || form.banner_data" alt="Banner Preview" />
-          </div>
-          <div class="banner-placeholder" v-else>
-            <q-icon name="image" size="48px" />
-            <div>No banner image</div>
-          </div>
-          <q-file
-            v-model="bannerFile"
-            label="Upload Banner Image"
-            outlined
-            accept=".jpg, .jpeg, .png"
-            @update:model-value="handleBannerFileChange"
-            class="q-mt-sm"
-          >
-            <template v-slot:prepend>
-              <q-icon name="cloud_upload" />
-            </template>
-          </q-file>
+      <div class="settings-layout" v-if="mod">
+        <!-- Sidebar Navigation -->
+        <div class="settings-sidebar">
+          <q-list padding>
+            <q-item 
+              v-for="section in modSettingsSections" 
+              :key="section.id"
+              clickable 
+              :active="activeSection === section.id"
+              @click="activeSection = section.id"
+              active-class="settings-active-item"
+            >
+              <q-item-section avatar>
+                <q-icon :name="section.icon" />
+              </q-item-section>
+              <q-item-section>
+                {{ section.label }}
+              </q-item-section>
+            </q-item>
+          </q-list>
         </div>
-        
-        <div class="logo-upload q-mb-md">
-          <div class="text-subtitle2 q-mb-sm">Logo Image (Replaces Title)</div>
-          <div class="logo-preview" v-if="logoPreview || form.logo_data">
-            <img :src="(logoPreview || form.logo_data) || ''" alt="Logo Preview" />
-          </div>
-          <div class="logo-placeholder" v-else>
-            <q-icon name="image" size="48px" />
-            <div>No logo image</div>
-          </div>
-          <q-file
-            v-model="logoFile"
-            label="Upload Logo Image"
-            outlined
-            accept=".jpg, .jpeg, .png"
-            @update:model-value="handleLogoFileChange"
-            class="q-mt-sm"
-          >
-            <template v-slot:prepend>
-              <q-icon name="cloud_upload" />
-            </template>
-          </q-file>
-          <q-btn 
-            v-if="logoPreview || form.logo_data" 
-            flat 
-            color="negative" 
-            label="Remove Logo" 
-            class="q-mt-sm"
-            @click="removeLogo"
-          />
+
+        <!-- Main Content Area -->
+        <div class="settings-content">
+          <!-- General Section -->
+          <q-card-section v-show="activeSection === 'general'">
+            <div class="text-subtitle1 q-mb-md">General Information</div>
+
+            <q-input 
+              v-model="form.name" 
+              label="Mod Name" 
+              outlined 
+              class="q-mb-md"
+            />
+            
+            <q-input 
+              v-model="form.version" 
+              label="Version" 
+              outlined 
+              class="q-mb-md"
+              placeholder="e.g. 1.0.0"
+            />
+            
+            <q-select
+              v-model="form.engine_type"
+              :options="engineTypes"
+              label="Engine Type"
+              outlined
+              class="q-mb-md selector"
+              emit-value
+              map-options
+            />
+          </q-card-section>
+
+          <!-- Location Section -->
+          <q-card-section v-show="activeSection === 'location'">
+            <div class="text-subtitle1 q-mb-md">File Locations</div>
+            
+            <q-input 
+              v-model="form.path" 
+              label="Folder Location" 
+              outlined 
+              readonly
+              class="q-mb-md"
+            >
+              <template v-slot:append>
+                <div class="icon">
+                <q-btn round flat icon="folder" @click="$emit('change-folder')" />
+              </div>
+              </template>
+            </q-input>
+            
+            <q-input 
+              v-model="form.executable_path" 
+              label="Executable Path" 
+              outlined 
+              readonly
+              class="q-mb-md"
+            >
+              <template v-slot:append>
+                <div class="icon">
+                <q-btn round flat icon="file_open" @click="$emit('select-executable')" />
+              </div>
+              </template>
+            </q-input>
+          </q-card-section>
+
+          <!-- Visuals Section -->
+          <q-card-section v-show="activeSection === 'visuals'">
+            <div class="text-subtitle1 q-mb-md">Visual Elements</div>
+            
+            <div class="banner-upload q-mb-md">
+              <div class="text-subtitle2 q-mb-sm">Banner Image</div>
+              <div class="banner-preview" v-if="bannerPreview || form.banner_data">
+                <img :src="bannerPreview || form.banner_data" alt="Banner Preview" />
+              </div>
+              <div class="banner-placeholder" v-else>
+                <q-icon name="image" size="48px" />
+                <div>No banner image</div>
+              </div>
+              <q-file
+                v-model="bannerFile"
+                label="Set Banner Image"
+                outlined
+                accept=".jpg, .jpeg, .png"
+                @update:model-value="handleBannerFileChange"
+                class="q-mt-sm"
+              >
+                <template v-slot:prepend>
+                  <div class="icon">
+                  <q-icon name="aspect_ratio" />
+                  </div>
+                </template>
+              </q-file>
+            </div>
+            
+            <div class="logo-upload q-mb-md">
+              <div class="text-subtitle2 q-mb-sm">Logo Image (Replaces Title)</div>
+              <div class="logo-preview" v-if="logoPreview || form.logo_data">
+                <img :src="(logoPreview || form.logo_data) || ''" alt="Logo Preview" />
+              </div>
+              <div class="logo-placeholder" v-else>
+                <q-icon name="image" size="48px" />
+                <div>No logo image</div>
+              </div>
+              <q-file
+                v-model="logoFile"
+                label="Set Logo Image"
+                outlined
+                accept=".jpg, .jpeg, .png"
+                @update:model-value="handleLogoFileChange"
+                class="q-mt-sm"
+              >
+                <template v-slot:prepend>
+                  <div class="icon">
+                  <q-icon name="image" />
+                  </div>
+                </template>
+              </q-file>
+              <q-btn 
+                v-if="logoPreview || form.logo_data" 
+                flat 
+                color="negative" 
+                label="Remove Logo" 
+                class="q-mt-sm"
+                @click="removeLogo"
+              />
+            </div>
+          </q-card-section>
         </div>
-      </q-card-section>
+      </div>
 
       <q-card-actions align="right">
         <q-btn flat label="Cancel" color="primary" v-close-popup @click="cancel" />
@@ -121,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 
 interface Mod {
   id: string;
@@ -178,6 +225,30 @@ const engineTypes = [
 const showModal = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
+});
+
+const modSettingsSections = [
+  { id: 'general', label: 'General', icon: 'info' },
+  { id: 'location', label: 'Location', icon: 'folder' },
+  { id: 'visuals', label: 'Visuals', icon: 'image' }
+];
+
+const activeSection = ref('general');
+
+// Add style to dropdown menu when component is mounted
+onMounted(() => {
+  // Fix for dropdown background
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .q-menu {
+      background-color: var(--theme-card) !important;
+      color: var(--theme-text) !important;
+    }
+    .q-item {
+      color: var(--theme-text) !important;
+    }
+  `;
+  document.head.appendChild(style);
 });
 
 // Reset form when modal is opened
@@ -248,10 +319,46 @@ const cancel = () => {
 
 <style scoped>
 .settings-modal {
-  width: 500px;
+  width: 700px;
+  height: 500px;
   max-width: 90vw;
+  max-height: 90vh;
   background-color: var(--theme-card);
   color: var(--theme-text);
+  border: var(--theme-border) 2px solid;
+  backdrop-filter: blur(10px);
+  scrollbar-width: none;
+}
+
+.settings-layout {
+  display: flex;
+  height: calc(100% - 100px); /* Account for header and footer */
+  overflow: hidden;
+}
+
+.settings-sidebar {
+  width: 200px;
+  border-right: 1px solid var(--theme-border);
+  overflow-y: auto;
+}
+
+.settings-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.settings-active-item {
+  background-color: var(--q-primary) !important;
+  color: white !important;
+}
+
+.settings-sidebar .q-icon {
+  color: var(--theme-text-secondary) !important;
+}
+
+.settings-active-item .q-icon {
+  color: white !important;
 }
 
 .banner-upload, .logo-upload {
@@ -276,5 +383,13 @@ const cancel = () => {
   border: 1px dashed var(--theme-border);
   border-radius: 4px;
   padding: 16px;
+}
+
+.q-field :deep(.q-field__label) {
+  color: var(--theme-text) !important;
+}
+
+.q-field.q-field--outlined :deep(.q-field__control) {
+  color: var(--theme-text);
 }
 </style>

@@ -1,7 +1,7 @@
 <template>  <q-dialog v-model="showModal" persistent>
     <q-card class="settings-modal phantom-font">
       <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6">App Settings</div>
+        <div class="text-h6 phantom-font-difficulty">App Settings</div>
         <q-space />
         <q-btn icon="close" flat round dense v-close-popup />
       </q-card-section>
@@ -107,7 +107,9 @@
               class="q-mb-md"
             >
               <template v-slot:append>
-                <q-btn round flat icon="folder" color="var(--theme-text)" @click="selectInstallLocation" />
+                <div class="icon">
+                <q-btn round flat icon="folder" @click="selectInstallLocation" />
+              </div>
               </template>
             </q-input>
           </q-card-section>
@@ -145,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 
 interface ColorOption {
@@ -376,6 +378,21 @@ const cancel = () => {
   // Reset any unsaved changes by reloading from DB
   loadSettings();
 };
+
+onMounted(() => {
+  // Really silly fix for dropdown background, oh Quasar why
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .q-menu {
+      background-color: var(--theme-card) !important;
+      color: var(--theme-text) !important;
+    }
+    .q-item {
+      color: var(--theme-text) !important;
+    }
+  `;
+  document.head.appendChild(style);
+});
 
 // Initialize settings on component creation
 loadSettings();
