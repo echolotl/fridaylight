@@ -114,9 +114,11 @@ pub fn is_windows_11_or_greater() -> bool {
     use windows_version::OsVersion;
     
     // Windows 11 starts at build 22000
-    if OsVersion::current() >= OsVersion::new(10, 0, 22000, 0) {
+    if OsVersion::current() <= OsVersion::new(10, 0, 0, 22000) {
+        debug!("Windows version is less than 11: {:?}", OsVersion::current());
         false // Not Windows 11 or greater
     } else {
+        debug!("Windows version is 11 or greater: {:?}", OsVersion::current());
         true // Is Windows 11 or greater
     }
 }
