@@ -10,6 +10,10 @@ pub mod gamebanana;
 pub mod logger;
 // Interfaces, types, and structures used throughout the app
 pub mod models;
+// Mod metadata file detection and management
+pub mod modfiles;
+// Mod enabling/disabling functions
+pub mod modenabler;
 // Other utility functions
 pub mod utils;
 

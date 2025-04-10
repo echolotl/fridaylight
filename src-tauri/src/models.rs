@@ -88,6 +88,35 @@ pub struct ModInfo {
     pub logo_data: Option<String>, // Base64 encoded logo image data
     pub version: Option<String>,
     pub engine_type: Option<String>,
+    pub display_order: Option<i64>,
+}
+
+// Define a structure for mod metadata files
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ModMetadataFile {
+    pub name: String,
+    pub description: Option<String>,
+    pub folder_path: String,
+    pub config_file_path: Option<String>,
+    pub icon_file_path: Option<String>,
+    pub icon_data: Option<String>, // Base64 encoded icon data
+    pub enabled: Option<bool>,     // Whether the mod is enabled
+}
+
+// Response structure for mod disable/enable operations
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ModDisableResult {
+    pub success: bool,
+    pub enabled: bool,
+    pub message: String,
+}
+
+// Define a structure for the engine mods response
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EngineModsResponse {
+    pub engine_type: String,
+    pub executable_path: String,
+    pub mods: Vec<ModMetadataFile>,
 }
 
 // Create a state to manage our mods

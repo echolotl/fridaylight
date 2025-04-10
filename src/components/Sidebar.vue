@@ -38,16 +38,17 @@
       </div>
     </div>
      <div class="main-content-area">
-      <Transition name="fade" mode="out-in" :duration="200">
+    <Transition name="fade" mode="out-in" :duration="200">
         <!-- Show ModDetails when a mod is selected and GameBanana is not shown -->
         <component 
-          :is="!showGameBanana ? ModDetails : GameBananaBrowser"          v-bind="!showGameBanana ? {
+          :is="!showGameBanana ? ModDetails : GameBananaBrowser"
+          v-bind="!showGameBanana ? {
             mod: selectedMod,
             error: launchError || '',
             'onUpdate:mod': updateModDetails,
             'onLaunch-mod': launchMod,
             'onOpen-settings': openSettingsModal,
-            key: showGameBanana ? 'gamebanana' : (selectedMod ? `mod-${selectedMod.id}` : 'no-mod')
+            key: showGameBanana ? 'gamebanana' : 'mod-details'
           } : {
             key: 'gamebanana-browser'
           }"

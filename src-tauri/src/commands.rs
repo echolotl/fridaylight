@@ -2,7 +2,9 @@ use crate::download::download_gamebanana_mod;
 use crate::filesystem::create_mod_info;
 use crate::gamebanana::fetch_gamebanana_mods;
 use crate::logger;
-use crate::models::{ModInfo, ModsState, GameBananaResponse};
+use crate::modfiles::{find_mod_metadata_files, get_executable_directory};
+use crate::modenabler::{toggle_mod_enabled_state, check_mod_enabled_state};
+use crate::models::{ModInfo, ModsState, GameBananaResponse, EngineModsResponse, ModDisableResult};
 use log::{debug, error, info, warn};
 use tauri::utils::config::WindowEffectsConfig;
 use tauri::window::{Effect, EffectsBuilder};
@@ -285,6 +287,71 @@ fn change_mica_theme(app_handle: tauri::AppHandle, window: String, dark: bool) -
     }
 }
 
+// Command to search for engine-specific mod metadata files
+#[tauri::command]
+pub async fn find_engine_mod_files(executable_path: String, engine_type: String) -> Result<EngineModsResponse, String> {
+    info!("Searching for {} engine mod files for executable: {}", engine_type, executable_path);
+    
+    // Get the directory where the executable is located
+    let exe_dir = get_executable_directory(&executable_path)?;
+    
+    // Find metadata files based on engine type
+    let mut metadata_files = find_mod_metadata_files(&exe_dir, &engine_type)?;
+    
+    // Process each mod to load its icon data and check if it's enabled
+    for mod_file in &mut metadata_files {
+        // Load icon data if available
+        if let Some(icon_path) = &mod_file.icon_file_path {
+            match crate::modfiles::get_mod_icon_data(icon_path) {
+                Ok(icon_data) => {
+                    mod_file.icon_data = Some(icon_data);
+                },
+                Err(e) => {
+                    warn!("Failed to load icon for mod {}: {}", mod_file.name, e);
+                }
+            }
+        }
+        
+        // Check if the mod is enabled
+        match check_mod_enabled_state(&executable_path, &mod_file.folder_path, &engine_type) {
+            Ok(enabled) => {
+                mod_file.enabled = Some(enabled);
+            },
+            Err(e) => {
+                warn!("Failed to check if mod {} is enabled: {}", mod_file.name, e);
+                // Default to enabled if we can't check
+                mod_file.enabled = Some(true);
+            }
+        }
+    }
+    
+    Ok(EngineModsResponse {
+        engine_type: engine_type,
+        executable_path: executable_path,
+        mods: metadata_files,
+    })
+}
+
+// Command to toggle a mod's enabled state
+#[tauri::command]
+pub async fn toggle_mod_enabled(executable_path: String, mod_folder_path: String, engine_type: String, enable: bool) -> Result<ModDisableResult, String> {
+    info!("Toggling mod enabled state for {} (engine: {}, enable: {})", mod_folder_path, engine_type, enable);
+    toggle_mod_enabled_state(&executable_path, &mod_folder_path, &engine_type, enable)
+}
+
+// Command to get a file's content as base64
+#[tauri::command]
+pub async fn get_file_as_base64(file_path: String) -> Result<String, String> {
+    info!("Loading file as base64: {}", file_path);
+    crate::modfiles::get_mod_icon_data(&file_path)
+}
+
+// Command to check if the OS is Windows 11 or greater
+#[tauri::command]
+pub fn is_windows_11() -> bool {
+    crate::utils::is_windows_11_or_greater()
+}
+
 // Setup function for Tauri application
 pub fn run() {
     tauri::Builder::default()
@@ -297,8 +364,7 @@ pub fn run() {
                 error!("Logger initialization failed: {}", e);
                 e
             })?)
-        })
-        .invoke_handler(tauri::generate_handler![
+        })        .invoke_handler(tauri::generate_handler![
             select_mod_folder,
             select_settings_folder,
             select_executable,
@@ -309,7 +375,11 @@ pub fn run() {
             download_gamebanana_mod_command,
             sync_mods_from_database,
             select_mods_parent_folder,
-            change_mica_theme
+            change_mica_theme,
+            find_engine_mod_files,
+            get_file_as_base64,
+            toggle_mod_enabled,
+            is_windows_11
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

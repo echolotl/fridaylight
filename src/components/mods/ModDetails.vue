@@ -36,12 +36,19 @@
         @click="$emit('open-settings')"
       />
     </div>
-    
-    <div class="mod-path" v-if="showDetails">
+      <div class="mod-path" v-if="showDetails">
       <p>Location: {{ mod.path }}</p>
       <p v-if="mod.executable_path">Executable: {{ mod.executable_path }}</p>
       <p v-if="mod.version">Version: {{ mod.version }}</p>
       <p v-if="mod.engine_type">Engine: {{ formatEngineType(mod.engine_type) }}</p>
+    </div>
+    
+    <!-- Show engine-specific mods list if mod has engine type and executable path -->
+    <div v-if="mod.engine_type && mod.executable_path">
+      <EngineModsList
+        :executablePath="mod.executable_path"
+        :engineType="mod.engine_type"
+      />
     </div>
   </div>
   
@@ -55,6 +62,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import ModBanner from './ModBanner.vue';
+import EngineModsList from './EngineModsList.vue';
 
 interface Mod {
   id: string;

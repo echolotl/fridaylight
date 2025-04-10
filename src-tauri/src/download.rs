@@ -405,6 +405,7 @@ pub async fn download_gamebanana_mod(
         name: name.clone(),
         path: mod_folder.to_string_lossy().to_string(),
         executable_path,
+        display_order: Some(0),
         icon_data,
         banner_data: final_banner_data,
         logo_data: final_logo_data,

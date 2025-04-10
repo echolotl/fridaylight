@@ -108,3 +108,21 @@ pub fn extract_rar_archive(
     
     Ok(())
 }
+
+#[cfg(target_os = "windows")]
+pub fn is_windows_11_or_greater() -> bool {
+    use windows_version::OsVersion;
+    
+    // Windows 11 starts at build 22000
+    if OsVersion::current() >= OsVersion::new(10, 0, 22000, 0) {
+        false // Not Windows 11 or greater
+    } else {
+        true // Is Windows 11 or greater
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn is_windows_11_or_greater() -> bool {
+    // Not Windows, so definitely not Windows 11
+    false
+}

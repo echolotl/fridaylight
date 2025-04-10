@@ -295,23 +295,46 @@ const updateTheme = async () => {
   
   console.log('Applying theme:', useLightTheme ? 'light' : 'dark');
   
+  // First check if we're running on Windows 11
+  const isWindows11 = await invoke<boolean>('is_windows_11');
+  console.log('Is Windows 11:', isWindows11);
+  
   // Apply CSS classes for theme
   if (useLightTheme) {
     document.body.classList.add('light-theme');
+    document.body.classList.remove('dark-theme');
   } else {
     document.body.classList.remove('light-theme');
+    document.body.classList.add('dark-theme');
   }
   
-  // Call the Rust backend to apply Mica effect (Windows only)
-  try {
-    await invoke('change_mica_theme', { 
-      window: 'main',  // Main window label
-      dark: !useLightTheme  // Invert because true = dark theme in the Rust function
-    });
-    console.log('Applied Mica theme effect:', !useLightTheme ? 'dark' : 'light');
-  } catch (error) {
-    console.error('Failed to apply Mica effect:', error);
-    // Non-fatal error, the app will still work without Mica
+  // Apply solid theme if not on Windows 11
+  if (!isWindows11) {
+    document.body.classList.add('solid-theme');
+    
+    // Remove transparent background styles
+    document.documentElement.style.setProperty('--transparent-bg-override', 'none');
+    
+    // Set background to solid color instead of transparent
+    const bgColor = useLightTheme ? 'var(--theme-bg)' : 'var(--theme-bg)';
+    document.body.style.background = bgColor;
+    document.querySelector('.q-layout')?.setAttribute('style', 'background: ' + bgColor + ' !important');
+  } else {
+    document.body.classList.remove('solid-theme');
+    document.documentElement.style.setProperty('--transparent-bg-override', 'transparent');
+    document.body.style.background = 'transparent';
+    
+    // Call the Rust backend to apply Mica effect (Windows only)
+    try {
+      await invoke('change_mica_theme', { 
+        window: 'main',  // Main window label
+        dark: !useLightTheme  // Invert because true = dark theme in the Rust function
+      });
+      console.log('Applied Mica theme effect:', !useLightTheme ? 'dark' : 'light');
+    } catch (error) {
+      console.error('Failed to apply Mica effect:', error);
+      // Non-fatal error, the app will still work without Mica
+    }
   }
   
   // Dispatch an event so other components can know about theme changes

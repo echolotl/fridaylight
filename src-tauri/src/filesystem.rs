@@ -500,6 +500,7 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         id,
         name,
         path: path.to_string(),
+        display_order: Some(0), // default display order (top of the list)
         executable_path,
         icon_data,
         banner_data,
