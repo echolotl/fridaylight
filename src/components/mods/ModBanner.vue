@@ -40,7 +40,7 @@
       
       <!-- Show version and engine type if available -->
       <div class="mod-info-overlay" v-if="mod.version || mod.engine_type">
-        <span v-if="mod.version" class="version-tag">{{ mod.version }}</span>
+        <span v-if="mod.version" class="version-tag phantom-font-difficulty"><b>v{{ mod.version }}</b></span>
         <span v-if="mod.engine_type" class="engine-tag"><img :src="'/images/engine_icons/' + formatEngineType(mod.engine_type) + '.webp'"></span>
       </div>
     </div>
@@ -191,8 +191,9 @@ const formatEngineType = (engineType: string) => {
 }
 .version-tag {
   color: var(--q-primary);
+  transform: translateY(1px);
   padding: 5px 10px;
   border-radius: 4px;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 </style>

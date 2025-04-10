@@ -26,11 +26,7 @@ app.use(Quasar, {
       timeout: 3000,
       textColor: 'white'
     }
-  },
-  extras: [
-    'material-icons', // Add other extras if needed
-    // Example: 'fontawesome-v6'
-  ]
+  }
 });
 
 // Mount the app

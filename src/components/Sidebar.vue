@@ -36,25 +36,23 @@
       >
         <div class="resize-handle-indicator"></div>
       </div>
-    </div>
-     <div class="main-content-area">
-    <Transition name="fade" mode="out-in" :duration="200">
+    </div>     <div class="main-content-area">
         <!-- Show ModDetails when a mod is selected and GameBanana is not shown -->
-        <component 
-          :is="!showGameBanana ? ModDetails : GameBananaBrowser"
-          v-bind="!showGameBanana ? {
-            mod: selectedMod,
-            error: launchError || '',
-            'onUpdate:mod': updateModDetails,
-            'onLaunch-mod': launchMod,
-            'onOpen-settings': openSettingsModal,
-            key: showGameBanana ? 'gamebanana' : 'mod-details'
-          } : {
-            key: 'gamebanana-browser'
-          }"
-        />
-      </Transition>
-    </div>
+        <Transition name="fade" mode="out-in">
+          <div :key="!showGameBanana ? (selectedMod ? selectedMod.id : 'no-mod') : 'gamebanana-browser'">
+            <component 
+            :is="!showGameBanana ? ModDetails : GameBananaBrowser"
+            v-bind="!showGameBanana ? {
+              mod: selectedMod,
+              error: launchError || '',
+              'onUpdate:mod': updateModDetails,
+              'onLaunch-mod': launchMod,
+              'onOpen-settings': openSettingsModal
+            } : {}"
+          />
+          </div>
+        </Transition>
+      </div>
 
     <!-- Settings Modal -->
     <ModSettingsModal 
@@ -167,6 +165,8 @@ onMounted(async () => {
     
     // Load and apply app settings
     await loadAppSettings();
+
+    showGameBanana.value = false; // Hide GameBanana by default
     
     // Add event listener for refreshing the mods list
     window.addEventListener('refresh-mods', handleRefreshMods);

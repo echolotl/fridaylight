@@ -323,7 +323,7 @@ const cancel = () => {
   height: 500px;
   max-width: 90vw;
   max-height: 90vh;
-  background-color: var(--theme-card);
+  background-color: var(--theme-border);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
   backdrop-filter: blur(10px);

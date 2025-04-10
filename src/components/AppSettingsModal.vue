@@ -119,20 +119,17 @@
             <div class="text-subtitle1 q-mb-md">About</div>
             
             <div class="text-body2 q-mb-sm">
-              FNF Mod Launcher v1.0.0
-            </div>
-            
-            <div class="text-subtitle1 q-mt-lg q-mb-md">Acknowledgements</div>
-            
-            <div class="acknowledgements q-pa-md">
-              <p>This application uses the following open source projects:</p>
-              <ul>
-                <li><strong>Tauri</strong> - Cross-platform app framework</li>
-                <li><strong>Vue.js</strong> - Frontend framework</li>
-                <li><strong>Quasar</strong> - UI component library</li>
-                <li><strong>Rust</strong> - Backend language</li>
-              </ul>
-              <p>Special thanks to the Friday Night Funkin' community!</p>
+              Fridaylight v0.2.0
+              <br />
+              A mod manager for Friday Night Funkin'.
+              <br />
+              <br />
+              <div class="text-caption text-grey-6">Made with:</div>
+              <div class="logo-grid">
+                <img src="/images/vue.svg" alt="Vue" width="32" height="32" class="logo" @click="openUrl('https://vuejs.org/')"/>
+                <img src="/images/tauri.svg" alt="Tauri" width="32" height="32" class="logo" @click="openUrl('https://v2.tauri.app/')" />
+                <img src="/images/quasar.svg" alt="Quasar" width="32" height="32" class="logo" @click="openUrl('https://quasar.dev/')" />
+              </div>
             </div>
           </q-card-section>
         </div>
@@ -149,6 +146,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 interface ColorOption {
   label: string;
@@ -427,7 +425,7 @@ loadSettings();
   height: 500px;
   max-width: 90vw;
   max-height: 90vh;
-  background-color: var(--theme-card);
+  background-color: var(--theme-border);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
   backdrop-filter: blur(10px);
@@ -489,5 +487,21 @@ loadSettings();
 
 .text-caption {
   color: var(--theme-text-secondary);
+}
+
+.logo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.logo {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.logo:hover {
+  transform: scale(1.05);
 }
 </style>
