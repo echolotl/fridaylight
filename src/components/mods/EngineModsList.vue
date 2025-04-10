@@ -118,20 +118,6 @@ const isUnsupportedEngine = computed(() => {
   return ['pre-vslice', 'kade', 'other'].includes(props.engineType);
 });
 
-// Format engine type for display
-const formatEngineType = (engineType: string) => {
-  const engineTypes: Record<string, string> = {
-    'vanilla': 'Vanilla',
-    'psych': 'Psych Engine',
-    'codename': 'Codename Engine',
-    'kade': 'Kade Engine',
-    'fps-plus': 'FPS Plus',
-    'pre-vslice': 'Pre-VSlice',
-    'other': 'Other'
-  };
-  
-  return engineTypes[engineType] || engineType;
-};
 
 const scanForMods = async () => {
   if (!props.executablePath || !props.engineType) {
