@@ -26,7 +26,7 @@ rustup default stable-msvc
 
 You will need to restart your terminal, and possibly your system, if neccesary.
 
-# 3. Install Bun and project dependencies
+## 3. Install Bun and project dependencies
 
 To install Bun, run this command in your terminal:
 ```pwsh
@@ -38,7 +38,7 @@ After that is installed, run this command in the root directory of the project:
 bun i
 ```
 
-## Running the program
+## 4. Running the program
 
 You can run it from the terminal directly using a dev server with:
 ```pwsh
