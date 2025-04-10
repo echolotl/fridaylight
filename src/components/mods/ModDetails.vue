@@ -4,6 +4,7 @@
       :mod="mod" 
       @update:title="updateTitle"
       @open-settings="$emit('open-settings')"
+      style="margin-bottom: 2rem;"
     />
     
     <div class="mod-actions">
@@ -44,7 +45,8 @@
     </div>
 
     <div class="description" v-if="mod.description">
-      <h3>Description</h3>
+      <h5 class="phantom-font-difficulty">Description</h5>
+      <hr/>
       <p>{{ mod.description }}</p>
     </div>
     
@@ -174,5 +176,19 @@ const formatEngineType = (engineType: string) => {
   color: red;
   font-size: 1rem;
   margin-top: 8px;
+}
+
+h5 {
+  margin: 0;
+  color: var(--theme-text);
+}
+
+.description {
+  margin-bottom: 50px;
+}
+
+.description p {
+  padding: 1rem;
+  font-size: 1rem;
 }
 </style>

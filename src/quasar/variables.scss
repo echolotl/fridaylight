@@ -163,3 +163,9 @@ body.light-theme.solid-theme {
   opacity: 0;
   transform: translateY(10px);
 }
+
+hr {
+  border: none;
+  border-top: 1px solid var(--theme-border);
+  margin: 0.5rem 0;
+}

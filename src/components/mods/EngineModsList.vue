@@ -1,6 +1,9 @@
-<template>  <div class="engine-mods-container phantom-font" v-if="!isUnsupportedEngine">
+<template>
+
+<h5 class="phantom-font-difficulty">Installed Mods</h5>
+<hr/>
+<div class="engine-mods-container phantom-font" v-if="!isUnsupportedEngine">
     <div class="header" v-if="mods.length > 0">
-      <h5 class="phantom-font-difficulty">Installed Mods</h5>
       <div class="scan-actions" v-if="showScanButton">
       <q-btn
       size="md"
@@ -238,7 +241,7 @@ onMounted(() => {
 
 <style scoped>
 .engine-mods-container {
-  margin-top: 20px;
+  margin-top: .25rem;
   background: var(--theme-surface);
   border-radius: 8px;
   padding: 16px;
@@ -251,8 +254,9 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
-.header h5 {
+h5 {
   margin: 0;
+  margin-top: 1rem;
   color: var(--theme-text);
 }
 

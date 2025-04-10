@@ -124,6 +124,7 @@
               A mod manager for Friday Night Funkin'.
               <br />
               <br />
+              <div class="center-credits">
               <div class="text-caption text-grey-6">Made with:</div>
               <div class="logo-grid">
                 <img src="/images/vue.svg" alt="Vue" width="32" height="32" class="logo" @click="openUrl('https://vuejs.org/')"/>
@@ -131,6 +132,7 @@
                 <img src="/images/quasar.svg" alt="Quasar" width="32" height="32" class="logo" @click="openUrl('https://quasar.dev/')" />
               </div>
             </div>
+          </div>
           </q-card-section>
         </div>
       </div>
@@ -490,18 +492,27 @@ loadSettings();
 }
 
 .logo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+  display: flex;
   gap: 8px;
   margin-top: 16px;
+  justify-content: center;
 }
 
 .logo {
   cursor: pointer;
   transition: transform 0.2s;
+  display: inline-block;
 }
 
 .logo:hover {
   transform: scale(1.05);
+}
+
+.center-credits {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  margin-top: 16px;
 }
 </style>
