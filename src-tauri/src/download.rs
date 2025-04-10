@@ -407,6 +407,7 @@ pub async fn download_gamebanana_mod(
         executable_path,
         display_order: Some(0),
         icon_data,
+        description: None,
         banner_data: final_banner_data,
         logo_data: final_logo_data,
         version: mod_info_response.as_ref()

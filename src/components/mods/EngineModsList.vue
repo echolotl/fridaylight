@@ -1,9 +1,15 @@
 <template>  <div class="engine-mods-container phantom-font" v-if="!isUnsupportedEngine">
     <div class="header" v-if="mods.length > 0">
       <h5 class="phantom-font-difficulty">Installed Mods</h5>
-      <q-badge color="primary" class="engine-badge">
-        {{ formatEngineType(engineType) }}
-      </q-badge>
+      <div class="scan-actions" v-if="showScanButton">
+      <q-btn
+      size="md"
+        color="primary"
+        label="Rescan"
+        @click="scanForMods"
+        :loading="loading"
+      />
+    </div>
     </div>
     
     <div v-if="loading" class="loading">
@@ -56,15 +62,6 @@
           />
         </div>
       </div>
-    </div>
-    
-    <div class="scan-actions" v-if="showScanButton">
-      <q-btn
-        color="primary"
-        label="Scan for Mods"
-        @click="scanForMods"
-        :loading="loading"
-      />
     </div>
   </div>
 </template>
@@ -342,7 +339,6 @@ onMounted(() => {
 }
 
 .scan-actions {
-  margin-top: 16px;
   display: flex;
   justify-content: center;
 }

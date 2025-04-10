@@ -82,6 +82,7 @@ pub struct ModInfo {
     pub id: String,
     pub name: String,
     pub path: String,
+    pub description: Option<String>,
     pub executable_path: Option<String>,
     pub icon_data: Option<String>, // Base64 encoded icon data
     pub banner_data: Option<String>, // Base64 encoded banner image data

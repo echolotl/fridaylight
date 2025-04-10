@@ -12,32 +12,20 @@ A mod manager for Friday Night Funkin mods! Built using Tauri and Vue.
 
 ### WIP Features
 
-- [ ] Engine mod management
+- [x] Engine mod management
 - [ ] Folder organization
 - [ ] Custom CSS/Themes
 - [ ] More metadata support *(feel free to recommend ideas in the Issues tab)*
 - [ ] Gamebanana download version picker
 - [ ] Gamebanana deep linking
 - [ ] Non-Gamebanana download links
-- [ ] Import folder of FNF mod folders *(for migration)*
+- [x] Import folder of FNF mod folders *(for migration)*
 - [ ] Linux/Mac builds
 - [ ] More unique UI, with same organization
 - [ ] Psych engine achievement display
 
-## Metadata Structure
-Located in the same directory as the mod's executable, mod creators have the ability to provide additional metadata to be used and displayed on its mod page by creating a folder with the name `.flight` and including any of these files:
-| File | Purpose |
-|------|---------|
-|`banner.png`, `banner.webp`| Image file used for the mods' display banner|
-|`logo.png`, `logo.webp`| Image file used for the mods' logo, displayed instead of its name|
-|`metadata.json`| JSON Schema used for including mod metadata to be shown on the sidebar and mod page|
+## Compiling
+See [COMPILING.md](/docs/COMPILING.md) on how to compile it locally.
 
-### Example `metadata.json`
-```json
-{
-  "name": "VS Impostor V4",
-  "version": "4.1.0",
-  "engine_type": "Psych"
-}
-```
-<sub>`engine_type`'s fields can be `psych`, `kade`, `codename`, `pre-vslice`, `vanilla`</sub>
+## Mod Metadata
+See [METADATA.md](/docs/METADATA.md) for a complete breakdown on metadata mod creators can use to display cosmetic / functional graphics.

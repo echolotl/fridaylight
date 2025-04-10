@@ -158,6 +158,11 @@ onMounted(async () => {
         await db.execute(`ALTER TABLE mods ADD COLUMN display_order INTEGER DEFAULT 9999`);
         console.log('Added display_order column to mods table');
       }
+
+      if (!columns.includes('description')) {
+        await db.execute(`ALTER TABLE mods ADD COLUMN description TEXT`);
+        console.log('Added description column to mods table');
+      }
     } else {
       // Table doesn't exist, create it with all columns
       await db.execute(`

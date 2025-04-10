@@ -31,8 +31,7 @@
 
         <!-- Main Content Area -->
         <div class="settings-content">
-          <!-- General Section -->
-          <q-card-section v-show="activeSection === 'general'">
+          <!-- General Section -->          <q-card-section v-show="activeSection === 'general'">
             <div class="text-subtitle1 q-mb-md">General Information</div>
 
             <q-input 
@@ -40,6 +39,16 @@
               label="Mod Name" 
               outlined 
               class="q-mb-md"
+            />
+            
+            <q-input 
+              v-model="form.description" 
+              type="textarea"
+              label="Description" 
+              outlined 
+              class="q-mb-md"
+              autogrow
+              placeholder="Enter mod description"
             />
             
             <q-input 
@@ -174,6 +183,7 @@ interface Mod {
   id: string;
   name: string;
   path: string;
+  description?: string;
   executable_path?: string;
   icon_data?: string;
   banner_data?: string;

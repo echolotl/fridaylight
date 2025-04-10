@@ -42,6 +42,11 @@
       <p v-if="mod.version">Version: {{ mod.version }}</p>
       <p v-if="mod.engine_type">Engine: {{ formatEngineType(mod.engine_type) }}</p>
     </div>
+
+    <div class="description" v-if="mod.description">
+      <h3>Description</h3>
+      <p>{{ mod.description }}</p>
+    </div>
     
     <!-- Show engine-specific mods list if mod has engine type and executable path -->
     <div v-if="mod.engine_type && mod.executable_path">
@@ -74,6 +79,7 @@ interface Mod {
   logo_data?: string;
   version?: string;
   engine_type?: string;
+  description?: string;
 }
 
 const props = defineProps({

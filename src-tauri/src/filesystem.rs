@@ -314,14 +314,14 @@ pub fn extract_executable_icon(_exe_path: &Path) -> Option<String> {
     }
 }
 
-// Function to check for custom banner/logo images in the fnfml folder
+// Function to check for custom banner/logo images in the .flight folder
 pub fn check_for_custom_images(mod_folder: &Path) -> (Option<String>, Option<String>) {
-    let fnfml_folder = mod_folder.join("fnfml");
+    let fnfml_folder = mod_folder.join(".flight");
     let mut banner_data = None;
     let mut logo_data = None;
     
     if fnfml_folder.exists() && fnfml_folder.is_dir() {
-        debug!("Found fnfml folder in mod: {}", mod_folder.display());
+        debug!("Found metadata folder in mod: {}!", mod_folder.display());
         
         // Check for banner image (banner.png or banner.webp)
         let banner_png = fnfml_folder.join("banner.png");
@@ -387,9 +387,9 @@ pub fn check_for_custom_images(mod_folder: &Path) -> (Option<String>, Option<Str
     (banner_data, logo_data)
 }
 
-// Function to read metadata.json file from the fnfml folder
+// Function to read metadata.json file from the .flight folder
 fn read_metadata_json(mod_folder: &Path) -> Option<serde_json::Value> {
-    let fnfml_folder = mod_folder.join("fnfml");
+    let fnfml_folder = mod_folder.join(".flight");
     let metadata_path = fnfml_folder.join("metadata.json");
     
     if metadata_path.exists() && metadata_path.is_file() {
@@ -445,6 +445,18 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         None => folder_name,
     };
     
+    let description = match &metadata {
+        Some(json) => {
+            if let Some(desc_value) = json.get("description").and_then(|v| v.as_str()) {
+                debug!("Using description from metadata.json");
+                Some(desc_value.to_string())
+            } else {
+                None
+            }
+        },
+        None => None,
+    };
+    
     let version = match &metadata {
         Some(json) => {
             if let Some(version_value) = json.get("version").and_then(|v| v.as_str()) {
@@ -494,12 +506,11 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
 
     // Create a unique ID
     let id = uuid::Uuid::new_v4().to_string();
-    debug!("Generated mod ID: {}", id);
-
-    let mod_info = ModInfo {
+    debug!("Generated mod ID: {}", id);    let mod_info = ModInfo {
         id,
         name,
         path: path.to_string(),
+        description,
         display_order: Some(0), // default display order (top of the list)
         executable_path,
         icon_data,
