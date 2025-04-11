@@ -10,8 +10,14 @@ use roxmltree;
 use base64::Engine; // Import the Engine trait
 
 /// Find and process mod metadata files based on engine type
-pub fn find_mod_metadata_files(executable_folder: &Path, engine_type: &str) -> Result<Vec<ModMetadataFile>, String> {
-    let mods_folder = executable_folder.join("mods");
+pub fn find_mod_metadata_files(executable_folder: &Path, engine_type: &str, custom_mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String> {
+    let mods_folder: PathBuf; // Declare mods_folder here
+    // Check if custom mods folder is an empty string or not
+    if custom_mods_folder.to_string_lossy().is_empty() {
+        mods_folder = executable_folder.join("mods");
+    } else {
+        mods_folder = executable_folder.join(custom_mods_folder);
+    }
     
     if !mods_folder.exists() || !mods_folder.is_dir() {
         return Err(format!("Mods folder not found: {}", mods_folder.display()));

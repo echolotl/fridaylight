@@ -58,16 +58,6 @@
               class="q-mb-md"
               placeholder="e.g. 1.0.0"
             />
-            
-            <q-select
-              v-model="form.engine_type"
-              :options="engineTypes"
-              label="Engine Type"
-              outlined
-              class="q-mb-md selector"
-              emit-value
-              map-options
-            />
           </q-card-section>
 
           <!-- Location Section -->
@@ -101,6 +91,85 @@
               </div>
               </template>
             </q-input>
+          </q-card-section>
+
+          <!-- Engine Section -->
+          <q-card-section v-show="activeSection === 'engine'">
+            <div class="text-subtitle1 q-mb-md">Engine Settings</div>
+              <q-select
+              v-model="form.engine.engine_type"
+              :options="engineTypes"
+              label="Engine Type"
+              outlined
+              class="q-mb-md selector"
+              emit-value
+              map-options
+              hint="The type of engine this mod uses"
+            />
+            
+            <q-input 
+              v-model="form.engine.engine_name" 
+              label="Custom Engine Name" 
+              outlined 
+              class="q-mb-md"
+              placeholder="e.g. My Custom Psych Fork"
+              hint="A custom name for the engine (optional)"
+            />
+
+            <div class="q-mb-md">
+              <div class="text-subtitle2 q-mb-sm">Engine Icon</div>
+              <div class="engine-icon-preview" v-if="engineIconPreview || form.engine?.engine_icon">
+                <img :src="engineIconPreview || form.engine?.engine_icon" alt="Engine Icon" />
+              </div>
+              <div class="icon-placeholder" v-else>
+                <q-icon name="block" size="48px" />
+              </div>
+              
+              <q-file
+                v-model="engineIconFile"
+                label="Set Engine Icon"
+                outlined
+                accept=".jpg, .jpeg, .png, .webp"
+                @update:model-value="handleEngineIconFileChange"
+                class="q-mt-sm"
+              >
+                <template v-slot:prepend>
+                  <div class="icon">
+                  <q-icon name="image" />
+                  </div>
+                </template>
+              </q-file>
+              
+              <q-btn 
+                v-if="engineIconPreview || form.engine?.engine_icon" 
+                flat 
+                color="negative" 
+                label="Remove Icon" 
+                class="q-mt-sm"
+                @click="removeEngineIcon"
+              />
+            </div>
+            
+            <q-separator class="q-my-md" />
+            
+            <div class="q-mb-md">
+              <q-toggle
+                v-model="form.engine!.mods_folder"
+                label="Has Mods Folder"
+                color="primary"
+                hint="Does this engine support a mods folder structure?"
+              />
+            </div>
+            
+            <q-input 
+              v-if="form.engine?.mods_folder"
+              v-model="form.engine!.mods_folder_path" 
+              label="Mods Folder Path" 
+              outlined 
+              class="q-mb-md"
+              placeholder="e.g. mods"
+              hint="Relative path to the mods folder from the executable directory"
+            />
           </q-card-section>
 
           <!-- Visuals Section -->
@@ -179,6 +248,14 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue';
 
+interface Engine {
+  engine_type: string;
+  engine_name: string;
+  engine_icon: string;
+  mods_folder: boolean;
+  mods_folder_path: string;
+}
+
 interface Mod {
   id: string;
   name: string;
@@ -189,7 +266,8 @@ interface Mod {
   banner_data?: string;
   logo_data?: string | null;
   version?: string;
-  engine_type?: string;
+  engine_type?: string;  // Kept for backward compatibility (probably will remove for full release)
+  engine: Engine;        // New extended engine information
 }
 
 const props = defineProps({
@@ -214,13 +292,22 @@ const form = ref<Mod>({
   banner_data: '',
   logo_data: '',
   version: '',
-  engine_type: ''
+  engine_type: '',
+  engine: {
+    engine_type: '',
+    engine_name: '',
+    engine_icon: '',
+    mods_folder: true,
+    mods_folder_path: ''
+  }
 });
 
 const bannerFile = ref<File | null>(null);
 const bannerPreview = ref<string | null>(null);
 const logoFile = ref<File | null>(null);
 const logoPreview = ref<string | null>(null);
+const engineIconFile = ref<File | null>(null);
+const engineIconPreview = ref<string | null>(null);
 
 const engineTypes = [
   { label: 'Vanilla', value: 'vanilla' },
@@ -240,6 +327,7 @@ const showModal = computed({
 const modSettingsSections = [
   { id: 'general', label: 'General', icon: 'info' },
   { id: 'location', label: 'Location', icon: 'folder' },
+  { id: 'engine', label: 'Engine', icon: 'settings' },
   { id: 'visuals', label: 'Visuals', icon: 'image' }
 ];
 
@@ -297,10 +385,45 @@ const handleLogoFileChange = (file: File) => {
   }
 };
 
+const handleEngineIconFileChange = (file: File) => {
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      engineIconPreview.value = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    engineIconPreview.value = null;
+  }
+};
+
 const removeLogo = () => {
   form.value.logo_data = null;
   logoPreview.value = null;
   logoFile.value = null;
+};
+
+const removeEngineIcon = () => {
+  if (form.value.engine) {
+    form.value.engine.engine_icon = '';
+  }
+  engineIconPreview.value = null;
+  engineIconFile.value = null;
+};
+
+// Function to format engine name from engine type
+const formatEngineName = (engineType: string): string => {
+  const engineNames: Record<string, string> = {
+    'vanilla': 'Vanilla FNF',
+    'psych': 'Psych Engine',
+    'codename': 'Codename Engine',
+    'fps-plus': 'FPS Plus',
+    'kade': 'Kade Engine',
+    'pre-vslice': 'Pre-VSlice Engine',
+    'other': 'Custom Engine'
+  };
+  
+  return engineNames[engineType] || engineType.charAt(0).toUpperCase() + engineType.slice(1);
 };
 
 const save = () => {
@@ -316,14 +439,40 @@ const save = () => {
     updatedMod.logo_data = logoPreview.value;
   }
   
+  // If we have an engine icon preview, use it
+  if (engineIconPreview.value && updatedMod.engine) {
+    updatedMod.engine.engine_icon = engineIconPreview.value;
+  }
+
+  // Make sure engine type is synchronized with engine.engine_type
+  if (updatedMod.engine_type && (!updatedMod.engine || !updatedMod.engine.engine_type)) {
+    if (!updatedMod.engine) {
+      updatedMod.engine = {
+        engine_type: updatedMod.engine_type,
+        engine_name: formatEngineName(updatedMod.engine_type),
+        engine_icon: '', 
+        mods_folder: false,
+        mods_folder_path: ''
+      };
+    } else {
+      updatedMod.engine.engine_type = updatedMod.engine_type;
+      if (!updatedMod.engine.engine_name) {
+        updatedMod.engine.engine_name = formatEngineName(updatedMod.engine_type);
+      }
+    }
+  }
+  
+  // Now emit the save event with the updated mod data
+  console.log('Saving mod with engine data:', JSON.stringify(updatedMod.engine));
   emit('save', updatedMod);
 };
-
 const cancel = () => {
   bannerPreview.value = null;
   logoPreview.value = null;
   bannerFile.value = null;
   logoFile.value = null;
+  engineIconPreview.value = null;
+  engineIconFile.value = null;
 };
 </script>
 
@@ -333,7 +482,7 @@ const cancel = () => {
   height: 500px;
   max-width: 90vw;
   max-height: 90vh;
-  background-color: var(--theme-border);
+  background-color: var(--solid);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
   backdrop-filter: blur(10px);
@@ -393,6 +542,26 @@ const cancel = () => {
   border: 1px dashed var(--theme-border);
   border-radius: 4px;
   padding: 16px;
+}
+
+.engine-icon-preview img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.icon-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-text-secondary);
+  border: 1px dashed var(--theme-border);
+  border-radius: 4px;
+  padding: 16px;
+  width: 64px;
+  height: 64px;
 }
 
 .q-field :deep(.q-field__label) {

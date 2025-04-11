@@ -37,11 +37,17 @@
           ref="titleInput"
         />
       </div>
-      
-      <!-- Show version and engine type if available -->
-      <div class="mod-info-overlay" v-if="mod.version || mod.engine_type">
-        <span v-if="mod.version" class="version-tag phantom-font-difficulty"><b>v{{ mod.version }}</b></span>
-        <span v-if="mod.engine_type" class="engine-tag"><img :src="'/images/engine_icons/' + formatEngineType(mod.engine_type) + '.webp'"></span>
+        <!-- Show version and engine type if available -->
+      <div class="mod-info-overlay" v-if="mod.version || mod.engine_type || (mod.engine && (mod.engine.engine_type || mod.engine.engine_icon))">
+        <span v-if="mod.version" class="version-tag phantom-font-difficulty"><b>v{{ mod.version }}</b></span>        <span v-if="mod.engine && mod.engine.engine_icon && mod.engine.engine_type !== 'unknown'" class="engine-tag">
+          <img :src="mod.engine.engine_icon" alt="Engine Icon" class="custom-engine-icon">
+        </span>
+        <span v-else-if="mod.engine && mod.engine.engine_type && mod.engine.engine_type !== 'unknown'" class="engine-tag">
+          <img :src="'/images/engine_icons/' + formatEngineType(mod.engine.engine_type) + '.webp'">
+        </span>
+        <span v-else-if="mod.engine_type && mod.engine_type !== 'unknown'" class="engine-tag">
+          <img :src="'/images/engine_icons/' + formatEngineType(mod.engine_type) + '.webp'">
+        </span>
       </div>
     </div>
   </div>
@@ -187,6 +193,12 @@ const formatEngineType = (engineType: string) => {
   img {
     max-height: 2rem;
     width: auto;
+  }
+  
+  .custom-engine-icon {
+    max-height: 2rem;
+    width: auto;
+    object-fit: contain;
   }
 }
 .version-tag {

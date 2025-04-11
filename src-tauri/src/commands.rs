@@ -289,14 +289,20 @@ fn change_mica_theme(app_handle: tauri::AppHandle, window: String, dark: bool) -
 
 // Command to search for engine-specific mod metadata files
 #[tauri::command]
-pub async fn find_engine_mod_files(executable_path: String, engine_type: String) -> Result<EngineModsResponse, String> {
+pub async fn find_engine_mod_files(executable_path: String, engine_type: String, mods_folder: String) -> Result<EngineModsResponse, String> {
     info!("Searching for {} engine mod files for executable: {}", engine_type, executable_path);
+    if mods_folder.is_empty() {
+        info!("No mods folder provided, using default location");
+        // Use the default mods folder location if none is provided
+    } else {
+        info!("Using provided mods folder: {}", mods_folder);
+    }
     
     // Get the directory where the executable is located
     let exe_dir = get_executable_directory(&executable_path)?;
     
     // Find metadata files based on engine type
-    let mut metadata_files = find_mod_metadata_files(&exe_dir, &engine_type)?;
+    let mut metadata_files = find_mod_metadata_files(&exe_dir, &engine_type, Path::new(&mods_folder))?;
     
     // Process each mod to load its icon data and check if it's enabled
     for mod_file in &mut metadata_files {

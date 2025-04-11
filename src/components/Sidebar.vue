@@ -87,6 +87,14 @@ declare global {
   }
 }
 
+interface Engine {
+  engine_type: string;
+  engine_name: string;
+  engine_icon: string;
+  mods_folder: boolean;
+  mods_folder_path: string;
+}
+
 interface ModInfo {
   id: string;
   name: string;
@@ -94,9 +102,10 @@ interface ModInfo {
   executable_path?: string;
   icon_data?: string;
   banner_data?: string;
-  logo_data?: string;
+  logo_data?: string | null;
   version?: string;
-  engine_type?: string;
+  engine_type?: string;  // Kept for backward compatibility (probably will remove for full release)
+  engine: Engine;        // New extended engine information
   display_order?: number;
 }
 
@@ -190,15 +199,47 @@ const loadModsFromDatabase = async () => {
         return await loadMods();
       }
     }
-    
-    const result = await window.db.select('SELECT * FROM mods ORDER BY display_order ASC');
+      const result = await window.db.select('SELECT * FROM mods ORDER BY display_order ASC');
     
     if (result && result.length > 0) {
-      mods.value = result;
+      // Process each mod to parse engine_data JSON if it exists
+      // Define interface for the raw database object structure
+      interface ModDataFromDb {
+        id: string;
+        name: string;
+        path: string;
+        executable_path?: string;
+        icon_data?: string;
+        banner_data?: string;
+        logo_data?: string;
+        version?: string;
+        engine_type?: string;
+        display_order?: number;
+        engine_data?: string; // Raw JSON string from DB
+      }
+
+      // Map the result to ModInfo and parse engine_data if it exists
+      const processedMods = result.map((mod: ModDataFromDb) => {
+        // Parse engine_data if it exists
+        const engineData = mod.engine_data ? JSON.parse(mod.engine_data) : null;
+        
+        return {
+          ...mod,
+          engine: engineData || {
+            engine_type: mod.engine_type || null,
+            engine_name: '',
+            engine_icon: '',
+            mods_folder: true,
+            mods_folder_path: ''
+          }
+        } as ModInfo;
+      });
+      
+      mods.value = processedMods;
       
       // If there's at least one mod, select the first one
-      if (result.length > 0) {
-        selectMod(result[0]);
+      if (processedMods.length > 0) {
+        selectMod(processedMods[0]);
       }
     } else {
       // If no mods in database, load from memory
@@ -237,10 +278,13 @@ const saveModToDatabase = async (mod: ModInfo) => {
       return;
     }
     
+    // Convert engine object to JSON string if it exists
+    const engineData = mod.engine ? JSON.stringify(mod.engine) : null;
+    
     await window.db.execute(
-      `INSERT OR REPLACE INTO mods (id, name, path, executable_path, icon_data, banner_data, logo_data, version, engine_type, display_order)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [mod.id, mod.name, mod.path, mod.executable_path || null, mod.icon_data || null, mod.banner_data || null, mod.logo_data || null, mod.version || null, mod.engine_type || null, mod.display_order || 9999]
+      `INSERT OR REPLACE INTO mods (id, name, path, executable_path, icon_data, banner_data, logo_data, version, engine_type, display_order, engine_data)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [mod.id, mod.name, mod.path, mod.executable_path || null, mod.icon_data || null, mod.banner_data || null, mod.logo_data || null, mod.version || null, mod.engine_type || null, mod.display_order || 9999, engineData]
     );
   } catch (error) {
     console.error('Failed to save mod to database:', error);

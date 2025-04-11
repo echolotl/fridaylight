@@ -144,6 +144,14 @@ import { ref, watch } from 'vue';
 import { downloadingMods } from '../../stores/downloadState';
 import draggable from 'vuedraggable';
 
+interface Engine {
+  engine_type: string;
+  engine_name: string;
+  engine_icon: string;
+  mods_folder: boolean;
+  mods_folder_path: string;
+}
+
 interface Mod {
   id: string;
   name: string;
@@ -151,9 +159,10 @@ interface Mod {
   executable_path?: string;
   icon_data?: string;
   banner_data?: string;
-  logo_data?: string;
+  logo_data?: string | null;
   version?: string;
-  engine_type?: string;
+  engine_type?: string;  // Kept for backward compatibility (probably will remove for full release)
+  engine: Engine;        // New extended engine information
   display_order?: number;
 }
 

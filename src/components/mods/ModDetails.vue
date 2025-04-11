@@ -51,10 +51,11 @@
     </div>
     
     <!-- Show engine-specific mods list if mod has engine type and executable path -->
-    <div v-if="mod.engine_type && mod.executable_path">
+    <div v-if="mod.engine.engine_type && mod.executable_path && mod.engine.mods_folder">
       <EngineModsList
         :executablePath="mod.executable_path"
-        :engineType="mod.engine_type"
+        :engineType="mod.engine.engine_type"
+        :customModsFolder="mod.engine.mods_folder_path"
       />
     </div>
   </div>
@@ -71,6 +72,14 @@ import { ref } from 'vue';
 import ModBanner from './ModBanner.vue';
 import EngineModsList from './EngineModsList.vue';
 
+interface Engine {
+  engine_type: string;
+  engine_name: string;
+  engine_icon: string;
+  mods_folder: boolean;
+  mods_folder_path: string;
+}
+
 interface Mod {
   id: string;
   name: string;
@@ -78,12 +87,13 @@ interface Mod {
   executable_path?: string;
   icon_data?: string;
   banner_data?: string;
-  logo_data?: string;
+  logo_data?: string | null;
   version?: string;
-  engine_type?: string;
+  engine_type?: string;  // Kept for backward compatibility (probably will remove for full release)
+  engine: Engine;        // New extended engine information
+  display_order?: number;
   description?: string;
 }
-
 const props = defineProps({
   mod: {
     type: Object as () => Mod | null,

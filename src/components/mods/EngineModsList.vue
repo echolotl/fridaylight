@@ -1,9 +1,11 @@
 <template>
-
-<h5 class="phantom-font-difficulty">Installed Mods</h5>
+<div class="mods-title" v-if="mods.length > 0">
+  <h5 class="phantom-font-difficulty">Installed Mods</h5>
 <hr/>
+</div>
+
 <div class="engine-mods-container phantom-font" v-if="!isUnsupportedEngine">
-    <div class="header" v-if="mods.length > 0">
+    <div class="header" v-if="mods.length >= 0">
       <div class="scan-actions" v-if="showScanButton">
       <q-btn
       size="md"
@@ -101,7 +103,11 @@ const props = defineProps({
   autoScan: {
     type: Boolean,
     default: true
-  }
+  },
+  customModsFolder: {
+    type: String,
+    default: null
+  },
 });
 
 const mods = ref<ModMetadataFile[]>([]);
@@ -126,7 +132,7 @@ const scanForMods = async () => {
   }
   
   // Handle "other" engine type as if it doesn't have a type
-  if (props.engineType === 'other') {
+  if (props.engineType === 'other' || props.engineType === 'unknown') {
     error.value = 'Custom engine types are not supported for mod scanning';
     return;
   }
@@ -138,7 +144,8 @@ const scanForMods = async () => {
   try {
     const response = await invoke<EngineModsResponse>('find_engine_mod_files', {
       executablePath: props.executablePath,
-      engineType: props.engineType
+      engineType: props.engineType,
+      modsFolder: props.customModsFolder
     });
     
     mods.value = response.mods;

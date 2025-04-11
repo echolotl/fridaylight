@@ -78,6 +78,15 @@ pub struct GameBananaModImage {
 
 // Define a structure to hold mod information
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Engine {
+    pub engine_type: Option<String>,
+    pub engine_name: Option<String>,
+    pub engine_icon: Option<String>, // Base64 encoded engine icon
+    pub mods_folder: Option<bool>,
+    pub mods_folder_path: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ModInfo {
     pub id: String,
     pub name: String,
@@ -88,7 +97,8 @@ pub struct ModInfo {
     pub banner_data: Option<String>, // Base64 encoded banner image data
     pub logo_data: Option<String>, // Base64 encoded logo image data
     pub version: Option<String>,
-    pub engine_type: Option<String>,
+    pub engine_type: Option<String>, // Kept for backward compatibility
+    pub engine: Option<Engine>,      // New extended engine information
     pub display_order: Option<i64>,
 }
 

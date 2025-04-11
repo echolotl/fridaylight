@@ -157,11 +157,15 @@ onMounted(async () => {
       if (!columns.includes('display_order')) {
         await db.execute(`ALTER TABLE mods ADD COLUMN display_order INTEGER DEFAULT 9999`);
         console.log('Added display_order column to mods table');
-      }
-
-      if (!columns.includes('description')) {
+      }      if (!columns.includes('description')) {
         await db.execute(`ALTER TABLE mods ADD COLUMN description TEXT`);
         console.log('Added description column to mods table');
+      }
+      
+      // Add new engine metadata fields
+      if (!columns.includes('engine_data')) {
+        await db.execute(`ALTER TABLE mods ADD COLUMN engine_data TEXT`);
+        console.log('Added engine_data column to mods table');
       }
     } else {
       // Table doesn't exist, create it with all columns

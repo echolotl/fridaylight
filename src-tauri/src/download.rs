@@ -399,8 +399,7 @@ pub async fn download_gamebanana_mod(
     let final_logo_data = custom_logo_data;
     
     // Create the mod info with banner
-    let id = uuid::Uuid::new_v4().to_string();
-    let mod_info = ModInfo {
+    let id = uuid::Uuid::new_v4().to_string();    let mod_info = ModInfo {
         id: id.clone(),
         name: name.clone(),
         path: mod_folder.to_string_lossy().to_string(),
@@ -419,6 +418,7 @@ pub async fn download_gamebanana_mod(
             .and_then(|meta| meta.get("engine"))
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
+        engine: None, // Initialize with None for now
     };
     
     // Add the mod to our state

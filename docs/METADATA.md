@@ -10,11 +10,13 @@ Located in the same directory as the mod's executable, mod creators have the abi
 
 ### Schema
 
+None of these are required. You can you whichever ones you need!
+
 | Key | Value |
 |-----|-------|
 |`name`| String, display name for the mod|
 |`version`| String, displayed version for the mod |
-|`engine_type`| String, see valid values below. Used when searching for `/mods` folder mods, displays an icon |
+|`engine`| Object, see more details below |
 |`description`| String, displayed text blurb under the mod's banner |
 
 ### Example 
@@ -22,14 +24,30 @@ Located in the same directory as the mod's executable, mod creators have the abi
 {
   "name": "VS Impostor V4",
   "version": "4.1.0",
-  "engine_type": "Psych",
-  "description": "A Friday Night Funkin' total conversion mod featuring 62 brand new songs spread out across 12 weeks..."
+  "description": "A Friday Night Funkin' total conversion mod featuring 62 brand new songs spread out across 12 weeks..",
+  "engine": {
+    "engine_type": "psych",
+    "engine_name": "Modified Psych Engine",
+    "engine_icon": "path/to/icon",
+    "mods_folder": false,
+    "mods_folder_path": "",
+  }
 }
 ```
 
-### `engine_type` Values
+### `engine` Object
+
+| Key | Value |
+|-----|-------|
+| `engine_type` | String, this allows for mods folder mod management and small cosmetic changes. See more details below. |
+| `engine_name` | String, currently unused. |
+| `engine_icon` | String, path to icon relative to the `.flight` folder |
+| `mods_folder` | Boolean, tells if you want to show the mods folder mod management. Default is `true` |
+| `mods_folder_path` | String, path to mods folder relative to the executable directory |
+
+### Valid `engine_type` Values
 | Value | Features |
 |-------|----------|
 |`psych`, `fps-plus`, `vanilla` | Allows for mod enabling + disabling right from the mod page, shows an icon and other relevant metadata |
 | `codename` | Shows a list of installed mods and some metadata |
-| `kade`, `pre-vslice` | Cosmetic only, has no effect other than showing icon |
+| `kade`, `pre-vslice`, `other` | Cosmetic only, has no effect other than showing icon |

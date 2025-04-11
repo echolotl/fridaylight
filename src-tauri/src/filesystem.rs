@@ -468,12 +468,85 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         },
         None => None,
     };
-    
-    let engine_type = match &metadata {
+      let engine_type = match &metadata {
         Some(json) => {
             if let Some(engine_value) = json.get("engine_type").and_then(|v| v.as_str()) {
                 debug!("Using engine_type from metadata.json: {}", engine_value);
                 Some(engine_value.to_string())
+            } else {
+                None
+            }
+        },
+        None => None,
+    };
+    
+    // Parse the new engine field if it exists
+    let engine = match &metadata {
+        Some(json) => {
+            if let Some(engine_json) = json.get("engine") {
+                debug!("Found engine metadata in metadata.json");
+                
+                // Extract engine_type from engine object
+                let engine_type = engine_json.get("engine_type")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                    
+                // Extract engine_name from engine object
+                let engine_name = engine_json.get("engine_name")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                      // Extract engine_icon from engine object
+                let engine_icon = engine_json.get("engine_icon")
+                    .and_then(|v| v.as_str())
+                    .and_then(|icon_path| {
+                        // Convert relative path to absolute path based on mod folder
+                        let absolute_path = path_obj.join(icon_path);
+                        debug!("Loading engine icon from: {}", absolute_path.display());
+                        
+                        // Try to read the file
+                        match fs::read(&absolute_path) {
+                            Ok(data) => {
+                                // Determine file extension/mime type
+                                let mime_type = if let Some(ext) = absolute_path.extension() {
+                                    match ext.to_string_lossy().to_lowercase().as_str() {
+                                        "png" => "image/png",
+                                        "webp" => "image/webp", 
+                                        "jpg" | "jpeg" => "image/jpeg",
+                                        "gif" => "image/gif",
+                                        _ => "application/octet-stream" // Default mime type
+                                    }
+                                } else {
+                                    "application/octet-stream" // Default mime type
+                                };
+                                
+                                // Convert to base64
+                                let b64 = BASE64.encode(&data);
+                                Some(format!("data:{};base64,{}", mime_type, b64))
+                            },
+                            Err(e) => {
+                                error!("Failed to read engine icon at {}: {}", absolute_path.display(), e);
+                                Some(icon_path.to_string()) // Fallback to original path if file can't be read
+                            }
+                        }
+                    });
+                    
+                // Extract mods_folder boolean
+                let mods_folder = engine_json.get("mods_folder")
+                    .and_then(|v| v.as_bool());
+                    
+                // Extract mods_folder_path
+                let mods_folder_path = engine_json.get("mods_folder_path")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                
+                // Create the Engine object
+                Some(crate::models::Engine {
+                    engine_type,
+                    engine_name,
+                    engine_icon,
+                    mods_folder,
+                    mods_folder_path,
+                })
             } else {
                 None
             }
@@ -517,7 +590,8 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         banner_data,
         logo_data,
         version,
-        engine_type,
+        engine_type, // Keep for backward compatibility
+        engine,      // Add the new engine field
     };
 
     Ok(mod_info)
