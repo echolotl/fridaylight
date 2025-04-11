@@ -71,8 +71,7 @@
         >
           <template #item="{element: item}">
             <div>
-            <!-- Show folder if it's a folder type -->
-            <FolderListItem 
+            <!-- Show folder if it's a folder type -->            <FolderListItem 
               v-if="item.type === 'folder'"
               :folder="item.data"
               :all-mods="mods"
@@ -80,6 +79,7 @@
               @select-mod="$emit('select-mod', $event)"
               @delete-mod="confirmDelete($event)"
               @delete-folder="confirmDeleteFolder(item.data)"
+              @update-folder-mods="handleFolderModsUpdate"
             />
             
             <!-- Show mod if it's not in any folder and is a mod type -->
@@ -258,7 +258,7 @@ watch([modsList, foldersList], () => {
   updateDisplayItems();
 }, { deep: true, immediate: true });
 
-const emit = defineEmits(['select-mod', 'add-mod', 'add-mods-folder', 'delete-mod', 'open-settings', 'reorder-mods']);
+const emit = defineEmits(['select-mod', 'add-mod', 'add-mods-folder', 'delete-mod', 'open-settings', 'reorder-mods', 'update-folder']);
 
 const showDeleteDialog = ref(false);
 const showDeleteFolderDialog = ref(false);
@@ -314,6 +314,38 @@ const onDragEnd = () => {
   } else {
     console.log('No order change detected');
   }
+};
+
+// Handle updates from the folder when mods are dragged in or out
+const handleFolderModsUpdate = (event: { folderId: string; action: 'add' | 'remove'; modId: string }) => {
+  console.log('Folder mods update:', event);
+  
+  // Find the folder that needs to be updated
+  const folderIndex = foldersList.value.findIndex(folder => folder.id === event.folderId);
+  if (folderIndex === -1) return;
+
+  const folder = { ...foldersList.value[folderIndex] };
+  
+  // Update the folder's mod list based on the action
+  if (event.action === 'add') {
+    // Only add if it's not already in the folder
+    if (!folder.mods.includes(event.modId)) {
+      folder.mods.push(event.modId);
+    }
+  } else if (event.action === 'remove') {
+    folder.mods = folder.mods.filter(id => id !== event.modId);
+  }
+  
+  // Create a new folders array to maintain reactivity
+  const updatedFolders = [...foldersList.value];
+  updatedFolders[folderIndex] = folder;
+  foldersList.value = updatedFolders;
+  
+  // Emit the updated folder to the parent component
+  emit('update-folder', folder);
+  
+  // Update the display items to reflect the changes
+  updateDisplayItems();
 };
 </script>
 
