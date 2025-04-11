@@ -185,8 +185,7 @@ onMounted(async () => {
       `);
       console.log('Created mods table with all columns');
     }
-    
-    // Check if settings table exists and create it if it doesn't
+      // Check if settings table exists and create it if it doesn't
     try {
       const settingsTableInfo: any[] = await db.select(`PRAGMA table_info(settings)`);
       
@@ -209,6 +208,43 @@ onMounted(async () => {
       }
     } catch (error) {
       console.error('Failed to initialize settings table:', error);
+    }
+    
+    // Create folders table if it doesn't exist
+    try {
+      const foldersTableInfo: any[] = await db.select(`PRAGMA table_info(folders)`);
+      
+      if (foldersTableInfo.length === 0) {
+        // Table doesn't exist, create it
+        await db.execute(`
+          CREATE TABLE IF NOT EXISTS folders (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            color TEXT NOT NULL,
+            display_order INTEGER DEFAULT 9999
+          )
+        `);
+        console.log('Created folders table');
+      }
+      
+      // Create mod_folders table to map mods to folders (many-to-many relationship)
+      const modFoldersTableInfo: any[] = await db.select(`PRAGMA table_info(mod_folders)`);
+      
+      if (modFoldersTableInfo.length === 0) {
+        // Table doesn't exist, create it
+        await db.execute(`
+          CREATE TABLE IF NOT EXISTS mod_folders (
+            mod_id TEXT NOT NULL,
+            folder_id TEXT NOT NULL,
+            PRIMARY KEY (mod_id, folder_id),
+            FOREIGN KEY (mod_id) REFERENCES mods (id) ON DELETE CASCADE,
+            FOREIGN KEY (folder_id) REFERENCES folders (id) ON DELETE CASCADE
+          )
+        `);
+        console.log('Created mod_folders mapping table');
+      }
+    } catch (error) {
+      console.error('Failed to initialize folders tables:', error);
     }
     
     // Load mods from the database and sync with backend

@@ -4,25 +4,27 @@
     <div 
       class="sidebar"
       :style="{ width: `${sidebarWidth}px` }"
-    >
-      <ModList 
-        :mods="mods" 
+    >      <ModList 
+        :mods="mods"
+        :folders="folders" 
         :selectedModId="selectedMod?.id"
         @select-mod="selectMod"
         @add-mod="selectModFolder"
         @add-mods-folder="selectModsParentFolder"
         @delete-mod="deleteMod"
+        @delete-folder="deleteFolder"
+        @create-folder="createFolder"
+        @add-mod-to-folder="addModToFolder"
         @open-settings="openAppSettings"
         @reorder-mods="handleModsReorder"
         class="modlist"
       />
       
       <!-- GameBanana button at the bottom of the sidebar -->
-      <div class="gamebanana-button-container phantom-font">
+      <div class="gamebanana-button-container phantom-font-difficulty">
         <q-btn 
           :class="{'gamebanana-button': true, 'active-gamebanana': showGameBanana}"
           color="secondary" 
-          icon="cloud_download" 
           label="Browse GameBanana" 
           @click="toggleGameBanana"
           flat
@@ -95,6 +97,14 @@ interface Engine {
   mods_folder_path: string;
 }
 
+interface Folder {
+  id: string;     // Unique ID for the folder
+  name: string;   // Name of the folder
+  color: string;  // Color for the folder icon
+  mods: string[]; // Array of mod IDs
+  display_order?: number; // Optional order for sorting
+}
+
 interface ModInfo {
   id: string;
   name: string;
@@ -160,6 +170,7 @@ const stopResize = () => {
 
 // Mod list and selection
 const mods = ref<ModInfo[]>([]);
+const folders = ref<Folder[]>([]);
 const selectedMod = ref<ModInfo | null>(null);
 const launchError = ref<string | null>(null);
 const showSettingsModal = ref(false);
@@ -171,6 +182,7 @@ onMounted(async () => {
   emit('resize', sidebarWidth.value);
   try {
     await loadModsFromDatabase();
+    await loadFoldersFromDatabase(); // Load folders after mods
     
     // Load and apply app settings
     await loadAppSettings();
@@ -244,11 +256,64 @@ const loadModsFromDatabase = async () => {
     } else {
       // If no mods in database, load from memory
       await loadMods();
-    }
-  } catch (error) {
+    }  } catch (error) {
     console.error('Failed to load mods from database:', error);
     // Fallback to in-memory mods
     await loadMods();
+  }
+};
+
+// Load folders from the database
+const loadFoldersFromDatabase = async () => {
+  try {
+    // Check if db is initialized
+    if (!window.db) {
+      console.warn('Database not initialized yet when loading folders');
+      return;
+    }
+    
+    console.log('Loading folders from database');
+    
+    // First, get all folders
+    const foldersResult = await window.db.select('SELECT * FROM folders ORDER BY display_order ASC');
+    
+    if (foldersResult && foldersResult.length > 0) {
+      console.log(`Found ${foldersResult.length} folders in database`);
+      
+      // Create a temporary array to hold the folders with their mods
+      const tempFolders: Folder[] = foldersResult.map((folder: any) => ({
+        id: folder.id,
+        name: folder.name,
+        color: folder.color,
+        display_order: folder.display_order || 9999,
+        mods: [] // Will populate this next
+      }));
+      
+      // Now get all mod-folder relationships
+      const modFoldersResult = await window.db.select('SELECT * FROM mod_folders');
+      
+      // Populate each folder with its mods
+      if (modFoldersResult && modFoldersResult.length > 0) {
+        console.log(`Found ${modFoldersResult.length} mod-folder relationships`);
+        
+        for (const relationship of modFoldersResult) {
+          const folder = tempFolders.find(f => f.id === relationship.folder_id);
+          if (folder) {
+            folder.mods.push(relationship.mod_id);
+          }
+        }
+      }
+      
+      // Update the reactive folders ref
+      folders.value = tempFolders;
+      console.log('Folders loaded successfully:', folders.value);
+    } else {
+      console.log('No folders found in database');
+      folders.value = [];
+    }
+  } catch (error) {
+    console.error('Failed to load folders from database:', error);
+    folders.value = [];
   }
 };
 
@@ -438,6 +503,108 @@ const deleteMod = async (modId: string) => {
 const handleRefreshMods = async () => {
   console.log('Refreshing mods list');
   await loadModsFromDatabase();
+  await loadFoldersFromDatabase();
+};
+
+// Create a new folder
+const createFolder = async (folder: Folder) => {
+  console.log('Creating new folder:', folder);
+  try {
+    if (!window.db) {
+      console.error('Database not initialized, cannot create folder');
+      return;
+    }
+    
+    // Insert the folder into the database
+    await window.db.execute(
+      'INSERT INTO folders (id, name, color, display_order) VALUES (?, ?, ?, ?)',
+      [folder.id, folder.name, folder.color, 9999]
+    );
+    
+    console.log('Folder created successfully in database');
+    
+    // Add the folder to the local folders array
+    folders.value.push({
+      ...folder,
+      mods: [] // Ensure mods is initialized as an empty array
+    });
+    
+    console.log('Updated folders list:', folders.value);
+  } catch (error) {
+    console.error('Error creating folder:', error);
+  }
+};
+
+// Add a mod to a folder
+const addModToFolder = async (data: { modId: string, folderId: string }) => {
+  const { modId, folderId } = data;
+  console.log(`Adding mod ${modId} to folder ${folderId}`);
+  
+  try {
+    if (!window.db) {
+      console.error('Database not initialized, cannot add mod to folder');
+      return;
+    }
+    
+    // Check if the relationship already exists to avoid duplicates
+    const existingRelation = await window.db.select(
+      'SELECT * FROM mod_folders WHERE mod_id = ? AND folder_id = ?',
+      [modId, folderId]
+    );
+    
+    if (existingRelation && existingRelation.length > 0) {
+      console.log('Mod is already in this folder, skipping addition');
+      return;
+    }
+    
+    // Insert the relationship into the mod_folders table
+    await window.db.execute(
+      'INSERT INTO mod_folders (mod_id, folder_id) VALUES (?, ?)',
+      [modId, folderId]
+    );
+    
+    console.log('Mod-folder relationship added to database');
+    
+    // Update the local folders array
+    const folderIndex = folders.value.findIndex(f => f.id === folderId);
+    if (folderIndex !== -1) {
+      // Add the mod ID to the folder's mods array if it's not already there
+      if (!folders.value[folderIndex].mods.includes(modId)) {
+        folders.value[folderIndex].mods.push(modId);
+      }
+      console.log(`Updated folder ${folderId} with mod ${modId}`);
+      
+      // Force a refresh of the UI
+      folders.value = [...folders.value];
+    }
+  } catch (error) {
+    console.error('Error adding mod to folder:', error);
+  }
+};
+
+// Delete a folder
+const deleteFolder = async (folderId: string) => {
+  console.log(`Deleting folder with ID: ${folderId}`);
+  
+  try {
+    if (!window.db) {
+      console.error('Database not initialized, cannot delete folder');
+      return;
+    }
+    
+    // Delete the folder from the database
+    // The mod_folders entries will be automatically deleted due to CASCADE constraint
+    await window.db.execute('DELETE FROM folders WHERE id = ?', [folderId]);
+    
+    console.log('Folder deleted from database');
+    
+    // Remove the folder from the local folders array
+    folders.value = folders.value.filter(f => f.id !== folderId);
+    
+    console.log('Updated folders list after deletion');
+  } catch (error) {
+    console.error('Error deleting folder:', error);
+  }
 };
 
 // Function to open app settings modal

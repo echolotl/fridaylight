@@ -53,10 +53,9 @@
         <q-item-label header class="text-grey-5">
           Installed
         </q-item-label>
-        
-        <!-- Sortable Mod list items -->
+          <!-- Sortable Mod list items -->
         <draggable 
-          v-model="modsList" 
+          v-model="displayItems" 
           group="mods" 
           item-key="id"
           @end="onDragEnd"
@@ -70,40 +69,28 @@
           :delay="50"
           :delayOnTouchOnly="true"
         >
-          <template #item="{element: mod}">
-            <q-item 
-              :key="mod.id" 
-              clickable 
-              v-ripple 
-              @click="$emit('select-mod', mod)"
-              :active="selectedModId === mod.id"
-              active-class="active-mod"
-              class="draggable-item cursor-move"
-            >      
-              <q-item-section avatar v-if="mod.icon_data">
-                <q-avatar size="32px" square>
-                  <img :src="mod.icon_data" alt="mod icon" />
-                </q-avatar>
-              </q-item-section>
-              <q-item-section avatar v-else>
-                <q-avatar size="32px" icon="folder" square class="default-icon" />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label>{{ mod.name }}</q-item-label>
-                <q-item-label caption class="version-text" v-if="mod.version">v{{ mod.version }}</q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-btn
-                  flat
-                  round
-                  dense
-                  icon="delete"
-                  color="grey-5"
-                  @click.stop="confirmDelete(mod)"
-                  class="delete-btn"
-                />
-              </q-item-section>
-            </q-item>
+          <template #item="{element: item}">
+            <div>
+            <!-- Show folder if it's a folder type -->
+            <FolderListItem 
+              v-if="item.type === 'folder'"
+              :folder="item.data"
+              :all-mods="mods"
+              :selected-mod-id="selectedModId"
+              @select-mod="$emit('select-mod', $event)"
+              @delete-mod="confirmDelete($event)"
+              @delete-folder="confirmDeleteFolder(item.data)"
+            />
+            
+            <!-- Show mod if it's not in any folder and is a mod type -->
+            <ModListItem 
+              v-else-if="item.type === 'mod' && !isModInFolder(item.data.id)"
+              :mod="item.data"
+              :is-active="selectedModId === item.data.id"
+              @select-mod="$emit('select-mod', item.data)"
+              @delete-mod="confirmDelete(item.data)"
+            />
+          </div>
           </template>
         </draggable>
         
@@ -116,7 +103,7 @@
           </q-item-section>
         </q-item>
       </q-list>
-    </q-scroll-area>    <!-- Delete confirmation dialog -->
+    </q-scroll-area>    <!-- Delete mod confirmation dialog -->
     <q-dialog v-model="showDeleteDialog" persistent>
       <q-card class="phantom-font" style="background-color: var(--theme-card); color: var(--theme-text);">
         <q-card-section class="row items-center">
@@ -136,13 +123,35 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+    
+    <!-- Delete folder confirmation dialog -->
+    <q-dialog v-model="showDeleteFolderDialog" persistent>
+      <q-card class="phantom-font" style="background-color: var(--theme-card); color: var(--theme-text);">
+        <q-card-section class="row items-center">
+          <q-avatar icon="warning" color="negative" text-color="white" />
+          <span class="q-ml-sm">Are you sure you want to delete this folder?</span>
+        </q-card-section>
+        <q-card-section v-if="folderToDelete">
+          <div class="text-h6">{{ folderToDelete.name }}</div>
+          <p class="text-body2 q-mt-sm">
+            This will only delete the folder. The mods inside will not be deleted but will return to the main mod list.
+          </p>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" color="primary" v-close-popup />
+          <q-btn flat label="Delete" color="negative" @click="deleteFolder" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { downloadingMods } from '../../stores/downloadState';
 import draggable from 'vuedraggable';
+import ModListItem from './ModListItem.vue';
+import FolderListItem from './FolderListItem.vue';
 
 interface Engine {
   engine_type: string;
@@ -150,6 +159,13 @@ interface Engine {
   engine_icon: string;
   mods_folder: boolean;
   mods_folder_path: string;
+}
+
+interface Folder {
+  id: string;     // Unique ID for the folder
+  mods: string[]; // Array of mod IDs
+  color: string;  // Color for the folder icon
+  name: string;   // Name of the folder
 }
 
 interface Mod {
@@ -171,6 +187,10 @@ const props = defineProps({
     type: Array as () => Mod[],
     required: true
   },
+  folders: {
+    type: Array as () => Folder[],
+    default: () => []
+  },
   selectedModId: {
     type: String,
     default: ''
@@ -179,8 +199,9 @@ const props = defineProps({
 
 // Create a local reactive copy of the mods array for reordering
 const modsList = ref<Mod[]>([]);
+const foldersList = ref<Folder[]>([]);
 
-// Initialize modsList when component is first created
+// Initialize modsList and foldersList when component is first created
 watch(() => props.mods, (newMods) => {
   if (newMods && newMods.length > 0) {
     console.log('ModList received new mods from parent with display_order:', 
@@ -189,20 +210,82 @@ watch(() => props.mods, (newMods) => {
   }
 }, { immediate: true, deep: true });
 
+watch(() => props.folders, (newFolders) => {
+  if (newFolders && newFolders.length > 0) {
+    console.log('ModList received new folders from parent:', 
+      newFolders.map(folder => ({ name: folder.name, mods: folder.mods.length })));
+    foldersList.value = [...newFolders];
+  }
+}, { immediate: true, deep: true });
+
+// Determine if a mod is inside any folder
+const isModInFolder = (modId: string) => {
+  return foldersList.value.some(folder => folder.mods.includes(modId));
+};
+
+// Create a combined list of mods and folders for the draggable component
+const displayItems = ref<Array<{id: string, type: string, data: any}>>([]);
+
+// Update displayItems when mods or folders change
+const updateDisplayItems = () => {
+  const items: Array<{ id: string; type: 'folder' | 'mod'; data: Folder | Mod }> = [];
+  
+  // First, add all folders
+  foldersList.value.forEach(folder => {
+    items.push({
+      id: `folder-${folder.id}`,
+      type: 'folder',
+      data: folder
+    });
+  });
+  
+  // Next, add all mods that are not in folders
+  modsList.value.forEach(mod => {
+    if (!isModInFolder(mod.id)) {
+      items.push({
+        id: mod.id,
+        type: 'mod',
+        data: mod
+      });
+    }
+  });
+  
+  displayItems.value = items;
+};
+
+// Watch for changes in mods and folders to update displayItems
+watch([modsList, foldersList], () => {
+  updateDisplayItems();
+}, { deep: true, immediate: true });
+
 const emit = defineEmits(['select-mod', 'add-mod', 'add-mods-folder', 'delete-mod', 'open-settings', 'reorder-mods']);
 
 const showDeleteDialog = ref(false);
+const showDeleteFolderDialog = ref(false);
 const modToDelete = ref<Mod | null>(null);
+const folderToDelete = ref<Folder | null>(null);
 
 const confirmDelete = (mod: Mod) => {
   modToDelete.value = mod;
   showDeleteDialog.value = true;
 };
 
+const confirmDeleteFolder = (folder: Folder) => {
+  folderToDelete.value = folder;
+  showDeleteFolderDialog.value = true;
+};
+
 const deleteMod = () => {
   if (modToDelete.value) {
     emit('delete-mod', modToDelete.value.id);
     modToDelete.value = null;
+  }
+};
+
+const deleteFolder = () => {
+  if (folderToDelete.value) {
+    emit('delete-folder', folderToDelete.value.id);
+    folderToDelete.value = null;
   }
 };
 
