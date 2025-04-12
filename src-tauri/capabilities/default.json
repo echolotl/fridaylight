@@ -11,6 +11,7 @@
     "dialog:default",
     "sql:default",
     "sql:allow-execute",
-    "sql:allow-select"
+    "sql:allow-select",
+    "deep-link:default"
   ]
 }

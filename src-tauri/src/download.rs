@@ -70,21 +70,26 @@ pub async fn download_gamebanana_mod(
     } else {
         None
     };
-    
-    // Get the actual download URL
-    let actual_download_url = match get_download_url(mod_id).await {
-        Ok(url) => url,
-        Err(e) => {
-            error!("Failed to get download URL: {}", e);
-            
-            // Emit error event
-            app.emit("download-error", DownloadError {
-                mod_id,
-                name: name.clone(),
-                error: e.clone(),
-            }).unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
-            
-            return Err(e);
+      // Use the provided URL if it's a direct download URL, otherwise get the default one
+    let actual_download_url = if url.contains("gamebanana.com/dl/") {
+        info!("Using provided direct download URL: {}", url);
+        url
+    } else {
+        info!("Getting default download URL for mod ID: {}", mod_id);
+        match get_download_url(mod_id).await {
+            Ok(url) => url,
+            Err(e) => {
+                error!("Failed to get download URL: {}", e);
+                
+                // Emit error event
+                app.emit("download-error", DownloadError {
+                    mod_id,
+                    name: name.clone(),
+                    error: e.clone(),
+                }).unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
+                
+                return Err(e);
+            }
         }
     };
     

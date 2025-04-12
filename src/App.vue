@@ -10,8 +10,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
-import Database from '@tauri-apps/plugin-sql';
+import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import Sidebar from './components/Sidebar.vue';
+import { DatabaseService } from './services/dbService';
 
 // Define window.db
 declare global {
@@ -90,14 +91,10 @@ const handleSystemThemeChange = async (event: MediaQueryListEvent) => {
 
 // Get the current "use system theme" setting from the database
 const getUseSystemThemeSetting = async (): Promise<boolean> => {
-  if (!window.db) return true; // Default to true if DB isn't available
-  
   try {
-    const result = await window.db.select('SELECT value FROM settings WHERE key = $1', ['useSystemTheme']);
-    if (result && result.length > 0) {
-      return result[0].value === 'true';
-    }
-    return true; // Default to true if setting doesn't exist
+    const dbService = DatabaseService.getInstance();
+    const value = await dbService.getSetting('useSystemTheme');
+    return value === 'true';
   } catch (error) {
     console.error('Error fetching useSystemTheme setting:', error);
     return true; // Default to true on error
@@ -106,14 +103,10 @@ const getUseSystemThemeSetting = async (): Promise<boolean> => {
 
 // Get the manually set theme preference (only used if not using system theme)
 const getThemePreference = async (): Promise<boolean> => {
-  if (!window.db) return false; // Default to dark if DB isn't available
-  
   try {
-    const result = await window.db.select('SELECT value FROM settings WHERE key = $1', ['enableLightTheme']);
-    if (result && result.length > 0) {
-      return result[0].value === 'true';
-    }
-    return false; // Default to dark if setting doesn't exist
+    const dbService = DatabaseService.getInstance();
+    const value = await dbService.getSetting('enableLightTheme');
+    return value === 'true';
   } catch (error) {
     console.error('Error fetching theme preference:', error);
     return false; // Default to dark on error
@@ -123,139 +116,38 @@ const getThemePreference = async (): Promise<boolean> => {
 // Initialize the app
 onMounted(async () => {
   try {
-    const db = await Database.load('sqlite:mods.db');
-    window.db = db; // Make the database available globally
+    // Set up deep link handler
+    onOpenUrl((urls) => {
+      console.log('deep link:', urls);
+    });
     
-    // First check if the mods table exists and what columns it has
-    const tableInfo: any[] = await db.select(`PRAGMA table_info(mods)`);
+    // Initialize the database service
+    const dbService = DatabaseService.getInstance();
+    await dbService.initialize();
     
-    if (tableInfo.length > 0) {
-      // Table exists, check for missing columns
-      const columns = tableInfo.map((col: any) => col.name);
-      
-      // Add missing columns if they don't exist
-      if (!columns.includes('banner_data')) {
-        await db.execute(`ALTER TABLE mods ADD COLUMN banner_data TEXT`);
-        console.log('Added banner_data column to mods table');
-      }
-      
-      if (!columns.includes('logo_data')) {
-        await db.execute(`ALTER TABLE mods ADD COLUMN logo_data TEXT`);
-        console.log('Added logo_data column to mods table');
-      }
-      
-      if (!columns.includes('version')) {
-        await db.execute(`ALTER TABLE mods ADD COLUMN version TEXT`);
-        console.log('Added version column to mods table');
-      }
-      
-      if (!columns.includes('engine_type')) {
-        await db.execute(`ALTER TABLE mods ADD COLUMN engine_type TEXT`);
-        console.log('Added engine_type column to mods table');
-      }
-      
-      if (!columns.includes('display_order')) {
-        await db.execute(`ALTER TABLE mods ADD COLUMN display_order INTEGER DEFAULT 9999`);
-        console.log('Added display_order column to mods table');
-      }      if (!columns.includes('description')) {
-        await db.execute(`ALTER TABLE mods ADD COLUMN description TEXT`);
-        console.log('Added description column to mods table');
-      }
-      
-      // Add new engine metadata fields
-      if (!columns.includes('engine_data')) {
-        await db.execute(`ALTER TABLE mods ADD COLUMN engine_data TEXT`);
-        console.log('Added engine_data column to mods table');
-      }
-    } else {
-      // Table doesn't exist, create it with all columns
-      await db.execute(`
-        CREATE TABLE IF NOT EXISTS mods (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL,
-          path TEXT NOT NULL,
-          executable_path TEXT,
-          icon_data TEXT,
-          banner_data TEXT,
-          logo_data TEXT,
-          version TEXT,
-          engine_type TEXT,
-          display_order INTEGER DEFAULT 9999
-        )
-      `);
-      console.log('Created mods table with all columns');
-    }
-      // Check if settings table exists and create it if it doesn't
-    try {
-      const settingsTableInfo: any[] = await db.select(`PRAGMA table_info(settings)`);
-      
-      if (settingsTableInfo.length === 0) {
-        // Table doesn't exist, create it
-        await db.execute(`
-          CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-          )
-        `);
-        
-        // Insert default settings
-        await db.execute(`
-          INSERT INTO settings (key, value) VALUES 
-          ('accentColor', '#FF0088'),
-          ('installLocation', 'C:\\Users\\Public\\Documents\\FNF Mods')
-        `);
-        console.log('Created settings table with default values');
-      }
-    } catch (error) {
-      console.error('Failed to initialize settings table:', error);
-    }
+    // Make the database service available globally
+    window.db = {
+      // Legacy interface for compatibility
+      select: async (query: string, params?: any[]) => {
+        // Pass this to the actual database via dbService when needed
+        const db = await dbService['db'];
+        return db.select(query, params);
+      },
+      execute: async (query: string, params?: any[]) => {
+        // Pass this to the actual database via dbService when needed
+        const db = await dbService['db'];
+        return db.execute(query, params);
+      },
+      // Add the dbService instance for direct access
+      service: dbService
+    };
     
-    // Create folders table if it doesn't exist
-    try {
-      const foldersTableInfo: any[] = await db.select(`PRAGMA table_info(folders)`);
-      
-      if (foldersTableInfo.length === 0) {
-        // Table doesn't exist, create it
-        await db.execute(`
-          CREATE TABLE IF NOT EXISTS folders (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            color TEXT NOT NULL,
-            display_order INTEGER DEFAULT 9999
-          )
-        `);
-        console.log('Created folders table');
-      }
-      
-      // Create mod_folders table to map mods to folders (many-to-many relationship)
-      const modFoldersTableInfo: any[] = await db.select(`PRAGMA table_info(mod_folders)`);
-      
-      if (modFoldersTableInfo.length === 0) {
-        // Table doesn't exist, create it
-        await db.execute(`
-          CREATE TABLE IF NOT EXISTS mod_folders (
-            mod_id TEXT NOT NULL,
-            folder_id TEXT NOT NULL,
-            PRIMARY KEY (mod_id, folder_id),
-            FOREIGN KEY (mod_id) REFERENCES mods (id) ON DELETE CASCADE,
-            FOREIGN KEY (folder_id) REFERENCES folders (id) ON DELETE CASCADE
-          )
-        `);
-        console.log('Created mod_folders mapping table');
-      }
-    } catch (error) {
-      console.error('Failed to initialize folders tables:', error);
-    }
-    
-    // Load mods from the database and sync with backend
-    const mods = await db.select<any[]>('SELECT * FROM mods ORDER BY display_order ASC');
+    // Load mods from the database
+    const mods = await dbService.getAllMods();
     console.log('Loaded mods from database:', mods);
     if (mods && mods.length > 0) {
       console.log(`Loading ${mods.length} mods from database to backend`);
-      
-      // Send the mods to the Rust backend to sync with ModsState
-      await invoke('sync_mods_from_database', { modsData: mods });
-      console.log('Successfully synced mods with backend');
+      // No need to sync with backend as the dbService handles this internally
     } else {
       console.log('No mods found in database');
     }

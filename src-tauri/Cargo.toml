@@ -42,4 +42,5 @@ sevenz-rust = "0.5.3"
 unrar = "0.5.2"
 roxmltree = "0.20.0"
 windows-version = "0.1.0"
+tauri-plugin-deep-link = "2"
 

@@ -35,27 +35,7 @@
 </template>
 
 <script setup lang="ts">
-interface Engine {
-  engine_type: string;
-  engine_name: string;
-  engine_icon: string;
-  mods_folder: boolean;
-  mods_folder_path: string;
-}
-
-interface Mod {
-  id: string;
-  name: string;
-  path: string;
-  executable_path?: string;
-  icon_data?: string;
-  banner_data?: string;
-  logo_data?: string | null;
-  version?: string;
-  engine_type?: string;
-  engine: Engine;
-  display_order?: number;
-}
+import { Mod } from '../../types';
 
 const props = defineProps({
   mod: {

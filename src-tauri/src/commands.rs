@@ -1,6 +1,6 @@
 use crate::download::download_gamebanana_mod;
 use crate::filesystem::create_mod_info;
-use crate::gamebanana::fetch_gamebanana_mods;
+use crate::gamebanana::{fetch_gamebanana_mods, get_mod_download_files};
 use crate::logger;
 use crate::modfiles::{find_mod_metadata_files, get_executable_directory};
 use crate::modenabler::{toggle_mod_enabled_state, check_mod_enabled_state};
@@ -358,12 +358,19 @@ pub fn is_windows_11() -> bool {
     crate::utils::is_windows_11_or_greater()
 }
 
+// Command to get download file options
+#[tauri::command]
+pub async fn get_mod_download_files_command(mod_id: i64) -> Result<serde_json::Value, String> {
+    get_mod_download_files(mod_id).await
+}
+
 // Setup function for Tauri application
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_sql::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_deep_link::init())
         .manage(ModsState(Mutex::new(HashMap::new())))
         .setup(|app| {
             Ok(logger::init(&app.handle()).map_err(|e| {
@@ -385,7 +392,8 @@ pub fn run() {
             find_engine_mod_files,
             get_file_as_base64,
             toggle_mod_enabled,
-            is_windows_11
+            is_windows_11,
+            get_mod_download_files_command
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

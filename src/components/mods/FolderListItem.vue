@@ -39,24 +39,30 @@
       </div>
     </q-item-section>
   </q-item>
-
   <!-- Expanded folder content with indentation -->
-  <div v-if="isExpanded" class="folder-contents">    <draggable
-    group="mods"
-    :list="modsInFolder"
-    item-key="id"
-    @change="handleModsChange">
-    <template #item="{ element }">
-      <div class="draggable-item" :key="element.id">
-        <ModListItem 
-          :mod="element.data" 
-          :is-active="selectedModId === element.id"
-          @select-mod="$emit('select-mod', element.data)"
-          @delete-mod="$emit('delete-mod', element)"
-        />
-      </div>
-
-
+  <div v-if="isExpanded" class="folder-contents" :style="{ borderLeftColor: folder.color}">            
+    <draggable 
+            :group="{ name: 'mods', pull: true, put: true }" 
+            :list="modsInFolder" 
+            item-key="id" 
+            @change="handleModsChange"
+            @end="handleDragEnd"
+            :animation="200" 
+            ghost-class="sortable-ghost" 
+            chosen-class="sortable-chosen"
+            drag-class="sortable-drag" 
+            :force-fallback="true" 
+            :fallback-on-body="true"
+            :delay="50" 
+            :delayOnTouchOnly="true">
+            <template #item="{ element }">
+                <div class="draggable-item cursor-move" :key="element.id">
+                    <ModListItem 
+                        :mod="element.data" 
+                        :is-active="selectedModId === element.id"
+                        @select-mod="$emit('select-mod', element.data)" 
+                        @delete-mod="$emit('delete-mod', element)" />
+                </div>
 </template>
 </draggable>
 </div>
@@ -66,35 +72,7 @@
 import { ref, computed } from 'vue';
 import ModListItem from './ModListItem.vue';
 import draggable from 'vuedraggable';
-
-interface Engine {
-  engine_type: string;
-  engine_name: string;
-  engine_icon: string;
-  mods_folder: boolean;
-  mods_folder_path: string;
-}
-
-interface Mod {
-  id: string;
-  name: string;
-  path: string;
-  executable_path?: string;
-  icon_data?: string;
-  banner_data?: string;
-  logo_data?: string | null;
-  version?: string;
-  engine_type?: string;
-  engine: Engine;
-  display_order?: number;
-}
-
-interface Folder {
-  id: string;     // Unique ID for the folder
-  mods: string[]; // Array of mod IDs
-  color: string;  // Color for the folder icon
-  name: string;   // Name of the folder
-}
+import { Mod, Folder } from '../../types';
 
 const props = defineProps({
   folder: {
@@ -116,7 +94,17 @@ const isExpanded = ref(false);
 // Compute the list of mods that belong to this folder
 const modsInFolder = computed(() => {
   return props.allMods
-    .filter(mod => props.folder.mods.includes(mod.id))
+    // Double check both the folder.mods array AND the mod's folder_id to avoid ghost items
+    .filter(mod => 
+      props.folder.mods.includes(mod.id) && 
+      mod.folder_id === props.folder.id
+    )
+    .sort((a, b) => {
+      // Sort by display_order_in_folder if available
+      const orderA = a.display_order_in_folder ?? 999;
+      const orderB = b.display_order_in_folder ?? 999;
+      return orderA - orderB;
+    })
     .map(mod => ({
       id: mod.id,
       data: mod  // Ensure each mod has a data property for ModListItem
@@ -128,7 +116,18 @@ const toggleExpanded = () => {
   isExpanded.value = !isExpanded.value;
 };
 
-const emit = defineEmits(['select-mod', 'delete-mod', 'delete-folder', 'update-folder-mods']);
+const emit = defineEmits(['select-mod', 'delete-mod', 'delete-folder', 'update-folder-mods', 'reorder-folder-mods']);
+
+// Handle drag end to update mod order within folder
+const handleDragEnd = () => {
+  console.log('Reordering mods within folder:', props.folder.name);
+  
+  // Emit an event to update the order
+  emit('reorder-folder-mods', {
+    folderId: props.folder.id,
+    updatedMods: modsInFolder.value.map(item => item.data)
+  });
+};
 
 // Handle changes to the mods list when dragging
 const handleModsChange = (event: any) => {
@@ -185,9 +184,8 @@ const handleModsChange = (event: any) => {
 }
 
 .folder-contents {
-  padding-left: 20px;
-  margin-left: 16px;
-  border-left: 2px solid var(--theme-border);
+  margin-left: 30px;
+  border-left: 2px dashed var(--theme-border);
 }
 
 .folder-item-container {
@@ -197,7 +195,7 @@ const handleModsChange = (event: any) => {
 
 .expanded-folder {
   background-color: var(--theme-surface-light);
-  border-radius: 0 1rem 0 0;
+  border-radius: 0 1rem 0 0 !important;
 }
 
 .folder-action-btn {
@@ -218,6 +216,7 @@ const handleModsChange = (event: any) => {
 .draggable-item {
   transition: background-color 0.2s ease;
   position: relative;
+  border-radius: 0 1rem 1rem 0;
 }
 
 .draggable-item:hover {

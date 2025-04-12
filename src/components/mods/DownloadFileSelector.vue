@@ -1,0 +1,218 @@
+<template>  <q-dialog
+    v-model="isOpen"
+    persistent
+    transition-show="fade"
+    transition-hide="fade"
+  >
+    <q-card class="download-selector-modal phantom-font">
+      <q-card-section class="row items-center q-pb-none">
+        <div class="text-h6 phantom-font-difficulty">Select Download File</div>
+        <q-space />
+        <q-btn icon="close" flat round dense v-close-popup @click="cancel" />
+      </q-card-section>
+
+      <q-card-section>
+        <p>The mod "{{ modName }}" has multiple download options. Please select one:</p>
+
+        <q-list separator>
+          <q-item 
+            v-for="(file, index) in files" 
+            :key="index" 
+            clickable 
+            v-ripple
+            @click="selectFile(file)"
+            :active="selectedFile && selectedFile._idRow === file._idRow"
+            active-class="selected-file"
+          >
+            <q-item-section>
+              <q-item-label>{{ file._sFile }}</q-item-label>
+              <q-item-label caption>
+                <span class="file-size">{{ formatFileSize(file._nFilesize) }}</span>
+                <span class="file-date">{{ formatDate(file._tsDateAdded) }}</span>
+                <span class="file-downloads q-ml-xs"><q-icon name="download"></q-icon>{{ file._nDownloadCount }}</span>
+              </q-item-label>
+              <q-item-label caption v-if="file._sDescription" class="file-description">
+                {{ file._sDescription }}
+              </q-item-label>
+              <q-badge v-if="file._bContainsExe" color="warning" size="md">Contains Executable</q-badge>
+            </q-item-section>
+          </q-item>
+        </q-list>
+        
+        <div v-if="alternateFileSources && alternateFileSources.length > 0" class="alternate-sources q-mt-md">
+          <div class="text-subtitle1">Alternative Download Sources</div>
+          <q-list separator>
+            <q-item
+              v-for="(source, index) in alternateFileSources"
+              :key="`alt-${index}`"
+              clickable
+              v-ripple
+              tag="a"
+              :href="source.url"
+              target="_blank"
+              rel="noopener"
+            >
+              <q-item-section>
+                <q-item-label>{{ source.description }}</q-item-label>
+                <q-item-label caption>{{ source.url }}</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-icon name="open_in_new" />
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </div>
+      </q-card-section>      <q-card-actions align="right">
+        <q-btn flat label="Cancel" color="primary" v-close-popup @click="cancel" />
+        <q-btn flat label="Download" color="primary" :disable="!selectedFile" @click="confirm" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+</template>
+
+<script setup lang="ts">
+import { ref, watch } from 'vue';
+
+// Define interface for files
+interface DownloadFile {
+  _idRow: number;
+  _sFile: string;
+  _nFilesize: number;
+  _sDescription: string;
+  _tsDateAdded: number;
+  _nDownloadCount: number;
+  _sAnalysisState: string;
+  _sAnalysisResultCode: string;
+  _sAnalysisResult: string;
+  _bContainsExe: boolean;
+  _sDownloadUrl: string;
+  _sMd5Checksum: string;
+  _sClamAvResult: string;
+  _sAvastAvResult: string;
+}
+
+interface AlternateSource {
+  url: string;
+  description: string;
+}
+
+const props = defineProps({
+  modelValue: {
+    type: Boolean,
+    default: false
+  },
+  files: {
+    type: Array as () => DownloadFile[],
+    default: () => []
+  },
+  modName: {
+    type: String,
+    default: 'Unknown Mod'
+  },
+  alternateFileSources: {
+    type: Array as () => AlternateSource[],
+    default: () => []
+  }
+});
+
+const emit = defineEmits(['update:modelValue', 'select', 'cancel']);
+
+const isOpen = ref(props.modelValue);
+const selectedFile = ref<DownloadFile | null>(null);
+
+// Set the default selected file to the first file with the most downloads
+watch(() => props.files, (newFiles) => {
+  if (newFiles && newFiles.length > 0) {
+    // Sort by download count and set the most downloaded as default
+    const sortedFiles = [...newFiles].sort((a, b) => b._nDownloadCount - a._nDownloadCount);
+    selectedFile.value = sortedFiles[0];
+  }
+}, { immediate: true });
+
+watch(() => props.modelValue, (val) => {
+  isOpen.value = val;
+});
+
+watch(isOpen, (val) => {
+  emit('update:modelValue', val);
+});
+
+const selectFile = (file: DownloadFile) => {
+  selectedFile.value = file;
+};
+
+const confirm = () => {
+  if (selectedFile.value) {
+    emit('select', selectedFile.value);
+    isOpen.value = false;
+  }
+};
+
+const cancel = () => {
+  emit('cancel');
+  isOpen.value = false;
+};
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const formatDate = (timestamp: number): string => {
+  const date = new Date(timestamp * 1000);
+  return date.toLocaleDateString();
+};
+</script>
+
+<style scoped>
+.download-selector-modal {
+  width: 700px;
+  max-width: 90vw;
+  max-height: 90vh;
+  background-color: var(--solid);
+  color: var(--theme-text);
+  border: var(--theme-border) 2px solid;
+  backdrop-filter: blur(10px);
+}
+
+.selected-file {
+  background-color: var(--q-primary) !important;
+  color: white !important;
+}
+
+.file-size {
+  font-weight: 500;
+}
+
+.file-date {
+  margin-left: 10px;
+  color: var(--theme-text-secondary);
+}
+
+.file-downloads {
+  color: var(--theme-text-secondary);
+}
+
+.file-description {
+  margin-top: 5px;
+  white-space: pre-line;
+}
+
+.alternate-sources {
+  border-top: 1px solid var(--theme-border);
+  padding-top: 16px;
+}
+
+.q-field :deep(.q-field__label) {
+  color: var(--theme-text) !important;
+}
+
+.q-field.q-field--outlined :deep(.q-field__control) {
+  color: var(--theme-text);
+}
+</style>

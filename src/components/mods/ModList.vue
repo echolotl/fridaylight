@@ -1,11 +1,12 @@
 <template>
   <div>
     <q-scroll-area style="height: 100%">
-      <q-list padding class="phantom-font" style="color: var(--theme-text);">        <q-item-label header class="flex justify-between items-center">
+      <q-list padding class="phantom-font" style="color: var(--theme-text);">      <q-item-label header class="flex justify-between items-center">
           Mods
           <div class="flex">
             <q-btn flat round dense icon="settings" @click="$emit('open-settings')" class="q-mr-xs" />
             <q-btn flat round dense icon="add" @click="$emit('add-mod')" class="q-mr-xs" />
+            <q-btn flat round dense icon="create_new_folder" @click="showCreateFolderDialog = true" class="q-mr-xs" tooltip="Create Folder" />
             <q-btn flat round dense icon="folder_open" @click="$emit('add-mods-folder')" tooltip="Import Folder of Mods" />
           </div>
         </q-item-label>
@@ -80,6 +81,7 @@
               @delete-mod="confirmDelete($event)"
               @delete-folder="confirmDeleteFolder(item.data)"
               @update-folder-mods="handleFolderModsUpdate"
+              @reorder-folder-mods="handleFolderModsReorder"
             />
             
             <!-- Show mod if it's not in any folder and is a mod type -->
@@ -143,6 +145,12 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+    
+    <!-- Create Folder Modal -->
+    <CreateFolderModal
+      v-model="showCreateFolderDialog"
+      @create-folder="handleCreateFolder"
+    />
   </div>
 </template>
 
@@ -152,35 +160,9 @@ import { downloadingMods } from '../../stores/downloadState';
 import draggable from 'vuedraggable';
 import ModListItem from './ModListItem.vue';
 import FolderListItem from './FolderListItem.vue';
-
-interface Engine {
-  engine_type: string;
-  engine_name: string;
-  engine_icon: string;
-  mods_folder: boolean;
-  mods_folder_path: string;
-}
-
-interface Folder {
-  id: string;     // Unique ID for the folder
-  mods: string[]; // Array of mod IDs
-  color: string;  // Color for the folder icon
-  name: string;   // Name of the folder
-}
-
-interface Mod {
-  id: string;
-  name: string;
-  path: string;
-  executable_path?: string;
-  icon_data?: string;
-  banner_data?: string;
-  logo_data?: string | null;
-  version?: string;
-  engine_type?: string;  // Kept for backward compatibility (probably will remove for full release)
-  engine: Engine;        // New extended engine information
-  display_order?: number;
-}
+import CreateFolderModal from './CreateFolderModal.vue';
+import { Mod, Folder, DisplayItem } from '../../types';
+import { v4 as uuidv4 } from 'uuid';
 
 const props = defineProps({
   mods: {
@@ -200,6 +182,7 @@ const props = defineProps({
 // Create a local reactive copy of the mods array for reordering
 const modsList = ref<Mod[]>([]);
 const foldersList = ref<Folder[]>([]);
+const displayItems = ref<DisplayItem[]>([]);
 
 // Initialize modsList and foldersList when component is first created
 watch(() => props.mods, (newMods) => {
@@ -213,42 +196,42 @@ watch(() => props.mods, (newMods) => {
 watch(() => props.folders, (newFolders) => {
   if (newFolders && newFolders.length > 0) {
     console.log('ModList received new folders from parent:', 
-      newFolders.map(folder => ({ name: folder.name, mods: folder.mods.length })));
+      newFolders.map(folder => ({ name: folder.name, mods: folder.mods.length, display_order: folder.display_order })));
     foldersList.value = [...newFolders];
   }
 }, { immediate: true, deep: true });
 
-// Determine if a mod is inside any folder
+// Determine if a mod is inside any folder using the mod's folder_id
 const isModInFolder = (modId: string) => {
-  return foldersList.value.some(folder => folder.mods.includes(modId));
+  const mod = modsList.value.find(mod => mod.id === modId);
+  // Return true only if folder_id exists AND is not null/undefined/empty
+  return mod?.folder_id !== undefined && mod?.folder_id !== null && mod?.folder_id !== '';
 };
-
-// Create a combined list of mods and folders for the draggable component
-const displayItems = ref<Array<{id: string, type: string, data: any}>>([]);
 
 // Update displayItems when mods or folders change
 const updateDisplayItems = () => {
-  const items: Array<{ id: string; type: 'folder' | 'mod'; data: Folder | Mod }> = [];
+  const items: DisplayItem[] = [];
   
-  // First, add all folders
-  foldersList.value.forEach(folder => {
-    items.push({
-      id: `folder-${folder.id}`,
-      type: 'folder',
-      data: folder
-    });
-  });
-  
-  // Next, add all mods that are not in folders
-  modsList.value.forEach(mod => {
-    if (!isModInFolder(mod.id)) {
-      items.push({
+  // Add folders and standalone mods
+  const allItems = [
+    ...foldersList.value.map(folder => ({
+      id: folder.id,
+      type: 'folder' as const,
+      data: folder,
+      display_order: folder.display_order
+    })),
+    ...modsList.value
+      .filter(mod => !mod.folder_id) // Only include mods not in folders
+      .map(mod => ({
         id: mod.id,
-        type: 'mod',
-        data: mod
-      });
-    }
-  });
+        type: 'mod' as const,
+        data: mod,
+        display_order: mod.display_order
+      }))
+  ];
+  
+  // Sort items by display_order
+  items.push(...allItems.sort((a, b) => a.display_order - b.display_order));
   
   displayItems.value = items;
 };
@@ -258,7 +241,18 @@ watch([modsList, foldersList], () => {
   updateDisplayItems();
 }, { deep: true, immediate: true });
 
-const emit = defineEmits(['select-mod', 'add-mod', 'add-mods-folder', 'delete-mod', 'open-settings', 'reorder-mods', 'update-folder']);
+const emit = defineEmits([
+  'select-mod',
+  'add-mod', 
+  'add-mods-folder', 
+  'delete-mod',
+  'delete-folder', 
+  'open-settings', 
+  'reorder-items',
+  'update-folder',
+  'update-mod',  // Added new emit type for mod updates
+  'reorder-folder-mods'  // Added new emit type for reordering mods within folders
+]);
 
 const showDeleteDialog = ref(false);
 const showDeleteFolderDialog = ref(false);
@@ -282,6 +276,30 @@ const deleteMod = () => {
   }
 };
 
+// Create folder dialog state
+const showCreateFolderDialog = ref(false);
+
+// Handle folder creation
+const handleCreateFolder = (folderData: { name: string, color: string }) => {
+  // Create a new folder object with a unique ID
+  const newFolder: Folder = {
+    id: uuidv4(),
+    name: folderData.name,
+    color: folderData.color,
+    mods: [],
+    display_order: displayItems.value.length // Add at the end of the list
+  };
+  
+  // Update our local foldersList
+  foldersList.value.push(newFolder);
+  
+  // Emit the new folder to the parent component
+  emit('update-folder', newFolder);
+  
+  // Update display items
+  updateDisplayItems();
+};
+
 const deleteFolder = () => {
   if (folderToDelete.value) {
     emit('delete-folder', folderToDelete.value.id);
@@ -291,32 +309,88 @@ const deleteFolder = () => {
 
 // Function to handle when drag starts
 const onDragStart = () => {
-  console.log('Drag started, current order:', modsList.value.map(mod => mod.name));
+  console.log('Drag started, current display items:', 
+    displayItems.value.map(item => `${item.type}:${item.type === 'mod' ? item.data.name : item.data.name}`));
 };
 
 // Function to handle when drag ends
 const onDragEnd = () => {
-  // Compare the old and new orders to see if they're actually different
-  const oldNames = props.mods.map(mod => mod.name).join(',');
-  const newNames = modsList.value.map(mod => mod.name).join(',');
+  console.log('Drag ended, new display items order:', 
+    displayItems.value.map(item => `${item.type}:${item.type === 'mod' ? item.data.name : item.data.name}`));
   
-  console.log('Drag ended, new order:', modsList.value.map(mod => mod.name));
-  console.log('Drag ended, display_order values:', modsList.value.map(mod => ({ name: mod.name, display_order: mod.display_order })));
+  // Update display_order for all items based on their new position
+  const updatedItems = displayItems.value.map((item, index) => {
+    // Create a new object to avoid reactivity issues
+    const updatedItem = { ...item };
+    
+    // Update the display_order in the data object
+    if (item.type === 'mod') {
+      updatedItem.data = { ...item.data, display_order: index };
+    } else if (item.type === 'folder') {
+      updatedItem.data = { ...item.data, display_order: index };
+    }
+    
+    // Update the display_order in the item itself
+    updatedItem.display_order = index;
+    
+    return updatedItem;
+  });
   
-  if (oldNames !== newNames) {
-    console.log('Order changed, emitting new order');
-    
-    // Clone the modsList to avoid Vue's reactivity issues with nested objects
-    const modsToEmit = modsList.value.map(mod => ({...mod}));
-    
-    // Emit the reordered list to the parent component
-    emit('reorder-mods', modsToEmit);
-  } else {
-    console.log('No order change detected');
-  }
+  // Emit the updated items with their new display orders
+  emit('reorder-items', updatedItems);
+  
+  console.log('Emitted reordered items with updated display_order values');
 };
 
 // Handle updates from the folder when mods are dragged in or out
+// Handle reordering of mods within a specific folder
+const handleFolderModsReorder = (event: { folderId: string; updatedMods: Mod[] }) => {
+  console.log(`Reordering mods within folder ${event.folderId}:`, 
+    event.updatedMods.map(mod => mod.name));
+  
+  // Find the folder
+  const folderIndex = foldersList.value.findIndex(folder => folder.id === event.folderId);
+  if (folderIndex === -1) {
+    console.error('Could not find folder with ID', event.folderId);
+    return;
+  }
+  
+  // Create a new folder object with updated mods array in the desired order
+  // Important: preserve all original properties, especially display_order
+  const updatedFolder = {
+    ...foldersList.value[folderIndex],
+    mods: event.updatedMods.map(mod => mod.id)
+  };
+  
+  // Update the display_order_in_folder for each mod
+  event.updatedMods.forEach((mod, index) => {
+    // Find the mod in modsList to update it
+    const modIndex = modsList.value.findIndex(m => m.id === mod.id);
+    if (modIndex !== -1) {
+      // Create a new mod object with updated display_order_in_folder
+      const updatedMod = {
+        ...modsList.value[modIndex],
+        display_order_in_folder: index
+      };
+      
+      // Update the mod in our array
+      modsList.value[modIndex] = updatedMod;
+      
+      // Emit event to update the mod in parent component
+      emit('update-mod', updatedMod);
+    }
+  });
+  
+  // Update the folder in our array
+  foldersList.value[folderIndex] = updatedFolder;
+  
+  // Emit event to update the folder in parent component
+  emit('update-folder', updatedFolder);
+  
+  // Update display items
+  updateDisplayItems();
+};
+
 const handleFolderModsUpdate = (event: { folderId: string; action: 'add' | 'remove'; modId: string }) => {
   console.log('Folder mods update:', event);
   
@@ -325,15 +399,45 @@ const handleFolderModsUpdate = (event: { folderId: string; action: 'add' | 'remo
   if (folderIndex === -1) return;
 
   const folder = { ...foldersList.value[folderIndex] };
-  
-  // Update the folder's mod list based on the action
+    // Find the mod that's being updated
+  const modIndex = modsList.value.findIndex(mod => mod.id === event.modId);
+  if (modIndex === -1) return;
+    // Update the folder's mod list based on the action
   if (event.action === 'add') {
     // Only add if it's not already in the folder
     if (!folder.mods.includes(event.modId)) {
       folder.mods.push(event.modId);
-    }
-  } else if (event.action === 'remove') {
+      
+      // Get the new display_order_in_folder (use the folder's current mods length as the index)
+      const newDisplayOrderInFolder = folder.mods.length - 1;
+      
+      // Update the mod's folder_id AND display_order_in_folder properties
+      const updatedMod = { 
+        ...modsList.value[modIndex], 
+        folder_id: event.folderId,
+        display_order_in_folder: newDisplayOrderInFolder 
+      };
+      const newModsList = [...modsList.value];
+      newModsList[modIndex] = updatedMod;
+      modsList.value = newModsList;
+      
+      // Emit the mod update to the parent component
+      emit('update-mod', updatedMod);
+    }} else if (event.action === 'remove') {
     folder.mods = folder.mods.filter(id => id !== event.modId);
+    
+    // Clear both folder_id and display_order_in_folder properties to make it show in the main list again
+    const updatedMod = { 
+      ...modsList.value[modIndex], 
+      folder_id: null, 
+      display_order_in_folder: 0
+    };
+    const newModsList = [...modsList.value];
+    newModsList[modIndex] = updatedMod;
+    modsList.value = newModsList;
+    
+    // Emit the mod update to the parent component
+    emit('update-mod', updatedMod);
   }
   
   // Create a new folders array to maintain reactivity

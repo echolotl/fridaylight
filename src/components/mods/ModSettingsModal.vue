@@ -247,28 +247,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue';
-
-interface Engine {
-  engine_type: string;
-  engine_name: string;
-  engine_icon: string;
-  mods_folder: boolean;
-  mods_folder_path: string;
-}
-
-interface Mod {
-  id: string;
-  name: string;
-  path: string;
-  description?: string;
-  executable_path?: string;
-  icon_data?: string;
-  banner_data?: string;
-  logo_data?: string | null;
-  version?: string;
-  engine_type?: string;  // Kept for backward compatibility (probably will remove for full release)
-  engine: Engine;        // New extended engine information
-}
+import { Mod, Engine } from '../../types';
 
 const props = defineProps({
   modelValue: {
@@ -289,6 +268,7 @@ const form = ref<Mod>({
   path: '',
   executable_path: '',
   icon_data: '',
+  display_order: 0,
   banner_data: '',
   logo_data: '',
   version: '',
