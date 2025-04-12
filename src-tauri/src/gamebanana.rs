@@ -53,15 +53,15 @@ pub async fn fetch_gamebanana_mods(query: String, page: i64) -> Result<GameBanan
             return Err(format!("Failed to fetch mods: {}", e));
         },
     };
-    
-    // Try to parse response as array first (new format)
+      // Try to parse response as array first (new format)
     let mods_array: Result<Vec<serde_json::Value>, _> = response.json().await;
     
-    let mods_data = match mods_array {
+    let (mods_data, total_count) = match mods_array {
         Ok(array) => {
             // New format - direct array of mods
             debug!("Successfully parsed API response as array of {} mods", array.len());
-            array
+            // For direct arrays, we only know the number of mods in this page
+            (array, None)
         },
         Err(_) => {
             // Try the old format with _aRecords
@@ -81,10 +81,19 @@ pub async fn fetch_gamebanana_mods(query: String, page: i64) -> Result<GameBanan
             
             match api_data {
                 Ok(data) => {
+                    // Extract total record count from _aMetadata if available
+                    let total_count = data.get("_aMetadata")
+                        .and_then(|metadata| metadata.get("_nRecordCount"))
+                        .and_then(|count| count.as_i64());
+                    
+                    if let Some(count) = total_count {
+                        debug!("Found _nRecordCount in metadata: {}", count);
+                    }
+                    
                     // Extract records from _aRecords if it exists
                     if let Some(records) = data.get("_aRecords").and_then(|r| r.as_array()) {
                         debug!("Found _aRecords with {} items", records.len());
-                        records.clone()
+                        (records.clone(), total_count)
                     } else {
                         // If neither format works, return empty array
                         error!("Invalid API response format: {}", data);
@@ -99,8 +108,8 @@ pub async fn fetch_gamebanana_mods(query: String, page: i64) -> Result<GameBanan
         }
     };
     
-    // Total is the array length since we don't have _nRecordCount anymore
-    let total = mods_data.len() as i64;
+    // Use the total_count from metadata if available, otherwise use the length of the data we got
+    let total = total_count.unwrap_or(mods_data.len() as i64);
     debug!("Total mods found: {}", total);
     
     // Map the API data to our GameBananaMod struct

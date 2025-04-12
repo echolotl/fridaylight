@@ -48,12 +48,11 @@
       <div class="no-results" v-else>
         <q-icon name="search_off" size="48px" />
         <div>No mods found matching "{{ searchQuery }}"</div>
-      </div>
-      
-      <div class="pagination" v-if="searchResults.length > 0">
+      </div>      <div class="pagination" v-if="searchResults.length > 0">
         <q-pagination
           v-model="currentPage"
           :max="totalPages"
+          :min="1"
           direction-links
           boundary-links
           @update:model-value="changePage"
@@ -261,14 +260,14 @@
               </div>
             </div>
           </q-tab-panel>
-        </q-tab-panels>
-        
-        <div class="pagination">
+        </q-tab-panels>        <div class="pagination">
           <q-pagination
             v-model="currentPage"
             :max="totalPages"
+            :min="1"
             direction-links
             boundary-links
+            input
             @update:model-value="changePage"
           />
         </div>
@@ -965,6 +964,25 @@ const downloadModpackForSelectedEngine = async () => {
       
       console.log('Download result:', result);
     }
+    
+    // Dismiss the loading notification
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification();
+      pendingDownloadNotification = null;
+    }
+    
+    // Show success notification
+    $q.notify({
+      type: 'positive',
+      message: `"${mod.name}" installed successfully!`,
+      caption: `Ready to play from the mods list`,
+      position: 'bottom-right',
+      timeout: 5000
+    });
+    
+    // Trigger the refresh event to update the mod list
+    const refreshEvent = new CustomEvent('refresh-mods');
+    window.dispatchEvent(refreshEvent);
   } catch (error) {
     // Show error notification
     $q.notify({
