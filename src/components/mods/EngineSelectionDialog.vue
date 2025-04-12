@@ -81,7 +81,7 @@ const props = defineProps({
     default: () => []
   },
   engineType: {
-    type: String,
+    type: String as () => string | null,
     default: null
   },
   modName: {
