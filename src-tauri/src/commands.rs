@@ -375,9 +375,20 @@ pub async fn download_engine_command(
     crate::download::download_engine(engine_type, install_location, app).await
 }
 
+// Command to fetch mod info by ID
+#[tauri::command]
+pub async fn get_mod_info_command(mod_id: i64) -> Result<serde_json::Value, String> {
+    info!("Fetching mod info for ID: {}", mod_id);
+    crate::gamebanana::get_mod_info(mod_id).await
+}
+
 // Setup function for Tauri application
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|_app, argv, _cwd| {
+            println!("a new app instance was opened with {argv:?} and the deep link event was already triggered");
+            // when defining deep link schemes at runtime, you must also check `argv` here
+          }))
         .plugin(tauri_plugin_sql::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -385,12 +396,18 @@ pub fn run() {
         .manage(ModsState(Mutex::new(HashMap::new())))
         .setup(|app| {
             #[cfg(desktop)]
-            app.deep_link().register("flmod")?;
+            {
+                match app.deep_link().register("flmod") {
+                    Ok(_) => info!("Successfully registered deep link protocol 'flmod://"),
+                    Err(e) => error!("Failed to register deep link protocol: {}", e),
+                }
+            }
             Ok(logger::init(&app.handle()).map_err(|e| {
                 error!("Logger initialization failed: {}", e);
                 e
             })?)
-        })        .invoke_handler(tauri::generate_handler![
+        })
+        .invoke_handler(tauri::generate_handler![
             select_mod_folder,
             select_settings_folder,
             select_executable,
@@ -407,7 +424,8 @@ pub fn run() {
             toggle_mod_enabled,
             is_windows_11,
             get_mod_download_files_command,
-            download_engine_command
+            download_engine_command,
+            get_mod_info_command
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

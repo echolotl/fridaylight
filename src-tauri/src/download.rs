@@ -872,9 +872,9 @@ pub async fn download_engine(
         engine: Some(crate::models::Engine {
             engine_type: Some(engine_type.clone()),
             engine_name: Some(engine_name.to_string()),
-            engine_icon: icon_data.clone(),
+            engine_icon: None, // Don't set the engine icon
             mods_folder: Some(true),
-            mods_folder_path: Some(engine_folder.join("mods").to_string_lossy().to_string()),
+            mods_folder_path: Some("mods".to_string()),
         }),
     };
     
