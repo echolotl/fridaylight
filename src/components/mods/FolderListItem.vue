@@ -6,6 +6,7 @@
     @click="toggleExpanded"
     class="draggable-item cursor-move folder"
     :class="{ 'expanded-folder': isExpanded }"
+    :style="{ borderBottomColor: isExpanded ? folder.color : 'transparent' }"
   >      
     <q-item-section avatar>
       <q-avatar size="32px" square class="folder-icon">
@@ -183,7 +184,7 @@ const handleModsChange = (event: any) => {
 }
 
 .folder-contents {
-  margin-left: 30px;
+  margin-left: 31px;
   border-left: 2px dashed var(--theme-border);
 }
 
@@ -195,6 +196,8 @@ const handleModsChange = (event: any) => {
 .expanded-folder {
   background-color: var(--theme-surface-light);
   border-radius: 0 1rem 0 0 !important;
+  border-bottom-width: 2px;
+  border-bottom-style: solid;
 }
 
 .folder-action-btn {

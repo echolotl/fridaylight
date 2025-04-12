@@ -6,7 +6,6 @@ use crate::modfiles::{find_mod_metadata_files, get_executable_directory};
 use crate::modenabler::{toggle_mod_enabled_state, check_mod_enabled_state};
 use crate::models::{ModInfo, ModsState, GameBananaResponse, EngineModsResponse, ModDisableResult};
 use log::{debug, error, info, warn};
-use tauri::utils::config::WindowEffectsConfig;
 use tauri::window::{Effect, EffectsBuilder};
 use std::collections::HashMap;
 use std::path::Path;
@@ -14,6 +13,7 @@ use std::process::Command;
 use std::sync::Mutex;
 use tauri::{Manager, State};
 use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_deep_link::DeepLinkExt;
 
 // Command to open a folder dialog and get the selected folder path
 #[tauri::command]
@@ -364,6 +364,17 @@ pub async fn get_mod_download_files_command(mod_id: i64) -> Result<serde_json::V
     get_mod_download_files(mod_id).await
 }
 
+// Command to download an engine
+#[tauri::command]
+pub async fn download_engine_command(
+    engine_type: String, 
+    install_location: Option<String>,
+    app: tauri::AppHandle
+) -> Result<String, String> {
+    info!("Starting direct download process for {} engine", engine_type);
+    crate::download::download_engine(engine_type, install_location, app).await
+}
+
 // Setup function for Tauri application
 pub fn run() {
     tauri::Builder::default()
@@ -373,6 +384,8 @@ pub fn run() {
         .plugin(tauri_plugin_deep_link::init())
         .manage(ModsState(Mutex::new(HashMap::new())))
         .setup(|app| {
+            #[cfg(desktop)]
+            app.deep_link().register("flmod")?;
             Ok(logger::init(&app.handle()).map_err(|e| {
                 error!("Logger initialization failed: {}", e);
                 e
@@ -393,7 +406,8 @@ pub fn run() {
             get_file_as_base64,
             toggle_mod_enabled,
             is_windows_11,
-            get_mod_download_files_command
+            get_mod_download_files_command,
+            download_engine_command
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

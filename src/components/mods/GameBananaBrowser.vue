@@ -272,7 +272,17 @@
           />
         </div>
       </div>
-    </div>    <!-- Download File Selector Dialog -->
+    </div>
+    <div class="engine-download">
+      <div class="text-h4 phantom-font-difficulty text-center engine-text">Engine Downloads</div>
+    <div class="engine-download-buttons text-center">
+      <q-btn flat label="Psych Engine" color="purple" @click="downloadEngine('psych')" class="engine-btn" />
+      <q-btn flat label="V-Slice" color="blue" @click="downloadEngine('vslice')" class="engine-btn" />
+      <q-btn flat label="FPS Plus" color="pink" @click="downloadEngine('fpsplus')" class="engine-btn" />
+      <q-btn flat label="Codename Engine" color="orange" @click="downloadEngine('codename')" class="engine-btn" />
+    </div> 
+  </div>
+    <!-- Download File Selector Dialog -->
     <DownloadFileSelector
       v-model="showFileSelector"
       :files="downloadFiles"
@@ -1481,6 +1491,94 @@ const getModsFolderPath = (engineMod: any): string => {
   // Construct the path to the mods folder
   return `${baseDir}/mods`;
 };
+
+// Add new method to handle direct engine downloads
+const downloadEngine = async (engineType: string) => {
+  try {
+    // Show loading notification
+    pendingDownloadNotification = $q.notify({
+      type: 'ongoing',
+      message: `Preparing to download ${formatEngineType(engineType)}...`,
+      position: 'bottom-right',
+      timeout: 0
+    });
+
+    // Get the install location from settings
+    let installLocation: string | null = null;
+    try {
+      if (window.db && window.db.service) {
+        installLocation = await window.db.service.getSetting('installLocation');
+      }
+    } catch (error) {
+      console.warn('Could not get install location from settings:', error);
+    }
+    
+    console.log(`Downloading ${engineType} engine to ${installLocation || 'default location'}`);
+    
+    // Call backend to download the engine directly
+    const result = await invoke<string>('download_engine_command', { 
+      engineType,
+      installLocation
+    });
+    
+    // Process the result
+    let modInfo: any;
+    
+    try {
+      // Try to parse as JSON
+      const parsed = JSON.parse(result);
+      modInfo = parsed.mod_info;
+    } catch (e) {
+      // If parsing fails, assume it's just the path string
+      const modPath = result;
+      // Get mod info directly from the backend
+      const allMods = await invoke<any[]>('get_mods');
+      modInfo = allMods.find(m => m.path === modPath);
+    }
+    
+    // Save the mod to the database
+    if (modInfo) {
+      await saveModToDatabase(modInfo);
+    }
+    
+    // Dismiss loading notification
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification();
+      pendingDownloadNotification = null;
+    }
+    
+    // Show success notification
+    $q.notify({
+      type: 'positive',
+      message: `${formatEngineType(engineType)} installed successfully!`,
+      caption: `Ready to play from the mods list`,
+      position: 'bottom-right',
+      timeout: 5000
+    });
+    
+    // Trigger the refresh event to update the mod list
+    const refreshEvent = new CustomEvent('refresh-mods');
+    window.dispatchEvent(refreshEvent);
+    
+  } catch (error) {
+    // Show error notification
+    $q.notify({
+      type: 'negative',
+      message: `Failed to download ${formatEngineType(engineType)}`,
+      caption: String(error),
+      position: 'bottom-right',
+      timeout: 5000
+    });
+    
+    // Dismiss any pending notification
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification();
+      pendingDownloadNotification = null;
+    }
+    
+    console.error(`Failed to download ${engineType} engine:`, error);
+  }
+};
 </script>
 
 <style scoped>
@@ -1694,5 +1792,14 @@ const getModsFolderPath = (engineMod: any): string => {
 .text-subtitle1 {
     color: var(--theme-text);
     font-size: 1.5rem;
+}
+.engine-text {
+  margin-bottom: 1rem;
+}
+.engine-download-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 16px;
 }
 </style>
