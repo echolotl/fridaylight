@@ -365,11 +365,16 @@ pub async fn download_gamebanana_mod(
         
         return Err(error_msg);
     }
-    
-    // Extract the archive based on its type
+      // Extract the archive based on its type
     let extraction_result = extract_archive(&download_path, &mod_folder, &name, mod_id, &app);
     if let Err(e) = extraction_result {
         return Err(e);
+    }
+    
+    // Reorganize modpack structure if needed (for better user experience)
+    if let Err(e) = reorganize_modpack(&mod_folder) {
+        warn!("Failed to reorganize modpack structure: {}", e);
+        // Continue anyway as this is not critical
     }
     
     // Emit progress event for finalizing
@@ -487,6 +492,119 @@ fn extract_archive(
             }
         }
     }
+}
+
+// Function to reorganize modpack content for easier use
+// This checks if there's only one directory in the root and if so,
+// moves all its contents up a level for easier access
+fn reorganize_modpack(mod_folder: &Path) -> Result<bool, String> {
+    debug!("Checking modpack structure at: {}", mod_folder.display());
+    
+    // Get all entries in the directory
+    let entries = match fs::read_dir(mod_folder) {
+        Ok(entries) => entries.filter_map(|e| e.ok()).collect::<Vec<_>>(),
+        Err(e) => {
+            let error_msg = format!("Failed to read modpack directory: {}", e);
+            error!("{}", error_msg);
+            return Err(error_msg);
+        }
+    };
+    
+    // Check if there's only one entry and it's a directory
+    if entries.len() == 1 && entries[0].path().is_dir() {
+        let single_dir = entries[0].path();
+        debug!("Modpack contains a single directory, reorganizing: {}", 
+               single_dir.file_name().unwrap_or_default().to_string_lossy());
+        
+        // Get all contents of this single directory
+        let sub_entries = match fs::read_dir(&single_dir) {
+            Ok(entries) => entries.filter_map(|e| e.ok()).collect::<Vec<_>>(),
+            Err(e) => {
+                let error_msg = format!("Failed to read subdirectory: {}", e);
+                error!("{}", error_msg);
+                return Err(error_msg);
+            }
+        };
+        
+        // Move each item up one level
+        for entry in sub_entries {
+            let source_path = entry.path();
+            let filename = match source_path.file_name() {
+                Some(name) => name,
+                None => continue, // Skip entries without a valid filename
+            };
+            
+            let dest_path = mod_folder.join(filename);
+            debug!("Moving {} to {}", source_path.display(), dest_path.display());
+            
+            // Use different methods for files and directories
+            if source_path.is_dir() {
+                if let Err(e) = fs::rename(&source_path, &dest_path) {
+                    warn!("Failed to move directory {}: {}", source_path.display(), e);
+                    // Fall back to copy+delete for cross-device moves
+                    if let Err(e) = copy_dir_all(&source_path, &dest_path) {
+                        let error_msg = format!("Failed to copy directory: {}", e);
+                        error!("{}", error_msg);
+                        return Err(error_msg);
+                    }
+                    if let Err(e) = fs::remove_dir_all(&source_path) {
+                        warn!("Failed to remove source directory after copy: {}", e);
+                        // Continue anyway as the files were copied successfully
+                    }
+                }
+            } else {
+                if let Err(e) = fs::rename(&source_path, &dest_path) {
+                    warn!("Failed to move file {}: {}", source_path.display(), e);
+                    // Fall back to copy+delete for cross-device moves
+                    if let Err(e) = fs::copy(&source_path, &dest_path) {
+                        let error_msg = format!("Failed to copy file: {}", e);
+                        error!("{}", error_msg);
+                        return Err(error_msg);
+                    }
+                    if let Err(e) = fs::remove_file(&source_path) {
+                        warn!("Failed to remove source file after copy: {}", e);
+                        // Continue anyway as the file was copied successfully
+                    }
+                }
+            }
+        }
+        
+        // Delete the now-empty directory
+        debug!("Removing empty directory: {}", single_dir.display());
+        if let Err(e) = fs::remove_dir(&single_dir) {
+            let error_msg = format!("Failed to remove empty directory: {}", e);
+            error!("{}", error_msg);
+            return Err(error_msg);
+        }
+        
+        debug!("Successfully reorganized modpack structure");
+        Ok(true)
+    } else {
+        debug!("Modpack contains multiple entries, no reorganization needed.");
+        Ok(false)
+    }
+}
+
+// Helper function to recursively copy directories
+fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
+    if !dst.exists() {
+        fs::create_dir_all(dst)?;
+    }
+    
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        let src_path = entry.path();
+        let dst_path = dst.join(entry.file_name());
+        
+        if ty.is_dir() {
+            copy_dir_all(&src_path, &dst_path)?;
+        } else {
+            fs::copy(&src_path, &dst_path)?;
+        }
+    }
+    
+    Ok(())
 }
 
 // Helper function to extract ZIP archives
