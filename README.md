@@ -13,10 +13,10 @@ A mod manager for Friday Night Funkin mods! Built using Tauri and Vue.
 ### WIP Features
 
 - [x] Engine mod management
-- [ ] Folder organization
+- [x] Folder organization
 - [ ] Custom CSS/Themes
 - [ ] More metadata support *(feel free to recommend ideas in the Issues tab)*
-- [ ] Gamebanana download version picker
+- [x] Gamebanana download version picker
 - [ ] Gamebanana deep linking
 - [ ] Non-Gamebanana download links
 - [x] Import folder of FNF mod folders *(for migration)*
