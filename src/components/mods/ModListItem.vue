@@ -37,7 +37,7 @@
 <script setup lang="ts">
 import { Mod } from '../../types';
 
-const props = defineProps({
+defineProps({
   mod: {
     type: Object as () => Mod,
     required: true

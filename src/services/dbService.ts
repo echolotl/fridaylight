@@ -1,15 +1,9 @@
-/**
- * Database service for Friday Night Funkin' Mod Launcher
- * Handles all database operations
- */
-
 import Database from '@tauri-apps/plugin-sql';
 import { invoke } from '@tauri-apps/api/core';
 import { v4 as uuidv4 } from 'uuid';
 import { Mod, Folder, DisplayItem } from '../types';
 
 // Constants for database lock protection
-const DB_BUSY_TIMEOUT_MS = 5000;  // 5 seconds timeout for busy connections
 const MAX_RETRY_ATTEMPTS = 3;     // Maximum number of retry attempts
 const RETRY_DELAY_MS = 500;       // Delay between retry attempts in milliseconds
 

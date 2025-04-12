@@ -83,7 +83,7 @@ import ModDetails from './mods/ModDetails.vue';
 import ModSettingsModal from './mods/ModSettingsModal.vue';
 import AppSettingsModal from './AppSettingsModal.vue';
 import GameBananaBrowser from './mods/GameBananaBrowser.vue';
-import { Mod, Folder, Engine, DisplayItem } from '../types';
+import { Mod, Folder, DisplayItem } from '../types';
 
 // TypeScript declaration for db
 declare global {

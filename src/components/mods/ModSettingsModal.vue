@@ -247,7 +247,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue';
-import { Mod, Engine } from '../../types';
+import { Mod } from '../../types';
 
 const props = defineProps({
   modelValue: {

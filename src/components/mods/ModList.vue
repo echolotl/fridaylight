@@ -155,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { downloadingMods } from '../../stores/downloadState';
 import draggable from 'vuedraggable';
 import ModListItem from './ModListItem.vue';

@@ -1,8 +1,8 @@
 [package]
-name = "fnfml"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+name = "fridaylight"
+version = "0.4.0"
+description = "a Friday Night Funkin mod loader"
+authors = ["echolotl"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
