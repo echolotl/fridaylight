@@ -21,6 +21,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useQuasar, Notify } from 'quasar';
 import Sidebar from './components/Sidebar.vue';
 import EngineSelectionDialog from './components/mods/EngineSelectionDialog.vue';
@@ -508,6 +509,7 @@ onMounted(async () => {
     // Set up deep link handler
     onOpenUrl((url) => {
       console.log('Deep link received:', url[0]);
+      await getCurrentWindow().setFocus();
       
       // Process the deep link URL
       if (url[0].startsWith('flmod://')) {
