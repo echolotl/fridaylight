@@ -507,7 +507,7 @@ const getModsFolderPath = (engineMod: any): string => {
 onMounted(async () => {
   try {
     // Set up deep link handler
-    onOpenUrl((url) => {
+    onOpenUrl(async (url) => {
       console.log('Deep link received:', url[0]);
       await getCurrentWindow().setFocus();
       
