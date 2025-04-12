@@ -368,7 +368,7 @@ pub async fn get_download_url(mod_id: i64) -> Result<String, String> {
         }
     };
     
-    // Extract the first file's download URL
+    // Extract the first file's download URL as default behavior
     match download_page.get("_aFiles")
         .and_then(|files| files.as_array())
         .and_then(|files_array| {
@@ -385,6 +385,41 @@ pub async fn get_download_url(mod_id: i64) -> Result<String, String> {
             let err_msg = "No download URLs found in the download page";
             error!("{}", err_msg);
             Err(err_msg.to_string())
+        }
+    }
+}
+
+// Function to get all download files information for a mod
+pub async fn get_mod_download_files(mod_id: i64) -> Result<serde_json::Value, String> {
+    let download_page_url = format!("https://gamebanana.com/apiv11/Mod/{}/DownloadPage", mod_id);
+    debug!("Download page API URL: {}", download_page_url);
+    
+    let client = reqwest::Client::new();
+    let download_page_response = match client.get(&download_page_url).send().await {
+        Ok(resp) => {
+            debug!("Received download page response with status: {}", resp.status());
+            if !resp.status().is_success() {
+                let status = resp.status();
+                let error_text = format!("Server returned error status: {}", status);
+                error!("{}", error_text);
+                return Err(error_text);
+            }
+            resp
+        },
+        Err(e) => {
+            let error_msg = format!("Failed to fetch download page: {}", e);
+            error!("{}", error_msg);
+            return Err(error_msg);
+        }
+    };
+    
+    // Parse the download page JSON
+    match download_page_response.json().await {
+        Ok(data) => Ok(data),
+        Err(e) => {
+            let error_msg = format!("Failed to parse download page response: {}", e);
+            error!("{}", error_msg);
+            Err(error_msg)
         }
     }
 }

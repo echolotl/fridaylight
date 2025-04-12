@@ -55,10 +55,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { Mod } from '../../types';
 
 const props = defineProps({
   mod: {
-    type: Object,
+    type: Object as () => Mod,
     required: true
   }
 });

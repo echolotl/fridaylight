@@ -4,25 +4,29 @@
     <div 
       class="sidebar"
       :style="{ width: `${sidebarWidth}px` }"
-    >
-      <ModList 
-        :mods="mods" 
+    >      <ModList 
+        :mods="mods"
+        :folders="folders" 
         :selectedModId="selectedMod?.id"
         @select-mod="selectMod"
         @add-mod="selectModFolder"
         @add-mods-folder="selectModsParentFolder"
         @delete-mod="deleteMod"
+        @delete-folder="deleteFolder"
+        @create-folder="createFolder"
+        @add-mod-to-folder="addModToFolder"
         @open-settings="openAppSettings"
-        @reorder-mods="handleModsReorder"
+        @reorder-items="handleModsReorder"
+        @update-mod="updateModDetails"
+        @update-folder="updateFolderDetails"
         class="modlist"
       />
       
       <!-- GameBanana button at the bottom of the sidebar -->
-      <div class="gamebanana-button-container phantom-font">
+      <div class="gamebanana-button-container phantom-font-difficulty">
         <q-btn 
           :class="{'gamebanana-button': true, 'active-gamebanana': showGameBanana}"
           color="secondary" 
-          icon="cloud_download" 
           label="Browse GameBanana" 
           @click="toggleGameBanana"
           flat
@@ -79,6 +83,7 @@ import ModDetails from './mods/ModDetails.vue';
 import ModSettingsModal from './mods/ModSettingsModal.vue';
 import AppSettingsModal from './AppSettingsModal.vue';
 import GameBananaBrowser from './mods/GameBananaBrowser.vue';
+import { Mod, Folder, Engine, DisplayItem } from '../types';
 
 // TypeScript declaration for db
 declare global {
@@ -87,27 +92,8 @@ declare global {
   }
 }
 
-interface Engine {
-  engine_type: string;
-  engine_name: string;
-  engine_icon: string;
-  mods_folder: boolean;
-  mods_folder_path: string;
-}
-
-interface ModInfo {
-  id: string;
-  name: string;
-  path: string;
-  executable_path?: string;
-  icon_data?: string;
-  banner_data?: string;
-  logo_data?: string | null;
-  version?: string;
-  engine_type?: string;  // Kept for backward compatibility (probably will remove for full release)
-  engine: Engine;        // New extended engine information
-  display_order?: number;
-}
+// Using ModInfo as an alias for Mod for backward compatibility in this file
+type ModInfo = Mod;
 
 // Use the props without storing in a variable to avoid the unused variable warning
 defineProps<{
@@ -160,6 +146,7 @@ const stopResize = () => {
 
 // Mod list and selection
 const mods = ref<ModInfo[]>([]);
+const folders = ref<Folder[]>([]);
 const selectedMod = ref<ModInfo | null>(null);
 const launchError = ref<string | null>(null);
 const showSettingsModal = ref(false);
@@ -171,6 +158,7 @@ onMounted(async () => {
   emit('resize', sidebarWidth.value);
   try {
     await loadModsFromDatabase();
+    await loadFoldersFromDatabase(); // Load folders after mods
     
     // Load and apply app settings
     await loadAppSettings();
@@ -187,54 +175,23 @@ onMounted(async () => {
 // Load mods from the database
 const loadModsFromDatabase = async () => {
   try {
-    // Check if db is initialized
-    if (!window.db) {
-      console.warn('Database not initialized yet, waiting...');
+    if (!window.db || !window.db.service) {
+      console.warn('Database service not initialized yet, waiting...');
       // Wait a bit and check again
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // If still not initialized, fall back to memory
-      if (!window.db) {
-        console.warn('Database still not initialized, falling back to memory');
+      if (!window.db || !window.db.service) {
+        console.warn('Database service still not initialized, falling back to memory');
         return await loadMods();
       }
     }
-      const result = await window.db.select('SELECT * FROM mods ORDER BY display_order ASC');
     
-    if (result && result.length > 0) {
-      // Process each mod to parse engine_data JSON if it exists
-      // Define interface for the raw database object structure
-      interface ModDataFromDb {
-        id: string;
-        name: string;
-        path: string;
-        executable_path?: string;
-        icon_data?: string;
-        banner_data?: string;
-        logo_data?: string;
-        version?: string;
-        engine_type?: string;
-        display_order?: number;
-        engine_data?: string; // Raw JSON string from DB
-      }
-
-      // Map the result to ModInfo and parse engine_data if it exists
-      const processedMods = result.map((mod: ModDataFromDb) => {
-        // Parse engine_data if it exists
-        const engineData = mod.engine_data ? JSON.parse(mod.engine_data) : null;
-        
-        return {
-          ...mod,
-          engine: engineData || {
-            engine_type: mod.engine_type || null,
-            engine_name: '',
-            engine_icon: '',
-            mods_folder: true,
-            mods_folder_path: ''
-          }
-        } as ModInfo;
-      });
-      
+    // Use the DatabaseService to get all mods
+    const dbService = window.db.service;
+    const processedMods = await dbService.getAllMods();
+    
+    if (processedMods && processedMods.length > 0) {
       mods.value = processedMods;
       
       // If there's at least one mod, select the first one
@@ -249,6 +206,36 @@ const loadModsFromDatabase = async () => {
     console.error('Failed to load mods from database:', error);
     // Fallback to in-memory mods
     await loadMods();
+  }
+};
+
+// Load folders from the database
+const loadFoldersFromDatabase = async () => {
+  try {
+    if (!window.db || !window.db.service) {
+      console.warn('Database service not initialized yet when loading folders');
+      return;
+    }
+    
+    console.log('Loading folders from database');
+    
+    // Use the DatabaseService to get all folders
+    const dbService = window.db.service;
+    const loadedFolders = await dbService.getAllFolders();
+    
+    if (loadedFolders && loadedFolders.length > 0) {
+      console.log(`Found ${loadedFolders.length} folders in database`);
+      
+      // Update the reactive folders ref
+      folders.value = loadedFolders;
+      console.log('Folders loaded successfully:', folders.value);
+    } else {
+      console.log('No folders found in database');
+      folders.value = [];
+    }
+  } catch (error) {
+    console.error('Failed to load folders from database:', error);
+    folders.value = [];
   }
 };
 
@@ -272,20 +259,15 @@ const loadMods = async () => {
 // Save a mod to the database
 const saveModToDatabase = async (mod: ModInfo) => {
   try {
-    // Check if db is initialized
-    if (!window.db) {
-      console.warn('Database not initialized yet, cannot save mod');
+    if (!window.db || !window.db.service) {
+      console.warn('Database service not initialized yet, cannot save mod');
       return;
     }
     
-    // Convert engine object to JSON string if it exists
-    const engineData = mod.engine ? JSON.stringify(mod.engine) : null;
-    
-    await window.db.execute(
-      `INSERT OR REPLACE INTO mods (id, name, path, executable_path, icon_data, banner_data, logo_data, version, engine_type, display_order, engine_data)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-      [mod.id, mod.name, mod.path, mod.executable_path || null, mod.icon_data || null, mod.banner_data || null, mod.logo_data || null, mod.version || null, mod.engine_type || null, mod.display_order || 9999, engineData]
-    );
+    // Use the DatabaseService to save the mod
+    const dbService = window.db.service;
+    await dbService.saveMod(mod);
+    console.log('Mod saved successfully to database:', mod.name);
   } catch (error) {
     console.error('Failed to save mod to database:', error);
   }
@@ -353,21 +335,31 @@ const syncModsWithBackend = async () => {
 
 // Function to handle mod updates, saving to the database and syncing with backend
 const updateModDetails = async (updatedMod: ModInfo) => {
-  if (selectedMod.value) {
-    // Find and update the mod in the mods array
-    const modIndex = mods.value.findIndex(m => m.id === updatedMod.id);
-    if (modIndex !== -1) {
-      mods.value[modIndex] = updatedMod;
-    }
+  console.log('Updating mod details:', updatedMod.name, 'folder_id:', updatedMod.folder_id);
+  
+  // Find and update the mod in the mods array regardless of whether it's selected
+  const modIndex = mods.value.findIndex(m => m.id === updatedMod.id);
+  if (modIndex !== -1) {
+    // Preserve display_order to prevent mod from moving in the list
+    const currentDisplayOrder = mods.value[modIndex].display_order;
+    updatedMod.display_order = currentDisplayOrder;
     
-    // Update the selected mod
-    selectedMod.value = updatedMod;
+    // Update the mod in the array
+    mods.value[modIndex] = updatedMod;
+    console.log('Updated mod in array at index', modIndex);
+    
+    // If this is the selected mod, update that reference too
+    if (selectedMod.value && selectedMod.value.id === updatedMod.id) {
+      selectedMod.value = updatedMod;
+    }
     
     // Save to database and sync with backend
     await saveModToDatabase(updatedMod);
     
     // Sync the updated mods list with the backend
     await syncModsWithBackend();
+  } else {
+    console.warn('Could not find mod with ID', updatedMod.id, 'in mods array');
   }
 };
 
@@ -422,13 +414,11 @@ const deleteMod = async (modId: string) => {
       selectedMod.value = null;
     }
     
-    // Delete mod from the database
-    if (window.db) {
-      await window.db.execute('DELETE FROM mods WHERE id = $1', [modId]);
+  // Delete mod from the database using the service
+    if (window.db && window.db.service) {
+      await window.db.service.deleteMod(modId);
+      // No need to sync with backend separately since the service handles it
     }
-    
-    // Sync the updated mods list with the backend
-    await syncModsWithBackend();
   } catch (error) {
     console.error('Failed to delete mod:', error);
   }
@@ -438,6 +428,141 @@ const deleteMod = async (modId: string) => {
 const handleRefreshMods = async () => {
   console.log('Refreshing mods list');
   await loadModsFromDatabase();
+  await loadFoldersFromDatabase();
+};
+
+// Create a new folder
+const createFolder = async (folder: Folder) => {
+  console.log('Creating new folder:', folder);
+  try {
+    if (!window.db || !window.db.service) {
+      console.error('Database service not initialized, cannot create folder');
+      return;
+    }
+    
+    // Use the DatabaseService to save the folder
+    await window.db.service.saveFolder(folder);
+    
+    console.log('Folder created successfully in database');
+    
+    // Add the folder to the local folders array
+    folders.value.push({
+      ...folder,
+      mods: [] // Ensure mods is initialized as an empty array
+    });
+    
+    console.log('Updated folders list:', folders.value);
+  } catch (error) {
+    console.error('Error creating folder:', error);
+  }
+};
+
+// Function to handle folder updates, saving to the database
+const updateFolderDetails = async (updatedFolder: Folder) => {
+  console.log('Updating folder details:', updatedFolder.name, 'mods count:', updatedFolder.mods.length);
+  
+  // Find and update the folder in the folders array
+  const folderIndex = folders.value.findIndex(f => f.id === updatedFolder.id);
+  
+  try {
+    if (!window.db || !window.db.service) {
+      console.error('Database service not initialized, cannot save folder');
+      return;
+    }
+    
+    if (folderIndex !== -1) {
+      // Existing folder: preserve display_order to prevent folder from moving in the list
+      const currentDisplayOrder = folders.value[folderIndex].display_order;
+      updatedFolder.display_order = currentDisplayOrder;
+      
+      // Update the folder in the array
+      folders.value[folderIndex] = updatedFolder;
+      console.log('Updated existing folder in array at index', folderIndex);
+    } else {
+      // New folder: add it to the folders array
+      console.log('Adding new folder to array:', updatedFolder.name);
+      folders.value.push(updatedFolder);
+    }
+    
+    // Save to database
+    await window.db.service.saveFolder(updatedFolder);
+    console.log('Folder saved successfully to database:', updatedFolder.name);
+    
+    // No need to explicitly update mods here, since the updateModDetails function
+    // handles that when mods are dragged in/out of folders
+  } catch (error) {
+    console.error('Failed to save folder to database:', error);
+  }
+};
+
+// Add a mod to a folder
+const addModToFolder = async (data: { modId: string, folderId: string }) => {
+  const { modId, folderId } = data;
+  console.log(`Adding mod ${modId} to folder ${folderId}`);
+  
+  try {
+    if (!window.db || !window.db.service) {
+      console.error('Database service not initialized, cannot add mod to folder');
+      return;
+    }
+    
+    // Use the DatabaseService to move the mod to the folder
+    await window.db.service.moveModToFolder(modId, folderId);
+    
+    console.log('Mod added to folder in database');
+    
+    // Update the local folders array
+    const folderIndex = folders.value.findIndex(f => f.id === folderId);
+    if (folderIndex !== -1) {
+      // Add the mod ID to the folder's mods array if it's not already there
+      if (!folders.value[folderIndex].mods.includes(modId)) {
+        folders.value[folderIndex].mods.push(modId);
+      }
+      console.log(`Updated folder ${folderId} with mod ${modId}`);
+      
+      // Update the mod's folder_id in our local mods array
+      const modIndex = mods.value.findIndex(m => m.id === modId);
+      if (modIndex !== -1) {
+        mods.value[modIndex].folder_id = folderId;
+      }
+      
+      // Force a refresh of the UI
+      folders.value = [...folders.value];
+    }
+  } catch (error) {
+    console.error('Error adding mod to folder:', error);
+  }
+};
+
+// Delete a folder
+const deleteFolder = async (folderId: string) => {
+  console.log(`Deleting folder with ID: ${folderId}`);
+  
+  try {
+    if (!window.db || !window.db.service) {
+      console.error('Database service not initialized, cannot delete folder');
+      return;
+    }
+    
+    // Use the DatabaseService to delete the folder
+    await window.db.service.deleteFolder(folderId);
+    
+    console.log('Folder deleted from database');
+    
+    // Remove the folder from the local folders array
+    folders.value = folders.value.filter(f => f.id !== folderId);
+    
+    // Update any mods that were in this folder
+    mods.value.forEach(mod => {
+      if (mod.folder_id === folderId) {
+        mod.folder_id = undefined;
+      }
+    });
+    
+    console.log('Updated folders list after deletion');
+  } catch (error) {
+    console.error('Error deleting folder:', error);
+  }
 };
 
 // Function to open app settings modal
@@ -505,38 +630,55 @@ const loadAppSettings = async () => {
 };
 
 // Function to handle reordering mods
-const handleModsReorder = async (newOrder: ModInfo[]) => {
-  console.log('Reordering mods, new order:', newOrder.map(mod => mod.name));
-  console.log('Before update display_order values:', newOrder.map(mod => ({ name: mod.name, display_order: mod.display_order })));
+const handleModsReorder = async (newOrder: DisplayItem[]) => {
+  console.log('Reordering display items, new order:', 
+    newOrder.map(item => `${item.type}:${item.type === 'mod' ? item.data.name : item.data.name}`));
   
-  // Update the display_order field for each mod based on its position in the array
-  const updatedMods = newOrder.map((mod, index) => {
-    return {
-      ...mod,
-      display_order: index
-    };
-  });
+  // Process the reordered items by type (mods or folders)
+  for (let index = 0; index < newOrder.length; index++) {
+    const item = newOrder[index];
+    
+    if (item.type === 'mod') {
+      // Find the corresponding mod in our mods array and update its display_order
+      const modIndex = mods.value.findIndex(m => m.id === item.data.id);
+      if (modIndex !== -1) {
+        mods.value[modIndex].display_order = index;
+      }
+    } else if (item.type === 'folder') {
+      // Find the corresponding folder in our folders array and update its display_order
+      const folderIndex = folders.value.findIndex(f => f.id === item.data.id);
+      if (folderIndex !== -1) {
+        folders.value[folderIndex].display_order = index;
+      }
+    }
+  }
   
-  console.log('After update display_order values:', updatedMods.map(mod => ({ name: mod.name, display_order: mod.display_order })));
-  
-  // Update the mods array with the new order and display_order values
-  mods.value = updatedMods;
-  
-  try {
+  // Force reactivity update
+  mods.value = [...mods.value];
+  folders.value = [...folders.value];
+    try {
     // Check if db is initialized
     if (!window.db) {
       console.warn('Database not initialized yet, cannot save mod order');
       return;
     }
     
-    // Start a transaction to update all mods at once
+    // Start a transaction to update all mods and folders at once
     await window.db.execute('BEGIN TRANSACTION');
     
-    // Save the updated order to the database
+    // Save the updated mod order to the database
     for (const mod of mods.value) {
       await window.db.execute(
         `UPDATE mods SET display_order = $1 WHERE id = $2`,
         [mod.display_order, mod.id]
+      );
+    }
+    
+    // Save the updated folder order to the database
+    for (const folder of folders.value) {
+      await window.db.execute(
+        `UPDATE folders SET display_order = $1 WHERE id = $2`,
+        [folder.display_order, folder.id]
       );
     }
     

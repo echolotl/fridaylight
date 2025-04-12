@@ -176,6 +176,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Download File Selector Dialog -->
+    <DownloadFileSelector
+      v-model="showFileSelector"
+      :files="downloadFiles"
+      :mod-name="currentDownloadMod?.name || ''"
+      :alternate-file-sources="alternateFileSources"
+      @select="onFileSelected"
+      @cancel="cancelDownload"
+    />
   </div>
 </template>
 
@@ -185,6 +195,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useQuasar, Notify } from 'quasar';
 import { useRouter } from 'vue-router';
+import DownloadFileSelector from './DownloadFileSelector.vue';
 
 // For managing global download state
 import { downloadingMods, updateDownloadProgress, completeDownload, errorDownload } from '../../stores/downloadState';
@@ -295,6 +306,13 @@ const totalPages = ref(1);
 const itemsPerPage = 20;
 const activeView = ref('all'); // 'all', 'search'
 const currentFeaturedSlide = ref(0); // For carousel
+
+// For file selection
+const showFileSelector = ref(false);
+const downloadFiles = ref([]);
+const alternateFileSources = ref([]);
+const currentDownloadMod = ref<GameBananaMod | null>(null);
+let pendingDownloadNotification: any = null;
 
 onMounted(async () => {
   fetchFeaturedMods();
@@ -516,14 +534,201 @@ const changePage = async (page: number) => {
 
 const downloadMod = async (mod: GameBananaMod) => {
   try {
-    // Show download starting notification
-    const notification = $q.notify({
+    currentDownloadMod.value = mod;
+    
+    // Show loading notification
+    pendingDownloadNotification = $q.notify({
       type: 'ongoing',
-      message: `Downloading "${mod.name}"...`,
+      message: `Preparing to download "${mod.name}"...`,
       position: 'bottom-right',
       timeout: 0
     });
     
+    // Check if this mod has multiple download options
+    const downloadInfo = await invoke<any>('get_mod_download_files_command', { modId: mod.id });
+    
+    // Check if there are multiple files
+    if (downloadInfo._aFiles && downloadInfo._aFiles.length > 1) {
+      // Set the download files for the selector
+      downloadFiles.value = downloadInfo._aFiles;
+      
+      // Set alternate sources if available
+      alternateFileSources.value = downloadInfo._aAlternateFileSources || [];
+      
+      // Show the file selector dialog
+      showFileSelector.value = true;
+      
+      // Dismiss the loading notification
+      if (pendingDownloadNotification) {
+        pendingDownloadNotification();
+        pendingDownloadNotification = null;
+      }
+      
+      return; // Wait for user selection
+    } else {
+      // If there's only one file or no files available, proceed with normal download
+      await startDownload(mod);
+    }
+  } catch (error) {
+    // Show error notification
+    $q.notify({
+      type: 'negative',
+      message: `Failed to prepare download for "${mod.name}"`,
+      caption: String(error),
+      position: 'bottom-right',
+      timeout: 5000
+    });
+    
+    // Dismiss any pending notification
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification();
+      pendingDownloadNotification = null;
+    }
+    
+    console.error('Failed to prepare mod download:', error);
+  }
+};
+
+// Function called when a file is selected from the dialog
+const onFileSelected = async (selectedFile: any) => {
+  if (!currentDownloadMod.value) return;
+  
+  try {
+    // Create a new notification for the download process
+    pendingDownloadNotification = $q.notify({
+      type: 'ongoing',
+      message: `Downloading "${currentDownloadMod.value.name}"...`,
+      position: 'bottom-right',
+      timeout: 0
+    });
+    
+    // Use the specific download URL from the selected file
+    const mod = currentDownloadMod.value;
+    
+    // Get the install location from settings
+    let installLocation: string | null = null;
+    try {
+      if (window.db && window.db.service) {
+        installLocation = await window.db.service.getSetting('installLocation');
+      }
+    } catch (error) {
+      console.warn('Could not get install location from settings:', error);
+    }
+      // Call backend to download using the specific file URL
+    console.log('Using selected file URL:', selectedFile._sDownloadUrl);
+    const result = await invoke<string>('download_gamebanana_mod_command', { 
+      url: selectedFile._sDownloadUrl,
+      name: mod.name,
+      modId: mod.id,
+      installLocation
+    });
+    
+    // Process the result
+    let modInfo: any;
+    let modPath: string;
+    
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(result);
+      modPath = parsed.path;
+      modInfo = parsed.mod_info;
+    } catch (e) {
+      // If parsing fails, assume it's just the path string
+      modPath = result;
+      // Get mod info directly from the backend
+      const allMods = await invoke<any[]>('get_mods');
+      modInfo = allMods.find(m => m.path === modPath);
+      
+      // If we still don't have mod info, create a basic one
+      if (!modInfo) {
+        modInfo = {
+          id: crypto.randomUUID(),
+          name: mod.name,
+          path: modPath,
+          executable_path: null,
+          icon_data: null,
+          banner_data: mod.thumbnailUrl,
+          version: mod.version || null,
+          engine_type: null
+        };
+      }
+    }
+    
+    // Save the mod to the database
+    if (modInfo) {
+      await saveModToDatabase(modInfo);
+    }
+    
+    // Dismiss loading notification
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification();
+      pendingDownloadNotification = null;
+    }
+    
+    // Show success notification
+    $q.notify({
+      type: 'positive',
+      message: `"${mod.name}" downloaded and installed successfully!`,
+      caption: `Ready to play from the mods list`,
+      position: 'bottom-right',
+      timeout: 5000
+    });
+    
+    // Trigger the refresh event to update the mod list
+    const refreshEvent = new CustomEvent('refresh-mods');
+    window.dispatchEvent(refreshEvent);
+    
+    // Reset current download mod
+    currentDownloadMod.value = null;
+    
+  } catch (error) {
+    // Show error notification
+    $q.notify({
+      type: 'negative',
+      message: `Failed to download "${currentDownloadMod.value?.name || 'Mod'}"`,
+      caption: String(error),
+      position: 'bottom-right',
+      timeout: 5000
+    });
+    
+    // Dismiss any pending notification
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification();
+      pendingDownloadNotification = null;
+    }
+    
+    console.error('Failed to download mod:', error);
+    
+    // Reset current download mod
+    currentDownloadMod.value = null;
+  }
+};
+
+// Function to cancel the download
+const cancelDownload = () => {
+  // Dismiss any pending notification
+  if (pendingDownloadNotification) {
+    pendingDownloadNotification();
+    pendingDownloadNotification = null;
+  }
+  
+  // Show cancellation notification
+  if (currentDownloadMod.value) {
+    $q.notify({
+      type: 'info',
+      message: `Download of "${currentDownloadMod.value.name}" cancelled`,
+      position: 'bottom-right',
+      timeout: 3000
+    });
+  }
+  
+  // Reset current download mod
+  currentDownloadMod.value = null;
+};
+
+// Original download function, renamed to startDownload
+const startDownload = async (mod: GameBananaMod) => {
+  try {
     // First notification for downloading
     $q.notify({
       type: 'info',
@@ -535,10 +740,9 @@ const downloadMod = async (mod: GameBananaMod) => {
     // Get the install location from settings
     let installLocation: string | null = null;
     try {
-      if (window.db) {
-        const result = await window.db.select('SELECT value FROM settings WHERE key = $1', ['installLocation']);
-        if (result && result.length > 0) {
-          installLocation = result[0].value;
+      if (window.db && window.db.service) {
+        installLocation = await window.db.service.getSetting('installLocation');
+        if (installLocation) {
           console.log('Using custom install location from settings:', installLocation);
         }
       }
@@ -566,39 +770,35 @@ const downloadMod = async (mod: GameBananaMod) => {
     } catch (e) {
       // If parsing fails, assume it's just the path string
       modPath = result;
-      // Get mod info directly from the backend using the path
-      console.log('Retrieving mod info for path:', modPath);
-      
-      // Get the list of mods from the backend to find the one we just added
+      // Get mod info directly from the backend
       const allMods = await invoke<any[]>('get_mods');
       modInfo = allMods.find(m => m.path === modPath);
       
       // If we still don't have mod info, create a basic one
       if (!modInfo) {
-        console.log('Creating default mod info for:', modPath);
         modInfo = {
           id: crypto.randomUUID(),
           name: mod.name,
           path: modPath,
           executable_path: null,
           icon_data: null,
-          banner_data: mod.thumbnailUrl, // Use thumbnail URL as fallback banner
-          version: mod.version || null,   // Store version from GameBanana mod
+          banner_data: mod.thumbnailUrl,
+          version: mod.version || null,
           engine_type: null
         };
-      } else {
-        console.log('Found mod info from backend:', modInfo);
       }
     }
     
     // Save the mod to the database
     if (modInfo) {
-      console.log('Saving downloaded mod to database:', modInfo);
       await saveModToDatabase(modInfo);
     }
     
     // Dismiss loading notification
-    notification();
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification();
+      pendingDownloadNotification = null;
+    }
     
     // Show success notification
     $q.notify({
@@ -608,8 +808,6 @@ const downloadMod = async (mod: GameBananaMod) => {
       position: 'bottom-right',
       timeout: 5000
     });
-    
-    console.log('Mod installed to:', modPath);
     
     // Trigger the refresh event to update the mod list
     const refreshEvent = new CustomEvent('refresh-mods');
@@ -623,6 +821,13 @@ const downloadMod = async (mod: GameBananaMod) => {
       position: 'bottom-right',
       timeout: 5000
     });
+    
+    // Dismiss any pending notification
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification();
+      pendingDownloadNotification = null;
+    }
+    
     console.error('Failed to download mod:', error);
   }
 };
@@ -630,19 +835,27 @@ const downloadMod = async (mod: GameBananaMod) => {
 // Save a mod to the database
 const saveModToDatabase = async (mod: any) => {
   try {
-    // Check if db is initialized
-    if (!window.db) {
-      console.warn('Database not initialized yet, cannot save mod');
+    // Check if DatabaseService is initialized
+    if (!window.db || !window.db.service) {
+      console.warn('Database service not initialized yet, cannot save mod');
       return false;
     }
     
-    console.log('Saving mod to database:', mod);
+    console.log('Saving mod to database using DatabaseService:', mod);
     
-    await window.db.execute(
-      `INSERT OR REPLACE INTO mods (id, name, path, executable_path, icon_data, banner_data, logo_data, version, engine_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [mod.id, mod.name, mod.path, mod.executable_path || null, mod.icon_data || null, mod.banner_data || null, mod.logo_data || null, mod.version || null, mod.engine_type || null]
-    );
+    // Make sure the mod has an engine field required by the type
+    if (!mod.engine) {
+      mod.engine = {
+        engine_type: mod.engine_type || 'unknown',
+        engine_name: mod.engine_type || 'Unknown Engine',
+        engine_icon: '',
+        mods_folder: false,
+        mods_folder_path: ''
+      };
+    }
+    
+    // Use the DatabaseService to save the mod
+    await window.db.service.saveMod(mod);
     
     console.log('Mod saved successfully to database:', mod.name);
     return true;
