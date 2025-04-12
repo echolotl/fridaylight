@@ -196,7 +196,7 @@ const accentColorOptions = [
   { label: 'Orange', value: '#FE621D' },
   { label: 'Yellow', value: '#f7c548'},
   { label: 'Red', value: '#C03221' },
-  { label: 'Cyan', value: '#39A9DB' }
+  { label: 'Cyan', value: '#39dbce' }
 ];
 
 const showModal = computed({
