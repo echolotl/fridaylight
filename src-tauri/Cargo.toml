@@ -1,6 +1,6 @@
 [package]
 name = "fridaylight"
-version = "0.4.0"
+version = "0.5.0"
 description = "a Friday Night Funkin mod loader"
 authors = ["echolotl"]
 edition = "2021"
@@ -43,4 +43,7 @@ unrar = "0.5.2"
 roxmltree = "0.20.0"
 windows-version = "0.1.0"
 tauri-plugin-deep-link = "2"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = {version = "2", features = ["deep-link"] }
 

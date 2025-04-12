@@ -365,11 +365,16 @@ pub async fn download_gamebanana_mod(
         
         return Err(error_msg);
     }
-    
-    // Extract the archive based on its type
+      // Extract the archive based on its type
     let extraction_result = extract_archive(&download_path, &mod_folder, &name, mod_id, &app);
     if let Err(e) = extraction_result {
         return Err(e);
+    }
+    
+    // Reorganize modpack structure if needed (for better user experience)
+    if let Err(e) = reorganize_modpack(&mod_folder) {
+        warn!("Failed to reorganize modpack structure: {}", e);
+        // Continue anyway as this is not critical
     }
     
     // Emit progress event for finalizing
@@ -453,6 +458,453 @@ pub async fn download_gamebanana_mod(
     Ok(mod_folder.to_string_lossy().to_string())
 }
 
+// Function to download a specific FNF engine directly
+pub async fn download_engine(
+    engine_type: String,
+    install_location: Option<String>,
+    app: tauri::AppHandle
+) -> Result<String, String> {
+    info!("Starting direct engine download for: {}", engine_type);
+    
+    // Set up engine-specific details
+    let (engine_name, engine_url, engine_banner, engine_logo, engine_icon, engine_description, engine_version) = match engine_type.as_str() {
+        "psych" => (
+            "Psych Engine",
+            "https://github.com/ShadowMario/FNF-PsychEngine/releases/latest/download/PsychEngine-Windows64.zip",
+            "banner_psych.png",
+            "logo_psych.png",
+            "Psych.webp",
+            "Engine originally used on Mind Games Mod, intended to be a fix for the vanilla version's many issues while keeping the casual play aspect of it. Also aiming to be an easier alternative to newbie coders.",
+            "1.0.4"
+        ),
+        "fpsplus" => (
+            "FPS Plus",
+            "https://github.com/Santicp/FNF-FPSPlus/releases/download/2.2.0+engine/fpsplus-windows.zip",
+            "banner_fpsplus.png",
+            "logo_fpsplus.png", 
+            "Fps-plus.webp",
+            "Friday Night Funkin' FPS Plus is an engine mod of Friday Night Funkin' that aims to improve gameplay and add quality of life features.",
+            "7.0.1"
+        ),
+        "codename" => (
+            "Codename Engine",
+            "https://github.com/FNF-CNE-Devs/CodenameEngine/releases/latest/download/CodenameEngine-Windows64.zip",
+            "banner_codename.png",
+            "logo_codename.png",
+            "Codename.webp",
+            "Codename Engine is a new Friday Night Funkin' Engine aimed at simplifying modding, along with extensibility and ease of use.",
+            ""
+        ),
+        "vslice" => (
+            "V-Slice",
+            "https://gamebanana.com/dl/929793", // V-Slice download URL from GameBanana
+            "banner_vslice.png",
+            "logo_vslice.png",
+            "Pre-vslice.webp",
+            "Friday Night Funkin' is a rhythm game. Built using HaxeFlixel for Ludum Dare 47.",
+            "0.6.2"
+        ),
+        _ => {
+            return Err(format!("Unknown engine type: {}", engine_type));
+        }
+    };
+    
+    // Create a unique mod ID for tracking downloads - use UUID instead of hardcoded number
+    let mod_id = uuid::Uuid::new_v4().as_u128() as i64;
+    info!("Generated mod_id for {} engine: {}", engine_type, mod_id);
+    
+    // Emit download started event
+    app.emit("download-started", DownloadStarted {
+        mod_id,
+        name: engine_name.to_string(),
+        content_length: 0, // We don't know the size yet
+        thumbnail_url: format!("/images/engine_icons/{}", engine_icon),
+    }).unwrap_or_else(|e| error!("Failed to emit download-started event: {}", e));
+    
+    // Emit progress event for the engine download fetch step
+    app.emit("download-progress", DownloadProgress {
+        mod_id,
+        name: engine_name.to_string(),
+        bytes_downloaded: 0,
+        total_bytes: 100,
+        percentage: 5,
+        step: "Preparing to download engine...".to_string(),
+    }).unwrap_or_else(|e| error!("Failed to emit download-progress event: {}", e));
+    
+    // Get the download folder
+    let downloads_dir = match app.path().download_dir() {
+        Ok(path) => {
+            debug!("Download directory: {}", path.display());
+            path
+        },
+        Err(e) => {
+            let error_msg = format!("Failed to find downloads directory: {}", e);
+            error!("{}", error_msg);
+            
+            // Emit error event
+            app.emit("download-error", DownloadError {
+                mod_id,
+                name: engine_name.to_string(),
+                error: error_msg.clone(),
+            }).unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
+            
+            return Err(error_msg);
+        },
+    };
+    
+    // Download the file with progress tracking
+    debug!("Sending HTTP request to download engine");
+    
+    // Use reqwest to perform download with progress tracking
+    let client = reqwest::Client::new();
+    let response = match client.get(engine_url).send().await {
+        Ok(resp) => {
+            debug!("Received response with status: {}", resp.status());
+            if !resp.status().is_success() {
+                let err_msg = format!("Server returned error status: {}", resp.status());
+                error!("{}", err_msg);
+                
+                // Emit error event
+                app.emit("download-error", DownloadError {
+                    mod_id,
+                    name: engine_name.to_string(),
+                    error: err_msg.clone(),
+                }).unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
+                
+                return Err(err_msg);
+            }
+            resp
+        },
+        Err(e) => {
+            let error_msg = format!("Failed to download engine: {}", e);
+            error!("{}", error_msg);
+            
+            // Emit error event
+            app.emit("download-error", DownloadError {
+                mod_id,
+                name: engine_name.to_string(),
+                error: error_msg.clone(),
+            }).unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
+            
+            return Err(error_msg);
+        }
+    };
+    
+    // Create a unique filename for the download
+    let filename = format!("FNF-{}-{}.zip", engine_name.replace(' ', "-"), chrono::Utc::now().timestamp());
+    let download_path = downloads_dir.join(&filename);
+    
+    debug!("Download path: {}", download_path.display());
+    
+    // Get the content length for progress tracking
+    let total_size = response.content_length().unwrap_or(0) as usize;
+    
+    // Update the download started event with actual content length
+    app.emit("download-started", DownloadStarted {
+        mod_id,
+        name: engine_name.to_string(),
+        content_length: total_size,
+        thumbnail_url: format!("/images/engine_icons/{}", engine_icon),
+    }).unwrap_or_else(|e| error!("Failed to emit updated download-started event: {}", e));
+    
+    // Create a file to write to
+    let mut file = match std::fs::File::create(&download_path) {
+        Ok(file) => file,
+        Err(e) => {
+            let error_msg = format!("Failed to create file: {}", e);
+            error!("{}", error_msg);
+            
+            // Emit error event
+            app.emit("download-error", DownloadError {
+                mod_id,
+                name: engine_name.to_string(),
+                error: error_msg.clone(),
+            }).unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
+            
+            return Err(error_msg);
+        }
+    };
+    
+    // Stream the response body with progress updates
+    let mut stream = response.bytes_stream();
+    let mut downloaded: usize = 0;
+    let mut last_percentage = 0;
+    
+    while let Some(chunk_result) = stream.next().await {
+        match chunk_result {
+            Ok(chunk) => {
+                // Write the chunk to the file
+                if let Err(e) = std::io::Write::write_all(&mut file, &chunk) {
+                    let error_msg = format!("Failed to write to file: {}", e);
+                    error!("{}", error_msg);
+                    
+                    // Emit error event
+                    app.emit("download-error", DownloadError {
+                        mod_id,
+                        name: engine_name.to_string(),
+                        error: error_msg.clone(),
+                    }).unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
+                    
+                    return Err(error_msg);
+                }
+                
+                // Update progress
+                downloaded += chunk.len();
+                let percentage = if total_size > 0 {
+                    ((downloaded as f64 / total_size as f64) * 60.0) as u8 + 20 // 20-80% range for download
+                } else {
+                    30 // Default to middle of range if size unknown
+                };
+                
+                // Only emit progress events if percentage has changed
+                if percentage != last_percentage {
+                    app.emit("download-progress", DownloadProgress {
+                        mod_id,
+                        name: engine_name.to_string(),
+                        bytes_downloaded: downloaded,
+                        total_bytes: total_size,
+                        percentage,
+                        step: "Downloading engine...".to_string(),
+                    }).unwrap_or_else(|e| error!("Failed to emit download-progress event: {}", e));
+                    
+                    last_percentage = percentage;
+                }
+            },
+            Err(e) => {
+                let error_msg = format!("Failed to download chunk: {}", e);
+                error!("{}", error_msg);
+                
+                // Emit error event
+                app.emit("download-error", DownloadError {
+                    mod_id,
+                    name: engine_name.to_string(),
+                    error: error_msg.clone(),
+                }).unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
+                
+                return Err(error_msg);
+            }
+        }
+    }
+    
+    // Emit progress event for extraction
+    app.emit("download-progress", DownloadProgress {
+        mod_id,
+        name: engine_name.to_string(),
+        bytes_downloaded: total_size,
+        total_bytes: total_size,
+        percentage: 80,
+        step: "Preparing to extract engine...".to_string(),
+    }).unwrap_or_else(|e| error!("Failed to emit download-progress event: {}", e));
+    
+    // Get the install location - use provided location or fall back to default
+    let install_dir = if let Some(location) = install_location {
+        let path = PathBuf::from(&location);
+        info!("Using provided install location: {}", path.display());
+        path
+    } else {
+        let default_path = get_default_install_location(&app);
+        info!("Using default install location: {}", default_path.display());
+        default_path
+    };
+    
+    debug!("Using install location: {}", install_dir.display());
+    
+    // Create the install directory if it doesn't exist
+    if !install_dir.exists() {
+        debug!("Creating install directory: {}", install_dir.display());
+        if let Err(e) = fs::create_dir_all(&install_dir) {
+            let error_msg = format!("Failed to create install directory: {}", e);
+            error!("{}", error_msg);
+            
+            // Emit error event
+            app.emit("download-error", DownloadError {
+                mod_id,
+                name: engine_name.to_string(),
+                error: error_msg.clone(),
+            }).unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
+            
+            return Err(error_msg);
+        }
+    }
+    
+    // Create engine folder
+    let sanitized_name = engine_name.replace(' ', "-");
+    let engine_folder = install_dir.join(&sanitized_name);
+    
+    if engine_folder.exists() {
+        debug!("Engine folder already exists, removing it: {}", engine_folder.display());
+        if let Err(e) = fs::remove_dir_all(&engine_folder) {
+            let error_msg = format!("Failed to remove existing engine folder: {}", e);
+            error!("{}", error_msg);
+            
+            // Emit error event
+            app.emit("download-error", DownloadError {
+                mod_id,
+                name: engine_name.to_string(),
+                error: error_msg.clone(),
+            }).unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
+            
+            return Err(error_msg);
+        }
+    }
+    
+    debug!("Creating engine folder: {}", engine_folder.display());
+    if let Err(e) = fs::create_dir_all(&engine_folder) {
+        let error_msg = format!("Failed to create engine folder: {}", e);
+        error!("{}", error_msg);
+        
+        // Emit error event
+        app.emit("download-error", DownloadError {
+            mod_id,
+            name: engine_name.to_string(),
+            error: error_msg.clone(),
+        }).unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
+        
+        return Err(error_msg);
+    }
+    
+    // Extract the archive
+    let extraction_result = extract_archive(&download_path, &engine_folder, engine_name, mod_id, &app);
+    if let Err(e) = extraction_result {
+        return Err(e);
+    }
+    
+    // Reorganize structure if needed
+    if let Err(e) = reorganize_modpack(&engine_folder) {
+        warn!("Failed to reorganize engine structure: {}", e);
+        // Continue anyway as this is not critical
+    }
+    
+    // Emit progress event for finalizing
+    app.emit("download-progress", DownloadProgress {
+        mod_id,
+        name: engine_name.to_string(),
+        bytes_downloaded: 95,
+        total_bytes: 100,
+        percentage: 95,
+        step: "Finalizing engine installation...".to_string(),
+    }).unwrap_or_else(|e| error!("Failed to emit download-progress event: {}", e));
+    
+    // Find executable in the extracted files
+    debug!("Searching for executables in engine folder");
+    let executables = find_executables(&engine_folder);
+    let executable_path = executables.first().map(|p| p.to_string_lossy().to_string());
+    
+    // Extract icon if we have an executable
+    let icon_data = match &executable_path {
+        Some(exe_path) => {
+            debug!("Extracting icon from: {}", exe_path);
+            extract_executable_icon(Path::new(exe_path))
+        },
+        None => None,
+    };
+    
+    // Create custom metadata folder if it doesn't exist
+    let metadata_folder = engine_folder.join("fnfml");
+    if !metadata_folder.exists() {
+        debug!("Creating metadata folder: {}", metadata_folder.display());
+        if let Err(e) = fs::create_dir_all(&metadata_folder) {
+            warn!("Failed to create metadata folder: {}", e);
+            // Continue anyway
+        }
+    }
+    
+    // Copy standard banner and logo from resources
+    let bundle_path = app.path().resource_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let banner_src = bundle_path.join("resources").join("assets").join("images").join("banners").join(engine_banner);
+    let logo_src = bundle_path.join("resources").join("assets").join("images").join("logos").join(engine_logo);
+    
+    // Read the banner and logo files if they exist in resources
+    let banner_data = if banner_src.exists() {
+        match crate::modfiles::get_mod_icon_data(&banner_src.to_string_lossy().to_string()) {
+            Ok(data) => Some(data),
+            Err(e) => {
+                warn!("Failed to read banner image: {}", e);
+                None
+            }
+        }
+    } else {
+        // Use default banner as fallback instead of engine icon
+        let default_banner = bundle_path.join("resources").join("assets").join("images").join("menuBG.png");
+        if default_banner.exists() {
+            match crate::modfiles::get_mod_icon_data(&default_banner.to_string_lossy().to_string()) {
+                Ok(data) => {
+                    debug!("Using default banner image as fallback");
+                    Some(data)
+                },
+                Err(e) => {
+                    warn!("Failed to read default banner image: {}", e);
+                    None
+                }
+            }
+        } else {
+            debug!("Default banner image not found");
+            None
+        }
+    };
+    
+    let logo_data = if logo_src.exists() {
+        match crate::modfiles::get_mod_icon_data(&logo_src.to_string_lossy().to_string()) {
+            Ok(data) => Some(data),
+            Err(e) => {
+                warn!("Failed to read logo image: {}", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+    
+    // Create the mod info
+    let id = uuid::Uuid::new_v4().to_string();
+    let mod_info = ModInfo {
+        id: id.clone(),
+        name: engine_name.to_string(),
+        path: engine_folder.to_string_lossy().to_string(),
+        executable_path,
+        display_order: Some(0),
+        icon_data: icon_data.clone(),
+        description: Some(engine_description.to_string()),
+        banner_data: banner_data,
+        logo_data: logo_data,
+        version: Some(engine_version.to_string()),
+        engine_type: Some(engine_type.clone()),
+        engine: Some(crate::models::Engine {
+            engine_type: Some(engine_type.clone()),
+            engine_name: Some(engine_name.to_string()),
+            engine_icon: None, // Don't set the engine icon
+            mods_folder: Some(true),
+            mods_folder_path: Some("mods".to_string()),
+        }),
+    };
+    
+    // Add the mod to our state
+    let mods_state = app.state::<crate::models::ModsState>();
+    let mut mods = mods_state.0.lock().unwrap();
+    mods.insert(id.clone(), mod_info.clone());
+    
+    info!("Successfully downloaded and installed {} engine", engine_name);
+    
+    // Emit download finished event
+    app.emit("download-finished", DownloadFinished {
+        mod_id,
+        name: engine_name.to_string(),
+        mod_info: mod_info.clone(),
+    }).unwrap_or_else(|e| error!("Failed to emit download-finished event: {}", e));
+    
+    // Emit progress event for completion
+    app.emit("download-progress", DownloadProgress {
+        mod_id,
+        name: engine_name.to_string(),
+        bytes_downloaded: 100,
+        total_bytes: 100,
+        percentage: 100,
+        step: "Engine installation complete".to_string(),
+    }).unwrap_or_else(|e| error!("Failed to emit download-progress event: {}", e));
+    
+    Ok(engine_folder.to_string_lossy().to_string())
+}
+
 // Helper function to extract archives of different types
 fn extract_archive(
     download_path: &PathBuf,
@@ -487,6 +939,119 @@ fn extract_archive(
             }
         }
     }
+}
+
+// Function to reorganize modpack content for easier use
+// This checks if there's only one directory in the root and if so,
+// moves all its contents up a level for easier access
+fn reorganize_modpack(mod_folder: &Path) -> Result<bool, String> {
+    debug!("Checking modpack structure at: {}", mod_folder.display());
+    
+    // Get all entries in the directory
+    let entries = match fs::read_dir(mod_folder) {
+        Ok(entries) => entries.filter_map(|e| e.ok()).collect::<Vec<_>>(),
+        Err(e) => {
+            let error_msg = format!("Failed to read modpack directory: {}", e);
+            error!("{}", error_msg);
+            return Err(error_msg);
+        }
+    };
+    
+    // Check if there's only one entry and it's a directory
+    if entries.len() == 1 && entries[0].path().is_dir() {
+        let single_dir = entries[0].path();
+        debug!("Modpack contains a single directory, reorganizing: {}", 
+               single_dir.file_name().unwrap_or_default().to_string_lossy());
+        
+        // Get all contents of this single directory
+        let sub_entries = match fs::read_dir(&single_dir) {
+            Ok(entries) => entries.filter_map(|e| e.ok()).collect::<Vec<_>>(),
+            Err(e) => {
+                let error_msg = format!("Failed to read subdirectory: {}", e);
+                error!("{}", error_msg);
+                return Err(error_msg);
+            }
+        };
+        
+        // Move each item up one level
+        for entry in sub_entries {
+            let source_path = entry.path();
+            let filename = match source_path.file_name() {
+                Some(name) => name,
+                None => continue, // Skip entries without a valid filename
+            };
+            
+            let dest_path = mod_folder.join(filename);
+            debug!("Moving {} to {}", source_path.display(), dest_path.display());
+            
+            // Use different methods for files and directories
+            if source_path.is_dir() {
+                if let Err(e) = fs::rename(&source_path, &dest_path) {
+                    warn!("Failed to move directory {}: {}", source_path.display(), e);
+                    // Fall back to copy+delete for cross-device moves
+                    if let Err(e) = copy_dir_all(&source_path, &dest_path) {
+                        let error_msg = format!("Failed to copy directory: {}", e);
+                        error!("{}", error_msg);
+                        return Err(error_msg);
+                    }
+                    if let Err(e) = fs::remove_dir_all(&source_path) {
+                        warn!("Failed to remove source directory after copy: {}", e);
+                        // Continue anyway as the files were copied successfully
+                    }
+                }
+            } else {
+                if let Err(e) = fs::rename(&source_path, &dest_path) {
+                    warn!("Failed to move file {}: {}", source_path.display(), e);
+                    // Fall back to copy+delete for cross-device moves
+                    if let Err(e) = fs::copy(&source_path, &dest_path) {
+                        let error_msg = format!("Failed to copy file: {}", e);
+                        error!("{}", error_msg);
+                        return Err(error_msg);
+                    }
+                    if let Err(e) = fs::remove_file(&source_path) {
+                        warn!("Failed to remove source file after copy: {}", e);
+                        // Continue anyway as the file was copied successfully
+                    }
+                }
+            }
+        }
+        
+        // Delete the now-empty directory
+        debug!("Removing empty directory: {}", single_dir.display());
+        if let Err(e) = fs::remove_dir(&single_dir) {
+            let error_msg = format!("Failed to remove empty directory: {}", e);
+            error!("{}", error_msg);
+            return Err(error_msg);
+        }
+        
+        debug!("Successfully reorganized modpack structure");
+        Ok(true)
+    } else {
+        debug!("Modpack contains multiple entries, no reorganization needed.");
+        Ok(false)
+    }
+}
+
+// Helper function to recursively copy directories
+fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
+    if !dst.exists() {
+        fs::create_dir_all(dst)?;
+    }
+    
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        let src_path = entry.path();
+        let dst_path = dst.join(entry.file_name());
+        
+        if ty.is_dir() {
+            copy_dir_all(&src_path, &dst_path)?;
+        } else {
+            fs::copy(&src_path, &dst_path)?;
+        }
+    }
+    
+    Ok(())
 }
 
 // Helper function to extract ZIP archives

@@ -278,9 +278,22 @@ const selectModFolder = async () => {
     const modFolderPath = await invoke<string>('select_mod_folder');
     if (modFolderPath) {
       const modInfo = await invoke<ModInfo>('add_mod', { path: modFolderPath });
+      
+      // Ensure the mod has an engine object before saving
+      if (!modInfo.engine) {
+        modInfo.engine = {
+          engine_type: modInfo.engine_type || 'unknown',
+          engine_name: '',
+          engine_icon: '',
+          mods_folder: false,
+          mods_folder_path: ''
+        };
+      }
+      
       mods.value.push(modInfo);
       selectMod(modInfo);
       await saveModToDatabase(modInfo);
+      console.log('Mod added and saved to database successfully:', modInfo.name);
     }
   } catch (error) {
     console.error('Failed to select mod folder:', error);

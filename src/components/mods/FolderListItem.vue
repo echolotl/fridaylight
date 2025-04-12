@@ -4,17 +4,17 @@
     clickable 
     v-ripple 
     @click="toggleExpanded"
-    class="draggable-item cursor-move"
+    class="draggable-item cursor-move folder"
     :class="{ 'expanded-folder': isExpanded }"
+    :style="{ borderBottomColor: isExpanded ? folder.color : 'transparent' }"
   >      
     <q-item-section avatar>
-      <q-avatar size="32px" square :style="{ backgroundColor: folder.color }" class="folder-icon">
-        <q-icon name="folder" size="24px" color="white" />
+      <q-avatar size="32px" square class="folder-icon">
+        <q-icon name="folder" size="24px" :style="{ color: folder.color}" />
       </q-avatar>
     </q-item-section>
     <q-item-section>
       <q-item-label>{{ folder.name }}</q-item-label>
-      <q-item-label caption class="version-text">{{ modsInFolder.length }} mods</q-item-label>
     </q-item-section>
     <q-item-section side>
       <div class="row items-center">
@@ -184,7 +184,7 @@ const handleModsChange = (event: any) => {
 }
 
 .folder-contents {
-  margin-left: 30px;
+  margin-left: 31px;
   border-left: 2px dashed var(--theme-border);
 }
 
@@ -196,6 +196,8 @@ const handleModsChange = (event: any) => {
 .expanded-folder {
   background-color: var(--theme-surface-light);
   border-radius: 0 1rem 0 0 !important;
+  border-bottom-width: 2px;
+  border-bottom-style: solid;
 }
 
 .folder-action-btn {
@@ -207,7 +209,10 @@ const handleModsChange = (event: any) => {
   opacity: 0;
   transition: opacity 0.2s ease;
 }
-
+.folder {
+  min-height: 12px;
+  padding: 2px 16px !important
+}
 .q-item:hover .delete-btn,
 .q-item:hover .folder-action-btn {
   opacity: 1;

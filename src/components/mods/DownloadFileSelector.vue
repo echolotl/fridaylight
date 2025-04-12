@@ -12,7 +12,7 @@
       </q-card-section>
 
       <q-card-section>
-        <p>The mod "{{ modName }}" has multiple download options. Please select one:</p>
+        <p>This mod, "{{ modName }}", has multiple download options. Please select one:</p>
 
         <q-list separator>
           <q-item 
@@ -23,24 +23,27 @@
             @click="selectFile(file)"
             :active="selectedFile && selectedFile._idRow === file._idRow"
             active-class="selected-file"
+            class="selected-file-inactive"
           >
             <q-item-section>
-              <q-item-label>{{ file._sFile }}</q-item-label>
+              <q-item-label>{{ file._sFile }}
+                <q-icon v-if="file._bContainsExe" name="terminal" class="q-ml-xs" color="secondary" size="xs" />
+                <q-icon v-if="file._sAnalysisState === 'pending'" name="hourglass_empty" class="q-ml-xs" color="orange" size="xs" />
+              </q-item-label>
+              <q-item-label caption v-if="file._sDescription" class="file-description">
+                {{ file._sDescription }}
+              </q-item-label>
               <q-item-label caption>
                 <span class="file-size">{{ formatFileSize(file._nFilesize) }}</span>
                 <span class="file-date">{{ formatDate(file._tsDateAdded) }}</span>
                 <span class="file-downloads q-ml-xs"><q-icon name="download"></q-icon>{{ file._nDownloadCount }}</span>
               </q-item-label>
-              <q-item-label caption v-if="file._sDescription" class="file-description">
-                {{ file._sDescription }}
-              </q-item-label>
-              <q-badge v-if="file._bContainsExe" color="warning" size="md">Contains Executable</q-badge>
             </q-item-section>
           </q-item>
         </q-list>
         
         <div v-if="alternateFileSources && alternateFileSources.length > 0" class="alternate-sources q-mt-md">
-          <div class="text-subtitle1">Alternative Download Sources</div>
+          <div class="text-subtitle1">Alternative Download Sources (Manual Install)</div>
           <q-list separator>
             <q-item
               v-for="(source, index) in alternateFileSources"
@@ -54,7 +57,7 @@
             >
               <q-item-section>
                 <q-item-label>{{ source.description }}</q-item-label>
-                <q-item-label caption>{{ source.url }}</q-item-label>
+                <q-item-label caption class="altsource-description">{{ source.url }}</q-item-label>
               </q-item-section>
               <q-item-section side>
                 <q-icon name="open_in_new" />
@@ -180,13 +183,19 @@ const formatDate = (timestamp: number): string => {
   backdrop-filter: blur(10px);
 }
 
+.selected-file-inactive {
+  color: var(--theme-text) !important;
+  border-radius: .5rem;
+}
 .selected-file {
   background-color: var(--q-primary) !important;
   color: white !important;
+  border-radius: .5rem;
 }
 
 .file-size {
   font-weight: 500;
+  color: var(--theme-text-secondary);
 }
 
 .file-date {
@@ -201,11 +210,16 @@ const formatDate = (timestamp: number): string => {
 .file-description {
   margin-top: 5px;
   white-space: pre-line;
+  color: var(--theme-text-secondary);
 }
 
 .alternate-sources {
   border-top: 1px solid var(--theme-border);
   padding-top: 16px;
+}
+
+.alternate-sources .altsource-description {
+  color: var(--theme-text-secondary);
 }
 
 .q-field :deep(.q-field__label) {

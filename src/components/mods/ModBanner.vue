@@ -161,7 +161,7 @@ const formatEngineType = (engineType: string) => {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  max-width: 80%;
+  max-width: 35vw;
 }
 
 .mod-logo {

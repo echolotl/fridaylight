@@ -1,7 +1,6 @@
 // This file contains the default color variables for Quasar.
-$primary   : #f5448e;
-$secondary : #ccbc28;
-$accent    : #9C27B0;
+$primary   : #DB2955;
+$secondary : #f7c548;
 
 $transparent: transparent;
 $solid-dark: #313131;
@@ -9,10 +8,18 @@ $solid-light: #e9e9e9;
 
 $white  : #FFFFFF;
 
-$positive  : #21BA45;
-$negative  : #C10015;
-$info      : #31CCEC;
-$warning   : #F2C037;
+$positive  : #35CE8D;
+$negative  : #C03221;
+$info      : #39dbce;
+$warning   : #f7c548;
+
+$red   : #C03221;
+$orange: #FE621D;
+$yellow: #F7C548;
+$green: #35CE8D;
+$blue: #39dbce;
+$purple: #C490D1;
+$pink: #DB2955;
 
 // Theme colors
 $theme-dark-bg: rgba(0, 0, 0, 0.87);
