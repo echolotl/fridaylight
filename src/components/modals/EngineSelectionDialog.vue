@@ -174,7 +174,7 @@ const getModsFolderPath = (engineMod: EngineMod): string => {
   background-color: var(--solid);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(30px);
 }
 
 .engine-item {

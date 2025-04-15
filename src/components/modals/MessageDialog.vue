@@ -2,6 +2,10 @@
   <q-dialog v-model="showDialog" persistent>
     <q-card
       class="phantom-font"
+      style="    background: var(--solid);
+    color: var(--text-color);
+    border: 2px solid var(--theme-border);
+    backdrop-filter: blur(30px);"
     >
       <q-card-section class="row items-center">
         <q-icon :name="icon" :color="iconColor" text-color="white" size="md" />
@@ -101,11 +105,5 @@ const onCancel = () => {
 <style>
 .dialog-title {
     margin: 0 .5rem;
-}
-
-.q-card {
-    background-color: var(--solid);
-    color: var(--text-color);
-    border: 2px solid var(--theme-border);
 }
 </style>

@@ -192,7 +192,7 @@ body.midnight-theme {
   --theme-text: #{$theme-midnight-text};
   --theme-text-secondary: #{$theme-midnight-text-secondary};
   --theme-border: #{$theme-midnight-border};
-  --solid: #{$solid-dark};
+  --solid: #{$theme-midnight-surface-solid};
 }
 
 body.sunset-theme {
@@ -314,11 +314,6 @@ body.neon-theme.solid-theme {
 
 body.forest-theme.solid-theme {
   background-color: #{$theme-forest-bg-solid} !important;
-}
-
-.q-card {
-  background-color: var(--theme-card);
-  color: var(--theme-text);
 }
 
 .text-subtitle1, .text-subtitle2, .text-h6, .text-body1, .text-body2 {

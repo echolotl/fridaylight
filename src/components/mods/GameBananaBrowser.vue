@@ -943,7 +943,104 @@ const onFileSelected = async (selectedFile: any) => {
     // Clear any existing pending modpack path
     localStorage.removeItem("pendingModpackInstallPath");
 
-    // After file selection, check if this is a modpack
+    // Check if the selected file contains an executable
+    // If it does, treat it as an executable mod regardless of other factors
+    if (selectedFile._bContainsExe) {
+      console.log("Selected file contains an executable, treating as standard mod");
+      
+      // Update notification to downloading
+      if (pendingDownloadNotification) {
+        pendingDownloadNotification();
+      }
+      pendingDownloadNotification = $q.notify({
+        type: "ongoing",
+        message: `Downloading "${mod.name}"...`,
+        position: "bottom-right",
+        timeout: 0,
+      });
+
+      // Get the install location from settings
+      let installLocation: string | null = null;
+      try {
+        if (window.db && window.db.service) {
+          installLocation = await window.db.service.getSetting("installLocation");
+        }
+      } catch (error) {
+        console.warn("Could not get install location from settings:", error);
+      }
+
+      console.log("Using selected file URL:", selectedFile._sDownloadUrl);
+      console.log("Using installation location:", installLocation);
+
+      // Call backend to download using the specific file URL
+      const result = await invoke<string>("download_gamebanana_mod_command", {
+        url: selectedFile._sDownloadUrl,
+        name: mod.name,
+        modId: mod.id,
+        installLocation,
+      });
+      
+      // Process the result
+      let modInfo: any;
+      let modPath: string;
+
+      try {
+        // Try to parse as JSON first
+        const parsed = JSON.parse(result);
+        modPath = parsed.path;
+        modInfo = parsed.mod_info;
+      } catch (e) {
+        // If parsing fails, assume it's just the path string
+        modPath = result;
+        // Get mod info directly from the backend
+        const allMods = await invoke<any[]>("get_mods");
+        modInfo = allMods.find((m) => m.path === modPath);
+
+        // If we still don't have mod info, create a basic one
+        if (!modInfo) {
+          modInfo = {
+            id: crypto.randomUUID(),
+            name: mod.name,
+            path: modPath,
+            executable_path: null,
+            icon_data: null,
+            banner_data: mod.thumbnailUrl,
+            version: mod.version || null,
+            engine_type: null,
+          };
+        }
+      }
+
+      // Save the mod to the database
+      if (modInfo) {
+        await saveModToDatabase(modInfo);
+      }
+
+      // Dismiss loading notification
+      if (pendingDownloadNotification) {
+        pendingDownloadNotification();
+        pendingDownloadNotification = null;
+      }
+
+      // Show success notification
+      $q.notify({
+        type: "positive",
+        message: `"${mod.name}" downloaded and installed successfully!`,
+        caption: `Ready to play from the mods list`,
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      // Trigger the refresh event to update the mod list
+      const refreshEvent = new CustomEvent("refresh-mods");
+      window.dispatchEvent(refreshEvent);
+
+      // Reset current download mod
+      currentDownloadMod.value = null;
+      return;
+    }
+
+    // If file doesn't contain an executable, check if this is a modpack
     const isModpack = determineIfModpack(mod);
     const modpackType = determineModpackType(mod);
 
@@ -990,7 +1087,7 @@ const onFileSelected = async (selectedFile: any) => {
       }
     }
 
-    // If not a modpack, proceed with standard download
+    // If not a modpack and doesn't contain an executable, proceed with standard download
     // Update notification to downloading
     if (pendingDownloadNotification) {
       pendingDownloadNotification();

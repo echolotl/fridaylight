@@ -25,10 +25,12 @@
           </div>
         </div>
         <div class="main-content">
-            <div class="main-banner-container">
+          <div class="main-banner-container">
           <div class="main-banner" :style="{ backgroundColor: accentColor }">
           </div>
           <div class="main-banner-title">Theme Preview</div>
+        </div>
+        <div class="play-button" :style="{ backgroundColor: accentColor }">
         </div>
         </div>
       </div>
@@ -52,8 +54,8 @@ defineProps({
 
 <style scoped>
 .theme-preview-container {
-  width: 441px;
-  height: 200px;
+  width: 100%;
+  height: 30vh;
   margin-bottom: 2rem;
   display: flex;
   align-items: center;
@@ -63,8 +65,8 @@ defineProps({
 
 .theme-preview {
   border-radius: 4px;
-  height: 200px;
-  width: 300px;
+  height: 100%;
+  width: calc(100vw * 0.3);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
@@ -267,5 +269,12 @@ defineProps({
 .folder-contents {
     margin-left: 9px;
     border-left: 2px dashed var(--theme-border);
+}
+
+.play-button {
+  width: 30px;
+  height: 15px;
+  border-radius: 2px;
+  margin-left: 6px;
 }
 </style>

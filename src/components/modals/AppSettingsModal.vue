@@ -33,6 +33,7 @@
         <div class="settings-content">
           <!-- Appearance Section -->
           <q-card-section v-show="activeSection === 'appearance'">
+
             <div class="text-subtitle1 q-mb-md">Appearance</div>
 
             <div class="theme-toggle-container row q-mb-md">
@@ -310,8 +311,8 @@ const themeOptions = [
   { label: "Dark", value: "dark" },
   { label: "Codename", value: "codename"},
   { label: "Friday", value: "sunset" },
-  { label: "Cobolt", value: "midnight" },
-  { label: "Neon", value: "neon" },
+  { label: "Boyfriend", value: "midnight" },
+  { label: "Corruption", value: "neon" },
 ];
 
 const accentColorOptions = [
@@ -707,14 +708,14 @@ loadSettings();
 
 <style scoped>
 .settings-modal {
-  width: 700px;
-  height: 500px;
+  width: 90vw;
+  height: 90vh;
   max-width: 90vw;
   max-height: 90vh;
   background-color: var(--solid);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(30px);
   scrollbar-width: none;
 }
 
@@ -798,5 +799,13 @@ loadSettings();
   flex-direction: column;
   text-align: center;
   margin-top: 16px;
+}
+
+:deep(.q-field__messages, .q-field__native::placeholder, .q-field__label) {
+  color: var(--theme-text-secondary);
+}
+
+:deep(.q-field__native::placeholder) {
+  color: var(--theme-text-secondary);
 }
 </style>
