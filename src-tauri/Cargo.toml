@@ -1,6 +1,6 @@
 [package]
 name = "fridaylight"
-version = "0.5.0"
+version = "0.6.5"
 description = "a Friday Night Funkin mod loader"
 authors = ["echolotl"]
 edition = "2021"

@@ -35,4 +35,18 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
+  resolve: {
+    // 4. resolve `@` to `src` for imports
+    alias: {
+      "@": "/src",
+      "@assets": "/src/assets",
+      "@components": "/src/components",
+      "@layouts": "/src/components/layouts",
+      "@mods": "/src/components/mods",
+      "@modals": "/src/components/modals",
+      "@common": "/src/components/common",
+      "@stores": "/src/stores",
+      "@services": "/src/services",
+    },
+  }
 }));

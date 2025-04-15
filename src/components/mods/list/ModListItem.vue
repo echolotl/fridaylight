@@ -1,13 +1,13 @@
 <template>
-  <q-item 
-    :key="mod.id" 
-    clickable 
-    v-ripple 
+  <q-item
+    :key="mod.id"
+    clickable
+    v-ripple
     @click="$emit('select-mod', mod)"
     :active="isActive"
     active-class="active-mod"
     class="draggable-item cursor-move"
-  >      
+  >
     <q-item-section avatar v-if="mod.icon_data">
       <q-avatar size="32px" square>
         <img :src="mod.icon_data" alt="mod icon" />
@@ -18,7 +18,9 @@
     </q-item-section>
     <q-item-section>
       <q-item-label>{{ mod.name }}</q-item-label>
-      <q-item-label caption class="version-text" v-if="mod.version">v{{ mod.version }}</q-item-label>
+      <q-item-label caption class="version-text" v-if="mod.version"
+        >v{{ mod.version }}</q-item-label
+      >
     </q-item-section>
     <q-item-section side>
       <q-btn
@@ -26,7 +28,7 @@
         round
         dense
         icon="delete"
-        color="grey-5"
+        style="color: var(--theme-text-secondary)"
         @click.stop="$emit('delete-mod', mod)"
         class="delete-btn"
       />
@@ -35,20 +37,20 @@
 </template>
 
 <script setup lang="ts">
-import { Mod } from '../../types';
+import { Mod } from "@main-types";
 
 defineProps({
   mod: {
     type: Object as () => Mod,
-    required: true
+    required: true,
   },
   isActive: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
-defineEmits(['select-mod', 'delete-mod']);
+defineEmits(["select-mod", "delete-mod"]);
 </script>
 
 <style scoped>
@@ -111,6 +113,6 @@ defineEmits(['select-mod', 'delete-mod']);
 }
 
 .version-text {
-  color: #999999 !important;
+  color: var(--theme-text-secondary) !important;
 }
 </style>

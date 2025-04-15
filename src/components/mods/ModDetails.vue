@@ -1,33 +1,33 @@
 <template>
   <div class="mod-details phantom-font" v-if="mod">
-    <ModBanner 
-      :mod="mod" 
+    <ModBanner
+      :mod="mod"
       @update:title="updateTitle"
       @open-settings="$emit('open-settings')"
-      style="margin-bottom: 2rem;"
+      style="margin-bottom: 2rem"
     />
-    
+
     <div class="mod-actions">
       <div class="action-buttons">
-        <q-btn 
-          color="primary" 
-          class="play-button phantom-font" 
-          size="lg" 
+        <q-btn
+          color="primary"
+          class="play-button phantom-font"
+          size="lg"
           @click="$emit('launch-mod', mod.id)"
           :disabled="!mod.executable_path"
         >
           PLAY
         </q-btn>
-        
+
         <div v-if="!mod.executable_path" class="error-message">
           No executable found in this mod folder
         </div>
-        
+
         <div v-if="error" class="error-message">
           {{ error }}
         </div>
       </div>
-      
+
       <q-btn
         flat
         round
@@ -37,21 +37,27 @@
         @click="$emit('open-settings')"
       />
     </div>
-      <div class="mod-path" v-if="showDetails">
+    <div class="mod-path" v-if="showDetails">
       <p>Location: {{ mod.path }}</p>
       <p v-if="mod.executable_path">Executable: {{ mod.executable_path }}</p>
       <p v-if="mod.version">Version: {{ mod.version }}</p>
-      <p v-if="mod.engine_type">Engine: {{ formatEngineType(mod.engine_type) }}</p>
+      <p v-if="mod.engine_type">
+        Engine: {{ formatEngineType(mod.engine_type) }}
+      </p>
     </div>
 
     <div class="description" v-if="mod.description">
       <h5 class="phantom-font-difficulty">Description</h5>
-      <hr/>
+      <hr />
       <p>{{ mod.description }}</p>
     </div>
-    
+
     <!-- Show engine-specific mods list if mod has engine type and executable path -->
-    <div v-if="mod.engine.engine_type && mod.executable_path && mod.engine.mods_folder">
+    <div
+      v-if="
+        mod.engine.engine_type && mod.executable_path && mod.engine.mods_folder
+      "
+    >
       <EngineModsList
         :executablePath="mod.executable_path"
         :engineType="mod.engine.engine_type"
@@ -59,7 +65,7 @@
       />
     </div>
   </div>
-  
+
   <!-- Show welcome message when no mod is selected -->
   <div v-else class="welcome-message phantom-font">
     <h2>Welcome to Friday Night Funkin' Mod Loader</h2>
@@ -68,41 +74,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import ModBanner from './ModBanner.vue';
-import EngineModsList from './EngineModsList.vue';
-import { Mod } from '../../types';
+import { ref } from "vue";
+import ModBanner from "@mods/ModBanner.vue";
+import EngineModsList from "@mods/EngineModsList.vue";
+import { Mod } from "@main-types";
 const props = defineProps({
   mod: {
     type: Object as () => Mod | null,
-    default: null
+    default: null,
   },
   error: {
     type: String,
-    default: ''
-  }
+    default: "",
+  },
 });
 
 const showDetails = ref(false);
-const emit = defineEmits(['update:mod', 'launch-mod', 'open-settings']);
+const emit = defineEmits(["update:mod", "launch-mod", "open-settings"]);
 
 const updateTitle = (newTitle: string) => {
   if (props.mod) {
     const updatedMod = { ...props.mod, name: newTitle };
-    emit('update:mod', updatedMod);
+    emit("update:mod", updatedMod);
   }
 };
 
 const formatEngineType = (engineType: string) => {
   const engineTypes: Record<string, string> = {
-    'vanilla': 'Vanilla',
-    'psych': 'Psych Engine',
-    'codename': 'Codename Engine',
-    'kade': 'Kade Engine',
-    'pre-vslice': 'Pre-VSlice',
-    'other': 'Other'
+    vanilla: "Vanilla",
+    psych: "Psych Engine",
+    codename: "Codename Engine",
+    kade: "Kade Engine",
+    "pre-vslice": "Pre-VSlice",
+    other: "Other",
   };
-  
+
   return engineTypes[engineType] || engineType;
 };
 </script>

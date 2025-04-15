@@ -39,7 +39,7 @@ pub async fn select_mod_folder(app: tauri::AppHandle) -> Result<String, String> 
 
 // Command to open a folder dialog and select a folder containing multiple mods
 #[tauri::command]
-pub async fn select_mods_parent_folder(app: tauri::AppHandle, mods_state: State<'_, ModsState>) -> Result<Vec<ModInfo>, String> {
+pub async fn select_mods_parent_folder(app: tauri::AppHandle, validate: Option<bool>, mods_state: State<'_, ModsState>) -> Result<Vec<ModInfo>, String> {
     debug!("Opening parent folder selection dialog for multiple mods");
     let folder = app
         .dialog()
@@ -52,10 +52,14 @@ pub async fn select_mods_parent_folder(app: tauri::AppHandle, mods_state: State<
             info!("Parent folder selected: {}", path);
             let path_str = path.to_string();
             
+            // Get validation setting (default to true if not specified)
+            let should_validate = validate.unwrap_or(true);
+            
             // Read all subdirectories and add each as a mod
             match std::fs::read_dir(&path_str) {
                 Ok(entries) => {
                     let mut added_mods = Vec::new();
+                    let mut invalid_mods = 0;
                     
                     for entry in entries.filter_map(|e| e.ok()) {
                         let entry_path = entry.path();
@@ -65,26 +69,40 @@ pub async fn select_mods_parent_folder(app: tauri::AppHandle, mods_state: State<
                             let subdir_path = entry_path.to_string_lossy().to_string();
                             debug!("Processing potential mod directory: {}", subdir_path);
                             
-                            // Try to add this directory as a mod
-                            match create_mod_info(&subdir_path) {
-                                Ok(mod_info) => {
-                                    let id = mod_info.id.clone();
-                                    added_mods.push(mod_info.clone());
-                                    
-                                    // Add to our state
-                                    let mut mods = mods_state.0.lock().unwrap();
-                                    mods.insert(id, mod_info);
-                                    info!("Added mod: {} ({})", entry_path.display(), subdir_path);
-                                },
-                                Err(e) => {
-                                    warn!("Failed to add directory as mod: {} - {}", subdir_path, e);
-                                    // Continue to next directory
+                            // Check if it's a valid FNF mod if validation is enabled
+                            let is_valid = !should_validate || crate::filesystem::is_valid_fnf_mod(&entry_path);
+                            
+                            if is_valid {
+                                // Try to add this directory as a mod
+                                match create_mod_info(&subdir_path) {
+                                    Ok(mod_info) => {
+                                        let id = mod_info.id.clone();
+                                        added_mods.push(mod_info.clone());
+                                        
+                                        // Add to our state
+                                        let mut mods = mods_state.0.lock().unwrap();
+                                        mods.insert(id, mod_info);
+                                        info!("Added mod: {} ({})", entry_path.display(), subdir_path);
+                                    },
+                                    Err(e) => {
+                                        warn!("Failed to add directory as mod: {} - {}", subdir_path, e);
+                                        // Continue to next directory
+                                    }
                                 }
+                            } else {
+                                debug!("Skipping invalid FNF mod: {}", subdir_path);
+                                invalid_mods += 1;
                             }
                         }
                     }
                     
-                    info!("Added {} mods from parent folder", added_mods.len());
+                    info!("Added {} mods from parent folder (skipped {} invalid mods)", 
+                          added_mods.len(), invalid_mods);
+                    
+                    if added_mods.is_empty() && invalid_mods > 0 {
+                        return Err(format!("No valid FNF mods found. Skipped {} invalid folders that didn't contain required FNF mod structure.", invalid_mods));
+                    }
+                    
                     Ok(added_mods)
                 },
                 Err(e) => {
@@ -148,8 +166,21 @@ pub async fn select_executable(app: tauri::AppHandle) -> Result<String, String> 
 
 // Command to add a mod to our list
 #[tauri::command]
-pub fn add_mod(path: String, mods_state: State<'_, ModsState>) -> Result<ModInfo, String> {
+pub fn add_mod(path: String, validate: Option<bool>, mods_state: State<'_, ModsState>) -> Result<ModInfo, String> {
     info!("Adding mod from path: {}", path);
+    
+    // Check if the folder is a valid FNF mod if validation is enabled
+    // Default to true if not specified
+    let should_validate = validate.unwrap_or(true);
+    
+    if should_validate {
+        let path_obj = Path::new(&path);
+        if !crate::filesystem::is_valid_fnf_mod(path_obj) {
+            let err_msg = format!("Invalid FNF mod: '{}' doesn't contain required folders (assets and manifest)", path);
+            warn!("{}", err_msg);
+            return Err(err_msg);
+        }
+    }
     
     // Create ModInfo from path
     let mod_info = create_mod_info(&path)?;
@@ -284,6 +315,28 @@ fn change_mica_theme(app_handle: tauri::AppHandle, window: String, dark: bool) -
     #[cfg(not(target_os = "windows"))]
     {
         Err("Unsupported platform! 'apply_mica' is only supported on Windows".into())
+    }
+}
+
+#[tauri::command]
+fn remove_mica_theme(app_handle: tauri::AppHandle, window: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        let window = app_handle.get_webview_window(&window).ok_or_else(|| {
+            let err = format!("Window with ID {} not found", window);
+            error!("{}", err);
+            err
+        })?;
+        // You can't really disable the Mica effect once you enable it, but since this won't effect anything
+        // if not on Windows 11, we can do the best we can by setting it to light theme to mimic the normal titlebar.
+
+        // The only reason this is a separate function is to allow for if Tauri adds the ability to disable Mica in the future.
+        window.set_effects(EffectsBuilder::new().effect(Effect::MicaLight).build()).map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Unsupported platform! 'remove_mica' is only supported on Windows".into())
     }
 }
 
@@ -425,7 +478,8 @@ pub fn run() {
             is_windows_11,
             get_mod_download_files_command,
             download_engine_command,
-            get_mod_info_command
+            get_mod_info_command,
+            remove_mica_theme,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

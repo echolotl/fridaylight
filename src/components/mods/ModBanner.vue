@@ -1,28 +1,33 @@
 <template>
   <div class="mod-banner">
     <!-- Banner image - user uploaded or default -->
-    <div 
-      class="banner-image" 
-      :style="mod && mod.banner_data ? { 
-        backgroundImage: `url('${mod.banner_data}')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      } : {}"
+    <div
+      class="banner-image"
+      :style="
+        mod && mod.banner_data
+          ? {
+              backgroundImage: `url('${mod.banner_data}')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }
+          : {}
+      "
     ></div>
-    
+
     <!-- Title overlay on the banner -->
     <div class="title-overlay">
       <!-- Show logo if available -->
       <div v-if="mod.logo_data" class="logo-container">
-        <img :src="mod.logo_data" alt="Mod Logo" class="mod-logo" @click="$emit('open-settings')" />
+        <img
+          :src="mod.logo_data"
+          alt="Mod Logo"
+          class="mod-logo"
+          @click="$emit('open-settings')"
+        />
       </div>
       <!-- Otherwise show editable title -->
       <div v-else class="title-container">
-        <h1 
-          v-if="!isEditingTitle" 
-          @click="startTitleEdit" 
-          class="mod-title"
-        >
+        <h1 v-if="!isEditingTitle" @click="startTitleEdit" class="mod-title">
           {{ mod.name }}
           <q-icon name="edit" size="sm" class="edit-icon" />
         </h1>
@@ -37,16 +42,59 @@
           ref="titleInput"
         />
       </div>
-        <!-- Show version and engine type if available -->
-      <div class="mod-info-overlay" v-if="mod.version || mod.engine_type || (mod.engine && (mod.engine.engine_type || mod.engine.engine_icon))">
-        <span v-if="mod.version" class="version-tag phantom-font-difficulty"><b>v{{ mod.version }}</b></span>        <span v-if="mod.engine && mod.engine.engine_icon && mod.engine.engine_type !== 'unknown'" class="engine-tag">
-          <img :src="mod.engine.engine_icon" alt="Engine Icon" class="custom-engine-icon">
+      <!-- Show version and engine type if available -->
+      <div
+        class="mod-info-overlay"
+        v-if="
+          mod.version ||
+          mod.engine_type ||
+          (mod.engine && (mod.engine.engine_type || mod.engine.engine_icon))
+        "
+      >
+        <span v-if="mod.version" class="version-tag phantom-font-difficulty"
+          ><b>v{{ mod.version }}</b></span
+        >
+        <span
+          v-if="
+            mod.engine &&
+            mod.engine.engine_icon &&
+            mod.engine.engine_type !== 'unknown'
+          "
+          class="engine-tag"
+        >
+          <img
+            :src="mod.engine.engine_icon"
+            alt="Engine Icon"
+            class="custom-engine-icon"
+          />
         </span>
-        <span v-else-if="mod.engine && mod.engine.engine_type && mod.engine.engine_type !== 'unknown'" class="engine-tag">
-          <img :src="'/images/engine_icons/' + formatEngineType(mod.engine.engine_type) + '.webp'">
+        <span
+          v-else-if="
+            mod.engine &&
+            mod.engine.engine_type &&
+            mod.engine.engine_type !== 'unknown'
+          "
+          class="engine-tag"
+        >
+          <img
+            :src="
+              '/images/engine_icons/' +
+              formatEngineType(mod.engine.engine_type) +
+              '.webp'
+            "
+          />
         </span>
-        <span v-else-if="mod.engine_type && mod.engine_type !== 'unknown'" class="engine-tag">
-          <img :src="'/images/engine_icons/' + formatEngineType(mod.engine_type) + '.webp'">
+        <span
+          v-else-if="mod.engine_type && mod.engine_type !== 'unknown'"
+          class="engine-tag"
+        >
+          <img
+            :src="
+              '/images/engine_icons/' +
+              formatEngineType(mod.engine_type) +
+              '.webp'
+            "
+          />
         </span>
       </div>
     </div>
@@ -54,28 +102,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Mod } from '../../types';
+import { ref } from "vue";
+import { Mod } from "@main-types";
 
 const props = defineProps({
   mod: {
     type: Object as () => Mod,
-    required: true
-  }
+    required: true,
+  },
 });
 
-const emit = defineEmits(['update:title', 'open-settings']);
+const emit = defineEmits(["update:title", "open-settings"]);
 
 const isEditingTitle = ref(false);
-const editedTitle = ref('');
+const editedTitle = ref("");
 
 const startTitleEdit = () => {
   isEditingTitle.value = true;
-  editedTitle.value = props.mod.name || '';
+  editedTitle.value = props.mod.name || "";
 };
 
 const saveTitle = () => {
-  emit('update:title', editedTitle.value);
+  emit("update:title", editedTitle.value);
   isEditingTitle.value = false;
 };
 
@@ -96,8 +144,8 @@ const formatEngineType = (engineType: string) => {
 .banner-image {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #0575E6, #021B79);
-  background-image: url('/images/menuBG.png');
+  background: linear-gradient(135deg, #0575e6, #021b79);
+  background-image: url("/images/menuBG.png");
   background-size: cover;
   background-position: center;
   position: relative;
@@ -105,7 +153,7 @@ const formatEngineType = (engineType: string) => {
 }
 
 .banner-image::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
@@ -191,16 +239,17 @@ const formatEngineType = (engineType: string) => {
   border-radius: 4px;
   font-size: 0.9rem;
   object-fit: contain;
-  img {
-    max-height: 2rem;
-    width: auto;
-  }
-  
-  .custom-engine-icon {
-    max-height: 2rem;
-    width: auto;
-    object-fit: contain;
-  }
+}
+
+.engine-tag img {
+  max-height: 2rem;
+  width: auto;
+}
+
+.engine-tag .custom-engine-icon {
+  max-height: 2rem;
+  width: auto;
+  object-fit: contain;
 }
 .version-tag {
   color: var(--q-primary);

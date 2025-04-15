@@ -17,10 +17,10 @@ export interface Engine {
  * Represents a mod folder for organization
  */
 export interface Folder {
-  id: string;           // Unique ID for the folder
-  name: string;         // Name of the folder
-  color: string;        // Color for the folder icon
-  mods: string[];       // Array of mod IDs contained in this folder
+  id: string; // Unique ID for the folder
+  name: string; // Name of the folder
+  color: string; // Color for the folder icon
+  mods: string[]; // Array of mod IDs contained in this folder
   display_order: number; // Position in the overall display order
 }
 
@@ -37,10 +37,10 @@ export interface Mod {
   logo_data?: string | null;
   version?: string;
   description?: string;
-  engine_type?: string;  // Kept for backward compatibility 
-  engine: Engine;        // Extended engine information
+  engine_type?: string; // Kept for backward compatibility
+  engine: Engine; // Extended engine information
   display_order: number; // Position in the overall list or within a folder
-  folder_id?: string | null;    // ID of the folder this mod belongs to, if any
+  folder_id?: string | null; // ID of the folder this mod belongs to, if any
   display_order_in_folder?: number; // Position within the folder
 }
 
@@ -49,7 +49,7 @@ export interface Mod {
  */
 export interface DisplayItem {
   id: string;
-  type: 'mod' | 'folder';
+  type: "mod" | "folder";
   data: Mod | Folder;
   display_order: number;
 }
@@ -72,5 +72,103 @@ export interface DownloadingMod {
  */
 export interface DbSettings {
   key: string;
+  value: string;
+}
+
+/**
+ * GameBanana API response for mod details
+ * This interface is used to represent the data structure of a mod fetched from GameBanana API.
+ */
+
+export interface GameBananaMod {
+  // Existing fields
+  id: number;
+  name: string;
+  owner: string;
+  description: string;
+  thumbnailUrl: string;
+  downloadUrl: string;
+  views: number;
+  downloads: number;
+  likes: number;
+
+  // New fields from GameBanana API
+  modelName: string;
+  profileUrl: string;
+  imageUrl: string;
+  initialVisibility: string;
+  period: string;
+
+  // Submitter details
+  submitterId: number;
+  submitterName: string;
+  submitterIsOnline: boolean;
+  submitterHasRipe: boolean;
+  submitterProfileUrl: string;
+  submitterAvatarUrl: string;
+  submitterMoreByUrl: string;
+
+  // Post count
+  postCount: number;
+
+  // Category details
+  categoryName: string;
+  categoryProfileUrl: string;
+  categoryIconUrl: string;
+
+  // Additional fields from normal mod data
+  singularTitle: string;
+  iconClasses: string;
+  dateAdded: number;
+  dateModified: number;
+  dateUpdated: number;
+  hasFiles: boolean;
+  tags: string[];
+  previewImages: GameBananaModImage[]; 
+  version: string;
+  isObsolete: boolean;
+  hasContentRatings: boolean;
+  viewCount: number;
+  isOwnedByAccessor: boolean;
+  wasFeatured: boolean;
+}
+
+/**
+ * Represents an image associated with a GameBanana mod
+ * This interface is used to represent the data structure of images fetched from GameBanana API.
+ */
+
+export interface GameBananaModImage {
+  imageType: string;
+  baseUrl: string;
+  fileName: string;
+  file100: string;
+  file220?: string;
+  file530?: string;
+  file800?: string;
+  height100?: number;
+  width100?: number;
+  height220?: number;
+  width220?: number;
+  height530?: number;
+  width530?: number;
+  height800?: number;
+  width800?: number;
+}
+
+/**
+ * Represents the settings for the application
+ */
+
+export interface AppSettings {
+  accentColor: string | ColorOption;
+  installLocation: string;
+  theme: string;  // Changed from enableLightTheme to theme
+  useSystemTheme: boolean;
+  customCSS: string;
+  validateFnfMods: boolean; // Whether to validate FNF mods structure before adding
+}
+interface ColorOption {
+  label: string;
   value: string;
 }

@@ -21,7 +21,7 @@ $blue: #39dbce;
 $purple: #C490D1;
 $pink: #DB2955;
 
-// Theme colors
+// Theme colors - Dark
 $theme-dark-bg: rgba(0, 0, 0, 0.87);
 $theme-dark-card: rgba(0, 0, 0, 0.35);
 $theme-dark-surface: rgba(0, 0, 0, 0.25);
@@ -29,12 +29,53 @@ $theme-dark-text: #ffffff;
 $theme-dark-text-secondary: rgba(255, 255, 255, 0.7);
 $theme-dark-border: rgba(255, 255, 255, 0.12);
 
+// Theme colors - Light
 $theme-light-bg: rgba(255, 255, 255, 0.87);
 $theme-light-card: rgba(255, 255, 255, 0.5);
 $theme-light-surface: rgba(255, 255, 255, 0.25);
 $theme-light-text: #212121;
 $theme-light-text-secondary: rgba(0, 0, 0, 0.7);
 $theme-light-border: rgba(0, 0, 0, 0.12);
+
+// Theme colors - Midnight
+$theme-midnight-bg: rgba(10, 25, 41, 0.98);
+$theme-midnight-card: rgba(20, 40, 70, 0.5);
+$theme-midnight-surface: rgba(30, 50, 90, 0.25);
+$theme-midnight-text: #e6f1ff;
+$theme-midnight-text-secondary: rgba(230, 241, 255, 0.7);
+$theme-midnight-border: rgba(66, 133, 244, 0.3);
+
+// Theme colors - Sunset
+$theme-sunset-bg: rgba(44, 28, 45, 0.95);
+$theme-sunset-card: rgba(70, 38, 57, 0.5);
+$theme-sunset-surface: rgba(90, 40, 60, 0.25);
+$theme-sunset-text: #ffdab9;
+$theme-sunset-text-secondary: rgba(255, 218, 185, 0.7);
+$theme-sunset-border: rgba(255, 158, 97, 0.3);
+
+// Theme colors - Neon
+$theme-neon-bg: rgba(15, 15, 18, 0.98);
+$theme-neon-card: rgba(22, 22, 28, 0.5);
+$theme-neon-surface: rgba(30, 30, 40, 0.25);
+$theme-neon-text: #fcfcfc;
+$theme-neon-text-secondary: rgba(252, 252, 252, 0.7);
+$theme-neon-border: rgba(255, 0, 230, 0.3);
+
+// Theme colors - Forest
+$theme-forest-bg: rgba(29, 45, 27, 0.98);
+$theme-forest-card: rgba(40, 60, 38, 0.5);
+$theme-forest-surface: rgba(53, 79, 51, 0.25);
+$theme-forest-text: #272d35;
+$theme-forest-text-secondary: rgba(36, 39, 35, 0.7);
+$theme-forest-border: rgba(115, 180, 150, 0.3);
+
+// Theme colors - Codename
+$theme-codename-bg: rgba(21, 28, 36, 1);
+$theme-codename-card: rgba(28, 30, 61, 0.35);
+$theme-codename-surface: rgba(59, 24, 92, 0.25);
+$theme-codename-text: #d5c4f0;
+$theme-codename-text-secondary: rgba(213, 196, 240, 0.7);
+$theme-codename-border: rgba(81, 64, 95, 0.12);
 
 // Solid theme colors for non-Windows 11 platforms
 $theme-dark-bg-solid: #121212;
@@ -44,6 +85,26 @@ $theme-dark-surface-solid: #282828;
 $theme-light-bg-solid: #f5f5f5;
 $theme-light-card-solid: #ffffff;
 $theme-light-surface-solid: #f0f0f0;
+
+$theme-midnight-bg-solid: #0a1929;
+$theme-midnight-card-solid: #142846;
+$theme-midnight-surface-solid: rgba(66, 133, 244, 0.1);
+
+$theme-sunset-bg-solid: #2c1c2d;
+$theme-sunset-card-solid: #462639;
+$theme-sunset-surface-solid: rgba(255, 158, 97, 0.1);
+
+$theme-neon-bg-solid: #0f0f12;
+$theme-neon-card-solid: #16161c;
+$theme-neon-surface-solid: rgba(255, 0, 230, 0.1);
+
+$theme-forest-bg-solid: #6e9489;
+$theme-forest-card-solid: #8bad98;
+$theme-forest-surface-solid: rgba(66, 114, 91, 0.1);
+
+$theme-codename-bg-solid: #23282e;
+$theme-codename-card-solid: #2e2d3b;
+$theme-codename-surface-solid: rgba(69, 38, 95, 0.2);
 
 // Font definitions
 $phantom-muff-empty: 'PhantomMuffEmpty';
@@ -104,6 +165,14 @@ body {
   --theme-text-secondary: #{$theme-dark-text-secondary};
   --theme-border: #{$theme-dark-border};
   --solid: #{$solid-dark};
+
+  --red: #{$red};
+  --orange: #{$orange};
+  --yellow: #{$yellow};
+  --green: #{$green};
+  --blue: #{$blue};
+  --purple: #{$purple};
+  --pink: #{$pink};
 }
 
 body.light-theme {
@@ -114,6 +183,56 @@ body.light-theme {
   --theme-text-secondary: #{$theme-light-text-secondary};
   --theme-border: #{$theme-light-border};
   --solid: #{$solid-light};
+}
+
+body.midnight-theme {
+  --theme-bg: #{$theme-midnight-bg};
+  --theme-card: #{$theme-midnight-card};
+  --theme-surface: #{$theme-midnight-surface};
+  --theme-text: #{$theme-midnight-text};
+  --theme-text-secondary: #{$theme-midnight-text-secondary};
+  --theme-border: #{$theme-midnight-border};
+  --solid: #{$theme-midnight-surface-solid};
+}
+
+body.sunset-theme {
+  --theme-bg: #{$theme-sunset-bg};
+  --theme-card: #{$theme-sunset-card};
+  --theme-surface: #{$theme-sunset-surface};
+  --theme-text: #{$theme-sunset-text};
+  --theme-text-secondary: #{$theme-sunset-text-secondary};
+  --theme-border: #{$theme-sunset-border};
+  --solid: #{$theme-sunset-surface-solid};
+}
+
+body.neon-theme {
+  --theme-bg: #{$theme-neon-bg};
+  --theme-card: #{$theme-neon-card};
+  --theme-surface: #{$theme-neon-surface};
+  --theme-text: #{$theme-neon-text};
+  --theme-text-secondary: #{$theme-neon-text-secondary};
+  --theme-border: #{$theme-neon-border};
+  --solid: #{$theme-neon-surface-solid};
+}
+
+body.forest-theme {
+  --theme-bg: #{$theme-forest-bg};
+  --theme-card: #{$theme-forest-card};
+  --theme-surface: #{$theme-forest-surface};
+  --theme-text: #{$theme-forest-text};
+  --theme-text-secondary: #{$theme-forest-text-secondary};
+  --theme-border: #{$theme-forest-border};
+  --solid: #{$theme-forest-surface-solid};
+}
+
+body.codename-theme {
+  --theme-bg: #{$theme-codename-bg};
+  --theme-card: #{$theme-codename-card};
+  --theme-surface: #{$theme-codename-surface};
+  --theme-text: #{$theme-codename-text};
+  --theme-text-secondary: #{$theme-codename-text-secondary};
+  --theme-border: #{$theme-codename-border};
+  --solid: #{$theme-codename-surface-solid};
 }
 
 body.solid-theme {
@@ -128,9 +247,73 @@ body.light-theme.solid-theme {
   --theme-surface: #{$theme-light-surface-solid};
 }
 
-.q-card {
-  background-color: var(--theme-card);
-  color: var(--theme-text);
+body.midnight-theme.solid-theme {
+  --theme-bg: #{$theme-midnight-bg-solid};
+  --theme-card: #{$theme-midnight-card-solid};
+  --theme-surface: #{$theme-midnight-surface-solid};
+}
+
+body.sunset-theme.solid-theme {
+  --theme-bg: #{$theme-sunset-bg-solid};
+  --theme-card: #{$theme-sunset-card-solid};
+  --theme-surface: #{$theme-sunset-surface-solid};
+}
+
+body.neon-theme.solid-theme {
+  --theme-bg: #{$theme-neon-bg-solid};
+  --theme-card: #{$theme-neon-card-solid};
+  --theme-surface: #{$theme-neon-surface-solid};
+}
+
+body.forest-theme.solid-theme {
+  --theme-bg: #{$theme-forest-bg-solid};
+  --theme-card: #{$theme-forest-card-solid};
+  --theme-surface: #{$theme-forest-surface-solid};
+}
+
+body.codename-theme.solid-theme {
+  --theme-bg: #{$theme-codename-bg-solid};
+  --theme-card: #{$theme-codename-card-solid};
+  --theme-surface: #{$theme-codename-surface-solid};
+}
+
+/* Additional CSS to ensure background colors are applied correctly */
+html {
+  background-color: var(--theme-bg) !important;
+}
+
+body.dark-theme, 
+body.midnight-theme, 
+body.sunset-theme, 
+body.neon-theme, 
+body.forest-theme, 
+body.light-theme {
+  background-color: var(--theme-bg) !important;
+}
+
+/* Ensure solid themes use solid backgrounds */
+body.dark-theme.solid-theme {
+  background-color: #{$theme-dark-bg-solid} !important;
+}
+
+body.light-theme.solid-theme {
+  background-color: #{$theme-light-bg-solid} !important;
+}
+
+body.midnight-theme.solid-theme {
+  background-color: #{$theme-midnight-bg-solid} !important;
+}
+
+body.sunset-theme.solid-theme {
+  background-color: #{$theme-sunset-bg-solid} !important;
+}
+
+body.neon-theme.solid-theme {
+  background-color: #{$theme-neon-bg-solid} !important;
+}
+
+body.forest-theme.solid-theme {
+  background-color: #{$theme-forest-bg-solid} !important;
 }
 
 .text-subtitle1, .text-subtitle2, .text-h6, .text-body1, .text-body2 {
