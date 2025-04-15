@@ -70,9 +70,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import ModListItem from './ModListItem.vue';
+import ModListItem from '@mods/list/ModListItem.vue';
 import draggable from 'vuedraggable';
-import { Mod, Folder } from '../../types';
+import { Mod, Folder } from '@main-types';
 
 const props = defineProps({
   folder: {

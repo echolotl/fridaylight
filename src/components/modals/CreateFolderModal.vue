@@ -8,17 +8,18 @@
       </q-card-section>
 
       <q-card-section>
-        <q-input 
-          v-model="folderName" 
-          label="Folder Name" 
-          outlined 
+        <q-input
+          v-model="folderName"
+          label="Folder Name"
+          outlined
           class="q-mb-md"
-          :rules="[val => !!val || 'Folder name is required']"
+          :rules="[(val) => !!val || 'Folder name is required']"
           ref="nameInput"
         />
-          <div class="text-subtitle2 q-mb-sm">Folder Color</div>
-        <div class="color-row q-mb-md">          <q-btn 
-            v-for="color in folderColors" 
+        <div class="text-subtitle2 q-mb-sm">Folder Color</div>
+        <div class="color-row q-mb-md">
+          <q-btn
+            v-for="color in folderColors"
             :key="color.value"
             round
             flat
@@ -32,7 +33,7 @@
             icon="colorize"
             class="color-button custom-color-btn"
             :class="{ 'color-selected': isCustomColor }"
-            :style="isCustomColor ? { backgroundColor: customColor } : {}"
+            :style="isCustomColor ? { backgroundColor: customColor } : { backgroundColor: 'transparent'}"
             @click="openColorPicker"
           />
           <input
@@ -46,76 +47,91 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" color="primary" v-close-popup @click="cancel" />
-        <q-btn flat label="Create" color="primary" @click="createFolder" :disabled="!isValid" />
+        <q-btn
+          flat
+          label="Cancel"
+          color="primary"
+          v-close-popup
+          @click="cancel"
+        />
+        <q-btn
+          flat
+          label="Create"
+          color="primary"
+          @click="createFolder"
+          :disabled="!isValid"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, watch } from 'vue';
+import { ref, computed, nextTick, watch } from "vue";
 
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
-const emit = defineEmits(['update:modelValue', 'create-folder']);
+const emit = defineEmits(["update:modelValue", "create-folder"]);
 
 const showModal = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: (value) => emit("update:modelValue", value),
 });
 
-const folderName = ref('');
-const selectedColor = ref('#DB2955'); // Default color
-const customColor = ref('#DB2955');
+const folderName = ref("");
+const selectedColor = ref("#DB2955"); // Default color
+const customColor = ref("#DB2955");
 const isCustomColor = ref(false);
 const nameInput = ref<HTMLInputElement | null>(null);
 const colorPickerInput = ref<HTMLInputElement | null>(null);
 
 const folderColors = [
-  { label: 'Pink', value: '#DB2955' },
-  { label: 'Blue', value: '#235789' },
-  { label: 'Green', value: '#35CE8D' },
-  { label: 'Purple', value: '#C490D1' },
-  { label: 'Orange', value: '#FE621D' },
-  { label: 'Yellow', value: '#f7c548'},
-  { label: 'Red', value: '#C03221' },
-  { label: 'Cyan', value: '#39A9DB' }
+  { label: "Pink", value: "#DB2955" },
+  { label: "Blue", value: "#235789" },
+  { label: "Green", value: "#35CE8D" },
+  { label: "Purple", value: "#C490D1" },
+  { label: "Orange", value: "#FE621D" },
+  { label: "Yellow", value: "#f7c548" },
+  { label: "Red", value: "#C03221" },
+  { label: "Cyan", value: "#39A9DB" },
 ];
 
 // Validate input
 const isValid = computed(() => {
-  return folderName.value.trim() !== '';
+  return folderName.value.trim() !== "";
 });
 
 // Focus the name input when the modal opens
-watch(() => props.modelValue, (isOpen) => {
-  if (isOpen) {
-    nextTick(() => {
-      // Reset values when opening the modal
-      folderName.value = '';
-      selectedColor.value = '#DB2955';
-      customColor.value = '#DB2955';
-      isCustomColor.value = false;
-      
-      // Focus the input
-      if (nameInput.value) {
-        nameInput.value.focus();
-      }
-    });
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen) {
+      nextTick(() => {
+        // Reset values when opening the modal
+        folderName.value = "";
+        selectedColor.value = "#DB2955";
+        customColor.value = "#DB2955";
+        isCustomColor.value = false;
+
+        // Focus the input
+        if (nameInput.value) {
+          nameInput.value.focus();
+        }
+      });
+    }
   }
-});
+);
 
 const createFolder = () => {
   if (isValid.value) {
-    emit('create-folder', {
+    emit("create-folder", {
       name: folderName.value.trim(),
-      color: selectedColor.value
+      color: selectedColor.value,
     });
     showModal.value = false;
   }
@@ -138,9 +154,9 @@ const selectPresetColor = (color: string) => {
 };
 
 const cancel = () => {
-  folderName.value = '';
-  selectedColor.value = '#DB2955';
-  customColor.value = '#DB2955';
+  folderName.value = "";
+  selectedColor.value = "#DB2955";
+  customColor.value = "#DB2955";
   isCustomColor.value = false;
 };
 </script>
@@ -148,7 +164,7 @@ const cancel = () => {
 <style scoped>
 .folder-modal {
   width: 400px;
-  background-color: var(--theme-card);
+  background-color: var(--solid);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
   backdrop-filter: blur(10px);
@@ -174,7 +190,7 @@ const cancel = () => {
 
 .color-selected {
   transform: scale(1.1);
-  box-shadow: 0 0 0 3px white !important;
+  box-shadow: 0 0 0 3px var(--theme-border) !important;
 }
 
 .custom-color-btn {
@@ -202,8 +218,25 @@ const cancel = () => {
   pointer-events: none;
 }
 
-.color-selected {
-  transform: scale(1.1);
-  box-shadow: 0 0 0 3px white !important;
+/* Add styles for Quasar form elements */
+:deep(.q-field__native),
+:deep(.q-field__input) {
+  color: var(--theme-text) !important;
+}
+
+:deep(.q-field__label) {
+  color: var(--theme-text-secondary) !important;
+}
+
+:deep(.q-field__marginal) {
+  color: var(--theme-text-secondary);
+}
+
+:deep(input::placeholder) {
+  color: var(--theme-text-secondary) !important;
+}
+
+:deep(.q-field__messages) {
+  color: var(--theme-text-secondary) !important;
 }
 </style>

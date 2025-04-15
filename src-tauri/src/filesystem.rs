@@ -596,3 +596,37 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
 
     Ok(mod_info)
 }
+
+// Function to check for the "assets" and "manifest" folders in the same directory as the executable
+// This helps verify if a folder is a valid FNF mod
+pub fn is_valid_fnf_mod(path: &Path) -> bool {
+    debug!("Checking if {} is a valid FNF mod", path.display());
+    
+    // Check if the path exists and is a directory
+    if !path.exists() || !path.is_dir() {
+        debug!("Path does not exist or is not a directory");
+        return false;
+    }
+    
+    // Check for assets folder
+    let assets_folder = path.join("assets");
+    let has_assets = assets_folder.exists() && assets_folder.is_dir();
+    
+    // Check for manifest folder (used in many FNF mods)
+    let manifest_folder = path.join("manifest");
+    let has_manifest = manifest_folder.exists() && manifest_folder.is_dir();
+    
+    // Additional checks for executable files
+    let executables = find_executables(path);
+    let has_executable = !executables.is_empty();
+    
+    // For a valid FNF mod, we require:
+    // 1. Assets folder, and
+    // 2. Either a manifest folder or an executable
+    let is_valid = has_assets && (has_manifest || has_executable);
+    
+    debug!("Validity check for {}: assets={}, manifest={}, executable={}, valid={}",
+        path.display(), has_assets, has_manifest, has_executable, is_valid);
+    
+    is_valid
+}

@@ -174,7 +174,7 @@
 
           <!-- Visuals Section -->
           <q-card-section v-show="activeSection === 'visuals'">
-            <div class="text-subtitle1 q-mb-md">Visual Elements</div>
+            <div class="text-subtitle1 q-mb-md">Appearance</div>
             
             <div class="banner-upload q-mb-md">
               <div class="text-subtitle2 q-mb-sm">Banner Image</div>
@@ -247,7 +247,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue';
-import { Mod } from '../../types';
+import { Mod } from '@main-types';
 
 const props = defineProps({
   modelValue: {
@@ -307,8 +307,8 @@ const showModal = computed({
 const modSettingsSections = [
   { id: 'general', label: 'General', icon: 'info' },
   { id: 'location', label: 'Location', icon: 'folder' },
-  { id: 'engine', label: 'Engine', icon: 'settings' },
-  { id: 'visuals', label: 'Visuals', icon: 'image' }
+  { id: 'engine', label: 'Engine', icon: 'code' },
+  { id: 'visuals', label: 'Appearance', icon: 'palette' }
 ];
 
 const activeSection = ref('general');
@@ -319,11 +319,11 @@ onMounted(() => {
   const style = document.createElement('style');
   style.innerHTML = `
     .q-menu {
-      background-color: var(--theme-card) !important;
-      color: var(--theme-text) !important;
+      background-color: var(--theme-card);
+      color: var(--theme-text);
     }
     .q-item {
-      color: var(--theme-text) !important;
+      color: var(--theme-text);
     }
   `;
   document.head.appendChild(style);
@@ -394,7 +394,7 @@ const removeEngineIcon = () => {
 // Function to format engine name from engine type
 const formatEngineName = (engineType: string): string => {
   const engineNames: Record<string, string> = {
-    'vanilla': 'Vanilla FNF',
+    'vanilla': 'V-Slice',
     'psych': 'Psych Engine',
     'codename': 'Codename Engine',
     'fps-plus': 'FPS Plus',
@@ -488,16 +488,16 @@ const cancel = () => {
 }
 
 .settings-active-item {
-  background-color: var(--q-primary) !important;
-  color: white !important;
+  background-color: var(--q-primary);
+  color: white;
 }
 
 .settings-sidebar .q-icon {
-  color: var(--theme-text-secondary) !important;
+  color: var(--theme-text-secondary);
 }
 
 .settings-active-item .q-icon {
-  color: white !important;
+  color: white;
 }
 
 .banner-upload, .logo-upload {

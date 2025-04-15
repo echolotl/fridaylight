@@ -18,8 +18,21 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    "baseUrl": "./src",
+
+    "paths": {
+      "@main-types": ["types/index.ts"],
+      "@modals/*": ["components/modals/*"],
+      "@components/*": ["components/*"],
+      "@stores/*": ["stores/*"],
+      "@services/*": ["services/*"],
+      "@layouts/*": ["components/layout/*"],
+      "@mods/*": ["components/mods/*"],
+
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "references": [{ "path": "./tsconfig.node.json" }],
 }
