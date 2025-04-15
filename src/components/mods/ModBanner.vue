@@ -239,16 +239,17 @@ const formatEngineType = (engineType: string) => {
   border-radius: 4px;
   font-size: 0.9rem;
   object-fit: contain;
-  img {
-    max-height: 2rem;
-    width: auto;
-  }
+}
 
-  .custom-engine-icon {
-    max-height: 2rem;
-    width: auto;
-    object-fit: contain;
-  }
+.engine-tag img {
+  max-height: 2rem;
+  width: auto;
+}
+
+.engine-tag .custom-engine-icon {
+  max-height: 2rem;
+  width: auto;
+  object-fit: contain;
 }
 .version-tag {
   color: var(--q-primary);
