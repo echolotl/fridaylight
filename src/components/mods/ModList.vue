@@ -243,7 +243,20 @@ watch(
           display_order: mod.display_order,
         }))
       );
-      modsList.value = [...newMods];
+      
+      // Ensure each mod has a valid display_order
+      const modsWithValidOrder = newMods.map(mod => {
+        // If display_order is undefined, null, or the problematic value 9999
+        if (mod.display_order === undefined || mod.display_order === null || mod.display_order === 9999) {
+          // Create a new mod with display_order set to a valid number
+          // Use the index in the array as a fallback
+          const index = newMods.findIndex(m => m.id === mod.id);
+          return { ...mod, display_order: index >= 0 ? index : 0 };
+        }
+        return mod;
+      });
+      
+      modsList.value = [...modsWithValidOrder];
     }
   },
   { immediate: true, deep: true }
@@ -261,7 +274,16 @@ watch(
           display_order: folder.display_order,
         }))
       );
-      foldersList.value = [...newFolders];
+      
+      // Ensure each folder has a valid display_order
+      const foldersWithValidOrder = newFolders.map((folder, index) => {
+        if (folder.display_order === undefined || folder.display_order === null || folder.display_order === 9999) {
+          return { ...folder, display_order: index };
+        }
+        return folder;
+      });
+      
+      foldersList.value = [...foldersWithValidOrder];
     }
   },
   { immediate: true, deep: true }
@@ -288,7 +310,7 @@ const updateDisplayItems = () => {
       id: folder.id,
       type: "folder" as const,
       data: folder,
-      display_order: folder.display_order,
+      display_order: folder.display_order || 0, // Ensure display_order is not undefined
     })),
     ...modsList.value
       .filter((mod) => !mod.folder_id) // Only include mods not in folders
@@ -296,7 +318,7 @@ const updateDisplayItems = () => {
         id: mod.id,
         type: "mod" as const,
         data: mod,
-        display_order: mod.display_order,
+        display_order: mod.display_order || 0, // Ensure display_order is not undefined
       })),
   ];
 

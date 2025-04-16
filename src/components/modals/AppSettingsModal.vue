@@ -192,6 +192,16 @@
               A mod manager for Friday Night Funkin'.
               <br />
               <br />
+
+
+              <div class="text-subtitle1 q-mb-md">Credits</div>
+              <div class="acknowledgements q-mb-md">
+                <ul style="background-color: transparent;">
+                  <li><a @click="openUrl('https://www.echolotl.lol')">echolotl</a> - Coder, Designer, Director, Creator of Fridaylight</li>
+                  <li><a @click="openUrl('https://gamebanana.com/members/1844732')">Cracsthor</a> - Creator of PhantomMuff Full + Difficulty fonts</li>
+                  <li><a @click="openUrl('https://gamebanana.com/members/3083321')">NoizDynamic</a> - Creator of Tardling font</li>
+                </ul>
+              </div>
               <div class="center-credits">
                 <div class="text-caption text-grey-6">Made with:</div>
                 <div class="logo-grid">
@@ -305,15 +315,29 @@ const settingsSections = [
 // Track the active section
 const activeSection = ref("appearance");
 
-// Theme options
-const themeOptions = [
-  { label: "Light", value: "light" },
-  { label: "Dark", value: "dark" },
-  { label: "Codename", value: "codename"},
-  { label: "Friday", value: "sunset" },
-  { label: "Boyfriend", value: "midnight" },
-  { label: "Corruption", value: "neon" },
-];
+// Theme options - "doe" is hidden until unlocked
+const hasUnlockedExtraThemes = ref(false);
+const themeOptions = computed(() => {
+  const baseOptions = [
+    { label: "Light", value: "light" },
+    { label: "Dark", value: "dark" },
+    { label: "Shaggy", value: "shaggy"},
+    { label: "Hotline", value: "hotline" },
+    { label: "Yourself", value: "yourself" },
+    { label: "Corruption", value: "corruption" },
+    { label: "QT", value: "qt" },
+    { label: "Garcello", value: "garcello" },
+    { label: "Pump", value: "pump" },
+    { label: "Boo", value: "boo" },
+  ];
+  
+  // Only add Extra themes if they are unlocked
+  if (hasUnlockedExtraThemes.value) {
+    baseOptions.push({ label: "Doe", value: "doe" });
+  }
+  
+  return baseOptions;
+});
 
 const accentColorOptions = [
   { label: "Pink", value: "#DB2955" },
@@ -505,33 +529,61 @@ const updateTheme = async () => {
 
   // First check if we're running on Windows 11
   const isWindows11 = await invoke<boolean>("is_windows_11");
-  console.log("Is Windows 11:", isWindows11);
+    console.log("Is Windows 11:", isWindows11, "Theme:", activeThemeValue);
 
   // Apply CSS classes for theme by first removing all theme classes
-  document.body.classList.remove("light-theme", "dark-theme", "midnight-theme", "sunset-theme", "neon-theme", "forest-theme", "codename-theme");
+  document.body.classList.remove(
+    "light-theme", 
+    "dark-theme", 
+    "yourself-theme", 
+    "hotline-theme", 
+    "corruption-theme", 
+    "shaggy-theme",
+    "boo-theme",
+    "qt-theme",
+    "garcello-theme",
+    "pump-theme",
+    "doe-theme"
+  );
   
   // Then add the active theme class
   document.body.classList.add(`${activeThemeValue}-theme`);
 
   // Apply solid theme if not on Windows 11
   if (!isWindows11) {
-    document.body.classList.add("solid-theme");
+    // Only apply solid-theme to light and dark themes
+    if (activeThemeValue === "light" || activeThemeValue === "dark") {
+      document.body.classList.add("solid-theme");
+      console.log("Using solid background for non-Windows 11 theme:", activeThemeValue);
 
-    // Remove transparent background styles
-    document.documentElement.style.setProperty(
-      "--transparent-bg-override",
-      "none"
-    );
+      // Remove transparent background styles
+      document.documentElement.style.setProperty(
+        "--transparent-bg-override",
+        "none"
+      );
 
-    // Set background to solid color based on the theme
-    const bgColor = `var(--theme-bg)`;
-    // Apply background explicitly instead of using style property
-    document.documentElement.style.setProperty("background-color", bgColor);
-    document.body.style.removeProperty("background");
-    document.body.style.backgroundColor = bgColor;
-    document
-      .querySelector(".q-layout")
-      ?.setAttribute("style", "background-color: " + bgColor + " !important");
+      // Set background to solid color based on the theme
+      const bgColor = `var(--theme-bg)`;
+      document.documentElement.style.setProperty("background", bgColor);
+      document.body.style.removeProperty("background");
+      document.body.style.backgroundColor = bgColor;
+      document
+        .querySelector(".q-layout")
+        ?.setAttribute("style", "background: " + bgColor + " !important");
+    } else {
+      // For other themes on non-Windows 11, don't use solid-theme
+      document.body.classList.remove("solid-theme");
+      console.log("Using transparent background for non-Windows 11 theme:", activeThemeValue);
+      
+      // Use the semi-transparent theme variables directly
+      const bgColor = `var(--theme-bg)`;
+      document.documentElement.style.setProperty("background", bgColor);
+      document.body.style.removeProperty("background");
+      document.body.style.backgroundColor = bgColor;
+      document
+        .querySelector(".q-layout")
+        ?.setAttribute("style", "background: " + bgColor + " !important");
+    }
   } else {
     // On Windows 11, only light and dark themes should be transparent for Mica
     if (activeThemeValue === "light" || activeThemeValue === "dark") {
@@ -569,8 +621,7 @@ const updateTheme = async () => {
         // Non-fatal error, the app will still work without Mica
       }
     } else {
-      // For other themes (midnight, sunset, neon, forest), use solid backgrounds
-      document.body.classList.add("solid-theme");
+      document.body.classList.remove("solid-theme");
       document.documentElement.style.setProperty(
         "--transparent-bg-override",
         "none"
@@ -578,12 +629,12 @@ const updateTheme = async () => {
       
       // Set background to solid color based on the theme
       const bgColor = `var(--theme-bg)`;
-      document.documentElement.style.setProperty("background-color", bgColor);
+      document.documentElement.style.setProperty("background", bgColor);
       document.body.style.removeProperty("background");
       document.body.style.backgroundColor = bgColor;
       document
         .querySelector(".q-layout")
-        ?.setAttribute("style", "background-color: " + bgColor + " !important");
+        ?.setAttribute("style", "background: " + bgColor + " !important");
     }
   }
 
@@ -758,10 +809,13 @@ loadSettings();
 }
 
 .acknowledgements {
-  background-color: var(--theme-surface);
-  border-radius: 4px;
   max-height: 200px;
   overflow-y: auto;
+  line-height: 1.5;
+}
+
+a {
+  cursor: pointer;
 }
 
 .acknowledgements ul {
@@ -809,3 +863,4 @@ loadSettings();
   color: var(--theme-text-secondary);
 }
 </style>
+```

@@ -102,7 +102,7 @@ const clear = () => {
 }
 
 .gb-logo1 {
-  fill: var(--theme-bg);
+  fill: rgba(0, 0, 0, 0.5);
 }
 .gb-logo2 {
   fill: url(#gradient);
@@ -121,7 +121,7 @@ const clear = () => {
 
 #gradient {
   --stop-color-1: var(--q-primary);
-  --stop-color-2: color-mix(in oklab, var(--q-primary), var(--theme-bg));
+  --stop-color-2: black;
 }
 
 /* Style for the input to use theme text colors */

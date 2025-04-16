@@ -751,6 +751,7 @@ const downloadMod = async (mod: GameBananaMod) => {
 
     if (isModpack) {
       // Handle modpack download logic
+      console.log("Modpack detected:", modpackType);
       const engineMods = await getCompatibleEngineMods(modpackType);
 
       if (engineMods.length === 0) {
@@ -1380,11 +1381,10 @@ const determineIfModpack = (mod: GameBananaMod): boolean => {
   // Check mod category if available
   if (mod.categoryName) {
     const lowerCaseCategoryName = mod.categoryName.toLowerCase();
-    return (
-      lowerCaseCategoryName.includes("modpack") ||
-      lowerCaseCategoryName.includes("mod pack") ||
-      lowerCaseCategoryName.includes("mods folder")
-    );
+    if (lowerCaseCategoryName.includes("executables")) return false;
+    if (lowerCaseCategoryName.includes("psych")) return true;
+    if (lowerCaseCategoryName.includes("v-slice")) return true;
+    if (lowerCaseCategoryName.includes("codename")) return true;
   }
 
   return false;
@@ -1397,30 +1397,16 @@ const determineModpackType = (mod: GameBananaMod): string | null => {
   if (selectedModType.value === "vsliceModpacks") return "vanilla";
   if (selectedModType.value === "codenameModpacks") return "codename";
 
-  // Then check mod tags or description
-  const lowerCaseDesc = mod.description?.toLowerCase() || "";
-  const tags = mod.tags || [];
-  const lowerCaseTags = tags.map((tag) => tag.toLowerCase());
 
-  if (
-    lowerCaseDesc.includes("psych engine") ||
-    lowerCaseTags.some((tag) => tag.includes("psych"))
-  ) {
-    return "psych";
-  } else if (
-    lowerCaseDesc.includes("v-slice") ||
-    lowerCaseTags.some(
-      (tag) => tag.includes("vslice") || tag.includes("v-slice")
-    )
-  ) {
-    return "vslice";
-  } else if (
-    lowerCaseDesc.includes("codename engine") ||
-    lowerCaseTags.some((tag) => tag.includes("codename"))
-  ) {
-    return "codename";
+  console.log("Mod category:", mod.categoryName);
+
+  // Check mod category if available
+  if (mod.categoryName) {
+    const lowerCaseCategoryName = mod.categoryName.toLowerCase();
+    if (lowerCaseCategoryName.includes("psych")) return "psych";
+    if (lowerCaseCategoryName.includes("v-slice")) return "vanilla";
+    if (lowerCaseCategoryName.includes("codename")) return "codename";
   }
-
   return null;
 };
 
