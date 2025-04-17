@@ -27,7 +27,7 @@
             'gamebanana-button': true,
             'active-gamebanana': showGameBanana,
           }"
-          color="secondary"
+          color="primary"
           @click="toggleGameBanana"
           flat
         >
@@ -293,13 +293,48 @@ const loadMods = async () => {
   try {
     const modList = await invoke<ModInfo[]>("get_mods");
 
-    // Sort mods by display_order if available, otherwise keep original order
-    mods.value = modList.sort((a, b) => {
-      if (a.display_order !== undefined && b.display_order !== undefined) {
-        return a.display_order - b.display_order;
+    // First, check for mods with display_order of 9999 or undefined and fix them
+    let needsReindexing = false;
+    const processedMods = modList.map((mod, index) => {
+      // Check if display_order is problematic (undefined, null, 9999)
+      if (mod.display_order === undefined || mod.display_order === null || mod.display_order === 9999) {
+        needsReindexing = true;
+        // Assign a reasonable index based on position in array
+        return { ...mod, display_order: index };
       }
-      return 0;
+      return mod;
     });
+
+    // Sort mods by display_order
+    mods.value = processedMods.sort((a, b) => {
+      return (a.display_order ?? 0) - (b.display_order ?? 0);
+    });
+    
+    // If we had to fix any mod display orders, save them back to the database
+    if (needsReindexing && window.db) {
+      console.log("Fixing incorrect display_order values in mods...");
+      try {
+        await window.db.execute("BEGIN TRANSACTION");
+        
+        for (const mod of mods.value) {
+          await window.db.execute(
+            `UPDATE mods SET display_order = $1 WHERE id = $2`,
+            [mod.display_order, mod.id]
+          );
+        }
+        
+        await window.db.execute("COMMIT");
+        console.log("Successfully fixed display_order values");
+        
+        // Sync with backend so it's aware of our changes
+        await syncModsWithBackend();
+      } catch (error) {
+        console.error("Failed to fix mod display_order values:", error);
+        if (window.db) {
+          await window.db.execute("ROLLBACK");
+        }
+      }
+    }
   } catch (error) {
     console.error("Failed to load mods:", error);
   }
@@ -987,6 +1022,6 @@ onUnmounted(() => {
 
 #gradient {
   --stop-color-1: var(--q-primary);
-  --stop-color-2: color-mix(in oklab, var(--q-primary), var(--theme-card));
+  --stop-color-2: color-mix(in oklab, var(--q-primary) 75%, black 25%);
 }
 </style>

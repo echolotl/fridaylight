@@ -1,7 +1,8 @@
 import Database from '@tauri-apps/plugin-sql';
 import { invoke } from '@tauri-apps/api/core';
 import { v4 as uuidv4 } from 'uuid';
-import { Mod, Folder, DisplayItem } from '../types';
+import { Mod, Folder, DisplayItem, AppSettings } from '../types';
+import { StoreService } from './storeService';
 
 // Constants for database lock protection
 const MAX_RETRY_ATTEMPTS = 3;     // Maximum number of retry attempts
@@ -48,8 +49,11 @@ export class DatabaseService {
   private static instance: DatabaseService;
   private db: any = null;
   private initialized = false;
+  private storeService: StoreService;
 
-  private constructor() {}
+  private constructor() {
+    this.storeService = StoreService.getInstance();
+  }
 
   /**
    * Get the singleton instance of DatabaseService
@@ -72,11 +76,15 @@ export class DatabaseService {
     };
 
     try {
+      // Initialize the store service
+      await this.storeService.initialize();
+      
       this.db = await Database.load('sqlite:mods.db');
       
       // Create or update tables with lock protection
       await withDatabaseLock(() => this.createModsTable());
-      await withDatabaseLock(() => this.createSettingsTable());
+      // Check and migrate settings if needed
+      await withDatabaseLock(() => this.migrateSettingsToStore());
       await withDatabaseLock(() => this.createFoldersTable());
       await withDatabaseLock(() => this.createModFoldersTable());
 
@@ -86,6 +94,62 @@ export class DatabaseService {
     } catch (error) {
       console.error('Failed to initialize database:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Migrate settings from database to store
+   */
+  private async migrateSettingsToStore(): Promise<void> {
+    try {
+      // Check if the settings table exists
+      const tableInfo = await this.db.select(`SELECT name FROM sqlite_master WHERE type='table' AND name='settings'`);
+      
+      if (tableInfo.length > 0) {
+        console.log('Found settings table, migrating settings to store...');
+        
+        // Get all settings from the database
+        const dbSettings = await this.db.select('SELECT key, value FROM settings');
+        
+        if (dbSettings.length > 0) {
+          const settings: Partial<AppSettings> = {};
+          
+          // Map the old settings to the new AppSettings format
+          for (const setting of dbSettings) {
+            let settingKey = setting.key;
+            let settingValue = setting.value;
+
+            // Convert string values to appropriate types
+            if (settingValue === 'true') settingValue = true;
+            else if (settingValue === 'false') settingValue = false;
+            
+            // Handle the theme migration from enableLightTheme to theme
+            if (settingKey === 'enableLightTheme') {
+              settingKey = 'theme';
+              settingValue = settingValue === true || settingValue === 'true' ? 'light' : 'dark';
+            }
+            
+            // Only add if the key exists in AppSettings
+            if (settingKey in this.storeService.DEFAULT_SETTINGS) {
+              settings[settingKey as keyof AppSettings] = settingValue;
+            }
+          }
+          
+          // Save migrated settings to the store
+          await this.storeService.saveSettings(settings);
+          console.log('Settings successfully migrated to store');
+          
+          // Optionally, remove the settings table since we don't need it anymore
+          // Commented out for safety - uncomment after thorough testing
+          // await this.db.execute('DROP TABLE settings');
+          // console.log('Settings table removed');
+        }
+      } else {
+        console.log('No settings table found, no migration needed');
+      }
+    } catch (error) {
+      console.error('Failed to migrate settings to store:', error);
+      // Don't throw error to continue initialization
     }
   }
 
@@ -173,38 +237,6 @@ export class DatabaseService {
   }
 
   /**
-   * Create or update the settings table
-   */
-  private async createSettingsTable(): Promise<void> {
-    try {
-      const settingsTableInfo: any[] = await this.db.select(`PRAGMA table_info(settings)`);
-      
-      if (settingsTableInfo.length === 0) {
-        // Table doesn't exist, create it
-        await this.db.execute(`
-          CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-          )
-        `);
-        
-        // Insert default settings
-        await this.db.execute(`
-          INSERT INTO settings (key, value) VALUES 
-          ('accentColor', '#FF0088'),
-          ('installLocation', 'C:\\Users\\Public\\Documents\\FNF Mods'),
-          ('useSystemTheme', 'true'),
-          ('enableLightTheme', 'false')
-        `);
-        console.log('Created settings table with default values');
-      }
-    } catch (error) {
-      console.error('Failed to initialize settings table:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Create or update the folders table
    */
   private async createFoldersTable(): Promise<void> {
@@ -263,6 +295,7 @@ export class DatabaseService {
       throw error;
     }
   }
+
   /**
    * Get all mods from the database
    */
@@ -305,6 +338,7 @@ export class DatabaseService {
       throw error;
     });
   }
+
   /**
    * Get all folders from the database
    */
@@ -334,6 +368,80 @@ export class DatabaseService {
       throw error;
     });
   }
+
+  // Helper to upsert mods in a single transaction with rollback
+  private async _upsertMods(mods: Mod[]): Promise<void> {
+    try {
+      await this.db.execute('BEGIN TRANSACTION');
+      for (const mod of mods) {
+        const engineData = JSON.stringify(mod.engine);
+        await this.db.execute(`
+          INSERT OR REPLACE INTO mods (
+            id, name, path, executable_path, icon_data, banner_data, logo_data, 
+            version, description, engine_type, engine_data, display_order, folder_id,
+            display_order_in_folder
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          mod.id,
+          mod.name,
+          mod.path,
+          mod.executable_path || null,
+          mod.icon_data || null,
+          mod.banner_data || null,
+          mod.logo_data || null,
+          mod.version || null,
+          mod.description || null,
+          mod.engine_type || mod.engine.engine_type,
+          engineData,
+          mod.display_order || 9999,
+          mod.folder_id || null,
+          mod.display_order_in_folder !== undefined ? mod.display_order_in_folder : 0
+        ]);
+      }
+      await this.db.execute('COMMIT');
+    } catch (error) {
+      await this.db.execute('ROLLBACK');
+      throw error;
+    }
+  }
+
+  // Helper to upsert mods and then sync with backend
+  private async _saveAndSyncMods(mods: Mod[]): Promise<void> {
+    await this._upsertMods(mods);
+    await this.syncModsWithBackend();
+  }
+
+  // Helper to upsert folders in a single transaction with rollback
+  private async _upsertFolders(folders: Folder[]): Promise<void> {
+    try {
+      await this.db.execute('BEGIN TRANSACTION');
+      for (const folder of folders) {
+        await this.db.execute(`
+          INSERT OR REPLACE INTO folders (id, name, color, display_order) 
+          VALUES (?, ?, ?, ?)
+        `, [folder.id, folder.name, folder.color, folder.display_order || 9999]);
+        // Update the folder_id for all mods in this folder
+        if (folder.mods && Array.isArray(folder.mods)) {
+          for (const modId of folder.mods) {
+            await this.db.execute(`
+              UPDATE mods SET folder_id = ? WHERE id = ?
+            `, [folder.id, modId]);
+          }
+        }
+      }
+      await this.db.execute('COMMIT');
+    } catch (error) {
+      await this.db.execute('ROLLBACK');
+      throw error;
+    }
+  }
+
+  // Helper to upsert folders and then sync with backend
+  private async _saveAndSyncFolders(folders: Folder[]): Promise<void> {
+    await this._upsertFolders(folders);
+    await this.syncModsWithBackend();
+  }
+
   /**
    * Save a mod to the database
    */
@@ -342,40 +450,13 @@ export class DatabaseService {
       throw new Error('Database not initialized');
     }
 
-    return withDatabaseLock(async () => {
-      // Serialize the engine object to JSON
-      const engineData = JSON.stringify(mod.engine);
-
-      await this.db.execute(`
-        INSERT OR REPLACE INTO mods (
-          id, name, path, executable_path, icon_data, banner_data, logo_data, 
-          version, description, engine_type, engine_data, display_order, folder_id,
-          display_order_in_folder
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        mod.id,
-        mod.name,
-        mod.path,
-        mod.executable_path || null,
-        mod.icon_data || null,
-        mod.banner_data || null,
-        mod.logo_data || null,
-        mod.version || null,
-        mod.description || null,
-        mod.engine_type || mod.engine.engine_type,
-        engineData,
-        mod.display_order || 9999,
-        mod.folder_id || null,
-        mod.display_order_in_folder !== undefined ? mod.display_order_in_folder : 0
-      ]);
-
-      // Sync with backend
-      await this.syncModsWithBackend();
-    }).catch(error => {
-      console.error('Failed to save mod:', error);
-      throw error;
-    });
+    return withDatabaseLock(() => this._saveAndSyncMods([mod]))
+      .catch(error => {
+        console.error('Failed to save mod:', error);
+        throw error;
+      });
   }
+
   /**
    * Save multiple mods to the database
    */
@@ -384,53 +465,13 @@ export class DatabaseService {
       throw new Error('Database not initialized');
     }
 
-    return withDatabaseLock(async () => {
-      try {
-        // Start a transaction
-        await this.db.execute('BEGIN TRANSACTION');
-
-        for (const mod of mods) {
-          // Serialize the engine object to JSON
-          const engineData = JSON.stringify(mod.engine);
-          await this.db.execute(`
-            INSERT OR REPLACE INTO mods (
-              id, name, path, executable_path, icon_data, banner_data, logo_data, 
-              version, description, engine_type, engine_data, display_order, folder_id,
-              display_order_in_folder
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `, [
-            mod.id,
-            mod.name,
-            mod.path,
-            mod.executable_path || null,
-            mod.icon_data || null,
-            mod.banner_data || null,
-            mod.logo_data || null,
-            mod.version || null,
-            mod.description || null,
-            mod.engine_type || mod.engine.engine_type,
-            engineData,
-            mod.display_order || 9999,
-            mod.folder_id || null,
-            mod.display_order_in_folder !== undefined ? mod.display_order_in_folder : 0
-          ]);
-        }
-
-        // Commit the transaction
-        await this.db.execute('COMMIT');
-
-        // Sync with backend
-        await this.syncModsWithBackend();
-      } catch (error) {
-        // Rollback on error
-        await this.db.execute('ROLLBACK');
+    return withDatabaseLock(() => this._saveAndSyncMods(mods))
+      .catch(error => {
+        console.error('Failed to save mods:', error);
         throw error;
-      }
-    }).catch(error => {
-      console.error('Failed to save mods:', error);
-      throw error;
-    });
+      });
   }
+
   /**
    * Delete a mod from the database
    */
@@ -448,6 +489,7 @@ export class DatabaseService {
       throw error;
     });
   }
+
   /**
    * Save a folder to the database
    */
@@ -455,41 +497,13 @@ export class DatabaseService {
     if (!this.db) {
       throw new Error('Database not initialized');
     }
-
-    return withDatabaseLock(async () => {
-      try {
-        // Start a transaction
-        await this.db.execute('BEGIN TRANSACTION');
-
-        // Insert or update the folder
-        await this.db.execute(`
-          INSERT OR REPLACE INTO folders (id, name, color, display_order) 
-          VALUES (?, ?, ?, ?)
-        `, [folder.id, folder.name, folder.color, folder.display_order || 9999]);
-
-        // Update the folder_id for all mods in this folder
-        for (const modId of folder.mods) {
-          await this.db.execute(`
-            UPDATE mods SET folder_id = ? WHERE id = ?
-          `, [folder.id, modId]);
-        }
-
-        // Commit the transaction
-        await this.db.execute('COMMIT');
-        console.log('Folder saved successfully:', folder);
-
-        // Sync with backend
-        await this.syncModsWithBackend();
-      } catch (error) {
-        // Rollback on error
-        await this.db.execute('ROLLBACK');
+    return withDatabaseLock(() => this._saveAndSyncFolders([folder]))
+      .catch(error => {
+        console.error('Failed to save folder:', error);
         throw error;
-      }
-    }).catch(error => {
-      console.error('Failed to save folder:', error);
-      throw error;
-    });
+      });
   }
+
   /**
    * Save multiple folders to the database
    */
@@ -497,32 +511,13 @@ export class DatabaseService {
     if (!this.db) {
       throw new Error('Database not initialized');
     }
-
-    return withDatabaseLock(async () => {
-      try {
-        // Start a transaction
-        await this.db.execute('BEGIN TRANSACTION');
-
-        for (const folder of folders) {
-          // Insert or update the folder
-          await this.db.execute(`
-            INSERT OR REPLACE INTO folders (id, name, color, display_order) 
-            VALUES (?, ?, ?, ?)
-          `, [folder.id, folder.name, folder.color, folder.display_order || 9999]);
-        }
-
-        // Commit the transaction
-        await this.db.execute('COMMIT');
-      } catch (error) {
-        // Rollback on error
-        await this.db.execute('ROLLBACK');
+    return withDatabaseLock(() => this._saveAndSyncFolders(folders))
+      .catch(error => {
+        console.error('Failed to save folders:', error);
         throw error;
-      }
-    }).catch(error => {
-      console.error('Failed to save folders:', error);
-      throw error;
-    });
+      });
   }
+
   /**
    * Delete a folder from the database
    */
@@ -533,9 +528,6 @@ export class DatabaseService {
 
     return withDatabaseLock(async () => {
       try {
-        // Start a transaction
-        await this.db.execute('BEGIN TRANSACTION');
-
         // Get mods in this folder
         await this.db.select('SELECT id FROM mods WHERE folder_id = ?', [folderId]);
 
@@ -546,26 +538,18 @@ export class DatabaseService {
         
         // Delete the folder
         await this.db.execute('DELETE FROM folders WHERE id = ?', [folderId]);
-
-        // Commit the transaction
-        await this.db.execute('COMMIT');
-
-        // Sync with backend after the transaction is completed
+        // Sync with backend after the operation
         await this.syncModsWithBackend();
       } catch (error) {
-        // Rollback on error
-        try {
-          await this.db.execute('ROLLBACK');
-        } catch (rollbackError) {
-          console.error('Error during rollback:', rollbackError);
-        }
         throw error;
       }
     }).catch(error => {
       console.error('Failed to delete folder:', error);
       throw error;
     });
-  }  /**
+  }
+
+  /**
    * Move a mod to a folder
    */
   public async moveModToFolder(modId: string, folderId: string | null): Promise<void> {
@@ -625,6 +609,7 @@ export class DatabaseService {
       throw error;
     });
   }
+
   /**
    * Update display order for mods and folders
    */
@@ -668,38 +653,24 @@ export class DatabaseService {
       throw error;
     });
   }
+
   /**
-   * Get a setting from the database
+   * Get a setting from the store
+   * @deprecated Use StoreService.getSetting() instead
    */
   public async getSetting(key: string): Promise<string | null> {
-    if (!this.db) {
-      throw new Error('Database not initialized');
-    }
-
-    return withDatabaseLock(async () => {
-      const result = await this.db.select('SELECT value FROM settings WHERE key = ?', [key]);
-      return result.length > 0 ? result[0].value : null;
-    }).catch(error => {
-      console.error(`Failed to get setting ${key}:`, error);
-      throw error;
-    });
+    console.warn('DatabaseService.getSetting is deprecated, use StoreService directly instead');
+    const value = await this.storeService.getSetting(key as keyof AppSettings);
+    return value !== null ? String(value) : null;
   }
+
   /**
-   * Save a setting to the database
+   * Save a setting to the store
+   * @deprecated Use StoreService.saveSetting() instead
    */
   public async saveSetting(key: string, value: string): Promise<void> {
-    if (!this.db) {
-      throw new Error('Database not initialized');
-    }
-
-    return withDatabaseLock(async () => {
-      await this.db.execute(`
-        INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)
-      `, [key, value]);
-    }).catch(error => {
-      console.error(`Failed to save setting ${key}:`, error);
-      throw error;
-    });
+    console.warn('DatabaseService.saveSetting is deprecated, use StoreService directly instead');
+    await this.storeService.saveSetting(key as keyof AppSettings, value as any);
   }
 
   /**

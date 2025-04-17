@@ -175,6 +175,7 @@ import FeaturedModsCarousel from "@mods/FeaturedModsCarousel.vue";
 import EngineDownloadButtons from "@mods/EngineDownloadButtons.vue";
 import DownloadFileSelector from "@modals/DownloadFileSelector.vue";
 import EngineSelectionDialog from "@modals/EngineSelectionDialog.vue";
+import { StoreService } from "../../services/storeService";
 
 // Types
 import type { GameBananaMod } from "@main-types";
@@ -751,6 +752,7 @@ const downloadMod = async (mod: GameBananaMod) => {
 
     if (isModpack) {
       // Handle modpack download logic
+      console.log("Modpack detected:", modpackType);
       const engineMods = await getCompatibleEngineMods(modpackType);
 
       if (engineMods.length === 0) {
@@ -962,9 +964,7 @@ const onFileSelected = async (selectedFile: any) => {
       // Get the install location from settings
       let installLocation: string | null = null;
       try {
-        if (window.db && window.db.service) {
-          installLocation = await window.db.service.getSetting("installLocation");
-        }
+        installLocation = await getInstallLocation();
       } catch (error) {
         console.warn("Could not get install location from settings:", error);
       }
@@ -1102,9 +1102,7 @@ const onFileSelected = async (selectedFile: any) => {
     // Get the install location from settings
     let installLocation: string | null = null;
     try {
-      if (window.db && window.db.service) {
-        installLocation = await window.db.service.getSetting("installLocation");
-      }
+      installLocation = await getInstallLocation();
     } catch (error) {
       console.warn("Could not get install location from settings:", error);
     }
@@ -1237,15 +1235,7 @@ const startDownload = async (mod: GameBananaMod) => {
     // Get the install location from settings
     let installLocation: string | null = null;
     try {
-      if (window.db && window.db.service) {
-        installLocation = await window.db.service.getSetting("installLocation");
-        if (installLocation) {
-          console.log(
-            "Using custom install location from settings:",
-            installLocation
-          );
-        }
-      }
+      installLocation = await getInstallLocation();
     } catch (error) {
       console.warn("Could not get install location from settings:", error);
     }
@@ -1380,11 +1370,10 @@ const determineIfModpack = (mod: GameBananaMod): boolean => {
   // Check mod category if available
   if (mod.categoryName) {
     const lowerCaseCategoryName = mod.categoryName.toLowerCase();
-    return (
-      lowerCaseCategoryName.includes("modpack") ||
-      lowerCaseCategoryName.includes("mod pack") ||
-      lowerCaseCategoryName.includes("mods folder")
-    );
+    if (lowerCaseCategoryName.includes("executables")) return false;
+    if (lowerCaseCategoryName.includes("psych")) return true;
+    if (lowerCaseCategoryName.includes("v-slice")) return true;
+    if (lowerCaseCategoryName.includes("codename")) return true;
   }
 
   return false;
@@ -1397,30 +1386,16 @@ const determineModpackType = (mod: GameBananaMod): string | null => {
   if (selectedModType.value === "vsliceModpacks") return "vanilla";
   if (selectedModType.value === "codenameModpacks") return "codename";
 
-  // Then check mod tags or description
-  const lowerCaseDesc = mod.description?.toLowerCase() || "";
-  const tags = mod.tags || [];
-  const lowerCaseTags = tags.map((tag) => tag.toLowerCase());
 
-  if (
-    lowerCaseDesc.includes("psych engine") ||
-    lowerCaseTags.some((tag) => tag.includes("psych"))
-  ) {
-    return "psych";
-  } else if (
-    lowerCaseDesc.includes("v-slice") ||
-    lowerCaseTags.some(
-      (tag) => tag.includes("vslice") || tag.includes("v-slice")
-    )
-  ) {
-    return "vslice";
-  } else if (
-    lowerCaseDesc.includes("codename engine") ||
-    lowerCaseTags.some((tag) => tag.includes("codename"))
-  ) {
-    return "codename";
+  console.log("Mod category:", mod.categoryName);
+
+  // Check mod category if available
+  if (mod.categoryName) {
+    const lowerCaseCategoryName = mod.categoryName.toLowerCase();
+    if (lowerCaseCategoryName.includes("psych")) return "psych";
+    if (lowerCaseCategoryName.includes("v-slice")) return "vanilla";
+    if (lowerCaseCategoryName.includes("codename")) return "codename";
   }
-
   return null;
 };
 
@@ -1601,6 +1576,17 @@ const downloadEngine = async (engineType: string) => {
     }
 
     console.error(`Failed to download ${engineType} engine:`, error);
+  }
+};
+
+// Get the install location from settings
+const getInstallLocation = async (): Promise<string | null> => {
+  try {
+    const storeService = StoreService.getInstance();
+    return await storeService.getSetting("installLocation");
+  } catch (error) {
+    console.warn("Could not get install location from settings:", error);
+    return null;
   }
 };
 </script>

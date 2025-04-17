@@ -26,6 +26,7 @@ import { useQuasar, Notify } from "quasar";
 import Sidebar from "./components/layout/Sidebar.vue";
 import EngineSelectionDialog from "./components/modals/EngineSelectionDialog.vue";
 import { DatabaseService } from "./services/dbService";
+import { StoreService } from "./services/storeService";
 
 // Define window.db
 declare global {
@@ -156,17 +157,21 @@ const applyTheme = async (themeValue: string | boolean) => {
 
   // First check if we're running on Windows 11
   const isWindows11 = await invoke<boolean>("is_windows_11");
-  console.log("Is Windows 11:", isWindows11);
+  console.log("Is Windows 11:", isWindows11, "Theme:", activeThemeValue);
 
   // Apply CSS classes for theme by first removing all theme classes
   document.body.classList.remove(
     "light-theme", 
     "dark-theme", 
-    "midnight-theme", 
-    "sunset-theme", 
-    "neon-theme", 
-    "forest-theme",
-    "codename-theme"
+    "yourself-theme", 
+    "hotline-theme", 
+    "corruption-theme", 
+    "shaggy-theme",
+    "boo-theme",
+    "qt-theme",
+    "garcello-theme",
+    "pump-theme",
+    "doe-theme"
   );
   
   // Then add the active theme class
@@ -174,23 +179,38 @@ const applyTheme = async (themeValue: string | boolean) => {
 
   // Apply solid theme if not on Windows 11
   if (!isWindows11) {
-    document.body.classList.add("solid-theme");
+    // Only apply solid-theme to light and dark themes
+    if (activeThemeValue === "light" || activeThemeValue === "dark") {
+      document.body.classList.add("solid-theme");
 
-    // Remove transparent background styles
-    document.documentElement.style.setProperty(
-      "--transparent-bg-override",
-      "none"
-    );
+      // Remove transparent background styles
+      document.documentElement.style.setProperty(
+        "--transparent-bg-override",
+        "none"
+      );
 
-    // Set background to solid color instead of transparent
-    const bgColor = `var(--theme-bg)`;
-    // Apply background explicitly instead of using style property
-    document.documentElement.style.setProperty("background-color", bgColor);
-    document.body.style.removeProperty("background");
-    document.body.style.backgroundColor = bgColor;
-    document
-      .querySelector(".q-layout")
-      ?.setAttribute("style", "background-color: " + bgColor + " !important");
+      // Set background to solid color instead of transparent
+      const bgColor = `var(--theme-bg)`;
+      // Apply background explicitly instead of using style property
+      document.documentElement.style.setProperty("background", bgColor);
+      document.body.style.removeProperty("background");
+      document.body.style.backgroundColor = bgColor;
+      document
+        .querySelector(".q-layout")
+        ?.setAttribute("style", "background: " + bgColor + " !important");
+    } else {
+      // For other themes on non-Windows 11, don't use solid-theme
+      document.body.classList.remove("solid-theme");
+      
+      // Use the semi-transparent theme variables directly
+      const bgColor = `var(--theme-bg)`;
+      document.documentElement.style.setProperty("background", bgColor);
+      document.body.style.removeProperty("background");
+      document.body.style.backgroundColor = bgColor;
+      document
+        .querySelector(".q-layout")
+        ?.setAttribute("style", "background: " + bgColor + " !important");
+    }
   } else {
     // On Windows 11, only light and dark themes should be transparent for Mica
     if (activeThemeValue === "light" || activeThemeValue === "dark") {
@@ -224,8 +244,7 @@ const applyTheme = async (themeValue: string | boolean) => {
         console.error("Failed to apply Mica effect:", error);
       }
     } else {
-      // For other themes (midnight, sunset, neon, forest), use solid backgrounds
-      document.body.classList.add("solid-theme");
+      document.body.classList.remove("solid-theme");
       document.documentElement.style.setProperty(
         "--transparent-bg-override",
         "none"
@@ -233,12 +252,12 @@ const applyTheme = async (themeValue: string | boolean) => {
       
       // Set background to solid color based on the theme
       const bgColor = `var(--theme-bg)`;
-      document.documentElement.style.setProperty("background-color", bgColor);
+      document.documentElement.style.setProperty("background", bgColor);
       document.body.style.removeProperty("background");
       document.body.style.backgroundColor = bgColor;
       document
         .querySelector(".q-layout")
-        ?.setAttribute("style", "background-color: " + bgColor + " !important");
+        ?.setAttribute("style", "background: " + bgColor + " !important");
       
       // Remove Mica effect for non-standard themes
       try {
@@ -264,8 +283,8 @@ const getSystemTheme = (): boolean => {
 // Apply custom CSS from settings
 const loadCustomCSS = async () => {
   try {
-    const dbService = DatabaseService.getInstance();
-    const customCSS = await dbService.getSetting("customCSS");
+    const storeService = StoreService.getInstance();
+    const customCSS = await storeService.getSetting("customCSS");
     
     if (customCSS) {
       // Create a style element for custom CSS
@@ -293,9 +312,8 @@ const handleSystemThemeChange = async (event: MediaQueryListEvent) => {
 // Get the current "use system theme" setting from the database
 const getUseSystemThemeSetting = async (): Promise<boolean> => {
   try {
-    const dbService = DatabaseService.getInstance();
-    const value = await dbService.getSetting("useSystemTheme");
-    return value === "true";
+    const storeService = StoreService.getInstance();
+    return await storeService.getSetting("useSystemTheme");
   } catch (error) {
     console.error("Error fetching useSystemTheme setting:", error);
     return true; // Default to true on error
@@ -305,17 +323,17 @@ const getUseSystemThemeSetting = async (): Promise<boolean> => {
 // Get the manually set theme preference 
 const getThemePreference = async (): Promise<string> => {
   try {
-    const dbService = DatabaseService.getInstance();
+    const storeService = StoreService.getInstance();
     
-    // First try to get the new theme format
-    const themeValue = await dbService.getSetting("theme");
-    if (themeValue) {
-      return themeValue;
+    // Get theme from the store
+    const theme = await storeService.getSetting("theme");
+    if (theme) {
+      return theme;
     }
     
-    // Fallback to legacy enableLightTheme format
-    const legacyValue = await dbService.getSetting("enableLightTheme");
-    return legacyValue === "true" ? "light" : "dark";
+    // Fallback to legacy enableLightTheme for compatibility
+    // This should not be needed after migration is complete
+    return "dark"; // Default to dark theme
   } catch (error) {
     console.error("Error fetching theme preference:", error);
     return "dark"; // Default to dark theme on error
@@ -403,9 +421,8 @@ const processDeepLinkModDownload = async (
     // Get the install location from settings
     let installLocation: string | null = null;
     try {
-      if (window.db && window.db.service) {
-        installLocation = await window.db.service.getSetting("installLocation");
-      }
+      const storeService = StoreService.getInstance();
+      installLocation = await storeService.getSetting("installLocation");
     } catch (error) {
       console.warn("Could not get install location from settings:", error);
     }
@@ -764,7 +781,6 @@ onUnmounted(() => {
 <style>
 html,
 body {
-  background: transparent !important;
   margin: 0;
   padding: 0;
   height: 100vh;

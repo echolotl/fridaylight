@@ -23,7 +23,7 @@
           round
           dense
           :icon="isExpanded ? 'expand_less' : 'expand_more'"
-          color="grey-5"
+          style="color: var(--theme-text-secondary)"
           @click.stop="toggleExpanded"
           class="folder-action-btn q-mr-xs"
         />
@@ -32,7 +32,7 @@
           round
           dense
           icon="delete"
-          color="grey-5"
+          style="color: var(--theme-text-secondary)"
           @click.stop="$emit('delete-folder', folder)"
           class="delete-btn"
         />

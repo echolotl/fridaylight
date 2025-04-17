@@ -13,6 +13,9 @@
     "sql:allow-execute",
     "sql:allow-select",
     "deep-link:default",
-    "core:window:allow-set-focus"
+    "core:window:allow-set-focus",
+    "store:allow-load",
+    "store:default",
+    "store:default"
   ]
 }

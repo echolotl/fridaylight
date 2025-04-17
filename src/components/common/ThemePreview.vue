@@ -43,7 +43,7 @@ defineProps({
   themeName: {
     type: String,
     default: 'dark',
-    validator: (value: string) => ['light', 'dark', 'midnight', 'sunset', 'neon', 'forest', 'codename'].includes(value)
+    validator: (value: string) => ['light', 'dark', 'yourself', 'hotline', 'corruption', 'shaggy', 'qt', 'garcello', 'pump', 'doe', 'boo'].includes(value)
   },
   accentColor: {
     type: String,
@@ -85,39 +85,67 @@ defineProps({
   border: 2px solid rgba(255, 255, 255, 0.12);
 }
 
-/* Midnight Theme - deep blue-black */
-.theme-preview-midnight {
-  background-color: #0a1929;
+/* Yourself Theme - deep blue-black (previously Billy) */
+.theme-preview-yourself {
+  background-color: #0f142c;
   color: #e6f1ff;
   border: 2px solid rgba(66, 133, 244, 0.3);
 }
 
-/* Sunset Theme - warm orange/dark red gradient */
-.theme-preview-sunset {
+/* hotline Theme - warm orange/dark red gradient */
+.theme-preview-hotline {
   background: linear-gradient(135deg, #2c1c2d 0%, #462639 100%);
   color: #ffdab9;
   border: 2px solid rgba(255, 158, 97, 0.3);
 }
 
-/* Neon Theme - dark with vibrant highlights */
-.theme-preview-neon {
+/* corruption Theme - dark with vibrant highlights */
+.theme-preview-corruption {
   background-color: #0f0f12;
-  color: #fcfcfc;
-  border: 2px solid rgba(255, 0, 230, 0.3);
+  color: #ffa0b0;
+  border: 2px solid rgba(255, 160, 184, 0.25);
 }
 
-/* Forest Theme - earthy tones */
-.theme-preview-forest {
-  background-color: #6e9489;
-  color: #d7e6cf;
-  border: 2px solid rgba(47, 83, 66, 0.3);
-}
-
-/* Codename Theme - Codename Engine */
-.theme-preview-codename {
+/* Shaggy Theme - Shaggy Engine (previously Codename) */
+.theme-preview-shaggy {
   background-color: #151c24;
   color: #d5c4f0;
   border: 2px solid rgba(81, 64, 95, 0.12);
+}
+
+/* QT Theme */
+.theme-preview-qt {
+  background-color: #eecfd8;
+  color: #49343f;
+  border: 2px solid rgba(73, 52, 63, 0.25);
+}
+
+/* Garcello Theme (previously Kero) */
+.theme-preview-garcello {
+  background-color: #dbeecf;
+  color: #343b49;
+  border: 2px solid rgba(52, 59, 73, 0.25);
+}
+
+/* Pump Theme (previously Soulles) */
+.theme-preview-pump {
+  background-color: #e6e0ad;
+  color: #311c24;
+  border: 2px solid rgba(49, 28, 36, 0.25);
+}
+
+/* Doe Theme */
+.theme-preview-doe {
+  background: linear-gradient(to top, #FFFFFF 20%, #9cedfc 50%, #7ba2f5);
+  color: #2c1d07;
+  border: 2px solid rgba(44, 29, 7, 0.25);
+}
+
+/* Boo Theme (previously Sour) */
+.theme-preview-boo {
+  background-color: #cfe2ee;
+  color: #614545;
+  border: 2px solid rgba(97, 69, 69, 0.25);
 }
 
 .window-content {
@@ -157,31 +185,48 @@ defineProps({
 }
 
 .theme-preview-light .sidebar-item.active {
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: #f0f0f0;
 }
 
 .theme-preview-dark .sidebar-item.active {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #282828;
 }
 
-.theme-preview-midnight .sidebar-item.active {
-  background-color: rgba(66, 133, 244, 0.1);
+.theme-preview-yourself .sidebar-item.active {
+  background-color: #121b38;
 }
 
-.theme-preview-sunset .sidebar-item.active {
-  background-color: rgba(255, 158, 97, 0.1);
+.theme-preview-hotline .sidebar-item.active {
+  background-color: #462639;
 }
 
-.theme-preview-neon .sidebar-item.active {
-  background-color: rgba(255, 0, 230, 0.1);
+.theme-preview-corruption .sidebar-item.active {
+  background-color: #140f16;
 }
 
-.theme-preview-forest .sidebar-item.active {
-  background-color: rgba(66, 114, 91, 0.1);
+.theme-preview-shaggy .sidebar-item.active {
+  background-color: #20243b;
 }
 
-.theme-preview-codename .sidebar-item.active {
-  background-color: rgba(69, 38, 95, 0.2);
+/* Add styles for new themes */
+.theme-preview-qt .sidebar-item.active {
+  background-color: #e4bad1;
+}
+
+.theme-preview-garcello .sidebar-item.active {
+  background-color: #bfe4ba;
+}
+
+.theme-preview-pump .sidebar-item.active {
+  background-color: #d8c395;
+}
+
+.theme-preview-doe .sidebar-item.active {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.theme-preview-boo .sidebar-item.active {
+  background-color: #bac9e4;
 }
 
 .sidebar-icon {
@@ -204,31 +249,48 @@ defineProps({
 }
 
 .theme-preview-light .main-content {
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: #f0f0f0;
 }
 
 .theme-preview-dark .main-content {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #282828;
 }
 
-.theme-preview-midnight .main-content {
-  background-color: rgba(66, 133, 244, 0.1);
+.theme-preview-yourself .main-content {
+  background-color: #121b38;
 }
 
-.theme-preview-sunset .main-content {
-  background-color: rgba(255, 158, 97, 0.1);
+.theme-preview-hotline .main-content {
+  background-color: #462639;
 }
 
-.theme-preview-neon .main-content {
-  background-color: rgba(255, 0, 230, 0.1);
+.theme-preview-corruption .main-content {
+  background-color: #140f16;
 }
 
-.theme-preview-forest .main-content {
-  background-color: rgba(121, 180, 115, 0.1);
-}
-
-.theme-preview-codename .main-content {
+.theme-preview-shaggy .main-content {
   background-color: rgba(69, 38, 95, 0.2);
+}
+
+/* Main content styles for new themes */
+.theme-preview-qt .main-content {
+  background-color: #e4bad1;
+}
+
+.theme-preview-garcello .main-content {
+  background-color: #bfe4ba;
+}
+
+.theme-preview-pump .main-content {
+  background-color: #d8c395;
+}
+
+.theme-preview-doe .main-content {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.theme-preview-boo .main-content {
+  background-color: #bac9e4;
 }
 
 .titlebar {

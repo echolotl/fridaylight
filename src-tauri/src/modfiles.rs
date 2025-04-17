@@ -1,13 +1,9 @@
-use crate::models::{ModInfo, ModMetadataFile};
-use log::{debug, error, info, warn};
+use crate::models::ModMetadataFile;
+use log::{debug, info, warn};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::io::Read;
-use std::collections::HashMap;
 use serde_json;
-use std::io;
 use roxmltree;
-use base64::Engine; // Import the Engine trait
 
 /// Find and process mod metadata files based on engine type
 pub fn find_mod_metadata_files(executable_folder: &Path, engine_type: &str, custom_mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String> {
@@ -423,28 +419,12 @@ pub fn get_executable_directory(executable_path: &str) -> Result<PathBuf, String
 /// Fetch an image and encode it as base64
 pub fn get_mod_icon_data(file_path: &str) -> Result<String, String> {
     debug!("Loading mod icon from: {}", file_path);
-    
-    match fs::read(file_path) {
-        Ok(data) => {
-            let extension = Path::new(file_path)
-                .extension()
-                .and_then(|ext| ext.to_str())
-                .unwrap_or("png");
-            
-            let mime_type = match extension.to_lowercase().as_str() {
-                "png" => "image/png",
-                "jpg" | "jpeg" => "image/jpeg",
-                "webp" => "image/webp",
-                "gif" => "image/gif",
-                _ => "application/octet-stream",
-            };
-            
-            let b64 = base64::engine::general_purpose::STANDARD.encode(&data);
-            Ok(format!("data:{};base64,{}", mime_type, b64))
-        },
-        Err(e) => {
-            warn!("Failed to read image file {}: {}", file_path, e);
-            Err(format!("Failed to read image file: {}", e))
+    let path = Path::new(file_path);
+    match crate::utils::encode_file_to_data_url(path) {
+        Some(data_url) => Ok(data_url),
+        None => {
+            warn!("Failed to read image file: {}", file_path);
+            Err(format!("Failed to read image file: {}", file_path))
         }
     }
 }
