@@ -187,7 +187,7 @@
             <div class="text-subtitle1 q-mb-md">About</div>
 
             <div class="text-body2 q-mb-sm">
-              Fridaylight v0.6.5
+              Fridaylight v0.7.0
               <br />
               A mod manager for Friday Night Funkin'.
               <br />
