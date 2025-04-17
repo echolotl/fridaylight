@@ -1,12 +1,20 @@
-# Fridaylight ![](https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vue.js&logoColor=4FC08D)
-A mod manager for Friday Night Funkin mods! Built using Tauri and Vue.
+# ![Fridaylight logo](/docs/fridaylight.png)
+
+<p align="center">
+A mod manager for Friday Night Funkin mods!<br /><br />
+<img alt="Vue badge" src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vue.js&logoColor=FFFFFF" />
+<img alt="Tauri badge" src="https://img.shields.io/badge/tauri-24C8D8?style=for-the-badge&logo=tauri&logoColor=FFFFFF" />
+<img alt="Quasar badge" src="https://img.shields.io/badge/quasar-050A14?style=for-the-badge&logo=quasar&logoColor=FFFFFF" />
+<img alt="Rust badge" src="https://img.shields.io/badge/rust-000000?style=for-the-badge&logo=rust&logoColor=FFFFFF" />
+</p>
+
+![Screenshot of main app layout](/docs/screenshot1.png)
 
 ## Features
 
 - An organized UI, including a mod list sidebar and a dedicated mod page.
 - Integrated GameBanana browsing + downloading
-- UI Customization*
-  - Currently limited to accent color
+- UI Customization
 - Mod metadata support
 - Mod launching
 
@@ -14,7 +22,7 @@ A mod manager for Friday Night Funkin mods! Built using Tauri and Vue.
 
 - [x] Engine mod management
 - [x] Folder organization
-- [ ] Custom CSS/Themes
+- [x] Custom CSS/Themes
 - [ ] More metadata support *(feel free to recommend ideas in the Issues tab)*
 - [x] Gamebanana download version picker
 - [x] Gamebanana deep linking
