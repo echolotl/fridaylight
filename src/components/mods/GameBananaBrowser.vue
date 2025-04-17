@@ -175,6 +175,7 @@ import FeaturedModsCarousel from "@mods/FeaturedModsCarousel.vue";
 import EngineDownloadButtons from "@mods/EngineDownloadButtons.vue";
 import DownloadFileSelector from "@modals/DownloadFileSelector.vue";
 import EngineSelectionDialog from "@modals/EngineSelectionDialog.vue";
+import { StoreService } from "../../services/storeService";
 
 // Types
 import type { GameBananaMod } from "@main-types";
@@ -963,9 +964,7 @@ const onFileSelected = async (selectedFile: any) => {
       // Get the install location from settings
       let installLocation: string | null = null;
       try {
-        if (window.db && window.db.service) {
-          installLocation = await window.db.service.getSetting("installLocation");
-        }
+        installLocation = await getInstallLocation();
       } catch (error) {
         console.warn("Could not get install location from settings:", error);
       }
@@ -1103,9 +1102,7 @@ const onFileSelected = async (selectedFile: any) => {
     // Get the install location from settings
     let installLocation: string | null = null;
     try {
-      if (window.db && window.db.service) {
-        installLocation = await window.db.service.getSetting("installLocation");
-      }
+      installLocation = await getInstallLocation();
     } catch (error) {
       console.warn("Could not get install location from settings:", error);
     }
@@ -1238,15 +1235,7 @@ const startDownload = async (mod: GameBananaMod) => {
     // Get the install location from settings
     let installLocation: string | null = null;
     try {
-      if (window.db && window.db.service) {
-        installLocation = await window.db.service.getSetting("installLocation");
-        if (installLocation) {
-          console.log(
-            "Using custom install location from settings:",
-            installLocation
-          );
-        }
-      }
+      installLocation = await getInstallLocation();
     } catch (error) {
       console.warn("Could not get install location from settings:", error);
     }
@@ -1587,6 +1576,17 @@ const downloadEngine = async (engineType: string) => {
     }
 
     console.error(`Failed to download ${engineType} engine:`, error);
+  }
+};
+
+// Get the install location from settings
+const getInstallLocation = async (): Promise<string | null> => {
+  try {
+    const storeService = StoreService.getInstance();
+    return await storeService.getSetting("installLocation");
+  } catch (error) {
+    console.warn("Could not get install location from settings:", error);
+    return null;
   }
 };
 </script>

@@ -26,6 +26,7 @@ import { useQuasar, Notify } from "quasar";
 import Sidebar from "./components/layout/Sidebar.vue";
 import EngineSelectionDialog from "./components/modals/EngineSelectionDialog.vue";
 import { DatabaseService } from "./services/dbService";
+import { StoreService } from "./services/storeService";
 
 // Define window.db
 declare global {
@@ -282,8 +283,8 @@ const getSystemTheme = (): boolean => {
 // Apply custom CSS from settings
 const loadCustomCSS = async () => {
   try {
-    const dbService = DatabaseService.getInstance();
-    const customCSS = await dbService.getSetting("customCSS");
+    const storeService = StoreService.getInstance();
+    const customCSS = await storeService.getSetting("customCSS");
     
     if (customCSS) {
       // Create a style element for custom CSS
@@ -311,9 +312,8 @@ const handleSystemThemeChange = async (event: MediaQueryListEvent) => {
 // Get the current "use system theme" setting from the database
 const getUseSystemThemeSetting = async (): Promise<boolean> => {
   try {
-    const dbService = DatabaseService.getInstance();
-    const value = await dbService.getSetting("useSystemTheme");
-    return value === "true";
+    const storeService = StoreService.getInstance();
+    return await storeService.getSetting("useSystemTheme");
   } catch (error) {
     console.error("Error fetching useSystemTheme setting:", error);
     return true; // Default to true on error
@@ -323,17 +323,17 @@ const getUseSystemThemeSetting = async (): Promise<boolean> => {
 // Get the manually set theme preference 
 const getThemePreference = async (): Promise<string> => {
   try {
-    const dbService = DatabaseService.getInstance();
+    const storeService = StoreService.getInstance();
     
-    // First try to get the new theme format
-    const themeValue = await dbService.getSetting("theme");
-    if (themeValue) {
-      return themeValue;
+    // Get theme from the store
+    const theme = await storeService.getSetting("theme");
+    if (theme) {
+      return theme;
     }
     
-    // Fallback to legacy enableLightTheme format
-    const legacyValue = await dbService.getSetting("enableLightTheme");
-    return legacyValue === "true" ? "light" : "dark";
+    // Fallback to legacy enableLightTheme for compatibility
+    // This should not be needed after migration is complete
+    return "dark"; // Default to dark theme
   } catch (error) {
     console.error("Error fetching theme preference:", error);
     return "dark"; // Default to dark theme on error
@@ -421,9 +421,8 @@ const processDeepLinkModDownload = async (
     // Get the install location from settings
     let installLocation: string | null = null;
     try {
-      if (window.db && window.db.service) {
-        installLocation = await window.db.service.getSetting("installLocation");
-      }
+      const storeService = StoreService.getInstance();
+      installLocation = await storeService.getSetting("installLocation");
     } catch (error) {
       console.warn("Could not get install location from settings:", error);
     }

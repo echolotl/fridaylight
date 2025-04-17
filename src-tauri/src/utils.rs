@@ -1,6 +1,8 @@
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use log::{debug, error};
 use reqwest;
+use std::path::Path;
+use image::{ImageBuffer, Rgba};
 
 // Function to fetch and convert an image to base64 data URL
 pub async fn fetch_image_as_base64(url: &str) -> Option<String> {
@@ -49,6 +51,41 @@ pub async fn fetch_image_as_base64(url: &str) -> Option<String> {
     
     // Return as a data URL
     Some(format!("data:{};base64,{}", content_type, b64))
+}
+
+/// Encode raw bytes into a data URL with given mime type
+pub fn encode_data_to_data_url(data: &[u8], mime: &str) -> String {
+    let b64 = BASE64.encode(data);
+    format!("data:{};base64,{}", mime, b64)
+}
+
+/// Read a file and encode its contents as a data URL
+pub fn encode_file_to_data_url(path: &Path) -> Option<String> {
+    match std::fs::read(path) {
+        Ok(data) => {
+            let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("bin").to_lowercase();
+            let mime = match ext.as_str() {
+                "png" => "image/png",
+                "jpg" | "jpeg" => "image/jpeg",
+                "webp" => "image/webp",
+                "gif" => "image/gif",
+                _ => "application/octet-stream",
+            };
+            Some(encode_data_to_data_url(&data, mime))
+        }
+        Err(_) => None,
+    }
+}
+
+/// Generate a default colored square icon (32x32 PNG) as a data URL
+pub fn default_icon_data() -> String {
+    let mut buffer = Vec::new();
+    let mut img = ImageBuffer::<Rgba<u8>, Vec<u8>>::new(32, 32);
+    for pixel in img.pixels_mut() {
+        *pixel = Rgba([30, 144, 255, 255]);
+    }
+    let _ = img.write_to(&mut std::io::Cursor::new(&mut buffer), image::ImageFormat::Png);
+    encode_data_to_data_url(&buffer, "image/png")
 }
 
 // Function to extract RAR archives
