@@ -167,6 +167,7 @@ export interface AppSettings {
   useSystemTheme: boolean;
   customCSS: string;
   validateFnfMods: boolean; // Whether to validate FNF mods structure before adding
+  showTerminalOutput: boolean; // Whether to show terminal output from running mods
 }
 interface ColorOption {
   label: string;

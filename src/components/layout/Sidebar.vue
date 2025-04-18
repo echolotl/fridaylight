@@ -86,6 +86,7 @@
                 : 'no-mod'
               : 'gamebanana-browser'
           "
+          class="main-content"
         >
           <component
             :is="!showGameBanana ? ModDetails : GameBananaBrowser"
@@ -452,6 +453,16 @@ const selectModsParentFolder = async () => {
     if (addedMods && addedMods.length > 0) {
       // Add each mod to the mods array
       for (const modInfo of addedMods) {
+        // Ensure the mod has an engine object before saving
+        if (!modInfo.engine) {
+          modInfo.engine = {
+            engine_type: modInfo.engine_type || "unknown",
+            engine_name: "",
+            engine_icon: "",
+            mods_folder: false,
+            mods_folder_path: "",
+          };
+        }
         mods.value.push(modInfo);
         await saveModToDatabase(modInfo);
       }
@@ -594,6 +605,11 @@ const deleteMod = async (modId: string) => {
       await window.db.service.deleteMod(modId);
       // No need to sync with backend separately since the service handles it
     }
+    
+    // Force a refresh of the UI to ensure the mod is removed from displayItems
+    // This will cause ModList to rebuild its displayItems array
+    const refreshEvent = new CustomEvent("refresh-mods");
+    window.dispatchEvent(refreshEvent);
   } catch (error) {
     console.error("Failed to delete mod:", error);
   }
@@ -956,6 +972,13 @@ onUnmounted(() => {
   background: var(--theme-surface);
   border-radius: 1rem 1rem 0 0;
   margin: 8px;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 .resize-handle {

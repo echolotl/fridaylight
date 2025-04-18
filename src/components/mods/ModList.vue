@@ -146,7 +146,7 @@
         </draggable>
 
         <!-- Empty state when no mods -->
-        <q-item v-if="mods.length === 0">
+        <q-item v-if="mods.length === 0 || displayItems.length === 0">
           <q-item-section>
             <q-item-label caption>
               No mods added. Click the + button to add a mod folder.
@@ -367,6 +367,15 @@ const confirmDeleteFolder = (folder: Folder) => {
 
 const deleteMod = () => {
   if (modToDelete.value) {
+    // Immediately remove the mod from our local arrays to prevent UI ghosting
+    modsList.value = modsList.value.filter((mod) => mod.id !== modToDelete.value?.id);
+    
+    // Update displayItems to remove this mod
+    displayItems.value = displayItems.value.filter(
+      (item) => !(item.type === "mod" && item.data.id === modToDelete.value?.id)
+    );
+    
+    // Then emit to parent to handle database deletion
     emit("delete-mod", modToDelete.value.id);
     modToDelete.value = null;
   }
@@ -398,6 +407,15 @@ const handleCreateFolder = (folderData: { name: string; color: string }) => {
 
 const deleteFolder = () => {
   if (folderToDelete.value) {
+    // Immediately remove the folder from our local arrays to prevent UI ghosting
+    foldersList.value = foldersList.value.filter((folder) => folder.id !== folderToDelete.value?.id);
+    
+    // Update displayItems to remove this folder
+    displayItems.value = displayItems.value.filter(
+      (item) => !(item.type === "folder" && item.data.id === folderToDelete.value?.id)
+    );
+    
+    // Then emit to parent to handle database deletion
     emit("delete-folder", folderToDelete.value.id);
     folderToDelete.value = null;
   }

@@ -73,19 +73,14 @@ pub async fn select_mods_parent_folder(app: tauri::AppHandle, validate: Option<b
                             let is_valid = !should_validate || crate::filesystem::is_valid_fnf_mod(&entry_path);
                             
                             if is_valid {
-                                // Try to add this directory as a mod
-                                match create_mod_info(&subdir_path) {
+                                // Use the existing add_mod function to ensure consistent initialization
+                                match add_mod(subdir_path, Some(false), mods_state.clone()) {
                                     Ok(mod_info) => {
-                                        let id = mod_info.id.clone();
-                                        added_mods.push(mod_info.clone());
-                                        
-                                        // Add to our state
-                                        let mut mods = mods_state.0.lock().unwrap();
-                                        mods.insert(id, mod_info);
-                                        info!("Added mod: {} ({})", entry_path.display(), subdir_path);
+                                        added_mods.push(mod_info);
+                                        info!("Added mod: {}", entry_path.display());
                                     },
                                     Err(e) => {
-                                        warn!("Failed to add directory as mod: {} - {}", subdir_path, e);
+                                        warn!("Failed to add directory as mod: {} - {}", entry_path.display(), e);
                                         // Continue to next directory
                                     }
                                 }
@@ -206,58 +201,129 @@ pub fn get_mods(mods_state: State<'_, ModsState>) -> Vec<ModInfo> {
 pub fn launch_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), String> {
     info!("Attempting to launch mod with ID: {}", id);
     let mut mods = mods_state.0.lock().unwrap();
-
-    if let Some(mod_info) = mods.get_mut(&id) {
-        info!("Launching mod: {}", mod_info.name);
-
-        // Check if the mod is already running
-        if let Some(pid) = mod_info.process_id {
-            warn!("Mod is already running with PID: {}", pid);
-            return Err(format!("Mod is already running with PID: {}", pid));
-        }
-
-        if let Some(exe_path) = &mod_info.executable_path {
-            debug!("Launching executable: {}", exe_path);
-            
-            // Get the executable's directory to use as the working directory
-            let exe_path_obj = Path::new(exe_path);
-            let working_dir = exe_path_obj.parent().map(|p| p.to_path_buf()).ok_or_else(|| {
-                let err = "Could not determine executable's directory".to_string();
-                error!("{}", err);
-                err
-            })?;
-            
-            debug!("Using working directory: {}", working_dir.display());
-            
-            // Launch the executable from its own directory
-            match Command::new(exe_path)
-                .current_dir(working_dir)  // Set the working directory to the mod's directory
-                .spawn() 
-            {
-                Ok(child) => {
-                    let pid = child.id();
-                    info!("Successfully launched: {} with PID: {}", exe_path, pid);
-                    
-                    // Store the process ID in the ModInfo
-                    mod_info.process_id = Some(pid);
-                    
-                    Ok(())
-                }
-                Err(e) => {
-                    let error_msg = format!("Failed to launch executable: {}", e);
-                    error!("{}", error_msg);
-                    Err(error_msg)
-                }
+    let mod_name: String;
+    
+    // Get required info from the mod
+    let executable_path = match mods.get(&id) {
+        Some(mod_info) => {
+            // Check if the mod is already running
+            if let Some(pid) = mod_info.process_id {
+                warn!("Mod is already running with PID: {}", pid);
+                return Err(format!("Mod is already running with PID: {}", pid));
             }
-        } else {
-            let err_msg = format!("No executable found for mod: {}", mod_info.name);
+            
+            mod_name = mod_info.name.clone();
+            
+            if let Some(exe_path) = &mod_info.executable_path {
+                exe_path.clone()
+            } else {
+                let err_msg = format!("No executable found for mod: {}", mod_info.name);
+                warn!("{}", err_msg);
+                crate::terminaloutput::add_log(&id, &format!("[ERROR] {}", err_msg));
+                return Err(err_msg);
+            }
+        },
+        None => {
+            let err_msg = format!("Mod not found with ID: {}", id);
             warn!("{}", err_msg);
-            Err(err_msg)
+            return Err("Mod not found".to_string());
         }
-    } else {
-        let err_msg = format!("Mod not found with ID: {}", id);
-        warn!("{}", err_msg);
-        Err("Mod not found".to_string())
+    };
+    
+    debug!("Launching executable: {}", executable_path);
+    
+    // Get the executable's directory to use as the working directory
+    let exe_path_obj = Path::new(&executable_path);
+    let working_dir = exe_path_obj.parent().map(|p| p.to_path_buf()).ok_or_else(|| {
+        let err = "Could not determine executable's directory".to_string();
+        error!("{}", err);
+        err
+    })?;
+    
+    debug!("Using working directory: {}", working_dir.display());
+    
+    // Clear previous logs for this mod
+    crate::terminaloutput::clear_logs(&id);
+    
+    // Add initial log entry showing the startup
+    crate::terminaloutput::add_log(&id, &format!("Starting mod: {} ({})", mod_name, executable_path));
+    crate::terminaloutput::add_log(&id, &format!("Working directory: {}", working_dir.display()));
+    
+    // Launch the executable with output capture
+    match Command::new(&executable_path)
+        .current_dir(&working_dir) // Set the working directory to the mod's directory
+        .stdout(std::process::Stdio::piped()) // Capture stdout
+        .stderr(std::process::Stdio::piped()) // Capture stderr
+        .spawn() 
+    {
+        Ok(mut child) => {
+            let pid = child.id();
+            info!("Successfully launched: {} with PID: {}", executable_path, pid);
+            
+            // Store the process ID in the ModInfo
+            if let Some(mod_info) = mods.get_mut(&id) {
+                mod_info.process_id = Some(pid);
+            }
+            
+            // Clone the id for use in threads
+            let id_clone = id.clone();
+            let id_clone2 = id.clone();
+            
+            // Set up stdout and stderr capturing in background threads
+            if let Some(stdout) = child.stdout.take() {
+                std::thread::spawn(move || {
+                    use std::io::{BufRead, BufReader};
+                    let reader = BufReader::new(stdout);
+                    for line in reader.lines() {
+                        if let Ok(line) = line {
+                            crate::terminaloutput::add_log(&id_clone, &line);
+                        }
+                    }
+                });
+            }
+            
+            if let Some(stderr) = child.stderr.take() {
+                std::thread::spawn(move || {
+                    use std::io::{BufRead, BufReader};
+                    let reader = BufReader::new(stderr);
+                    for line in reader.lines() {
+                        if let Ok(line) = line {
+                            crate::terminaloutput::add_log(&id_clone2, &format!("[ERROR] {}", line));
+                        }
+                    }
+                });
+            }
+            
+            // Monitor the process in a background thread to update state when it exits
+            let id_for_thread = id.to_string();
+            std::thread::spawn(move || {
+                match child.wait() {
+                    Ok(status) => {
+                        let exit_message = format!("Process exited with status: {}", status);
+                        info!("{}", exit_message);
+                        crate::terminaloutput::add_log(&id_for_thread, &exit_message);
+                        
+                        // The process has exited, so we need to update the mod's running state
+                        // We do this by directly invoking the set_mod_not_running function
+                        // which will handle the state update in a thread-safe way
+                        crate::models::set_mod_not_running(&id_for_thread);
+                    },
+                    Err(e) => {
+                        let error_msg = format!("Failed to wait for process: {}", e);
+                        error!("{}", error_msg);
+                        crate::terminaloutput::add_log(&id_for_thread, &format!("[ERROR] {}", error_msg));
+                    }
+                }
+            });
+            
+            Ok(())
+        }
+        Err(e) => {
+            let error_msg = format!("Failed to launch executable: {}", e);
+            error!("{}", error_msg);
+            crate::terminaloutput::add_log(&id, &format!("[ERROR] {}", error_msg));
+            Err(error_msg)
+        }
     }
 }
 
@@ -529,8 +595,32 @@ pub async fn get_mod_download_files_command(mod_id: i64) -> Result<serde_json::V
     get_mod_download_files(mod_id).await
 }
 
+// Command to get terminal logs for a specific mod
+#[tauri::command]
+pub fn get_mod_logs(id: String) -> Vec<String> {
+    crate::terminaloutput::get_logs(&id)
+}
+
+// Command to clear terminal logs for a specific mod
+#[tauri::command]
+pub fn clear_mod_logs(id: String) -> Result<(), String> {
+    info!("Clearing terminal logs for mod with ID: {}", id);
+    crate::terminaloutput::clear_logs(&id);
+    Ok(())
+}
+
 // Setup function for Tauri application
 pub fn run() {
+    // Create a shared mods state that will be used throughout the application
+    let mods_state = ModsState(Mutex::new(HashMap::new()));
+    
+    // Store a reference to this state in our global state for background thread access
+    {
+        let mut global_state = crate::models::GLOBAL_MODS_STATE.lock().unwrap();
+        *global_state = mods_state.0.lock().unwrap().clone();
+        info!("Initialized global mods state");
+    }
+    
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|_app, argv, _cwd| {
             info!("a new app instance was opened with {argv:?} and the deep link event was already triggered");
@@ -542,7 +632,7 @@ pub fn run() {
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .manage(ModsState(Mutex::new(HashMap::new())))
+        .manage(mods_state)
         .setup(|app| {
             #[cfg(desktop)]
             {
@@ -578,6 +668,8 @@ pub fn run() {
             remove_mica_theme,
             is_mod_running,
             stop_mod,
+            get_mod_logs,
+            clear_mod_logs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

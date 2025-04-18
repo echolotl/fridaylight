@@ -14,6 +14,8 @@ pub mod models;
 pub mod modfiles;
 // Mod enabling/disabling functions
 pub mod modenabler;
+// Terminal output capture and display
+pub mod terminaloutput;
 // Other utility functions
 pub mod utils;
 

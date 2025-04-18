@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, provide, reactive } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -27,6 +27,7 @@ import Sidebar from "./components/layout/Sidebar.vue";
 import EngineSelectionDialog from "./components/modals/EngineSelectionDialog.vue";
 import { DatabaseService } from "./services/dbService";
 import { StoreService } from "./services/storeService";
+import { AppSettings } from "./types";
 
 // Define window.db
 declare global {
@@ -140,6 +141,53 @@ const onEngineSelected = async (engine: any) => {
 
     // Close the dialog
     showEngineSelectDialog.value = false;
+  }
+};
+
+// Initialize application settings
+const appSettings = reactive<AppSettings>({
+  accentColor: "#DB2955",
+  installLocation: "C:\\Users\\Public\\Documents\\FNF Mods",
+  theme: "dark",
+  useSystemTheme: true,
+  customCSS: "",
+  validateFnfMods: true,
+  showTerminalOutput: true,
+});
+
+// Provide appSettings to all components
+provide('appSettings', appSettings);
+
+// Load app settings from database and update the reactive object
+const loadAppSettings = async () => {
+  try {
+    const storeService = StoreService.getInstance();
+    
+    // Load each setting individually
+    const accentColor = await storeService.getSetting("accentColor");
+    if (accentColor) appSettings.accentColor = accentColor;
+    
+    const installLocation = await storeService.getSetting("installLocation");
+    if (installLocation) appSettings.installLocation = installLocation;
+    
+    const theme = await storeService.getSetting("theme");
+    if (theme) appSettings.theme = theme;
+    
+    const useSystemTheme = await storeService.getSetting("useSystemTheme");
+    if (useSystemTheme !== undefined) appSettings.useSystemTheme = useSystemTheme === true;
+    
+    const customCSS = await storeService.getSetting("customCSS");
+    if (customCSS) appSettings.customCSS = customCSS;
+    
+    const validateFnfMods = await storeService.getSetting("validateFnfMods");
+    if (validateFnfMods !== undefined) appSettings.validateFnfMods = validateFnfMods === true;
+    
+    const showTerminalOutput = await storeService.getSetting("showTerminalOutput");
+    if (showTerminalOutput !== undefined) appSettings.showTerminalOutput = showTerminalOutput === true;
+    
+    console.log("Loaded app settings:", appSettings);
+  } catch (error) {
+    console.error("Error loading app settings:", error);
   }
 };
 
@@ -760,6 +808,9 @@ onMounted(async () => {
 
     // Apply custom CSS
     await loadCustomCSS();
+
+    // Load app settings
+    await loadAppSettings();
 
     // Listen for system theme changes
     const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");

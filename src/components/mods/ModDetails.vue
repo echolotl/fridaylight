@@ -37,6 +37,16 @@
         @click="$emit('open-settings')"
       />
     </div>
+    
+    <!-- Terminal Output Component -->
+    <TerminalOutput 
+      v-if="isModRunning && showTerminalOutput" 
+      :modId="mod.id"
+      :isVisible="isModRunning && showTerminalOutput"
+      @close="showTerminalOutput = false"
+      @clear="clearModLogs"
+    />
+    
     <div class="mod-path" v-if="showDetails">
       <p>Location: {{ mod.path }}</p>
       <p v-if="mod.executable_path">Executable: {{ mod.executable_path }}</p>
@@ -68,17 +78,18 @@
 
   <!-- Show welcome message when no mod is selected -->
   <div v-else class="welcome-message phantom-font">
-    <h2>Welcome to Friday Night Funkin' Mod Loader</h2>
-    <p>Select a mod from the sidebar to get started</p>
+    <h2 class="phantom-font-display">Welcome to Fridaylight!</h2>
+    <p>Select or add a mod from the sidebar to get started</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from "vue";
+import { ref, watch, onMounted, onUnmounted, inject } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import ModBanner from "@mods/ModBanner.vue";
 import EngineModsList from "@mods/EngineModsList.vue";
-import { Mod } from "@main-types";
+import TerminalOutput from "@common/TerminalOutput.vue";
+import { Mod, AppSettings } from "@main-types";
 import { useQuasar } from "quasar";
 
 const $q = useQuasar();
@@ -95,6 +106,8 @@ const props = defineProps({
 
 const showDetails = ref(false);
 const isModRunning = ref(false);
+const showTerminalOutput = ref(true); // Default to showing terminal output
+const appSettings = inject<AppSettings>('appSettings'); // Inject app settings
 const emit = defineEmits(["update:mod", "launch-mod", "open-settings", "stop-mod"]);
 const checkRunningInterval = ref<number | null>(null);
 
@@ -106,6 +119,13 @@ const checkIfModRunning = async () => {
     const running = await invoke<boolean>("is_mod_running", { 
       id: props.mod.id 
     });
+    
+    // Check if the mod was running before but isn't anymore
+    if (isModRunning.value && !running) {
+      // Mod was stopped by the application, update UI immediately
+      showTerminalOutput.value = false;
+    }
+    
     isModRunning.value = running;
   } catch (error) {
     console.error("Failed to check if mod is running:", error);
@@ -122,6 +142,7 @@ const handleModAction = async () => {
     try {
       await invoke("stop_mod", { id: props.mod.id });
       isModRunning.value = false;
+      showTerminalOutput.value = false; // Hide terminal immediately
       $q.notify({
         type: "positive",
         message: `Stopped ${props.mod.name}`,
@@ -141,7 +162,25 @@ const handleModAction = async () => {
   } else {
     // Launch the mod
     emit("launch-mod", props.mod.id);
+    
+    // Show terminal output based on user settings
+    if (appSettings) {
+      showTerminalOutput.value = appSettings.showTerminalOutput;
+    }
+    
     // We'll update the button state in response to the next check interval
+  }
+};
+
+const clearModLogs = async (modId: string) => {
+  if (!modId) return;
+  
+  try {
+    console.log(`Clearing logs for mod: ${modId}`);
+    await invoke("clear_mod_logs", { id: modId });
+    console.log(`Logs cleared for mod: ${modId}`);
+  } catch (error) {
+    console.error("Failed to clear mod logs:", error);
   }
 };
 
@@ -173,6 +212,16 @@ watch(() => props.mod, async (newMod) => {
     isModRunning.value = false;
   }
 }, { immediate: true, deep: true });
+
+// Watch for app settings changes to update terminal visibility
+watch(() => appSettings?.showTerminalOutput, (newValue) => {
+  if (newValue !== undefined) {
+    // Only update if mod is running, otherwise keep current state
+    if (isModRunning.value) {
+      showTerminalOutput.value = newValue;
+    }
+  }
+});
 
 onMounted(() => {
   // Check the mod status periodically
@@ -233,12 +282,12 @@ onUnmounted(() => {
 }
 
 .welcome-message h2 {
-  font-size: 1.5rem;
+  font-size: 3rem;
   margin-bottom: 8px;
 }
 
 .welcome-message p {
-  font-size: 1rem;
+  font-size: 1.25rem;
 }
 
 .error-message {

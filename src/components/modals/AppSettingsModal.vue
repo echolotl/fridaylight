@@ -180,6 +180,18 @@
                 <q-toggle v-model="settings.validateFnfMods" color="primary" />
               </q-item-section>
             </q-item>
+            
+            <q-item tag="label" class="q-mt-md">
+              <q-item-section>
+                <q-item-label>Show Terminal Output</q-item-label>
+                <q-item-label caption>
+                  Display terminal output when running mods
+                </q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-toggle v-model="settings.showTerminalOutput" color="primary" />
+              </q-item-section>
+            </q-item>
           </q-card-section>
 
           <!-- About Section -->
@@ -303,6 +315,7 @@ const settings = ref<AppSettings>({
   useSystemTheme: true, // Default to using system theme
   customCSS: "", // Default to no custom CSS
   validateFnfMods: true, // Default to validating FNF mods
+  showTerminalOutput: true, // Default to showing terminal output
 });
 
 // Sidebar navigation sections
@@ -480,6 +493,15 @@ const loadSettings = async () => {
     );
     if (validateFnfModsResult && validateFnfModsResult.length > 0) {
       settings.value.validateFnfMods = validateFnfModsResult[0].value === "true";
+    }
+
+    // Load show terminal output setting
+    const showTerminalOutputResult = await window.db.select(
+      "SELECT value FROM settings WHERE key = $1",
+      ["showTerminalOutput"]
+    );
+    if (showTerminalOutputResult && showTerminalOutputResult.length > 0) {
+      settings.value.showTerminalOutput = showTerminalOutputResult[0].value === "true";
     }
 
     // Apply theme immediately upon loading
@@ -702,6 +724,12 @@ const save = async () => {
       ["validateFnfMods", String(settings.value.validateFnfMods)]
     );
 
+    // Save show terminal output setting
+    await window.db.execute(
+      "INSERT OR REPLACE INTO settings (key, value) VALUES ($1, $2)",
+      ["showTerminalOutput", String(settings.value.showTerminalOutput)]
+    );
+
     // Apply the accent color to CSS custom properties
     // Make sure we're setting a string value
     const colorValue =
@@ -734,6 +762,7 @@ const resetSettings = () => {
     useSystemTheme: true,
     customCSS: "",
     validateFnfMods: true,
+    showTerminalOutput: true,
   };
   console.log("Settings have been reset to default values.");
 };

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
+use tauri::{Manager, Emitter};
 
 // GameBanana API Structures
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -176,3 +177,25 @@ pub struct DownloadError {
 
 // Create a state to manage terminal output for each running mod
 pub struct TerminalOutputState(pub Mutex<HashMap<String, String>>);
+
+// Global thread-safe instance of ModsState for use across threads
+use lazy_static::lazy_static;
+use std::sync::Arc;
+
+lazy_static! {
+    pub static ref GLOBAL_MODS_STATE: Arc<Mutex<HashMap<String, ModInfo>>> = Arc::new(Mutex::new(HashMap::new()));
+}
+
+// Function to update a mod's running state from any thread
+pub fn set_mod_not_running(mod_id: &str) {
+    // First, update the global state if available
+    if let Ok(mut mods) = GLOBAL_MODS_STATE.lock() {
+        if let Some(mod_info) = mods.get_mut(mod_id) {
+            mod_info.process_id = None;
+            log::info!("Updated mod {} to not running status in global state", mod_id);
+        }
+    }
+    
+    // Also add a log entry to note that the process has finished
+    crate::terminaloutput::add_log(mod_id, "[Process terminated]");
+}
