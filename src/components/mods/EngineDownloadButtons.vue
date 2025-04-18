@@ -46,6 +46,9 @@ defineEmits(['download-engine']);
 </script>
 
 <style scoped>
+.engine-download {
+  margin-top: 1rem;
+}
 .engine-text {
   margin-bottom: 1rem;
 }

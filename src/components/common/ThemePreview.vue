@@ -70,46 +70,46 @@ defineProps({
   overflow: hidden;
 }
 
-/* Light Theme - bright white */
+/* Light Theme */
 .theme-preview-light {
   background-color: #f5f5f5;
   color: #333;
   border: 2px solid rgba(0, 0, 0, 0.12);
 }
 
-/* Dark Theme - standard dark gray */
+/* Dark Theme*/
 .theme-preview-dark {
   background-color: #121212;
   color: #fff;
   border: 2px solid rgba(255, 255, 255, 0.12);
 }
 
-/* Yourself Theme - deep blue-black (previously Billy) */
+/* Yourself Theme */
 .theme-preview-yourself {
   background-color: #0f142c;
   color: #e6f1ff;
   border: 2px solid rgba(66, 133, 244, 0.3);
 }
 
-/* hotline Theme - warm orange/dark red gradient */
+/* Hotline Theme */
 .theme-preview-hotline {
   background: linear-gradient(135deg, #2c1c2d 0%, #462639 100%);
   color: #ffdab9;
   border: 2px solid rgba(255, 158, 97, 0.3);
 }
 
-/* corruption Theme - dark with vibrant highlights */
+/* Corruption Theme */
 .theme-preview-corruption {
   background-color: #0f0f12;
   color: #ffa0b0;
   border: 2px solid rgba(255, 160, 184, 0.25);
 }
 
-/* Shaggy Theme - Shaggy Engine (previously Codename) */
+/* Shaggy Theme */
 .theme-preview-shaggy {
-  background-color: #151c24;
+  background-color: #152423;
   color: #d5c4f0;
-  border: 2px solid rgba(81, 64, 95, 0.12);
+  border: 2px solid rgba(213, 196, 240, 0.25);
 }
 
 /* QT Theme */
@@ -119,14 +119,14 @@ defineProps({
   border: 2px solid rgba(73, 52, 63, 0.25);
 }
 
-/* Garcello Theme (previously Kero) */
+/* Garcello Theme */
 .theme-preview-garcello {
   background-color: #dbeecf;
   color: #343b49;
   border: 2px solid rgba(52, 59, 73, 0.25);
 }
 
-/* Pump Theme (previously Soulles) */
+/* Pump Theme */
 .theme-preview-pump {
   background-color: #e6e0ad;
   color: #311c24;
@@ -140,7 +140,7 @@ defineProps({
   border: 2px solid rgba(44, 29, 7, 0.25);
 }
 
-/* Boo Theme (previously Sour) */
+/* Boo Theme */
 .theme-preview-boo {
   background-color: #cfe2ee;
   color: #614545;
@@ -204,7 +204,7 @@ defineProps({
 }
 
 .theme-preview-shaggy .sidebar-item.active {
-  background-color: #20243b;
+  background-color: #1e3129;
 }
 
 /* Add styles for new themes */
@@ -268,7 +268,7 @@ defineProps({
 }
 
 .theme-preview-shaggy .main-content {
-  background-color: rgba(69, 38, 95, 0.2);
+  background-color: #1e3129;
 }
 
 /* Main content styles for new themes */

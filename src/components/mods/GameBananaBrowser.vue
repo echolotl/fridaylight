@@ -135,10 +135,11 @@
           </q-tab-panel>
         </q-tab-panels>
       </div>
+          <!-- Engine Download Buttons -->
+    <EngineDownloadButtons @download-engine="downloadEngine" />
     </div>
 
-    <!-- Engine Download Buttons -->
-    <EngineDownloadButtons @download-engine="downloadEngine" />
+
 
     <!-- Download File Selector Dialog -->
     <DownloadFileSelector
@@ -1786,6 +1787,7 @@ const onModTypeSubmit = async (typeData: any) => {
 .scroll-container {
   overflow-y: auto;
   flex-grow: 1;
+  scrollbar-width: none;
 }
 
 .mods-section {

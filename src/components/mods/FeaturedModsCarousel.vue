@@ -219,6 +219,7 @@ const shortenDescription = (description: string): string => {
 .mod-period-badge {
   font-size: 0.8rem;
   padding: 0.5rem 0.5rem;
+  border-radius: .25rem;
 }
 
 .absolute-top-right {
@@ -231,7 +232,7 @@ const shortenDescription = (description: string): string => {
   gap: 8px;
   padding: 1rem;
   background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 1rem;
+  border-radius: .25rem;
 }
 
 .author-name {
