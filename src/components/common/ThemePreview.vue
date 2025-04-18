@@ -60,14 +60,13 @@ defineProps({
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
 }
 
 .theme-preview {
   border-radius: 4px;
   height: 100%;
   width: calc(100vw * 0.3);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 }
 

@@ -47,6 +47,7 @@ export default defineConfig(async () => ({
       "@common": "/src/components/common",
       "@stores": "/src/stores",
       "@services": "/src/services",
+      "@main-types": "/src/types",
     },
   }
 }));

@@ -76,7 +76,7 @@
 
             <q-item-section>
               <q-item-label>{{ download.name }}</q-item-label>
-              <q-item-label caption>{{ download.step }}</q-item-label>
+              <q-item-label caption style="color: var(--theme-text-secondary)">{{ download.step }}</q-item-label>
 
               <q-linear-progress
                 v-if="!download.isComplete && !download.isError"

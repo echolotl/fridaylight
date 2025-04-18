@@ -4,6 +4,7 @@ use crate::models::{DownloadStarted, DownloadProgress, DownloadFinished, Downloa
 use crate::utils::{fetch_image_as_base64, extract_rar_archive};
 use futures_util::StreamExt;
 use log::{debug, error, info, warn};
+use tauri::path::BaseDirectory;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -409,7 +410,8 @@ pub async fn download_gamebanana_mod(
     let final_logo_data = custom_logo_data;
     
     // Create the mod info with banner
-    let id = uuid::Uuid::new_v4().to_string();    let mod_info = ModInfo {
+    let id = uuid::Uuid::new_v4().to_string();    
+    let mod_info = ModInfo {
         id: id.clone(),
         name: name.clone(),
         path: mod_folder.to_string_lossy().to_string(),
@@ -429,6 +431,7 @@ pub async fn download_gamebanana_mod(
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
         engine: None, // Initialize with None for now
+        process_id: None, // Initialize with None since mod is not running yet
     };
     
     // Add the mod to our state
@@ -479,7 +482,7 @@ pub async fn download_engine(
         ),
         "fpsplus" => (
             "FPS Plus",
-            "https://github.com/Santicp/FNF-FPSPlus/releases/download/2.2.0+engine/fpsplus-windows.zip",
+            "https://github.com/ThatRozebudDude/FPS-Plus-Public/releases/download/v7.0.1/fpsplus_v7_0_1.zip",
             "banner_fpsplus.png",
             "logo_fpsplus.png", 
             "Fps-plus.webp",
@@ -488,16 +491,16 @@ pub async fn download_engine(
         ),
         "codename" => (
             "Codename Engine",
-            "https://github.com/FNF-CNE-Devs/CodenameEngine/releases/latest/download/CodenameEngine-Windows64.zip",
+            "https://nightly.link/CodenameCrew/CodenameEngine/workflows/windows/main/Codename%20Engine.zip",
             "banner_codename.png",
             "logo_codename.png",
             "Codename.webp",
             "Codename Engine is a new Friday Night Funkin' Engine aimed at simplifying modding, along with extensibility and ease of use.",
             ""
         ),
-        "vslice" => (
+        "vanilla" => (
             "V-Slice",
-            "https://gamebanana.com/dl/929793", // V-Slice download URL from GameBanana
+            "https://github.com/FunkinCrew/Funkin/releases/download/v0.6.2/funkin-windows-64bit.zip",
             "banner_vslice.png",
             "logo_vslice.png",
             "Pre-vslice.webp",
@@ -810,9 +813,17 @@ pub async fn download_engine(
     }
     
     // Copy standard banner and logo from resources
-    let bundle_path = app.path().resource_dir().unwrap_or_else(|_| PathBuf::from("."));
-    let banner_src = bundle_path.join("resources").join("assets").join("images").join("banners").join(engine_banner);
-    let logo_src = bundle_path.join("resources").join("assets").join("images").join("logos").join(engine_logo);
+    let banner_path = "resources/banners/".to_string() + engine_banner;
+    let logo_path = "resources/logos/".to_string() + engine_logo;
+
+    let banner_src = app.path().resolve(&banner_path, BaseDirectory::Resource).unwrap_or_else(|e| {
+        error!("Failed to resolve banner path: {}", e);
+        PathBuf::new()
+    });
+    let logo_src = app.path().resolve(&logo_path, BaseDirectory::Resource).unwrap_or_else(|e| {
+        error!("Failed to resolve logo path: {}", e);
+        PathBuf::new()
+    });
     
     // Read the banner and logo files if they exist in resources
     let banner_data = if banner_src.exists() {
@@ -825,7 +836,11 @@ pub async fn download_engine(
         }
     } else {
         // Use default banner as fallback instead of engine icon
-        let default_banner = bundle_path.join("resources").join("assets").join("images").join("menuBG.png");
+        let default_banner_path = "resources/banners/menuBG.png";
+        let default_banner = app.path().resolve(&default_banner_path, BaseDirectory::Resource).unwrap_or_else(|e| {
+            error!("Failed to resolve default banner path: {}", e);
+            PathBuf::new()
+        });
         if default_banner.exists() {
             match crate::modfiles::get_mod_icon_data(&default_banner.to_string_lossy().to_string()) {
                 Ok(data) => {
@@ -876,6 +891,7 @@ pub async fn download_engine(
             mods_folder: Some(true),
             mods_folder_path: Some("mods".to_string()),
         }),
+        process_id: None, // Initialize with None since mod is not running yet
     };
     
     // Add the mod to our state

@@ -268,7 +268,7 @@ onMounted(() => {
 
 h5 {
   margin: 0;
-  margin-top: 1rem;
+  margin-top: 2rem;
   color: var(--theme-text);
 }
 

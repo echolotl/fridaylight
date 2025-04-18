@@ -205,10 +205,16 @@ pub fn get_mods(mods_state: State<'_, ModsState>) -> Vec<ModInfo> {
 #[tauri::command]
 pub fn launch_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), String> {
     info!("Attempting to launch mod with ID: {}", id);
-    let mods = mods_state.0.lock().unwrap();
+    let mut mods = mods_state.0.lock().unwrap();
 
-    if let Some(mod_info) = mods.get(&id) {
+    if let Some(mod_info) = mods.get_mut(&id) {
         info!("Launching mod: {}", mod_info.name);
+
+        // Check if the mod is already running
+        if let Some(pid) = mod_info.process_id {
+            warn!("Mod is already running with PID: {}", pid);
+            return Err(format!("Mod is already running with PID: {}", pid));
+        }
 
         if let Some(exe_path) = &mod_info.executable_path {
             debug!("Launching executable: {}", exe_path);
@@ -228,8 +234,13 @@ pub fn launch_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), St
                 .current_dir(working_dir)  // Set the working directory to the mod's directory
                 .spawn() 
             {
-                Ok(_) => {
-                    info!("Successfully launched: {}", exe_path);
+                Ok(child) => {
+                    let pid = child.id();
+                    info!("Successfully launched: {} with PID: {}", exe_path, pid);
+                    
+                    // Store the process ID in the ModInfo
+                    mod_info.process_id = Some(pid);
+                    
                     Ok(())
                 }
                 Err(e) => {
@@ -247,6 +258,82 @@ pub fn launch_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), St
         let err_msg = format!("Mod not found with ID: {}", id);
         warn!("{}", err_msg);
         Err("Mod not found".to_string())
+    }
+}
+
+// Command to check if a mod is running
+#[tauri::command]
+pub fn is_mod_running(id: String, mods_state: State<'_, ModsState>) -> bool {
+    let mods = mods_state.0.lock().unwrap();
+    
+    if let Some(mod_info) = mods.get(&id) {
+        mod_info.process_id.is_some()
+    } else {
+        false
+    }
+}
+
+// Command to stop a running mod
+#[tauri::command]
+pub fn stop_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), String> {
+    info!("Attempting to stop mod with ID: {}", id);
+    let mut mods = mods_state.0.lock().unwrap();
+
+    if let Some(mod_info) = mods.get_mut(&id) {
+        if let Some(pid) = mod_info.process_id {
+            info!("Stopping mod: {} with PID: {}", mod_info.name, pid);
+            
+            #[cfg(target_os = "windows")]
+            {
+                use std::process::Command;
+                // On Windows, use taskkill to terminate the process
+                match Command::new("taskkill")
+                    .args(&["/PID", &pid.to_string(), "/F"])
+                    .output() 
+                {
+                    Ok(_) => {
+                        info!("Successfully stopped process with PID: {}", pid);
+                        mod_info.process_id = None;
+                        Ok(())
+                    },
+                    Err(e) => {
+                        let error_msg = format!("Failed to stop process: {}", e);
+                        error!("{}", error_msg);
+                        Err(error_msg)
+                    }
+                }
+            }
+            
+            #[cfg(not(target_os = "windows"))]
+            {
+                use std::process::Command;
+                // On Unix-like systems, use kill
+                match Command::new("kill")
+                    .arg("-9")
+                    .arg(pid.to_string())
+                    .output() 
+                {
+                    Ok(_) => {
+                        info!("Successfully stopped process with PID: {}", pid);
+                        mod_info.process_id = None;
+                        Ok(())
+                    },
+                    Err(e) => {
+                        let error_msg = format!("Failed to stop process: {}", e);
+                        error!("{}", error_msg);
+                        Err(error_msg)
+                    }
+                }
+            }
+        } else {
+            let msg = format!("Mod {} is not running", mod_info.name);
+            warn!("{}", msg);
+            Err(msg)
+        }
+    } else {
+        let err_msg = format!("Mod not found with ID: {}", id);
+        warn!("{}", err_msg);
+        Err(err_msg)
     }
 }
 
@@ -482,6 +569,8 @@ pub fn run() {
             download_engine_command,
             get_mod_info_command,
             remove_mica_theme,
+            is_mod_running,
+            stop_mod,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

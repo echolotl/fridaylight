@@ -579,7 +579,8 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
 
     // Create a unique ID
     let id = uuid::Uuid::new_v4().to_string();
-    debug!("Generated mod ID: {}", id);    let mod_info = ModInfo {
+    debug!("Generated mod ID: {}", id);    
+    let mod_info = ModInfo {
         id,
         name,
         path: path.to_string(),
@@ -592,6 +593,7 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         version,
         engine_type, // Keep for backward compatibility
         engine,      // Add the new engine field
+        process_id: None, // Initialize with None since mod is not running yet
     };
 
     Ok(mod_info)

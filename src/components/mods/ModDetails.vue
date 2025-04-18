@@ -10,13 +10,13 @@
     <div class="mod-actions">
       <div class="action-buttons">
         <q-btn
-          color="primary"
-          class="play-button phantom-font"
+          :color="isModRunning ? 'negative' : 'primary'"
+          class="action-button phantom-font"
           size="lg"
-          @click="$emit('launch-mod', mod.id)"
+          @click="handleModAction"
           :disabled="!mod.executable_path"
         >
-          PLAY
+          {{ isModRunning ? 'STOP' : 'PLAY' }}
         </q-btn>
 
         <div v-if="!mod.executable_path" class="error-message">
@@ -74,10 +74,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
+import { invoke } from "@tauri-apps/api/core";
 import ModBanner from "@mods/ModBanner.vue";
 import EngineModsList from "@mods/EngineModsList.vue";
 import { Mod } from "@main-types";
+import { useQuasar } from "quasar";
+
+const $q = useQuasar();
 const props = defineProps({
   mod: {
     type: Object as () => Mod | null,
@@ -90,7 +94,56 @@ const props = defineProps({
 });
 
 const showDetails = ref(false);
-const emit = defineEmits(["update:mod", "launch-mod", "open-settings"]);
+const isModRunning = ref(false);
+const emit = defineEmits(["update:mod", "launch-mod", "open-settings", "stop-mod"]);
+const checkRunningInterval = ref<number | null>(null);
+
+// Function to check if the current mod is running
+const checkIfModRunning = async () => {
+  if (!props.mod) return;
+  
+  try {
+    const running = await invoke<boolean>("is_mod_running", { 
+      id: props.mod.id 
+    });
+    isModRunning.value = running;
+  } catch (error) {
+    console.error("Failed to check if mod is running:", error);
+    isModRunning.value = false;
+  }
+};
+
+// Handle the play/stop button click
+const handleModAction = async () => {
+  if (!props.mod) return;
+  
+  if (isModRunning.value) {
+    // Stop the mod
+    try {
+      await invoke("stop_mod", { id: props.mod.id });
+      isModRunning.value = false;
+      $q.notify({
+        type: "positive",
+        message: `Stopped ${props.mod.name}`,
+        position: "bottom-right",
+        timeout: 2000,
+      });
+    } catch (error) {
+      console.error("Failed to stop mod:", error);
+      $q.notify({
+        type: "negative",
+        message: `Failed to stop ${props.mod.name}`,
+        caption: String(error),
+        position: "bottom-right",
+        timeout: 3000,
+      });
+    }
+  } else {
+    // Launch the mod
+    emit("launch-mod", props.mod.id);
+    // We'll update the button state in response to the next check interval
+  }
+};
 
 const updateTitle = (newTitle: string) => {
   if (props.mod) {
@@ -111,6 +164,27 @@ const formatEngineType = (engineType: string) => {
 
   return engineTypes[engineType] || engineType;
 };
+
+// Watch for changes to props.mod and check running state
+watch(() => props.mod, async (newMod) => {
+  if (newMod) {
+    await checkIfModRunning();
+  } else {
+    isModRunning.value = false;
+  }
+}, { immediate: true, deep: true });
+
+onMounted(() => {
+  // Check the mod status periodically
+  checkRunningInterval.value = window.setInterval(checkIfModRunning, 2000);
+});
+
+onUnmounted(() => {
+  // Clear the interval when the component is unmounted
+  if (checkRunningInterval.value !== null) {
+    window.clearInterval(checkRunningInterval.value);
+  }
+});
 </script>
 
 <style scoped>
@@ -131,10 +205,11 @@ const formatEngineType = (engineType: string) => {
   flex-direction: column;
 }
 
-.play-button {
+.action-button {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 120px;
 }
 
 .settings-button {

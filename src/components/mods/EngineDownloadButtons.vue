@@ -1,37 +1,42 @@
 <template>
   <div class="engine-download">
-    <div class="text-h4 phantom-font-difficulty text-center engine-text">
+    <div class="text-h5 phantom-font-difficulty engine-text">
       Engine Downloads
     </div>
     <div class="engine-download-buttons text-center">
       <q-btn
         flat
         label="Psych Engine"
-        color="purple"
         @click="$emit('download-engine', 'psych')"
         class="engine-btn"
-      />
+      >
+      <img src="/images/engine_icons/Psych.webp" alt="Psych Engine" class="engine-icon" />
+    </q-btn>
       <q-btn
         flat
         label="V-Slice"
-        color="blue"
-        @click="$emit('download-engine', 'vslice')"
+        @click="$emit('download-engine', 'vanilla')"
         class="engine-btn"
-      />
+      >
+      <img src="/images/engine_icons/Vanilla.webp" alt="V-Slice" class="engine-icon" />
+    </q-btn>
       <q-btn
         flat
         label="FPS Plus"
-        color="pink"
         @click="$emit('download-engine', 'fpsplus')"
         class="engine-btn"
-      />
+      >
+        <img src="/images/engine_icons/Fps-plus.webp" alt="FPS Plus" class="engine-icon" />
+      </q-btn>
       <q-btn
         flat
         label="Codename Engine"
-        color="orange"
         @click="$emit('download-engine', 'codename')"
         class="engine-btn"
-      />
+      >
+        <img src="/images/engine_icons/Codename.webp" alt="Codename Engine" class="engine-icon" />
+    
+    </q-btn>
     </div>
   </div>
 </template>
@@ -46,16 +51,25 @@ defineEmits(['download-engine']);
 }
 .engine-download-buttons {
   display: flex;
-  gap: 8px;
-  justify-content: center;
   margin-bottom: 16px;
+  gap: 8px;
 }
 .engine-btn {
   border-radius: 8px;
   padding: 8px 16px;
+  width: 100%;
   transition: transform 0.2s ease;
+  background-color: var(--theme-card);
+  border: 1px solid var(--theme-border);
 }
 .engine-btn:hover {
   transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.engine-icon {
+  width: 32px;
+  height: 32px;
+  margin-left: 8px;
 }
 </style>

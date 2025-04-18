@@ -100,6 +100,7 @@ pub struct ModInfo {
     pub engine_type: Option<String>, // Kept for backward compatibility
     pub engine: Option<Engine>,      // New extended engine information
     pub display_order: Option<i64>,
+    pub process_id: Option<u32>,    // Track the running process ID
 }
 
 // Define a structure for mod metadata files
@@ -172,3 +173,6 @@ pub struct DownloadError {
     pub name: String,
     pub error: String,
 }
+
+// Create a state to manage terminal output for each running mod
+pub struct TerminalOutputState(pub Mutex<HashMap<String, String>>);
