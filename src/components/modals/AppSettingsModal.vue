@@ -214,30 +214,30 @@
                   <li><a @click="openUrl('https://gamebanana.com/members/3083321')">NoizDynamic</a> - Creator of Tardling font</li>
                 </ul>
               </div>
+              <div class="text-subtitle1 q-mb-md">Created with</div>
               <div class="center-credits">
-                <div class="text-caption text-grey-6">Made with:</div>
                 <div class="logo-grid">
                   <img
                     src="/images/vue.svg"
                     alt="Vue"
-                    width="32"
-                    height="32"
+                    width="48"
+                    height="48"
                     class="logo"
                     @click="openUrl('https://vuejs.org/')"
                   />
                   <img
                     src="/images/tauri.svg"
                     alt="Tauri"
-                    width="32"
-                    height="32"
+                    width="48"
+                    height="48"
                     class="logo"
                     @click="openUrl('https://v2.tauri.app/')"
                   />
                   <img
                     src="/images/quasar.svg"
                     alt="Quasar"
-                    width="32"
-                    height="32"
+                    width="48"
+                    height="48"
                     class="logo"
                     @click="openUrl('https://quasar.dev/')"
                   />
@@ -246,7 +246,7 @@
               
               <div class="settings-reset-section q-mt-lg">
                 <q-separator class="q-my-md" />
-                <div class="text-subtitle2 q-mb-md">Settings Management</div>
+                <div class="text-subtitle1 q-mb-md">Settings Management</div>
                 <q-btn
                   color="negative"
                   icon="restart_alt"
@@ -862,8 +862,6 @@ a {
 .logo-grid {
   display: flex;
   gap: 8px;
-  margin-top: 16px;
-  justify-content: center;
 }
 
 .logo {
@@ -878,9 +876,7 @@ a {
 
 .center-credits {
   display: flex;
-  justify-content: center;
   flex-direction: column;
-  text-align: center;
   margin-top: 16px;
 }
 
