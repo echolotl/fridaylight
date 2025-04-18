@@ -196,6 +196,25 @@ pub fn set_mod_not_running(mod_id: &str) {
         }
     }
     
-    // Also add a log entry to note that the process has finished
+    // Add a log entry to note that the process has finished
     crate::terminaloutput::add_log(mod_id, "[Process terminated]");
+    
+    // Emit mod-terminated event to frontend
+    if let Some(app_handle) = try_get_app_handle() {
+        log::info!("Emitting mod-terminated event for mod {}", mod_id);
+        if let Err(e) = app_handle.emit("mod-terminated", mod_id) {
+            log::error!("Failed to emit mod-terminated event: {}", e);
+        }
+    }
+}
+
+// Helper function to get the app handle from anywhere in the application
+fn try_get_app_handle() -> Option<tauri::AppHandle> {
+    match tauri::Manager::get_application("fridaylight") {
+        Ok(app) => Some(app),
+        Err(e) => {
+            log::warn!("Failed to get application handle: {}", e);
+            None
+        }
+    }
 }

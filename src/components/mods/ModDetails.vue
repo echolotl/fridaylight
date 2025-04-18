@@ -86,6 +86,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, inject } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import ModBanner from "@mods/ModBanner.vue";
 import EngineModsList from "@mods/EngineModsList.vue";
 import TerminalOutput from "@common/TerminalOutput.vue";
@@ -109,7 +110,7 @@ const isModRunning = ref(false);
 const showTerminalOutput = ref(true); // Default to showing terminal output
 const appSettings = inject<AppSettings>('appSettings'); // Inject app settings
 const emit = defineEmits(["update:mod", "launch-mod", "open-settings", "stop-mod"]);
-const checkRunningInterval = ref<number | null>(null);
+let modTerminatedListener: (() => void) | null = null;
 
 // Function to check if the current mod is running
 const checkIfModRunning = async () => {
@@ -120,13 +121,13 @@ const checkIfModRunning = async () => {
       id: props.mod.id 
     });
     
-    // Check if the mod was running before but isn't anymore
-    if (isModRunning.value && !running) {
-      // Mod was stopped by the application, update UI immediately
+    // Update the mod running state
+    isModRunning.value = running;
+    
+    // If mod is not running, hide terminal
+    if (!running) {
       showTerminalOutput.value = false;
     }
-    
-    isModRunning.value = running;
   } catch (error) {
     console.error("Failed to check if mod is running:", error);
     isModRunning.value = false;
@@ -168,7 +169,8 @@ const handleModAction = async () => {
       showTerminalOutput.value = appSettings.showTerminalOutput;
     }
     
-    // We'll update the button state in response to the next check interval
+    // Update UI state immediately, will be confirmed when we receive the event
+    isModRunning.value = true;
   }
 };
 
@@ -204,12 +206,41 @@ const formatEngineType = (engineType: string) => {
   return engineTypes[engineType] || engineType;
 };
 
+// Set up mod-terminated event listener
+const setupModTerminatedListener = async () => {
+  if (modTerminatedListener) {
+    modTerminatedListener();
+    modTerminatedListener = null;
+  }
+  
+  if (props.mod) {
+    modTerminatedListener = await listen<string>('mod-terminated', (event) => {
+      // Check if this event is for the current mod
+      if (event.payload === props.mod?.id) {
+        console.log(`Received mod-terminated event for ${props.mod?.id}`);
+        isModRunning.value = false;
+        showTerminalOutput.value = false;
+      }
+    });
+  }
+};
+
 // Watch for changes to props.mod and check running state
 watch(() => props.mod, async (newMod) => {
   if (newMod) {
+    // Check initial running state
     await checkIfModRunning();
+    
+    // Set up event listener for this mod
+    await setupModTerminatedListener();
   } else {
     isModRunning.value = false;
+    
+    // Clean up listener if no mod is selected
+    if (modTerminatedListener) {
+      modTerminatedListener();
+      modTerminatedListener = null;
+    }
   }
 }, { immediate: true, deep: true });
 
@@ -223,15 +254,19 @@ watch(() => appSettings?.showTerminalOutput, (newValue) => {
   }
 });
 
-onMounted(() => {
-  // Check the mod status periodically
-  checkRunningInterval.value = window.setInterval(checkIfModRunning, 2000);
+onMounted(async () => {
+  // Check initial running state
+  if (props.mod) {
+    await checkIfModRunning();
+    await setupModTerminatedListener();
+  }
 });
 
 onUnmounted(() => {
-  // Clear the interval when the component is unmounted
-  if (checkRunningInterval.value !== null) {
-    window.clearInterval(checkRunningInterval.value);
+  // Clean up event listener
+  if (modTerminatedListener) {
+    modTerminatedListener();
+    modTerminatedListener = null;
   }
 });
 </script>

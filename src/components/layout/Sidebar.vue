@@ -244,6 +244,10 @@ const loadModsFromDatabase = async () => {
     if (processedMods && processedMods.length > 0) {
       mods.value = processedMods;
 
+      // Sync mods from database to backend in-memory state
+      console.log("Syncing mods from database to backend state on app start");
+      await syncModsWithBackend();
+
       // If there's at least one mod, select the first one
       if (processedMods.length > 0) {
         selectMod(processedMods[0]);
