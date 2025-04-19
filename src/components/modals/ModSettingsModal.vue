@@ -341,6 +341,21 @@ watch(() => props.modelValue, (newVal) => {
   }
 });
 
+// Add a watcher to keep engine.engine_type and engine_type in sync
+watch(() => form.value.engine?.engine_type, (newEngineType) => {
+  if (newEngineType) {
+    // When engine.engine_type changes, update engine_type to match
+    console.log("Engine type changed to:", newEngineType);
+    form.value.engine_type = newEngineType;
+    
+    // Always update engine name based on the selected engine type
+    if (form.value.engine) {
+      form.value.engine.engine_name = formatEngineName(newEngineType);
+      console.log("Updated engine name to:", form.value.engine.engine_name);
+    }
+  }
+});
+
 const handleBannerFileChange = (file: File) => {
   if (file) {
     const reader = new FileReader();
@@ -406,7 +421,7 @@ const formatEngineName = (engineType: string): string => {
   return engineNames[engineType] || engineType.charAt(0).toUpperCase() + engineType.slice(1);
 };
 
-const save = () => {
+const save = async () => {
   const updatedMod = { ...form.value };
   
   // If we have a banner preview, use it
@@ -424,26 +439,41 @@ const save = () => {
     updatedMod.engine.engine_icon = engineIconPreview.value;
   }
 
-  // Make sure engine type is synchronized with engine.engine_type
-  if (updatedMod.engine_type && (!updatedMod.engine || !updatedMod.engine.engine_type)) {
-    if (!updatedMod.engine) {
-      updatedMod.engine = {
-        engine_type: updatedMod.engine_type,
-        engine_name: formatEngineName(updatedMod.engine_type),
-        engine_icon: '', 
-        mods_folder: false,
-        mods_folder_path: ''
-      };
-    } else {
-      updatedMod.engine.engine_type = updatedMod.engine_type;
-      if (!updatedMod.engine.engine_name) {
-        updatedMod.engine.engine_name = formatEngineName(updatedMod.engine_type);
-      }
+  // Make sure engine_type is synchronized with engine.engine_type
+  // First, make sure engine object exists
+  if (!updatedMod.engine) {
+    updatedMod.engine = {
+      engine_type: updatedMod.engine_type || "unknown",
+      engine_name: formatEngineName(updatedMod.engine_type || "unknown"),
+      engine_icon: '', 
+      mods_folder: false,
+      mods_folder_path: ''
+    };
+  }
+  
+  // Important fix: Always set engine_type from engine.engine_type (not the other way around)
+  // This ensures the database gets the right value since it prioritizes engine_type
+  if (updatedMod.engine && updatedMod.engine.engine_type) {
+    updatedMod.engine_type = updatedMod.engine.engine_type;
+    if (!updatedMod.engine.engine_name) {
+      updatedMod.engine.engine_name = formatEngineName(updatedMod.engine.engine_type);
     }
   }
   
-  // Now emit the save event with the updated mod data
   console.log('Saving mod with engine data:', JSON.stringify(updatedMod.engine));
+  
+  try {
+    // If database service is available, use the direct engine update method for better reliability
+    if (window.db && window.db.service && updatedMod.engine && updatedMod.engine.engine_type) {
+      console.log("Using direct engine update method for more reliable saving");
+      await window.db.service.updateModEngineData(updatedMod.id, updatedMod.engine.engine_type);
+      console.log("Direct engine update successful");
+    }
+  } catch (error) {
+    console.error("Direct engine update failed:", error);
+  }
+  
+  // Still emit the save event with the updated mod data for other fields
   emit('save', updatedMod);
 };
 const cancel = () => {

@@ -404,6 +404,12 @@ const saveModToDatabase = async (mod: ModInfo) => {
       return;
     }
 
+    // Log the mod's engine data before saving
+    console.log("SAVING MOD - Engine data before database save:", {
+      engine_type: mod.engine_type,
+      engine: mod.engine ? JSON.stringify(mod.engine) : undefined,
+    });
+
     // Use the DatabaseService to save the mod
     const dbService = window.db.service;
     await dbService.saveMod(mod);
