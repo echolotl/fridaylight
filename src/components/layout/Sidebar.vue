@@ -172,8 +172,8 @@ import { Mod, Folder, DisplayItem } from "@main-types";
 import { useQuasar } from "quasar";
 import { StoreService } from "../../services/storeService";
 
-// Create a ref for store service
-const storeService = ref<StoreService | null>(null);
+// Use the singleton directly instead of through a ref
+const storeService = StoreService.getInstance();
 
 // TypeScript declaration for db
 declare global {
@@ -248,8 +248,7 @@ const showAppSettingsModal = ref(false);
 // Load mods on component mount
 onMounted(async () => {
   // Initialize the StoreService
-  storeService.value = StoreService.getInstance();
-  await storeService.value.initialize();
+  await storeService.initialize();
 
   emit("resize", sidebarWidth.value);
   try {
@@ -880,34 +879,49 @@ const saveAppSettings = (settings: any) => {
 // Load and apply app settings
 const loadAppSettings = async () => {
   try {
-    if (!storeService.value) {
+    if (!storeService) {
       console.warn("Store service not initialized yet, cannot load settings");
       return;
     }
 
     // Get all settings at once through the StoreService
-    const settings = await storeService.value.getAllSettings();
+    const settings = await storeService.getAllSettings();
 
     // Apply the accent color to CSS custom properties
     let colorValue = settings.accentColor || "#FF0088";
-
+    
+    // Handle if accentColor is stored as a JSON string (from previous version)
+    if (typeof colorValue === 'string' && colorValue.startsWith('{') && colorValue.includes('value')) {
+      try {
+        const parsedColor = JSON.parse(colorValue);
+        colorValue = parsedColor.value || "#FF0088";
+        
+        // Also fix it in the database by saving it back as a string
+        await storeService.saveSetting('accentColor', colorValue);
+        console.log("Fixed accent color format in database:", colorValue);
+      } catch (e) {
+        console.error("Failed to parse accent color JSON:", e);
+        colorValue = "#FF0088"; // Fallback to default
+      }
+    }
     // Handle if accentColor is an object with a value property
-    if (typeof colorValue !== "string" && colorValue?.value) {
+    else if (typeof colorValue !== 'string' && colorValue?.value) {
+      const originalValue = colorValue;
       colorValue = colorValue.value;
+      
+      // Also fix it in the database
+      await storeService.saveSetting('accentColor', colorValue);
+      console.log("Fixed accent color format in database:", originalValue, "→", colorValue);
     }
 
-    // Ensure colorValue is always a string
-    if (typeof colorValue !== "string" && colorValue?.value) {
-      colorValue = colorValue.value;
+    // Ensure colorValue is always a valid CSS color string
+    if (typeof colorValue !== 'string' || !colorValue.startsWith('#')) {
+      colorValue = "#FF0088"; // Fallback to default if invalid
     }
 
-    document.documentElement.style.setProperty(
-      "--q-primary",
-      String(colorValue)
-    );
-
+    document.documentElement.style.setProperty("--q-primary", colorValue);
     console.log("Applied accent color from settings:", colorValue);
-
+    
     // Apply any custom CSS
     if (settings.customCSS) {
       applyCustomCSS(settings.customCSS);

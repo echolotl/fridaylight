@@ -314,8 +314,8 @@ import ThemePreview from "../common/ThemePreview.vue";
 import MessageDialog from "./MessageDialog.vue";
 import { StoreService } from "../../services/storeService";
 
-// Create a ref for store service
-const storeService = ref<StoreService | null>(null);
+// Use the singleton directly instead of through a ref
+const storeService = StoreService.getInstance();
 
 const props = defineProps({
   modelValue: {
@@ -426,13 +426,13 @@ watch(
 
 const loadSettings = async () => {
   try {
-    if (!storeService.value) {
+    if (!storeService) {
       console.warn("Store service not initialized yet, using default settings");
       return;
     }
 
     // Get all settings from StoreService
-    const storedSettings = await storeService.value.getAllSettings();
+    const storedSettings = await storeService.getAllSettings();
 
     // Apply stored settings to our local settings ref
     settings.value = { ...settings.value, ...storedSettings };
@@ -615,41 +615,46 @@ const updateTheme = async () => {
 
 const save = async () => {
   try {
-    if (!storeService.value) {
+    if (!storeService) {
       console.warn("Store service not initialized yet, cannot save settings");
       return;
     }
 
-    // Process the accent color for storage
+    // Process the accent color for storage - ensure it's stored as a string
     // For accent color, we need to handle both string and object values
-    if (
-      typeof settings.value.accentColor !== "string" &&
-      settings.value.accentColor?.value
-    ) {
-      console.log("Converting accent color object to string value");
-      settings.value.accentColor = settings.value.accentColor.value;
+    if (typeof settings.value.accentColor !== "string") {
+      // If it's an object with a value property
+      if (settings.value.accentColor?.value) {
+        console.log("Converting accent color object to string value:", settings.value.accentColor);
+        settings.value.accentColor = settings.value.accentColor.value;
+      }
+      // If it's null or undefined or another non-string type
+      else {
+        console.log("Using default accent color");
+        settings.value.accentColor = "#DB2955"; // Default
+      }
+    }
+
+    // Ensure accentColor is a valid CSS color value (starts with #)
+    if (typeof settings.value.accentColor !== 'string' || !settings.value.accentColor.startsWith('#')) {
+      console.log("Fixing invalid accent color format");
+      settings.value.accentColor = "#DB2955"; // Default
     }
 
     // Process the theme value to ensure it's a string
-    if (
-      typeof settings.value.theme === "object" &&
-      settings.value.theme !== null &&
-      "value" in settings.value.theme
-    ) {
+    if (typeof settings.value.theme === "object" && settings.value.theme !== null && "value" in settings.value.theme) {
       console.log("Converting theme object to string value");
       settings.value.theme = (settings.value.theme as { value: string }).value;
     }
 
+    console.log("Saving settings with accent color:", settings.value.accentColor);
+
     // Save all settings at once using the StoreService
-    await storeService.value.saveSettings(settings.value);
+    await storeService.saveSettings(settings.value);
     console.log("Settings saved via StoreService:", settings.value);
 
     // Apply the accent color to CSS custom properties
-    const colorValue =
-      typeof settings.value.accentColor === "string"
-        ? settings.value.accentColor
-        : "#FF0088";
-    document.documentElement.style.setProperty("--q-primary", colorValue);
+    document.documentElement.style.setProperty("--q-primary", settings.value.accentColor);
 
     // Apply theme
     await updateTheme();
@@ -682,8 +687,7 @@ const resetSettings = () => {
 
 onMounted(async () => {
   // Initialize StoreService
-  storeService.value = StoreService.getInstance();
-  await storeService.value.initialize();
+  await storeService.initialize();
 
   // Really silly fix for dropdown background, oh Quasar why
   const style = document.createElement("style");
