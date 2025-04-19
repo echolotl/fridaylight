@@ -6,6 +6,8 @@ A mod manager for Friday Night Funkin mods!<br /><br />
 <img alt="Tauri badge" src="https://img.shields.io/badge/tauri-24C8D8?style=for-the-badge&logo=tauri&logoColor=FFFFFF" />
 <img alt="Quasar badge" src="https://img.shields.io/badge/quasar-050A14?style=for-the-badge&logo=quasar&logoColor=FFFFFF" />
 <img alt="Rust badge" src="https://img.shields.io/badge/rust-000000?style=for-the-badge&logo=rust&logoColor=FFFFFF" />
+<img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/echolotl/fridaylight/release.yml?branch=main&style=for-the-badge&logo=github&logoColor=FFFFFF"">
+
 </p>
 
 ![Screenshot of main app layout](/docs/screenshot1.png)
