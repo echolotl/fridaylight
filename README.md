@@ -23,14 +23,12 @@ A mod manager for Friday Night Funkin mods!<br /><br />
 - [x] Engine mod management
 - [x] Folder organization
 - [x] Custom CSS/Themes
-- [ ] More metadata support *(feel free to recommend ideas in the Issues tab)*
 - [x] Gamebanana download version picker
 - [x] Gamebanana deep linking
-- [ ] Non-Gamebanana download links
+- [x] Non-Gamebanana download links
 - [x] Import folder of FNF mod folders *(for migration)*
 - [ ] Linux/Mac builds
-- [ ] More unique UI, with same organization
-- [ ] Psych engine achievement display
+- [ ] More metadata support *(feel free to recommend ideas in the Issues tab)*
 
 ## Compiling
 See [COMPILING.md](/docs/COMPILING.md) on how to compile it locally.
