@@ -16,6 +16,8 @@
     "core:window:allow-set-focus",
     "store:allow-load",
     "store:default",
-    "store:default"
+    "process:default",
+    "updater:allow-check",
+    "updater:default"
   ]
 }

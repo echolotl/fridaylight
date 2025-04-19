@@ -14,6 +14,7 @@ use std::sync::Mutex;
 use tauri::{Manager, State};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_deep_link::DeepLinkExt;
+use tauri_plugin_updater::UpdaterExt;
 
 // Command to open a folder dialog and get the selected folder path
 #[tauri::command]
@@ -609,6 +610,29 @@ pub fn clear_mod_logs(id: String) -> Result<(), String> {
     Ok(())
 }
 
+async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
+    if let Some(update) = app.updater()?.check().await? {
+      let mut downloaded = 0;
+  
+      update
+        .download_and_install(
+          |chunk_length, content_length| {
+            downloaded += chunk_length;
+            println!("downloaded {downloaded} from {content_length:?}");
+          },
+          || {
+            println!("download finished");
+          },
+        )
+        .await?;
+  
+      println!("update installed");
+      app.restart();
+    }
+  
+    Ok(())
+  }
+
 // Setup function for Tauri application
 pub fn run() {
     // Create a shared mods state that will be used throughout the application
@@ -632,8 +656,13 @@ pub fn run() {
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .manage(mods_state)
         .setup(|app| {
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+              update(handle).await.unwrap();
+            });
             #[cfg(desktop)]
             {
                 match app.deep_link().register("flmod") {

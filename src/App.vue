@@ -23,6 +23,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useQuasar, Notify } from "quasar";
+import { check } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 import Sidebar from "./components/layout/Sidebar.vue";
 import EngineSelectionDialog from "./components/modals/EngineSelectionDialog.vue";
 import { DatabaseService } from "./services/dbService";
@@ -156,35 +158,40 @@ const appSettings = reactive<AppSettings>({
 });
 
 // Provide appSettings to all components
-provide('appSettings', appSettings);
+provide("appSettings", appSettings);
 
 // Load app settings from database and update the reactive object
 const loadAppSettings = async () => {
   try {
     const storeService = StoreService.getInstance();
-    
+
     // Load each setting individually
     const accentColor = await storeService.getSetting("accentColor");
     if (accentColor) appSettings.accentColor = accentColor;
-    
+
     const installLocation = await storeService.getSetting("installLocation");
     if (installLocation) appSettings.installLocation = installLocation;
-    
+
     const theme = await storeService.getSetting("theme");
     if (theme) appSettings.theme = theme;
-    
+
     const useSystemTheme = await storeService.getSetting("useSystemTheme");
-    if (useSystemTheme !== undefined) appSettings.useSystemTheme = useSystemTheme === true;
-    
+    if (useSystemTheme !== undefined)
+      appSettings.useSystemTheme = useSystemTheme === true;
+
     const customCSS = await storeService.getSetting("customCSS");
     if (customCSS) appSettings.customCSS = customCSS;
-    
+
     const validateFnfMods = await storeService.getSetting("validateFnfMods");
-    if (validateFnfMods !== undefined) appSettings.validateFnfMods = validateFnfMods === true;
-    
-    const showTerminalOutput = await storeService.getSetting("showTerminalOutput");
-    if (showTerminalOutput !== undefined) appSettings.showTerminalOutput = showTerminalOutput === true;
-    
+    if (validateFnfMods !== undefined)
+      appSettings.validateFnfMods = validateFnfMods === true;
+
+    const showTerminalOutput = await storeService.getSetting(
+      "showTerminalOutput"
+    );
+    if (showTerminalOutput !== undefined)
+      appSettings.showTerminalOutput = showTerminalOutput === true;
+
     console.log("Loaded app settings:", appSettings);
   } catch (error) {
     console.error("Error loading app settings:", error);
@@ -195,12 +202,12 @@ const loadAppSettings = async () => {
 const applyTheme = async (themeValue: string | boolean) => {
   // Convert legacy boolean value to theme string
   let activeThemeValue: string;
-  if (typeof themeValue === 'boolean') {
+  if (typeof themeValue === "boolean") {
     activeThemeValue = themeValue ? "light" : "dark";
   } else {
     activeThemeValue = themeValue;
   }
-  
+
   console.log("Applying theme:", activeThemeValue);
 
   // First check if we're running on Windows 11
@@ -209,11 +216,11 @@ const applyTheme = async (themeValue: string | boolean) => {
 
   // Apply CSS classes for theme by first removing all theme classes
   document.body.classList.remove(
-    "light-theme", 
-    "dark-theme", 
-    "yourself-theme", 
-    "hotline-theme", 
-    "corruption-theme", 
+    "light-theme",
+    "dark-theme",
+    "yourself-theme",
+    "hotline-theme",
+    "corruption-theme",
     "shaggy-theme",
     "boo-theme",
     "qt-theme",
@@ -221,7 +228,7 @@ const applyTheme = async (themeValue: string | boolean) => {
     "pump-theme",
     "doe-theme"
   );
-  
+
   // Then add the active theme class
   document.body.classList.add(`${activeThemeValue}-theme`);
 
@@ -249,7 +256,7 @@ const applyTheme = async (themeValue: string | boolean) => {
     } else {
       // For other themes on non-Windows 11, don't use solid-theme
       document.body.classList.remove("solid-theme");
-      
+
       // Use the semi-transparent theme variables directly
       const bgColor = `var(--theme-bg)`;
       document.documentElement.style.setProperty("background", bgColor);
@@ -270,14 +277,14 @@ const applyTheme = async (themeValue: string | boolean) => {
       // Fix for background style being commented out
       document.body.style.removeProperty("background");
       document.body.setAttribute("style", "background: transparent !important");
-      
+
       // Make sure q-layout is also transparent for Mica to work properly
       const qLayout = document.querySelector(".q-layout");
       if (qLayout) {
         qLayout.removeAttribute("style");
         qLayout.setAttribute("style", "background: transparent !important");
       }
-      
+
       // Apply Mica effect based on theme (Windows 11 only)
       try {
         await invoke("change_mica_theme", {
@@ -297,7 +304,7 @@ const applyTheme = async (themeValue: string | boolean) => {
         "--transparent-bg-override",
         "none"
       );
-      
+
       // Set background to solid color based on the theme
       const bgColor = `var(--theme-bg)`;
       document.documentElement.style.setProperty("background", bgColor);
@@ -306,11 +313,11 @@ const applyTheme = async (themeValue: string | boolean) => {
       document
         .querySelector(".q-layout")
         ?.setAttribute("style", "background: " + bgColor + " !important");
-      
+
       // Remove Mica effect for non-standard themes
       try {
         await invoke("remove_mica_theme", {
-          window: "main" // Main window label
+          window: "main", // Main window label
         });
         console.log("Removed Mica effect for theme:", activeThemeValue);
       } catch (error) {
@@ -333,7 +340,7 @@ const loadCustomCSS = async () => {
   try {
     const storeService = StoreService.getInstance();
     const customCSS = await storeService.getSetting("customCSS");
-    
+
     if (customCSS) {
       // Create a style element for custom CSS
       const styleElement = document.createElement("style");
@@ -368,17 +375,17 @@ const getUseSystemThemeSetting = async (): Promise<boolean> => {
   }
 };
 
-// Get the manually set theme preference 
+// Get the manually set theme preference
 const getThemePreference = async (): Promise<string> => {
   try {
     const storeService = StoreService.getInstance();
-    
+
     // Get theme from the store
     const theme = await storeService.getSetting("theme");
     if (theme) {
       return theme;
     }
-    
+
     // Fallback to legacy enableLightTheme for compatibility
     // This should not be needed after migration is complete
     return "dark"; // Default to dark theme
@@ -815,6 +822,54 @@ onMounted(async () => {
     // Listen for system theme changes
     const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
     mediaQuery.addEventListener("change", handleSystemThemeChange);
+
+    // Check for updates
+    try {
+      const updateResult = await check();
+      if (updateResult !== null) {
+        const updateNotification = (message: string) => {
+          $q.notify({
+            type: "ongoing",
+            message: message,
+            position: "bottom-right",
+            timeout: 0,
+          });
+        };
+
+        await updateResult.downloadAndInstall((event) => {
+          switch (event.event) {
+            case "Started":
+              let contentLength = event.data.contentLength;
+              updateNotification(`Downloading update...`);
+              break;
+            case "Progress":
+              let downloaded = 0;
+              downloaded += event.data.chunkLength;
+              let percent = contentLength
+                ? Math.round((downloaded / contentLength) * 100)
+                : 0;
+              updateNotification(`Downloading update... ${percent}%`);
+              break;
+            case "Finished":
+              updateNotification(`Update finished. Restarting application...`);
+              break;
+          }
+        });
+
+        $q.notify({
+          type: "positive",
+          message: "Update finished. Restarting application...",
+          position: "bottom-right",
+          timeout: 5000,
+        });
+
+        await relaunch();
+      } else {
+        console.log("No updates available");
+      }
+    } catch (error) {
+      console.error("Failed to check for updates:", error);
+    }
 
     console.log("App initialized and database tables updated");
   } catch (error) {
