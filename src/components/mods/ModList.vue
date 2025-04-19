@@ -18,9 +18,19 @@
               flat
               round
               dense
-              icon="add"
+              icon="add_circle_outline"
               @click="$emit('add-mod')"
               class="q-mr-xs"
+              style="color: var(--theme-text-secondary)"
+            />
+            <q-btn
+              flat
+              round
+              dense
+              icon="dashboard_customize"
+              class="q-mr-xs"
+              @click="$emit('add-mods-folder')"
+              tooltip="Import Folder of Mods"
               style="color: var(--theme-text-secondary)"
             />
             <q-btn
@@ -31,15 +41,6 @@
               @click="showCreateFolderDialog = true"
               class="q-mr-xs"
               tooltip="Create Folder"
-              style="color: var(--theme-text-secondary)"
-            />
-            <q-btn
-              flat
-              round
-              dense
-              icon="folder_open"
-              @click="$emit('add-mods-folder')"
-              tooltip="Import Folder of Mods"
               style="color: var(--theme-text-secondary)"
             />
           </div>

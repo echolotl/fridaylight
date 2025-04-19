@@ -33,20 +33,20 @@
         <div class="settings-content">
           <!-- Appearance Section -->
           <q-card-section v-show="activeSection === 'appearance'">
-
             <div class="text-subtitle1 q-mb-md">Appearance</div>
 
             <div class="theme-toggle-container row q-mb-md">
               <!-- Use our ThemePreview component -->
-              <ThemePreview 
-                :themeName="getThemeName()" 
-                :accentColor="getAccentColor()" 
+              <ThemePreview
+                :themeName="getThemeName()"
+                :accentColor="getAccentColor()"
               />
               <q-item tag="label" class="full-width">
                 <q-item-section>
                   <q-item-label>Use System Theme</q-item-label>
                   <q-item-label caption
-                    >Automatically match your OS theme (Light/Dark)</q-item-label
+                    >Automatically match your OS theme
+                    (Light/Dark)</q-item-label
                   >
                 </q-item-section>
                 <q-item-section side>
@@ -55,10 +55,7 @@
               </q-item>
             </div>
 
-            <div
-              class="theme-selector q-mb-md"
-              v-if="!settings.useSystemTheme"
-            >
+            <div class="theme-selector q-mb-md" v-if="!settings.useSystemTheme">
               <q-select
                 v-model="settings.theme"
                 :options="themeOptions"
@@ -124,7 +121,7 @@
                 </div>
               </template>
             </q-select>
-            
+
             <div class="q-mt-lg">
               <div class="text-subtitle2 q-mb-md">Custom CSS</div>
               <q-input
@@ -140,8 +137,8 @@
                 :max-rows="12"
               />
               <div class="text-caption q-mt-sm">
-                Custom CSS allows you to override the application's default styles.
-                Changes will apply after saving and restarting the app.
+                Custom CSS allows you to override the application's default
+                styles. Changes will apply after saving and restarting the app.
               </div>
             </div>
           </q-card-section>
@@ -168,7 +165,7 @@
                 </div>
               </template>
             </q-input>
-            
+
             <q-item tag="label" class="q-mt-md">
               <q-item-section>
                 <q-item-label>Validate FNF Mods</q-item-label>
@@ -180,7 +177,7 @@
                 <q-toggle v-model="settings.validateFnfMods" color="primary" />
               </q-item-section>
             </q-item>
-            
+
             <q-item tag="label" class="q-mt-md">
               <q-item-section>
                 <q-item-label>Show Terminal Output</q-item-label>
@@ -189,7 +186,10 @@
                 </q-item-label>
               </q-item-section>
               <q-item-section side>
-                <q-toggle v-model="settings.showTerminalOutput" color="primary" />
+                <q-toggle
+                  v-model="settings.showTerminalOutput"
+                  color="primary"
+                />
               </q-item-section>
             </q-item>
           </q-card-section>
@@ -205,13 +205,27 @@
               <br />
               <br />
 
-
               <div class="text-subtitle1 q-mb-md">Credits</div>
               <div class="acknowledgements q-mb-md">
-                <ul style="background-color: transparent;">
-                  <li><a @click="openUrl('https://www.echolotl.lol')">echolotl</a> - Coder, Designer, Director, Creator of Fridaylight</li>
-                  <li><a @click="openUrl('https://gamebanana.com/members/1844732')">Cracsthor</a> - Creator of PhantomMuff Full + Difficulty fonts</li>
-                  <li><a @click="openUrl('https://gamebanana.com/members/3083321')">NoizDynamic</a> - Creator of Tardling font</li>
+                <ul style="background-color: transparent">
+                  <li>
+                    <a @click="openUrl('https://www.echolotl.lol')">echolotl</a>
+                    - Coder, Designer, Director, Creator of Fridaylight
+                  </li>
+                  <li>
+                    <a
+                      @click="openUrl('https://gamebanana.com/members/1844732')"
+                      >Cracsthor</a
+                    >
+                    - Creator of PhantomMuff Full + Difficulty fonts
+                  </li>
+                  <li>
+                    <a
+                      @click="openUrl('https://gamebanana.com/members/3083321')"
+                      >NoizDynamic</a
+                    >
+                    - Creator of Tardling font
+                  </li>
                 </ul>
               </div>
               <div class="text-subtitle1 q-mb-md">Created with</div>
@@ -243,7 +257,7 @@
                   />
                 </div>
               </div>
-              
+
               <div class="settings-reset-section q-mt-lg">
                 <q-separator class="q-my-md" />
                 <div class="text-subtitle1 q-mb-md">Settings Management</div>
@@ -277,7 +291,7 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
-  
+
   <!-- Reset Settings Confirmation Dialog -->
   <MessageDialog
     v-model="showResetSettingsDialog"
@@ -298,6 +312,10 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { AppSettings } from "@main-types";
 import ThemePreview from "../common/ThemePreview.vue";
 import MessageDialog from "./MessageDialog.vue";
+import { StoreService } from "../../services/storeService";
+
+// Create a ref for store service
+const storeService = ref<StoreService | null>(null);
 
 const props = defineProps({
   modelValue: {
@@ -334,7 +352,7 @@ const themeOptions = computed(() => {
   const baseOptions = [
     { label: "Light", value: "light" },
     { label: "Dark", value: "dark" },
-    { label: "Shaggy", value: "shaggy"},
+    { label: "Shaggy", value: "shaggy" },
     { label: "Hotline", value: "hotline" },
     { label: "Yourself", value: "yourself" },
     { label: "Corruption", value: "corruption" },
@@ -343,12 +361,12 @@ const themeOptions = computed(() => {
     { label: "Pump", value: "pump" },
     { label: "Boo", value: "boo" },
   ];
-  
+
   // Only add Extra themes if they are unlocked
   if (hasUnlockedExtraThemes.value) {
     baseOptions.push({ label: "Doe", value: "doe" });
   }
-  
+
   return baseOptions;
 });
 
@@ -368,23 +386,25 @@ const getThemeName = () => {
   if (settings.value.useSystemTheme) {
     let value = getSystemTheme();
     return value.value;
-    
   }
   // Ensure we're working with a string value
-  if (typeof settings.value.theme === 'string') {
+  if (typeof settings.value.theme === "string") {
     return settings.value.theme;
   }
   // Handle case where theme is an object
-  let value = settings.value.theme as unknown as { label: string; value: string };
+  let value = settings.value.theme as unknown as {
+    label: string;
+    value: string;
+  };
   return value.value;
 };
 
 // Helper function to get current accent color
 const getAccentColor = () => {
-  if (typeof settings.value.accentColor === 'string') {
+  if (typeof settings.value.accentColor === "string") {
     return settings.value.accentColor;
   }
-  return settings.value.accentColor?.value || '#DB2955';
+  return settings.value.accentColor?.value || "#DB2955";
 };
 
 const showModal = computed({
@@ -406,110 +426,23 @@ watch(
 
 const loadSettings = async () => {
   try {
-    if (!window.db) {
-      console.warn("Database not initialized yet, using default settings");
+    if (!storeService.value) {
+      console.warn("Store service not initialized yet, using default settings");
       return;
     }
 
-    // Load settings from database
-    const accentColorResult = await window.db.select(
-      "SELECT value FROM settings WHERE key = $1",
-      ["accentColor"]
-    );
-    if (accentColorResult && accentColorResult.length > 0) {
-      const colorValue = accentColorResult[0].value;
-      console.log("Loaded accent color from DB:", colorValue);
+    // Get all settings from StoreService
+    const storedSettings = await storeService.value.getAllSettings();
 
-      // Try to parse as JSON if it looks like an object
-      if (
-        typeof colorValue === "string" &&
-        colorValue.startsWith("{") &&
-        colorValue.includes("value")
-      ) {
-        try {
-          const colorObj = JSON.parse(colorValue);
-          console.log("Parsed color object:", colorObj);
-          settings.value.accentColor = colorObj;
-        } catch (e) {
-          console.error("Failed to parse accent color as JSON:", e);
-          settings.value.accentColor = colorValue;
-        }
-      } else {
-        // It's a direct string value
-        settings.value.accentColor = colorValue;
-      }
-    }
+    // Apply stored settings to our local settings ref
+    settings.value = { ...settings.value, ...storedSettings };
 
-    const installLocationResult = await window.db.select(
-      "SELECT value FROM settings WHERE key = $1",
-      ["installLocation"]
-    );
-    if (installLocationResult && installLocationResult.length > 0) {
-      settings.value.installLocation = installLocationResult[0].value;
-    }
-    
-    // Load theme setting
-    const themeResult = await window.db.select(
-      "SELECT value FROM settings WHERE key = $1",
-      ["theme"]
-    );
-    if (themeResult && themeResult.length > 0) {
-      settings.value.theme = themeResult[0].value;
-    } else {
-      // Backward compatibility: Convert enableLightTheme to theme
-      const legacyThemeResult = await window.db.select(
-        "SELECT value FROM settings WHERE key = $1",
-        ["enableLightTheme"]
-      );
-      if (legacyThemeResult && legacyThemeResult.length > 0) {
-        // Convert string 'true'/'false' to theme value
-        settings.value.theme = legacyThemeResult[0].value === "true" ? "light" : "dark";
-      }
-    }
-
-    // Load system theme preference
-    const systemThemeResult = await window.db.select(
-      "SELECT value FROM settings WHERE key = $1",
-      ["useSystemTheme"]
-    );
-    if (systemThemeResult && systemThemeResult.length > 0) {
-      // Convert string 'true'/'false' to boolean
-      settings.value.useSystemTheme = systemThemeResult[0].value === "true";
-    }
-    
-    // Load custom CSS
-    const customCSSResult = await window.db.select(
-      "SELECT value FROM settings WHERE key = $1",
-      ["customCSS"]
-    );
-    if (customCSSResult && customCSSResult.length > 0) {
-      settings.value.customCSS = customCSSResult[0].value;
-    }
-
-    // Load validate FNF mods setting
-    const validateFnfModsResult = await window.db.select(
-      "SELECT value FROM settings WHERE key = $1",
-      ["validateFnfMods"]
-    );
-    if (validateFnfModsResult && validateFnfModsResult.length > 0) {
-      settings.value.validateFnfMods = validateFnfModsResult[0].value === "true";
-    }
-
-    // Load show terminal output setting
-    const showTerminalOutputResult = await window.db.select(
-      "SELECT value FROM settings WHERE key = $1",
-      ["showTerminalOutput"]
-    );
-    if (showTerminalOutputResult && showTerminalOutputResult.length > 0) {
-      settings.value.showTerminalOutput = showTerminalOutputResult[0].value === "true";
-    }
+    console.log("Settings loaded from store service:", settings.value);
 
     // Apply theme immediately upon loading
     await updateTheme();
-
-    console.log("Settings loaded from database:", settings.value);
   } catch (error) {
-    console.error("Failed to load settings from database:", error);
+    console.error("Failed to load settings:", error);
   }
 };
 
@@ -527,9 +460,10 @@ const selectInstallLocation = async () => {
 
 // Get the current system theme (light or dark)
 const getSystemTheme = (): { label: string; value: string } => {
-  return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches 
-    ? {label: "Light", value: "light"} 
-    : {label: "Dark", value: "dark"} 
+  return window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: light)").matches
+    ? { label: "Light", value: "light" }
+    : { label: "Dark", value: "dark" };
 };
 
 // Apply theme function
@@ -542,24 +476,26 @@ const updateTheme = async () => {
     activeThemeValue = getSystemTheme().value;
   } else {
     // Handle both string and object theme values
-    activeThemeValue = typeof settings.value.theme === 'string'
-      ? settings.value.theme
-      : (settings.value.theme as unknown as { value: string })?.value || 'dark';
+    activeThemeValue =
+      typeof settings.value.theme === "string"
+        ? settings.value.theme
+        : (settings.value.theme as unknown as { value: string })?.value ||
+          "dark";
   }
 
   console.log("Applying theme:", activeThemeValue);
 
   // First check if we're running on Windows 11
   const isWindows11 = await invoke<boolean>("is_windows_11");
-    console.log("Is Windows 11:", isWindows11, "Theme:", activeThemeValue);
+  console.log("Is Windows 11:", isWindows11, "Theme:", activeThemeValue);
 
   // Apply CSS classes for theme by first removing all theme classes
   document.body.classList.remove(
-    "light-theme", 
-    "dark-theme", 
-    "yourself-theme", 
-    "hotline-theme", 
-    "corruption-theme", 
+    "light-theme",
+    "dark-theme",
+    "yourself-theme",
+    "hotline-theme",
+    "corruption-theme",
     "shaggy-theme",
     "boo-theme",
     "qt-theme",
@@ -567,7 +503,7 @@ const updateTheme = async () => {
     "pump-theme",
     "doe-theme"
   );
-  
+
   // Then add the active theme class
   document.body.classList.add(`${activeThemeValue}-theme`);
 
@@ -576,7 +512,10 @@ const updateTheme = async () => {
     // Only apply solid-theme to light and dark themes
     if (activeThemeValue === "light" || activeThemeValue === "dark") {
       document.body.classList.add("solid-theme");
-      console.log("Using solid background for non-Windows 11 theme:", activeThemeValue);
+      console.log(
+        "Using solid background for non-Windows 11 theme:",
+        activeThemeValue
+      );
 
       // Remove transparent background styles
       document.documentElement.style.setProperty(
@@ -595,8 +534,11 @@ const updateTheme = async () => {
     } else {
       // For other themes on non-Windows 11, don't use solid-theme
       document.body.classList.remove("solid-theme");
-      console.log("Using transparent background for non-Windows 11 theme:", activeThemeValue);
-      
+      console.log(
+        "Using transparent background for non-Windows 11 theme:",
+        activeThemeValue
+      );
+
       // Use the semi-transparent theme variables directly
       const bgColor = `var(--theme-bg)`;
       document.documentElement.style.setProperty("background", bgColor);
@@ -617,19 +559,19 @@ const updateTheme = async () => {
       // Fix for background style being commented out
       document.body.style.removeProperty("background");
       document.body.setAttribute("style", "background: transparent !important");
-      
+
       // Make sure q-layout is also transparent for Mica to work properly
       const qLayout = document.querySelector(".q-layout");
       if (qLayout) {
         qLayout.removeAttribute("style");
         qLayout.setAttribute("style", "background: transparent !important");
       }
-      
+
       // Call the Rust backend to apply Mica effect (Windows only)
       try {
         // Only light and dark themes should use the Mica effect
         const isDarkMica = activeThemeValue !== "light";
-        
+
         await invoke("change_mica_theme", {
           window: "main", // Main window label
           dark: isDarkMica, // true for dark themes, false for light theme
@@ -648,7 +590,7 @@ const updateTheme = async () => {
         "--transparent-bg-override",
         "none"
       );
-      
+
       // Set background to solid color based on the theme
       const bgColor = `var(--theme-bg)`;
       document.documentElement.style.setProperty("background", bgColor);
@@ -673,78 +615,49 @@ const updateTheme = async () => {
 
 const save = async () => {
   try {
-    if (!window.db) {
-      console.warn("Database not initialized yet, cannot save settings");
+    if (!storeService.value) {
+      console.warn("Store service not initialized yet, cannot save settings");
       return;
     }
 
+    // Process the accent color for storage
     // For accent color, we need to handle both string and object values
-    const accentColorValue =
-      typeof settings.value.accentColor === "string"
-        ? settings.value.accentColor
-        : JSON.stringify(settings.value.accentColor);
+    if (
+      typeof settings.value.accentColor !== "string" &&
+      settings.value.accentColor?.value
+    ) {
+      console.log("Converting accent color object to string value");
+      settings.value.accentColor = settings.value.accentColor.value;
+    }
 
-    console.log("Saving accent color to DB:", accentColorValue);
+    // Process the theme value to ensure it's a string
+    if (
+      typeof settings.value.theme === "object" &&
+      settings.value.theme !== null &&
+      "value" in settings.value.theme
+    ) {
+      console.log("Converting theme object to string value");
+      settings.value.theme = (settings.value.theme as { value: string }).value;
+    }
 
-    // Save settings to database
-    await window.db.execute(
-      "INSERT OR REPLACE INTO settings (key, value) VALUES ($1, $2)",
-      ["accentColor", accentColorValue]
-    );
-    
-    await window.db.execute(
-      "INSERT OR REPLACE INTO settings (key, value) VALUES ($1, $2)",
-      ["installLocation", settings.value.installLocation]
-    );
-    
-    // Save theme settings - ensure it's a string value
-    const themeValue = typeof settings.value.theme === 'string' 
-      ? settings.value.theme 
-      : (settings.value.theme as unknown as { value: string })?.value || 'dark';
-      
-    await window.db.execute(
-      "INSERT OR REPLACE INTO settings (key, value) VALUES ($1, $2)",
-      ["theme", themeValue]
-    );
-
-    await window.db.execute(
-      "INSERT OR REPLACE INTO settings (key, value) VALUES ($1, $2)",
-      ["useSystemTheme", String(settings.value.useSystemTheme)]
-    );
-    
-    // Save custom CSS
-    await window.db.execute(
-      "INSERT OR REPLACE INTO settings (key, value) VALUES ($1, $2)",
-      ["customCSS", settings.value.customCSS]
-    );
-
-    // Save validate FNF mods setting
-    await window.db.execute(
-      "INSERT OR REPLACE INTO settings (key, value) VALUES ($1, $2)",
-      ["validateFnfMods", String(settings.value.validateFnfMods)]
-    );
-
-    // Save show terminal output setting
-    await window.db.execute(
-      "INSERT OR REPLACE INTO settings (key, value) VALUES ($1, $2)",
-      ["showTerminalOutput", String(settings.value.showTerminalOutput)]
-    );
+    // Save all settings at once using the StoreService
+    await storeService.value.saveSettings(settings.value);
+    console.log("Settings saved via StoreService:", settings.value);
 
     // Apply the accent color to CSS custom properties
-    // Make sure we're setting a string value
     const colorValue =
       typeof settings.value.accentColor === "string"
         ? settings.value.accentColor
-        : settings.value.accentColor?.value || "#FF0088";
+        : "#FF0088";
     document.documentElement.style.setProperty("--q-primary", colorValue);
 
     // Apply theme
     await updateTheme();
 
-    console.log("Settings saved to database:", settings.value);
+    // Emit save event
     emit("save", settings.value);
   } catch (error) {
-    console.error("Failed to save settings to database:", error);
+    console.error("Failed to save settings:", error);
   }
 };
 
@@ -767,7 +680,11 @@ const resetSettings = () => {
   console.log("Settings have been reset to default values.");
 };
 
-onMounted(() => {
+onMounted(async () => {
+  // Initialize StoreService
+  storeService.value = StoreService.getInstance();
+  await storeService.value.initialize();
+
   // Really silly fix for dropdown background, oh Quasar why
   const style = document.createElement("style");
   style.innerHTML = `
@@ -888,4 +805,3 @@ a {
   color: var(--theme-text-secondary);
 }
 </style>
-```
