@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   useSystemTheme: true,
   customCSS: '',
   validateFnfMods: true,
+  showTerminalOutput: true,
 };
 
 /**
