@@ -37,24 +37,34 @@
 </svg>
     </div>
 
-    <q-input
-      v-model="searchQueryModel"
-      outlined
-      dense
-      placeholder="Search mods..."
-      class="search-input theme-input"
-      @keyup.enter="search"
-    >
-      <template v-slot:append>
-        <q-icon
-          v-if="searchQueryModel.length > 0"
-          name="close"
-          class="cursor-pointer theme-icon"
-          @click="clear"
-        />
-        <q-icon name="search" class="cursor-pointer theme-icon" @click="search" />
-      </template>
-    </q-input>
+    <div class="search-container">
+      <q-input
+        v-model="searchQueryModel"
+        outlined
+        dense
+        placeholder="Search mods..."
+        class="search-input theme-input"
+        @keyup.enter="search"
+      >
+        <template v-slot:append>
+          <q-icon
+            v-if="searchQueryModel.length > 0"
+            name="close"
+            class="cursor-pointer theme-icon"
+            @click="clear"
+          />
+          <q-icon name="search" class="cursor-pointer theme-icon" @click="search" />
+        </template>
+      </q-input>
+      
+      <q-btn
+        round
+        flat
+        icon="file_download"
+        class="custom-download-btn"
+        @click="openCustomDownload"
+      />
+    </div>
   </div>
 </template>
 
@@ -68,7 +78,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['search', 'clear', 'update:searchQuery']);
+const emit = defineEmits(['search', 'clear', 'update:searchQuery', 'custom-download']);
 
 // Use a computed property with getter/setter to maintain two-way binding
 const searchQueryModel = computed({
@@ -83,6 +93,10 @@ const search = () => {
 const clear = () => {
   emit('clear');
 };
+
+const openCustomDownload = () => {
+  emit('custom-download');
+};
 </script>
 
 <style scoped>
@@ -93,8 +107,19 @@ const clear = () => {
   margin-bottom: 16px;
 }
 
-.search-input {
+.search-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
   width: 100%;
+}
+
+.search-input {
+  flex: 1;
+}
+
+.custom-download-btn {
+  white-space: nowrap;
 }
 
 .theme-icon {

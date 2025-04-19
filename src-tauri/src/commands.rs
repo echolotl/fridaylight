@@ -355,6 +355,31 @@ pub async fn download_gamebanana_mod_command(
     download_gamebanana_mod(url, name, mod_id, install_location, app).await
 }
 
+#[tauri::command]
+pub async fn download_custom_mod_command(
+    url: String, 
+    name: String,
+    mod_id: i64,
+    install_location: Option<String>,
+    thumbnail_url: Option<String>,
+    description: Option<String>,
+    version: Option<String>,
+    app: tauri::AppHandle
+) -> Result<String, String> {
+    info!("Starting custom mod download process for {} with ID: {}", name, mod_id);
+    crate::download::download_custom_mod(url, name, mod_id, install_location, thumbnail_url, description, version, app).await
+}
+
+#[tauri::command]
+pub async fn download_engine_command(
+    engine_type: String, 
+    install_location: Option<String>,
+    app: tauri::AppHandle
+) -> Result<String, String> {
+    info!("Starting direct download process for {} engine", engine_type);
+    crate::download::download_engine(engine_type, install_location, app).await
+}
+
 // Command to sync mods from database
 #[tauri::command]
 pub async fn sync_mods_from_database(mods_data: Vec<ModInfo>, mods_state: State<'_, ModsState>) -> Result<(), String> {
@@ -504,24 +529,6 @@ pub async fn get_mod_download_files_command(mod_id: i64) -> Result<serde_json::V
     get_mod_download_files(mod_id).await
 }
 
-// Command to download an engine
-#[tauri::command]
-pub async fn download_engine_command(
-    engine_type: String, 
-    install_location: Option<String>,
-    app: tauri::AppHandle
-) -> Result<String, String> {
-    info!("Starting direct download process for {} engine", engine_type);
-    crate::download::download_engine(engine_type, install_location, app).await
-}
-
-// Command to fetch mod info by ID
-#[tauri::command]
-pub async fn get_mod_info_command(mod_id: i64) -> Result<serde_json::Value, String> {
-    info!("Fetching mod info for ID: {}", mod_id);
-    crate::gamebanana::get_mod_info(mod_id).await
-}
-
 // Setup function for Tauri application
 pub fn run() {
     tauri::Builder::default()
@@ -558,6 +565,8 @@ pub fn run() {
             launch_mod,
             fetch_gamebanana_mods_command,
             download_gamebanana_mod_command,
+            download_custom_mod_command,
+            download_engine_command,
             sync_mods_from_database,
             select_mods_parent_folder,
             change_mica_theme,
@@ -566,8 +575,6 @@ pub fn run() {
             toggle_mod_enabled,
             is_windows_11,
             get_mod_download_files_command,
-            download_engine_command,
-            get_mod_info_command,
             remove_mica_theme,
             is_mod_running,
             stop_mod,

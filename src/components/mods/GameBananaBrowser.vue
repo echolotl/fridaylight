@@ -1,11 +1,12 @@
 <template>
   <div class="gamebanana-browser phantom-font">
-    <!-- Search Bar -->
+    <!-- Search Bar - Updated to handle custom-download event -->
     <SearchBar
       :searchQuery="searchQuery"
       @update:searchQuery="searchQuery = $event"
       @search="searchMods"
       @clear="clearSearch"
+      @custom-download="showCustomUrlModal = true"
     />
 
     <!-- Search Results View -->
@@ -158,6 +159,22 @@
       @select="onEngineSelected"
       @cancel="cancelDownload"
     />
+
+    <!-- Custom URL Download Modal -->
+    <CustomUrlDownloadModal
+      v-model="showCustomUrlModal"
+      @submit="onCustomUrlSubmit"
+      @cancel="showCustomUrlModal = false"
+    />
+
+    <!-- Mod Type Selection Modal -->
+    <ModTypeSelectionModal
+      v-model="showModTypeModal"
+      :modData="customModData"
+      @submit="onModTypeSubmit"
+      @back="showModTypeModal = false; showCustomUrlModal = true"
+      @cancel="showModTypeModal = false; customModData = null"
+    />
   </div>
 </template>
 
@@ -175,6 +192,8 @@ import FeaturedModsCarousel from "@mods/FeaturedModsCarousel.vue";
 import EngineDownloadButtons from "@mods/EngineDownloadButtons.vue";
 import DownloadFileSelector from "@modals/DownloadFileSelector.vue";
 import EngineSelectionDialog from "@modals/EngineSelectionDialog.vue";
+import CustomUrlDownloadModal from "@modals/CustomUrlDownloadModal.vue";
+import ModTypeSelectionModal from "@modals/ModTypeSelectionModal.vue";
 import { StoreService } from "../../services/storeService";
 
 // Types
@@ -254,6 +273,11 @@ interface ModpackInfo {
 const showEngineSelectDialog = ref(false);
 const currentModpackInfo = ref<ModpackInfo | null>(null);
 const selectedEngineMod = ref<any>(null);
+
+// For custom URL download
+const showCustomUrlModal = ref(false);
+const showModTypeModal = ref(false);
+const customModData = ref<any>(null);
 
 // Watch for tab changes to load appropriate data
 watch(selectedModType, async (newType) => {
@@ -1587,6 +1611,167 @@ const getInstallLocation = async (): Promise<string | null> => {
   } catch (error) {
     console.warn("Could not get install location from settings:", error);
     return null;
+  }
+};
+
+// Custom URL download flow
+const onCustomUrlSubmit = (formData: any) => {
+  console.log("Custom URL form submitted:", formData);
+  customModData.value = formData;
+  showCustomUrlModal.value = false;
+  showModTypeModal.value = true;
+};
+
+const onModTypeSubmit = async (typeData: any) => {
+  console.log("Mod type selected:", typeData);
+  if (!customModData.value) return;
+
+  try {
+    // Show loading notification
+    pendingDownloadNotification = $q.notify({
+      type: "ongoing",
+      message: `Preparing to download "${customModData.value.name}"...`,
+      position: "bottom-right",
+      timeout: 0,
+    });
+
+    // Determine install location based on mod type
+    let installLocation: string | null = null;
+    
+    if (typeData.modType === 'executable') {
+      // For standalone mods, use the standard install location
+      installLocation = await getInstallLocation();
+    } else {
+      // For modpacks, use the engine's mods folder
+      if (typeData.engineMod) {
+        installLocation = getModsFolderPath(typeData.engineMod);
+      } else {
+        throw new Error(`No ${formatEngineType(typeData.modType)} installation found`);
+      }
+    }
+
+    console.log(`Downloading ${customModData.value.name} to ${installLocation || 'default location'}`);
+
+    // Generate a random modId for tracking the download
+    const modId = Math.floor(Math.random() * 1000000);
+
+    // Call backend to download using the custom mod command instead
+    const result = await invoke<string>("download_custom_mod_command", {
+      url: customModData.value.url,
+      name: customModData.value.name,
+      modId,
+      installLocation,
+      thumbnailUrl: customModData.value.bannerData,
+      description: customModData.value.description,
+      version: customModData.value.version
+    });
+
+    // Process the result
+    let modInfo: any;
+    let modPath: string;
+
+    try {
+      // Try to parse as JSON
+      const parsed = JSON.parse(result);
+      modPath = parsed.path;
+      modInfo = parsed.mod_info;
+    } catch (e) {
+      // If parsing fails, assume it's just the path string
+      modPath = result;
+      // Get mod info directly from the backend
+      const allMods = await invoke<any[]>("get_mods");
+      modInfo = allMods.find((m) => m.path === modPath);
+    }
+
+    // If we still don't have mod info, create one with our custom data
+    if (!modInfo) {
+      modInfo = {
+        id: crypto.randomUUID(),
+        name: customModData.value.name,
+        path: modPath,
+        executable_path: null,
+        icon_data: null,
+        banner_data: customModData.value.bannerData,
+        logo_data: customModData.value.logoData,
+        description: customModData.value.description,
+        version: customModData.value.version || null,
+        engine_type: typeData.modType !== 'executable' ? typeData.modType : null,
+        engine: typeData.modType !== 'executable' ? {
+          engine_type: typeData.modType,
+          engine_name: formatEngineType(typeData.modType),
+          mods_folder: true,
+          mods_folder_path: "mods"
+        } : null
+      };
+    } else {
+      // Update the mod info with custom data
+      modInfo.name = customModData.value.name;
+      modInfo.banner_data = customModData.value.bannerData || modInfo.banner_data;
+      modInfo.logo_data = customModData.value.logoData || modInfo.logo_data;
+      modInfo.description = customModData.value.description || modInfo.description;
+      modInfo.version = customModData.value.version || modInfo.version;
+      
+      if (typeData.modType !== 'executable') {
+        modInfo.engine_type = typeData.modType;
+        modInfo.engine = {
+          ...(modInfo.engine || {}),
+          engine_type: typeData.modType,
+          engine_name: formatEngineType(typeData.modType),
+          mods_folder: true,
+          mods_folder_path: "mods"
+        };
+      }
+    }
+
+    // Save the mod to the database
+    if (modInfo) {
+      await saveModToDatabase(modInfo);
+    }
+
+    // Dismiss loading notification
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification();
+      pendingDownloadNotification = null;
+    }
+
+    // Show success notification
+    $q.notify({
+      type: "positive",
+      message: `"${customModData.value.name}" downloaded and installed successfully!`,
+      caption: `Ready to play from the mods list`,
+      position: "bottom-right",
+      timeout: 5000,
+    });
+
+    // Trigger the refresh event to update the mod list
+    const refreshEvent = new CustomEvent("refresh-mods");
+    window.dispatchEvent(refreshEvent);
+
+    // Reset state
+    showModTypeModal.value = false;
+    customModData.value = null;
+
+  } catch (error) {
+    // Show error notification
+    $q.notify({
+      type: "negative",
+      message: `Failed to download "${customModData.value.name}"`,
+      caption: String(error),
+      position: "bottom-right",
+      timeout: 5000,
+    });
+
+    // Dismiss any pending notification
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification();
+      pendingDownloadNotification = null;
+    }
+
+    console.error("Failed to download custom mod:", error);
+
+    // Reset state but keep the modal open to allow for corrections
+    showModTypeModal.value = false;
+    showCustomUrlModal.value = true;
   }
 };
 </script>

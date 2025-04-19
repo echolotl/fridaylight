@@ -195,7 +195,7 @@
               >
                 <template v-slot:prepend>
                   <div class="icon">
-                  <q-icon name="aspect_ratio" />
+                  <q-icon name="panorama" />
                   </div>
                 </template>
               </q-file>
