@@ -1,4 +1,4 @@
-use log::{debug, error, info, LevelFilter};
+use log::{debug, info, LevelFilter};
 use simplelog::{ColorChoice, CombinedLogger, Config, TermLogger, TerminalMode, WriteLogger};
 use std::fs::{self, File};
 use std::sync::Once;

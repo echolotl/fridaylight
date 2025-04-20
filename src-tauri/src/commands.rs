@@ -2,8 +2,7 @@ use crate::download::download_gamebanana_mod;
 use crate::filesystem::create_mod_info;
 use crate::gamebanana::{fetch_gamebanana_mods, get_mod_download_files};
 use crate::logger;
-use crate::modfiles::{find_mod_metadata_files, get_executable_directory};
-use crate::modenabler::{toggle_mod_enabled_state, check_mod_enabled_state};
+use crate::modutils::{find_mod_metadata_files, get_executable_directory, toggle_mod_enabled_state, check_mod_enabled_state};
 use crate::models::{ModInfo, ModsState, GameBananaResponse, EngineModsResponse, ModDisableResult};
 use log::{debug, error, info, warn};
 use tauri::window::{Effect, EffectsBuilder};
@@ -74,7 +73,7 @@ pub async fn select_mods_parent_folder(app: tauri::AppHandle, validate: Option<b
                             let is_valid = !should_validate || crate::filesystem::is_valid_fnf_mod(&entry_path);
                             
                             if is_valid {
-                                // Use the existing add_mod function to ensure consistent initialization
+                                // Add the mod
                                 match add_mod(subdir_path, Some(false), mods_state.clone()) {
                                     Ok(mod_info) => {
                                         added_mods.push(mod_info);
@@ -166,7 +165,7 @@ pub fn add_mod(path: String, validate: Option<bool>, mods_state: State<'_, ModsS
     info!("Adding mod from path: {}", path);
     
     // Check if the folder is a valid FNF mod if validation is enabled
-    // Default to true if not specified
+    // Default to true if not specified (should be specified, but just in case)
     let should_validate = validate.unwrap_or(true);
     
     if should_validate {
@@ -307,7 +306,7 @@ pub fn launch_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), St
                         // The process has exited, so we need to update the mod's running state
                         // We do this by directly invoking the set_mod_not_running function
                         // which will handle the state update in a thread-safe way
-                        crate::models::set_mod_not_running(&id_for_thread);
+                        crate::modutils::set_mod_not_running(&id_for_thread);
                     },
                     Err(e) => {
                         let error_msg = format!("Failed to wait for process: {}", e);
@@ -356,28 +355,6 @@ pub fn stop_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), Stri
                 // On Windows, use taskkill to terminate the process
                 match Command::new("taskkill")
                     .args(&["/PID", &pid.to_string(), "/F"])
-                    .output() 
-                {
-                    Ok(_) => {
-                        info!("Successfully stopped process with PID: {}", pid);
-                        mod_info.process_id = None;
-                        Ok(())
-                    },
-                    Err(e) => {
-                        let error_msg = format!("Failed to stop process: {}", e);
-                        error!("{}", error_msg);
-                        Err(error_msg)
-                    }
-                }
-            }
-            
-            #[cfg(not(target_os = "windows"))]
-            {
-                use std::process::Command;
-                // On Unix-like systems, use kill
-                match Command::new("kill")
-                    .arg("-9")
-                    .arg(pid.to_string())
                     .output() 
                 {
                     Ok(_) => {
@@ -508,7 +485,6 @@ fn remove_mica_theme(app_handle: tauri::AppHandle, window: String) -> Result<(),
         })?;
         // You can't really disable the Mica effect once you enable it, but since this won't effect anything
         // if not on Windows 11, we can do the best we can by setting it to light theme to mimic the normal titlebar.
-
         // The only reason this is a separate function is to allow for if Tauri adds the ability to disable Mica in the future.
         window.set_effects(EffectsBuilder::new().effect(Effect::MicaLight).build()).map_err(|e| e.to_string())?;
         Ok(())
@@ -540,7 +516,7 @@ pub async fn find_engine_mod_files(executable_path: String, engine_type: String,
     for mod_file in &mut metadata_files {
         // Load icon data if available
         if let Some(icon_path) = &mod_file.icon_file_path {
-            match crate::modfiles::get_mod_icon_data(icon_path) {
+            match crate::modutils::get_mod_icon_data(icon_path) {
                 Ok(icon_data) => {
                     mod_file.icon_data = Some(icon_data);
                 },
@@ -581,7 +557,7 @@ pub async fn toggle_mod_enabled(executable_path: String, mod_folder_path: String
 #[tauri::command]
 pub async fn get_file_as_base64(file_path: String) -> Result<String, String> {
     info!("Loading file as base64: {}", file_path);
-    crate::modfiles::get_mod_icon_data(&file_path)
+    crate::modutils::get_mod_icon_data(&file_path)
 }
 
 // Command to check if the OS is Windows 11 or greater
@@ -659,6 +635,9 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .manage(mods_state)
         .setup(|app| {
+            // Store the app handle for event emission
+            crate::app_handle::set_global_app_handle(app.handle().clone());
+            
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
               update(handle).await.unwrap();

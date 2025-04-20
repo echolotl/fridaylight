@@ -32,7 +32,6 @@
               <q-img :src="mod.imageUrl" class="featured-thumbnail">
                 <div class="absolute-full featured-overlay"></div>
 
-                <!-- Author profile picture with name -->
                 <div class="absolute-top-right q-pa-sm">
                   <div class="author-container">
                     <q-avatar size="40px">
@@ -44,7 +43,6 @@
                   </div>
                 </div>
 
-                <!-- Period tag -->
                 <div class="absolute-top-left featured-period q-pa-sm">
                   <q-badge
                     color="primary"
@@ -77,6 +75,7 @@
                       </span>
                     </div>
                   </div>
+
                 </div>
               </q-img>
             </div>
@@ -106,7 +105,7 @@ defineEmits(['download']);
 
 const currentSlide = ref(0);
 
-// Helper function to format numbers (e.g., 1000 -> 1K)
+// Helper function to format file sizes
 const formatNumber = (num: number): string => {
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1) + "M";

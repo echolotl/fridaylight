@@ -288,13 +288,13 @@ const loadAllEngines = async () => {
 
 // Get engine type from mod object
 const getEngineType = (mod: EngineMod): string => {
-  // Check new structure first
+  // Check engine structure
   if (mod.engine && mod.engine.engine_type) {
     return mod.engine.engine_type;
   }
   
-  // Fall back to legacy field
-  return mod.engine_type || 'unknown';
+  // If no engine type found, return unknown
+  return 'unknown';
 };
 
 // Load compatible engines based on the selected type

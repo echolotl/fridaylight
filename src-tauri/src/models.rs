@@ -186,21 +186,7 @@ lazy_static! {
     pub static ref GLOBAL_MODS_STATE: Arc<Mutex<HashMap<String, ModInfo>>> = Arc::new(Mutex::new(HashMap::new()));
 }
 
-// Function to update a mod's running state from any thread
-pub fn set_mod_not_running(mod_id: &str) {
-    // First, update the global state if available
-    if let Ok(mut mods) = GLOBAL_MODS_STATE.lock() {
-        if let Some(mod_info) = mods.get_mut(mod_id) {
-            mod_info.process_id = None;
-            log::info!("Updated mod {} to not running status in global state", mod_id);
-        }
-    }
-    
-    // Add a log entry to note that the process has finished
-    crate::terminaloutput::add_log(mod_id, "[Process terminated]");
-
-    // TODO: Notify the UI about the process termination
-    // I can use Tauri's event system to emit an event to the frontend,
-    // but this requires a reference to the Tauri app instance, which is not available here.
-    // I'll figure it out later.
+// Global app handle that can be accessed from anywhere, thread-safe
+lazy_static! {
+    pub static ref GLOBAL_APP_HANDLE: Mutex<Option<tauri::AppHandle>> = Mutex::new(None);
 }

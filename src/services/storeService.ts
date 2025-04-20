@@ -13,7 +13,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
 };
 
 /**
- * StoreService class for managing application settings with tauri-plugin-store
+ * StoreService class for managing application settings,
+ * this is for everything else that doesn't need a database
  */
 export class StoreService {
   private static instance: StoreService;
@@ -129,7 +130,6 @@ export class StoreService {
     try {
       // Using type assertion to handle complex types
       await this.store.set(key as string, value as any);
-      // No need to manually call save() when autoSave is true
     } catch (error) {
       console.error(`Failed to save setting ${key}:`, error);
       throw error;
@@ -155,7 +155,6 @@ export class StoreService {
         // Using type assertion to handle complex types
         await this.store.set(key, value as any);
       }
-      // No need to manually call save() when autoSave is true
     } catch (error) {
       console.error('Failed to save settings:', error);
       throw error;
@@ -177,7 +176,6 @@ export class StoreService {
     
     try {
       await this.store.clear();
-      // No need to manually call save() when autoSave is true
     } catch (error) {
       console.error('Failed to clear settings:', error);
       throw error;

@@ -6,7 +6,6 @@ use futures_util::StreamExt;
 use log::{debug, error, info, warn};
 use tauri::path::BaseDirectory;
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use tauri::{Manager, Emitter};
 
@@ -404,7 +403,7 @@ pub async fn download_gamebanana_mod(
         None => None,
     };
     
-    // Check for custom images in fnfml folder
+    // Check for custom images in .flight folder
     let (custom_banner_data, custom_logo_data) = check_for_custom_images(&mod_folder);
     
     // Use custom banner/logo if available, otherwise use downloaded ones
@@ -897,7 +896,7 @@ pub async fn download_engine(
         }
     };
     
-    // Create a unique mod ID for tracking downloads - use UUID instead of hardcoded number
+    // Create a unique mod ID for tracking downloads
     let mod_id = uuid::Uuid::new_v4().as_u128() as i64;
     info!("Generated mod_id for {} engine: {}", engine_type, mod_id);
     
@@ -1188,7 +1187,7 @@ pub async fn download_engine(
     };
     
     // Create custom metadata folder if it doesn't exist
-    let metadata_folder = engine_folder.join("fnfml");
+    let metadata_folder = engine_folder.join(".flight");
     if !metadata_folder.exists() {
         debug!("Creating metadata folder: {}", metadata_folder.display());
         if let Err(e) = fs::create_dir_all(&metadata_folder) {
@@ -1212,7 +1211,7 @@ pub async fn download_engine(
     
     // Read the banner and logo files if they exist in resources
     let banner_data = if banner_src.exists() {
-        match crate::modfiles::get_mod_icon_data(&banner_src.to_string_lossy().to_string()) {
+        match crate::modutils::get_mod_icon_data(&banner_src.to_string_lossy().to_string()) {
             Ok(data) => Some(data),
             Err(e) => {
                 warn!("Failed to read banner image: {}", e);
@@ -1227,7 +1226,7 @@ pub async fn download_engine(
             PathBuf::new()
         });
         if default_banner.exists() {
-            match crate::modfiles::get_mod_icon_data(&default_banner.to_string_lossy().to_string()) {
+            match crate::modutils::get_mod_icon_data(&default_banner.to_string_lossy().to_string()) {
                 Ok(data) => {
                     debug!("Using default banner image as fallback");
                     Some(data)
@@ -1244,7 +1243,7 @@ pub async fn download_engine(
     };
     
     let logo_data = if logo_src.exists() {
-        match crate::modfiles::get_mod_icon_data(&logo_src.to_string_lossy().to_string()) {
+        match crate::modutils::get_mod_icon_data(&logo_src.to_string_lossy().to_string()) {
             Ok(data) => Some(data),
             Err(e) => {
                 warn!("Failed to read logo image: {}", e);
@@ -1344,7 +1343,7 @@ fn extract_archive(
 
 // Function to reorganize modpack content for easier use
 // This checks if there's only one directory in the root and if so,
-// moves all its contents up a level for easier access
+// moves all its contents up a level so we can see them
 fn reorganize_modpack(mod_folder: &Path) -> Result<bool, String> {
     debug!("Checking modpack structure at: {}", mod_folder.display());
     

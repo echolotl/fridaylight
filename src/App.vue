@@ -1,11 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf" class="transparent-bg">
-    <!-- Redesigned Sidebar that contains both the sidebar and main content -->
-    <Sidebar v-model="sidebarOpen" @resize="handleSidebarResize">
-      <!-- Main content is now handled within the Sidebar component -->
-    </Sidebar>
-
-    <!-- Engine Selection Dialog for Modpacks from deep links -->
+    <Sidebar v-model="sidebarOpen" @resize="handleSidebarResize" />
+    <!-- Engine selection for modpacks from deep links -->
     <EngineSelectionDialog
       v-model="showEngineSelectDialog"
       :compatible-engines="compatibleEngines"
@@ -38,7 +34,7 @@ declare global {
   }
 }
 
-// Initialize Quasar at the component setup level
+// Initialize Quasar 
 const $q = useQuasar();
 
 // Ensure Notify is properly registered
@@ -96,7 +92,7 @@ const onEngineSelected = async (engine: any) => {
       `Starting download for "${currentModName.value}" modpack to ${modsFolderPath}`
     );
 
-    // Fix the URL if needed
+    // Fix the URL since it doesn't have the colon (or shouldn't have it)
     let fixedUrl = currentDownloadUrl.value;
     if (fixedUrl.startsWith("//")) {
       fixedUrl = "https:" + fixedUrl;
@@ -114,7 +110,7 @@ const onEngineSelected = async (engine: any) => {
 
     console.log("Download result:", result);
 
-    // Get the mod info from GameBanana API - we need this to process the result
+    // Get the mod info from GameBanana API
     const modInfo = await invoke<any>("get_mod_info_command", {
       modId: currentModId.value,
     });
@@ -157,7 +153,7 @@ const appSettings = reactive<AppSettings>({
   showTerminalOutput: true,
 });
 
-// Provide appSettings to all components
+// Provide app settings to all components
 provide("appSettings", appSettings);
 
 // Load app settings from database and update the reactive object
@@ -317,7 +313,7 @@ const applyTheme = async (themeValue: string | boolean) => {
       // Remove Mica effect for non-standard themes
       try {
         await invoke("remove_mica_theme", {
-          window: "main", // Main window label
+          window: "main", 
         });
         console.log("Removed Mica effect for theme:", activeThemeValue);
       } catch (error) {
@@ -386,12 +382,10 @@ const getThemePreference = async (): Promise<string> => {
       return theme;
     }
 
-    // Fallback to legacy enableLightTheme for compatibility
-    // This should not be needed after migration is complete
     return "dark"; // Default to dark theme
   } catch (error) {
     console.error("Error fetching theme preference:", error);
-    return "dark"; // Default to dark theme on error
+    return "dark"; // Default to dark theme 
   }
 };
 
@@ -431,7 +425,7 @@ const processDeepLinkModDownload = async (
 
     console.log("Mod analysis:", { isModpack, modpackType });
 
-    // Update notification with mod name
+    // Update notification 
     pendingNotification();
     const downloadingNotification = $q.notify({
       type: "ongoing",
@@ -482,7 +476,7 @@ const processDeepLinkModDownload = async (
       console.warn("Could not get install location from settings:", error);
     }
 
-    // Fix the URL if needed
+    // Fix the URL
     let fixedUrl = downloadUrl;
     if (fixedUrl.startsWith("//")) {
       fixedUrl = "https:" + fixedUrl;
@@ -492,7 +486,7 @@ const processDeepLinkModDownload = async (
 
     console.log(`Starting download for "${modName}" from URL: ${fixedUrl}`);
 
-    // Call the backend to download the mod
+    // Download the mod
     const result = await invoke<string>("download_gamebanana_mod_command", {
       url: fixedUrl,
       name: modName,
@@ -604,10 +598,8 @@ const processDownloadResult = async (
 
 // Functions for checking modpack types using direct category IDs
 const determineIfModpack = (modInfo: any): boolean => {
-  // Check category ID directly - this is the most reliable method
   if (modInfo._aCategory && modInfo._aCategory._idRow) {
     const categoryId = parseInt(modInfo._aCategory._idRow);
-    // These are the known modpack category IDs
     const modpackCategoryIds = [28367, 29202, 34764]; // Psych, V-Slice, Codename
     return modpackCategoryIds.includes(categoryId);
   }
@@ -616,7 +608,7 @@ const determineIfModpack = (modInfo: any): boolean => {
 };
 
 const determineModpackType = (modInfo: any): string | null => {
-  // Determine type by category ID - most accurate method
+  // Determine type by category ID
   if (modInfo._aCategory && modInfo._aCategory._idRow) {
     const categoryId = parseInt(modInfo._aCategory._idRow);
     switch (categoryId) {
@@ -650,18 +642,12 @@ const getCompatibleEngineMods = async (
     // Filter mods by engine type
     return allMods.filter(
       (mod: { engine: { engine_type: string }; engine_type: string }) => {
-        // Check engine.engine_type first (new structure)
+        // Check engine.engine_type first
         if (mod.engine && mod.engine.engine_type) {
           return (
             mod.engine.engine_type.toLowerCase() === engineType.toLowerCase()
           );
         }
-
-        // Fall back to legacy engine_type field
-        return (
-          mod.engine_type &&
-          mod.engine_type.toLowerCase() === engineType.toLowerCase()
-        );
       }
     );
   } catch (error) {
@@ -689,7 +675,7 @@ const formatEngineType = (engineType: string | null): string => {
 
 // Function to get the mods folder path for an engine mod
 const getModsFolderPath = (engineMod: any): string => {
-  // First check if the engine has a specified mods_folder_path in the new structure
+  // First check if the engine has a specified mods_folder_path
   if (
     engineMod.engine &&
     engineMod.engine.mods_folder &&
@@ -752,7 +738,7 @@ onMounted(async () => {
               archiveExt,
             });
 
-            // Ensure this is a mod type we support
+            // Ensure this is a mod type we support (this should always be 'Mod')
             if (modType === "Mod" && !isNaN(modId)) {
               // Process the download - fetch the mod info first
               processDeepLinkModDownload(downloadUrl, modId, archiveExt);
@@ -776,18 +762,15 @@ onMounted(async () => {
 
     // Make the database service available globally
     window.db = {
-      // Legacy interface for compatibility
+      // Direct access to the database service
       select: async (query: string, params?: any[]) => {
-        // Pass this to the actual database via dbService when needed
         const db = await dbService["db"];
         return db.select(query, params);
       },
       execute: async (query: string, params?: any[]) => {
-        // Pass this to the actual database via dbService when needed
         const db = await dbService["db"];
         return db.execute(query, params);
       },
-      // Add the dbService instance for direct access
       service: dbService,
     };
 
@@ -836,6 +819,7 @@ onMounted(async () => {
           });
         };
 
+        // Install the update if there is one
         await updateResult.downloadAndInstall((event) => {
           switch (event.event) {
             case "Started":
@@ -897,41 +881,5 @@ body {
 
 .transparent-bg {
   background: transparent !important;
-}
-
-/* Make sure any Quasar containers are also transparent */
-.q-layout,
-.q-page-container,
-.q-page {
-  background: transparent !important;
-}
-
-/* Remove all shadows from Quasar components */
-.q-shadow-1,
-.q-shadow-2,
-.q-shadow-3,
-.q-shadow-4,
-.q-shadow-5,
-.q-shadow-6,
-.q-shadow-7,
-.q-shadow-8,
-.q-shadow-9,
-.q-shadow-10 {
-  box-shadow: none !important;
-}
-
-/* Custom font face for phantom muff font */
-@font-face {
-  font-family: "PhantomMuffFull";
-  src: url("./assets/fonts/PhantomMuffFull.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "PhantomMuffEmpty";
-  src: url("./assets/fonts/PhantomMuffEmpty.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
 }
 </style>

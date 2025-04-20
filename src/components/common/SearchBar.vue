@@ -127,7 +127,7 @@ const openCustomDownload = () => {
 }
 
 .gb-logo1 {
-  fill: rgba(0, 0, 0, 0.5);
+  fill: var(--theme-bg);
 }
 .gb-logo2 {
   fill: url(#gradient);

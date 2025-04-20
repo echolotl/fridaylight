@@ -2,7 +2,7 @@
   <q-dialog v-model="showModal" persistent>
     <q-card class="settings-modal phantom-font">
       <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6">Mod Settings</div>
+        <div class="text-h6 phantom-font-difficulty">Mod Settings</div>
         <q-space />
         <q-btn icon="close" flat round dense v-close-popup />
       </q-card-section>
@@ -11,10 +11,10 @@
         <!-- Sidebar Navigation -->
         <div class="settings-sidebar">
           <q-list padding>
-            <q-item 
-              v-for="section in modSettingsSections" 
+            <q-item
+              v-for="section in modSettingsSections"
               :key="section.id"
-              clickable 
+              clickable
               :active="activeSection === section.id"
               @click="activeSection = section.id"
               active-class="settings-active-item"
@@ -31,30 +31,31 @@
 
         <!-- Main Content Area -->
         <div class="settings-content">
-          <!-- General Section -->          <q-card-section v-show="activeSection === 'general'">
+          <!-- General Section -->
+          <q-card-section v-show="activeSection === 'general'">
             <div class="text-subtitle1 q-mb-md">General Information</div>
 
-            <q-input 
-              v-model="form.name" 
-              label="Mod Name" 
-              outlined 
+            <q-input
+              v-model="form.name"
+              label="Mod Name"
+              outlined
               class="q-mb-md"
             />
-            
-            <q-input 
-              v-model="form.description" 
+
+            <q-input
+              v-model="form.description"
               type="textarea"
-              label="Description" 
-              outlined 
+              label="Description"
+              outlined
               class="q-mb-md"
               autogrow
               placeholder="Enter mod description"
             />
-            
-            <q-input 
-              v-model="form.version" 
-              label="Version" 
-              outlined 
+
+            <q-input
+              v-model="form.version"
+              label="Version"
+              outlined
               class="q-mb-md"
               placeholder="e.g. 1.0.0"
             />
@@ -63,32 +64,42 @@
           <!-- Location Section -->
           <q-card-section v-show="activeSection === 'location'">
             <div class="text-subtitle1 q-mb-md">File Locations</div>
-            
-            <q-input 
-              v-model="form.path" 
-              label="Folder Location" 
-              outlined 
+
+            <q-input
+              v-model="form.path"
+              label="Folder Location"
+              outlined
               readonly
               class="q-mb-md"
             >
               <template v-slot:append>
                 <div class="icon">
-                <q-btn round flat icon="folder" @click="$emit('change-folder')" />
-              </div>
+                  <q-btn
+                    round
+                    flat
+                    icon="folder"
+                    @click="$emit('change-folder')"
+                  />
+                </div>
               </template>
             </q-input>
-            
-            <q-input 
-              v-model="form.executable_path" 
-              label="Executable Path" 
-              outlined 
+
+            <q-input
+              v-model="form.executable_path"
+              label="Executable Path"
+              outlined
               readonly
               class="q-mb-md"
             >
               <template v-slot:append>
                 <div class="icon">
-                <q-btn round flat icon="file_open" @click="$emit('select-executable')" />
-              </div>
+                  <q-btn
+                    round
+                    flat
+                    icon="file_open"
+                    @click="$emit('select-executable')"
+                  />
+                </div>
               </template>
             </q-input>
           </q-card-section>
@@ -96,7 +107,7 @@
           <!-- Engine Section -->
           <q-card-section v-show="activeSection === 'engine'">
             <div class="text-subtitle1 q-mb-md">Engine Settings</div>
-              <q-select
+            <q-select
               v-model="form.engine.engine_type"
               :options="engineTypes"
               label="Engine Type"
@@ -106,11 +117,11 @@
               map-options
               hint="The type of engine this mod uses"
             />
-            
-            <q-input 
-              v-model="form.engine.engine_name" 
-              label="Custom Engine Name" 
-              outlined 
+
+            <q-input
+              v-model="form.engine.engine_name"
+              label="Custom Engine Name"
+              outlined
               class="q-mb-md"
               placeholder="e.g. My Custom Psych Fork"
               hint="A custom name for the engine (optional)"
@@ -118,13 +129,19 @@
 
             <div class="q-mb-md">
               <div class="text-subtitle2 q-mb-sm">Engine Icon</div>
-              <div class="engine-icon-preview" v-if="engineIconPreview || form.engine?.engine_icon">
-                <img :src="engineIconPreview || form.engine?.engine_icon" alt="Engine Icon" />
+              <div
+                class="engine-icon-preview"
+                v-if="engineIconPreview || form.engine?.engine_icon"
+              >
+                <img
+                  :src="engineIconPreview || form.engine?.engine_icon"
+                  alt="Engine Icon"
+                />
               </div>
               <div class="icon-placeholder" v-else>
                 <q-icon name="block" size="48px" />
               </div>
-              
+
               <q-file
                 v-model="engineIconFile"
                 label="Set Engine Icon"
@@ -135,23 +152,23 @@
               >
                 <template v-slot:prepend>
                   <div class="icon">
-                  <q-icon name="image" />
+                    <q-icon name="image" />
                   </div>
                 </template>
               </q-file>
-              
-              <q-btn 
-                v-if="engineIconPreview || form.engine?.engine_icon" 
-                flat 
-                color="negative" 
-                label="Remove Icon" 
+
+              <q-btn
+                v-if="engineIconPreview || form.engine?.engine_icon"
+                flat
+                color="negative"
+                label="Remove Icon"
                 class="q-mt-sm"
                 @click="removeEngineIcon"
               />
             </div>
-            
+
             <q-separator class="q-my-md" />
-            
+
             <div class="q-mb-md">
               <q-toggle
                 v-model="form.engine!.mods_folder"
@@ -160,12 +177,12 @@
                 hint="Does this engine support a mods folder structure?"
               />
             </div>
-            
-            <q-input 
+
+            <q-input
               v-if="form.engine?.mods_folder"
-              v-model="form.engine!.mods_folder_path" 
-              label="Mods Folder Path" 
-              outlined 
+              v-model="form.engine!.mods_folder_path"
+              label="Mods Folder Path"
+              outlined
               class="q-mb-md"
               placeholder="e.g. mods"
               hint="Relative path to the mods folder from the executable directory"
@@ -175,11 +192,17 @@
           <!-- Visuals Section -->
           <q-card-section v-show="activeSection === 'visuals'">
             <div class="text-subtitle1 q-mb-md">Appearance</div>
-            
+
             <div class="banner-upload q-mb-md">
               <div class="text-subtitle2 q-mb-sm">Banner Image</div>
-              <div class="banner-preview" v-if="bannerPreview || form.banner_data">
-                <img :src="bannerPreview || form.banner_data" alt="Banner Preview" />
+              <div
+                class="banner-preview"
+                v-if="bannerPreview || form.banner_data"
+              >
+                <img
+                  :src="bannerPreview || form.banner_data"
+                  alt="Banner Preview"
+                />
               </div>
               <div class="banner-placeholder" v-else>
                 <q-icon name="image" size="48px" />
@@ -195,16 +218,21 @@
               >
                 <template v-slot:prepend>
                   <div class="icon">
-                  <q-icon name="panorama" />
+                    <q-icon name="panorama" />
                   </div>
                 </template>
               </q-file>
             </div>
-            
+
             <div class="logo-upload q-mb-md">
-              <div class="text-subtitle2 q-mb-sm">Logo Image (Replaces Title)</div>
+              <div class="text-subtitle2 q-mb-sm">
+                Logo Image (Replaces Title)
+              </div>
               <div class="logo-preview" v-if="logoPreview || form.logo_data">
-                <img :src="(logoPreview || form.logo_data) || ''" alt="Logo Preview" />
+                <img
+                  :src="logoPreview || form.logo_data || ''"
+                  alt="Logo Preview"
+                />
               </div>
               <div class="logo-placeholder" v-else>
                 <q-icon name="image" size="48px" />
@@ -220,15 +248,15 @@
               >
                 <template v-slot:prepend>
                   <div class="icon">
-                  <q-icon name="image" />
+                    <q-icon name="image" />
                   </div>
                 </template>
               </q-file>
-              <q-btn 
-                v-if="logoPreview || form.logo_data" 
-                flat 
-                color="negative" 
-                label="Remove Logo" 
+              <q-btn
+                v-if="logoPreview || form.logo_data"
+                flat
+                color="negative"
+                label="Remove Logo"
                 class="q-mt-sm"
                 @click="removeLogo"
               />
@@ -238,7 +266,13 @@
       </div>
 
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" color="primary" v-close-popup @click="cancel" />
+        <q-btn
+          flat
+          label="Cancel"
+          color="primary"
+          v-close-popup
+          @click="cancel"
+        />
         <q-btn flat label="Save" color="primary" @click="save" v-close-popup />
       </q-card-actions>
     </q-card>
@@ -246,40 +280,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue';
-import { Mod } from '@main-types';
+import { ref, watch, computed, onMounted } from "vue";
+import { Mod } from "@main-types";
 
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    default: false
+    default: false,
   },
   mod: {
     type: Object as () => Mod | null,
-    default: null
-  }
+    default: null,
+  },
 });
 
-const emit = defineEmits(['update:modelValue', 'save', 'change-folder', 'select-executable']);
+const emit = defineEmits([
+  "update:modelValue",
+  "save",
+  "change-folder",
+  "select-executable",
+]);
 
 const form = ref<Mod>({
-  id: '',
-  name: '',
-  path: '',
-  executable_path: '',
-  icon_data: '',
+  id: "",
+  name: "",
+  path: "",
+  executable_path: "",
+  icon_data: "",
   display_order: 0,
-  banner_data: '',
-  logo_data: '',
-  version: '',
-  engine_type: '',
+  banner_data: "",
+  logo_data: "",
+  version: "",
   engine: {
-    engine_type: '',
-    engine_name: '',
-    engine_icon: '',
+    engine_type: "",
+    engine_name: "",
+    engine_icon: "",
     mods_folder: true,
-    mods_folder_path: ''
-  }
+    mods_folder_path: "",
+  },
 });
 
 const bannerFile = ref<File | null>(null);
@@ -290,33 +328,33 @@ const engineIconFile = ref<File | null>(null);
 const engineIconPreview = ref<string | null>(null);
 
 const engineTypes = [
-  { label: 'Vanilla', value: 'vanilla' },
-  { label: 'Psych Engine', value: 'psych' },
-  { label: 'Codename Engine', value: 'codename' },
-  { label: 'FPS Plus', value: 'fps-plus' },
-  { label: 'Kade Engine', value: 'kade' },
-  { label: 'Pre-VSlice', value: 'pre-vslice' },
-  { label: 'Other', value: 'other' }
+  { label: "Vanilla", value: "vanilla" },
+  { label: "Psych Engine", value: "psych" },
+  { label: "Codename Engine", value: "codename" },
+  { label: "FPS Plus", value: "fps-plus" },
+  { label: "Kade Engine", value: "kade" },
+  { label: "Pre-VSlice", value: "pre-vslice" },
+  { label: "Other", value: "other" },
 ];
 
 const showModal = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: (value) => emit("update:modelValue", value),
 });
 
 const modSettingsSections = [
-  { id: 'general', label: 'General', icon: 'info' },
-  { id: 'location', label: 'Location', icon: 'folder' },
-  { id: 'engine', label: 'Engine', icon: 'code' },
-  { id: 'visuals', label: 'Appearance', icon: 'palette' }
+  { id: "general", label: "General", icon: "info" },
+  { id: "location", label: "Location", icon: "folder" },
+  { id: "engine", label: "Engine", icon: "code" },
+  { id: "visuals", label: "Appearance", icon: "palette" },
 ];
 
-const activeSection = ref('general');
+const activeSection = ref("general");
 
 // Add style to dropdown menu when component is mounted
 onMounted(() => {
   // Fix for dropdown background
-  const style = document.createElement('style');
+  const style = document.createElement("style");
   style.innerHTML = `
     .q-menu {
       background-color: var(--theme-card);
@@ -330,31 +368,36 @@ onMounted(() => {
 });
 
 // Reset form when modal is opened
-watch(() => props.modelValue, (newVal) => {
-  if (newVal && props.mod) {
-    // Clone the mod object to form
-    form.value = JSON.parse(JSON.stringify(props.mod));
-    bannerPreview.value = null;
-    logoPreview.value = null;
-    bannerFile.value = null;
-    logoFile.value = null;
-  }
-});
-
-// Add a watcher to keep engine.engine_type and engine_type in sync
-watch(() => form.value.engine?.engine_type, (newEngineType) => {
-  if (newEngineType) {
-    // When engine.engine_type changes, update engine_type to match
-    console.log("Engine type changed to:", newEngineType);
-    form.value.engine_type = newEngineType;
-    
-    // Always update engine name based on the selected engine type
-    if (form.value.engine) {
-      form.value.engine.engine_name = formatEngineName(newEngineType);
-      console.log("Updated engine name to:", form.value.engine.engine_name);
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal && props.mod) {
+      // Clone the mod object to form
+      form.value = JSON.parse(JSON.stringify(props.mod));
+      bannerPreview.value = null;
+      logoPreview.value = null;
+      bannerFile.value = null;
+      logoFile.value = null;
     }
   }
-});
+);
+
+// Add a watcher to keep engine.engine_type and engine_type in sync
+watch(
+  () => form.value.engine?.engine_type,
+  (newEngineType) => {
+    if (newEngineType) {
+      // When engine.engine_type changes, update engine_type to match
+      console.log("Engine type changed to:", newEngineType);
+
+      // Always update engine name based on the selected engine type
+      if (form.value.engine) {
+        form.value.engine.engine_name = formatEngineName(newEngineType);
+        console.log("Updated engine name to:", form.value.engine.engine_name);
+      }
+    }
+  }
+);
 
 const handleBannerFileChange = (file: File) => {
   if (file) {
@@ -400,7 +443,7 @@ const removeLogo = () => {
 
 const removeEngineIcon = () => {
   if (form.value.engine) {
-    form.value.engine.engine_icon = '';
+    form.value.engine.engine_icon = "";
   }
   engineIconPreview.value = null;
   engineIconFile.value = null;
@@ -409,72 +452,76 @@ const removeEngineIcon = () => {
 // Function to format engine name from engine type
 const formatEngineName = (engineType: string): string => {
   const engineNames: Record<string, string> = {
-    'vanilla': 'V-Slice',
-    'psych': 'Psych Engine',
-    'codename': 'Codename Engine',
-    'fps-plus': 'FPS Plus',
-    'kade': 'Kade Engine',
-    'pre-vslice': 'Pre-VSlice Engine',
-    'other': 'Custom Engine'
+    vanilla: "V-Slice",
+    psych: "Psych Engine",
+    codename: "Codename Engine",
+    "fps-plus": "FPS Plus",
+    kade: "Kade Engine",
+    "pre-vslice": "Pre-VSlice Engine",
+    other: "Custom Engine",
   };
-  
-  return engineNames[engineType] || engineType.charAt(0).toUpperCase() + engineType.slice(1);
+
+  return (
+    engineNames[engineType] ||
+    engineType.charAt(0).toUpperCase() + engineType.slice(1)
+  );
 };
 
 const save = async () => {
   const updatedMod = { ...form.value };
-  
+
   // If we have a banner preview, use it
   if (bannerPreview.value) {
     updatedMod.banner_data = bannerPreview.value;
   }
-  
+
   // If we have a logo preview, use it
   if (logoPreview.value) {
     updatedMod.logo_data = logoPreview.value;
   }
-  
+
   // If we have an engine icon preview, use it
   if (engineIconPreview.value && updatedMod.engine) {
     updatedMod.engine.engine_icon = engineIconPreview.value;
   }
 
-  // Make sure engine_type is synchronized with engine.engine_type
   // First, make sure engine object exists
   if (!updatedMod.engine) {
     updatedMod.engine = {
-      engine_type: updatedMod.engine_type || "unknown",
-      engine_name: formatEngineName(updatedMod.engine_type || "unknown"),
-      engine_icon: '', 
+      engine_type: "unknown",
+      engine_name: formatEngineName("unknown"),
+      engine_icon: "",
       mods_folder: false,
-      mods_folder_path: ''
+      mods_folder_path: "",
     };
   }
-  
-  // Important fix: Always set engine_type from engine.engine_type (not the other way around)
-  // This ensures the database gets the right value since it prioritizes engine_type
-  if (updatedMod.engine && updatedMod.engine.engine_type) {
-    updatedMod.engine_type = updatedMod.engine.engine_type;
-    if (!updatedMod.engine.engine_name) {
-      updatedMod.engine.engine_name = formatEngineName(updatedMod.engine.engine_type);
-    }
-  }
-  
-  console.log('Saving mod with engine data:', JSON.stringify(updatedMod.engine));
-  
+
+  console.log(
+    "Saving mod with engine data:",
+    JSON.stringify(updatedMod.engine)
+  );
+
   try {
     // If database service is available, use the direct engine update method for better reliability
-    if (window.db && window.db.service && updatedMod.engine && updatedMod.engine.engine_type) {
+    if (
+      window.db &&
+      window.db.service &&
+      updatedMod.engine &&
+      updatedMod.engine.engine_type
+    ) {
       console.log("Using direct engine update method for more reliable saving");
-      await window.db.service.updateModEngineData(updatedMod.id, updatedMod.engine.engine_type);
+      await window.db.service.updateModEngineData(
+        updatedMod.id,
+        updatedMod.engine.engine_type
+      );
       console.log("Direct engine update successful");
     }
   } catch (error) {
     console.error("Direct engine update failed:", error);
   }
-  
+
   // Still emit the save event with the updated mod data for other fields
-  emit('save', updatedMod);
+  emit("save", updatedMod);
 };
 const cancel = () => {
   bannerPreview.value = null;
@@ -530,12 +577,14 @@ const cancel = () => {
   color: white;
 }
 
-.banner-upload, .logo-upload {
+.banner-upload,
+.logo-upload {
   display: flex;
   flex-direction: column;
 }
 
-.banner-preview img, .logo-preview img {
+.banner-preview img,
+.logo-preview img {
   width: 100%;
   height: auto;
   max-height: 150px;
@@ -543,7 +592,8 @@ const cancel = () => {
   border-radius: 4px;
 }
 
-.banner-placeholder, .logo-placeholder {
+.banner-placeholder,
+.logo-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -53,12 +53,11 @@ pub async fn fetch_gamebanana_mods(query: String, page: i64) -> Result<GameBanan
             return Err(format!("Failed to fetch mods: {}", e));
         },
     };
-      // Try to parse response as array first (new format)
+      // Try to parse response as array first 
     let mods_array: Result<Vec<serde_json::Value>, _> = response.json().await;
     
     let (mods_data, total_count) = match mods_array {
         Ok(array) => {
-            // New format - direct array of mods
             debug!("Successfully parsed API response as array of {} mods", array.len());
             // For direct arrays, we only know the number of mods in this page
             (array, None)
@@ -112,7 +111,7 @@ pub async fn fetch_gamebanana_mods(query: String, page: i64) -> Result<GameBanan
     let total = total_count.unwrap_or(mods_data.len() as i64);
     debug!("Total mods found: {}", total);
     
-    // Map the API data to our GameBananaMod struct
+    // Map the API data to GameBananaMod struct
     let mut mods = Vec::new();
     
     for record in &mods_data {

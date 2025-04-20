@@ -1,6 +1,7 @@
 <template>
   <div class="layout-container">
-    <!-- Sidebar with resize handle -->
+    <!-- The Sidebar ended up becoming the wrapper around basically everything -->
+    <!-- Actual Sidebar -->
     <div class="sidebar" :style="{ width: `${sidebarWidth}px` }">
       <ModList
         :mods="mods"
@@ -20,7 +21,7 @@
         class="modlist"
       />
 
-      <!-- GameBanana button at the bottom of the sidebar -->
+      <!-- GameBanana button -->
       <div class="gamebanana-button-container phantom-font-difficulty">
         <q-btn
           :class="{
@@ -182,7 +183,7 @@ declare global {
   }
 }
 
-// Using ModInfo as an alias for Mod for backward compatibility in this file
+// So I didn't have to change anything
 type ModInfo = Mod;
 
 // Use the props without storing in a variable to avoid the unused variable warning
@@ -512,7 +513,6 @@ const selectModsParentFolder = async () => {
     }
 
     // Call the Rust command to select a folder containing multiple mods
-    // Pass the validation setting to the backend
     const addedMods = await invoke<ModInfo[]>("select_mods_parent_folder", {
       validate: validateFnfMods,
     });
@@ -674,7 +674,6 @@ const deleteMod = async (modId: string) => {
     }
 
     // Force a refresh of the UI to ensure the mod is removed from displayItems
-    // This will cause ModList to rebuild its displayItems array
     const refreshEvent = new CustomEvent("refresh-mods");
     window.dispatchEvent(refreshEvent);
   } catch (error) {
@@ -878,8 +877,8 @@ const saveAppSettings = (settings: any) => {
     applyCustomCSS(settings.customCSS);
   }
 
-  // If we need to use the install location in other parts of the app,
-  // we could store it in a ref or emit an event here
+
+  window.dispatchEvent(new CustomEvent("settings-saved", { detail: settings }));
 };
 
 // Load and apply app settings
@@ -1092,7 +1091,7 @@ onUnmounted(() => {
   align-items: center;
 }
 .gb-logo1 {
-  fill: var(--theme-card);
+  fill: var(--theme-bg);
 }
 .gb-logo2 {
   fill: url(#gradient);

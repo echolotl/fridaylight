@@ -1,6 +1,6 @@
 <template>
   <div class="mod-banner">
-    <!-- Banner image - user uploaded or default -->
+    <!-- Banner image -->
     <div
       class="banner-image"
       :style="
@@ -47,7 +47,6 @@
         class="mod-info-overlay"
         v-if="
           mod.version ||
-          mod.engine_type ||
           (mod.engine && (mod.engine.engine_type || mod.engine.engine_icon))
         "
       >
@@ -80,18 +79,6 @@
             :src="
               '/images/engine_icons/' +
               formatEngineType(mod.engine.engine_type) +
-              '.webp'
-            "
-          />
-        </span>
-        <span
-          v-else-if="mod.engine_type && mod.engine_type !== 'unknown'"
-          class="engine-tag"
-        >
-          <img
-            :src="
-              '/images/engine_icons/' +
-              formatEngineType(mod.engine_type) +
               '.webp'
             "
           />

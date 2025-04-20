@@ -10,14 +10,14 @@ pub mod gamebanana;
 pub mod logger;
 // Interfaces, types, and structures used throughout the app
 pub mod models;
-// Mod metadata file detection and management
-pub mod modfiles;
-// Mod enabling/disabling functions
-pub mod modenabler;
+// Mod utility functions
+pub mod modutils;
 // Terminal output capture and display
 pub mod terminaloutput;
 // Other utility functions
 pub mod utils;
+// Global app handle management
+pub mod app_handle;
 
 // Re-export the main run function for Tauri
 pub use commands::run;

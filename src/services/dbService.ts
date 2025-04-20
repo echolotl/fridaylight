@@ -421,8 +421,8 @@ export class DatabaseService {
           engine = mod.engine_data
             ? JSON.parse(mod.engine_data)
             : {
-                engine_type: mod.engine_type || "unknown",
-                engine_name: mod.engine_type || "Unknown Engine",
+                engine_type: "unknown",
+                engine_name: "Unknown Engine",
                 engine_icon: "",
                 mods_folder: false,
                 mods_folder_path: "",
@@ -430,8 +430,8 @@ export class DatabaseService {
         } catch (e) {
           console.error("Failed to parse engine data for mod:", mod.id, e);
           engine = {
-            engine_type: mod.engine_type || "unknown",
-            engine_name: mod.engine_type || "Unknown Engine",
+            engine_type: "unknown",
+            engine_name: "Unknown Engine",
             engine_icon: "",
             mods_folder: false,
             mods_folder_path: "",
@@ -506,37 +506,22 @@ export class DatabaseService {
         console.log(`_upsertMods - Processing mod: ${mod.name} (${mod.id})`);
         
         try {
-          // Ensure the engine object is properly initialized
+          // Create engine object if it doesn't exist
           if (!mod.engine) {
-            console.log(`_upsertMods - Creating new engine object for mod: ${mod.name}`);
+            console.log("_upsertMods - Creating missing engine object");
             mod.engine = {
-              engine_type: mod.engine_type || "unknown",
-              engine_name: this.formatEngineName(mod.engine_type || "unknown"),
+              engine_type: "unknown",
+              engine_name: this.formatEngineName("unknown"),
               engine_icon: "",
               mods_folder: false,
               mods_folder_path: "",
             };
-          } 
-          // Make sure engine_type and engine.engine_type are synchronized
-          else if (mod.engine_type && mod.engine_type !== mod.engine.engine_type) {
-            console.log(`_upsertMods - Updating engine.engine_type from ${mod.engine.engine_type} to ${mod.engine_type}`);
-            // Update engine object to match engine_type
-            mod.engine.engine_type = mod.engine_type;
-            if (!mod.engine.engine_name) {
-              mod.engine.engine_name = this.formatEngineName(mod.engine_type);
-            }
-          } 
-          // If only engine.engine_type is set, update the legacy field
-          else if (mod.engine.engine_type && (!mod.engine_type || mod.engine_type !== mod.engine.engine_type)) {
-            console.log(`_upsertMods - Updating engine_type from ${mod.engine_type} to ${mod.engine.engine_type}`);
-            mod.engine_type = mod.engine.engine_type;
           }
 
-          // Generate fresh engine_data JSON after all the adjustments
+          // Generate fresh engine_data JSON
           const engineData = JSON.stringify(mod.engine);
           
           console.log(`_upsertMods - Final mod engine data:
-            engine_type: ${mod.engine_type}
             engine.engine_type: ${mod.engine?.engine_type}
             engine_data: ${engineData}
           `);
@@ -546,9 +531,9 @@ export class DatabaseService {
             `
             INSERT OR REPLACE INTO mods (
               id, name, path, executable_path, icon_data, banner_data, logo_data, 
-              version, description, engine_type, engine_data, display_order, folder_id,
+              version, description, engine_data, display_order, folder_id,
               display_order_in_folder
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
             [
               mod.id,
@@ -560,8 +545,6 @@ export class DatabaseService {
               mod.logo_data || null,
               mod.version || null,
               mod.description || null,
-              // Prioritize the new structure over the legacy field
-              mod.engine.engine_type || mod.engine_type || null,
               engineData,
               mod.display_order || 9999,
               mod.folder_id || null,
@@ -587,38 +570,27 @@ export class DatabaseService {
         
         for (const mod of mods) {
           // Reuse the same code as above, but with our own db connection
-          // Ensure the engine object is properly initialized
+          // Create engine object if it doesn't exist
           if (!mod.engine) {
             mod.engine = {
-              engine_type: mod.engine_type || "unknown",
-              engine_name: this.formatEngineName(mod.engine_type || "unknown"),
+              engine_type: "unknown",
+              engine_name: this.formatEngineName("unknown"),
               engine_icon: "",
               mods_folder: false,
               mods_folder_path: "",
             };
-          } 
-          // Make sure engine_type and engine.engine_type are synchronized
-          else if (mod.engine_type && mod.engine_type !== mod.engine.engine_type) {
-            mod.engine.engine_type = mod.engine_type;
-            if (!mod.engine.engine_name) {
-              mod.engine.engine_name = this.formatEngineName(mod.engine_type);
-            }
-          } 
-          // If only engine.engine_type is set, update the legacy field
-          else if (mod.engine.engine_type && (!mod.engine_type || mod.engine_type !== mod.engine.engine_type)) {
-            mod.engine_type = mod.engine.engine_type;
           }
 
-          // Generate fresh engine_data JSON after all the adjustments
+          // Generate fresh engine_data JSON
           const engineData = JSON.stringify(mod.engine);
           
           await db.execute(
             `
             INSERT OR REPLACE INTO mods (
               id, name, path, executable_path, icon_data, banner_data, logo_data, 
-              version, description, engine_type, engine_data, display_order, folder_id,
+              version, description, engine_data, display_order, folder_id,
               display_order_in_folder
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
             [
               mod.id,
@@ -630,7 +602,6 @@ export class DatabaseService {
               mod.logo_data || null,
               mod.version || null,
               mod.description || null,
-              mod.engine.engine_type || mod.engine_type || null,
               engineData,
               mod.display_order || 9999,
               mod.folder_id || null,
@@ -652,7 +623,6 @@ export class DatabaseService {
     console.log("_saveAndSyncMods - About to save mods with engine data:", mods.map(mod => ({
       id: mod.id,
       name: mod.name, 
-      engine_type: mod.engine_type,
       engine: mod.engine ? JSON.stringify(mod.engine) : undefined
     })));
     
@@ -757,7 +727,6 @@ export class DatabaseService {
     console.log("DATABASE SERVICE - Received mod with engine data:", {
       id: mod.id,
       name: mod.name,
-      engine_type: mod.engine_type,
       engine: mod.engine ? JSON.stringify(mod.engine) : undefined,
     });
 
@@ -1009,8 +978,8 @@ export class DatabaseService {
             engine = mod.engine_data
               ? JSON.parse(mod.engine_data)
               : {
-                  engine_type: mod.engine_type || "unknown",
-                  engine_name: mod.engine_type || "Unknown Engine",
+                  engine_type: "unknown",
+                  engine_name: "Unknown Engine",
                   engine_icon: "",
                   mods_folder: false,
                   mods_folder_path: "",
@@ -1018,8 +987,8 @@ export class DatabaseService {
           } catch (e) {
             console.error("Failed to parse engine data for mod:", mod.id, e);
             engine = {
-              engine_type: mod.engine_type || "unknown",
-              engine_name: mod.engine_type || "Unknown Engine",
+              engine_type: "unknown",
+              engine_name: "Unknown Engine",
               engine_icon: "",
               mods_folder: false,
               mods_folder_path: "",
@@ -1047,8 +1016,8 @@ export class DatabaseService {
               engine = mod.engine_data
                 ? JSON.parse(mod.engine_data)
                 : {
-                    engine_type: mod.engine_type || "unknown",
-                    engine_name: mod.engine_type || "Unknown Engine",
+                    engine_type: "unknown",
+                    engine_name: "Unknown Engine",
                     engine_icon: "",
                     mods_folder: false,
                     mods_folder_path: "",
@@ -1056,8 +1025,8 @@ export class DatabaseService {
             } catch (e) {
               console.error("Failed to parse engine data for mod:", mod.id, e);
               engine = {
-                engine_type: mod.engine_type || "unknown",
-                engine_name: mod.engine_type || "Unknown Engine",
+                engine_type: "unknown",
+                engine_name: "Unknown Engine",
                 engine_icon: "",
                 mods_folder: false,
                 mods_folder_path: "",
@@ -1113,8 +1082,8 @@ export class DatabaseService {
       
       // Execute a simple direct SQL statement without withDatabaseLock
       await this.db.execute(
-        `UPDATE mods SET engine_type = ?, engine_data = ? WHERE id = ?`,
-        [engineType, engineData, modId]
+        `UPDATE mods SET engine_data = ? WHERE id = ?`,
+        [engineData, modId]
       );
       
       console.log(`Direct engine update - Successfully updated mod ${modId} with engine type ${engineType}`);

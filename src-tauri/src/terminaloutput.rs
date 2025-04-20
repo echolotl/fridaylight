@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use lazy_static::lazy_static;
-use log::{debug, info, warn};
+use log::{debug, info};
 
-// Define a type to store logs for each mod
+// Stores logs for each mod
 pub type LogStore = Arc<Mutex<HashMap<String, Vec<String>>>>;
 
 // Create a global singleton for storing logs

@@ -1,6 +1,6 @@
 <template>
   <div class="gamebanana-browser phantom-font">
-    <!-- Search Bar - Updated to handle custom-download event -->
+
     <SearchBar
       :searchQuery="searchQuery"
       @update:searchQuery="searchQuery = $event"
@@ -38,7 +38,6 @@
 
     <!-- Home View with Featured and Latest Mods -->
     <div v-else class="scroll-container">
-      <!-- Featured Mods Carousel Section -->
       <div class="section-header phantom-font-difficulty">
           <div class="text-subtitle1">Featured Mods</div>
         </div>
@@ -74,7 +73,7 @@
         </q-tabs>
 
         <q-tab-panels v-model="selectedModType" animated>
-          <!-- Executables Tab (Original Latest Mods) -->
+          <!-- Executables Tab -->
           <q-tab-panel name="executables">
             <ModGrid
               :mods="latestMods"
@@ -1441,19 +1440,14 @@ const getCompatibleEngineMods = async (
 
     // Filter mods by engine type
     return allMods.filter(
-      (mod: { engine: { engine_type: string }; engine_type: string }) => {
-        // Check engine.engine_type first (new structure)
+      (mod: { engine: { engine_type: string } }) => {
+        // Check engine.engine_type 
         if (mod.engine && mod.engine.engine_type) {
           return (
             mod.engine.engine_type.toLowerCase() === engineType.toLowerCase()
           );
         }
-
-        // Fall back to legacy engine_type field
-        return (
-          mod.engine_type &&
-          mod.engine_type.toLowerCase() === engineType.toLowerCase()
-        );
+        return false;
       }
     );
   } catch (error) {
@@ -1684,7 +1678,7 @@ const onModTypeSubmit = async (typeData: any) => {
       modInfo = allMods.find((m) => m.path === modPath);
     }
 
-    // If we still don't have mod info, create one with our custom data
+    // If we still don't have mod info, create one with custom data
     if (!modInfo) {
       modInfo = {
         id: crypto.randomUUID(),

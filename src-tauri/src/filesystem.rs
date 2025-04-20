@@ -11,59 +11,26 @@ use std::os::windows::ffi::OsStrExt;
 #[cfg(target_os = "windows")]
 use winapi::shared::minwindef::HINSTANCE;
 #[cfg(target_os = "windows")]
-use winapi::shared::windef::HICON;
-#[cfg(target_os = "windows")]
 use winapi::um::shellapi::ExtractIconW;
 
-// Find the executable file(s) within a directory with priority for FNF patterns
+// Find the executable file(s) within a directory
 pub fn find_executables(dir_path: &Path) -> Vec<PathBuf> {
     let mut executables = Vec::new();
-    let mut prioritized_executables = Vec::new();
-    
-    // Common FNF executable names to prioritize
-    let priority_names = [
-        "Funkin", "funkin", 
-        "FNF", "fnf",
-        "Friday Night Funkin", 
-        "game", "Game",
-        "play", "Play",
-        "start", "Start",
-        "launcher", "Launcher"
-    ];
-    
-    // Priority folders where executables are commonly found
-    let priority_folders = [
-        "bin", "game", "Game", "FNF", "fnf", 
-        "executable", "Executable", "exe",
-        "Friday Night Funkin", "Funkin"
-    ];
     
     // Track recursion depth to prevent going too deep
     fn search_directory(
         dir_path: &Path, 
-        executables: &mut Vec<PathBuf>, 
-        prioritized_executables: &mut Vec<PathBuf>,
-        priority_names: &[&str],
-        priority_folders: &[&str],
+        executables: &mut Vec<PathBuf>,
         depth: usize
     ) {
-        // Limit recursion depth to prevent excessive searching
-        if depth > 5 {  // Increased from 3 to 5 for deeper searching
+        // Limit recursion depth so we dont blow up everything
+        if depth > 5 { 
             return;
         }
-        
-        // Check if current directory is a priority folder
-        let is_priority_dir = if let Some(dir_name) = dir_path.file_name() {
-            let dir_name_str = dir_name.to_string_lossy();
-            priority_folders.iter().any(|&name| dir_name_str.contains(name))
-        } else {
-            false
-        };
         
         if let Ok(entries) = fs::read_dir(dir_path) {
             debug!("Searching for executables in directory: {}", dir_path.display());
             
-            // First pass: collect all executables
             for entry in entries.filter_map(|e| e.ok()) {
                 let path = entry.path();
                 
@@ -73,50 +40,31 @@ pub fn find_executables(dir_path: &Path) -> Vec<PathBuf> {
                         if extension.to_string_lossy().to_lowercase() == "exe" {
                             let file_name = path.file_name().unwrap_or_default().to_string_lossy();
                             debug!("Found executable: {}", file_name);
-                            
-                            // Check if this is a priority executable (by name)
-                            let is_priority = priority_names.iter()
-                                .any(|&name| file_name.to_lowercase().contains(&name.to_lowercase()));
-                            
-                            // Add to appropriate list
-                            if is_priority || is_priority_dir {
-                                debug!("Prioritizing executable: {}", file_name);
-                                prioritized_executables.push(path.clone());
-                            } else {
-                                executables.push(path.clone());
-                            }
+                            executables.push(path.clone());
                         }
                     }
                 } else if path.is_dir() {
                     // Recursively search subdirectories
-                    search_directory(&path, executables, prioritized_executables, 
-                                    priority_names, priority_folders, depth + 1);
+                    search_directory(&path, executables, depth + 1);
                 }
             }
         }
     }
     
     // Start the recursive search at depth 0
-    search_directory(dir_path, &mut executables, &mut prioritized_executables, 
-                    &priority_names, &priority_folders, 0);
+    search_directory(dir_path, &mut executables, 0);
     
-    // Combine the lists, with prioritized executables first
-    debug!("Found {} prioritized and {} regular executables", 
-           prioritized_executables.len(), executables.len());
-    
-    prioritized_executables.append(&mut executables);
-    
-    if prioritized_executables.is_empty() {
+    if executables.is_empty() {
         debug!("No executables found in: {}", dir_path.display());
     } else {
-        debug!("Final executable list for {}: {:#?}", 
+        debug!("Found executables in {}: {:#?}", 
                dir_path.display(), 
-               prioritized_executables.iter()
+               executables.iter()
                   .map(|p| p.file_name().unwrap_or_default().to_string_lossy())
                   .collect::<Vec<_>>());
     }
     
-    prioritized_executables
+    executables
 }
 
 // Extract icon from executable and convert to base64 data URL
@@ -128,7 +76,7 @@ pub fn extract_executable_icon(exe_path: &Path) -> Option<String> {
         // Create a small solid-colored square as default icon
         let mut img = ImageBuffer::<Rgba<u8>, Vec<u8>>::new(32, 32);
 
-        // Fill with a color (blue in this case)
+        // Fill with a color
         for pixel in img.pixels_mut() {
             *pixel = Rgba([30, 144, 255, 255]); // DodgerBlue
         }
@@ -295,7 +243,7 @@ pub fn extract_executable_icon(_exe_path: &Path) -> Option<String> {
     let mut buffer = Vec::new();
     let mut img = ImageBuffer::<Rgba<u8>, Vec<u8>>::new(32, 32);
 
-    // Fill with a color (blue in this case)
+    // Fill with a color 
     for pixel in img.pixels_mut() {
         *pixel = Rgba([30, 144, 255, 255]); // DodgerBlue
     }
@@ -599,8 +547,7 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
     Ok(mod_info)
 }
 
-// Function to check for the "assets" and "manifest" folders in the same directory as the executable
-// This helps verify if a folder is a valid FNF mod
+// Checks for the "assets" folder and the "manifest" folder in the mod directory
 pub fn is_valid_fnf_mod(path: &Path) -> bool {
     debug!("Checking if {} is a valid FNF mod", path.display());
     
@@ -614,7 +561,7 @@ pub fn is_valid_fnf_mod(path: &Path) -> bool {
     let assets_folder = path.join("assets");
     let has_assets = assets_folder.exists() && assets_folder.is_dir();
     
-    // Check for manifest folder (used in many FNF mods)
+    // Check for manifest folder (used in all Haxe-based mods (?))
     let manifest_folder = path.join("manifest");
     let has_manifest = manifest_folder.exists() && manifest_folder.is_dir();
     
@@ -622,9 +569,7 @@ pub fn is_valid_fnf_mod(path: &Path) -> bool {
     let executables = find_executables(path);
     let has_executable = !executables.is_empty();
     
-    // For a valid FNF mod, we require:
-    // 1. Assets folder, and
-    // 2. Either a manifest folder or an executable
+    // Check if at least one of the conditions is met (very basic check)
     let is_valid = has_assets && (has_manifest || has_executable);
     
     debug!("Validity check for {}: assets={}, manifest={}, executable={}, valid={}",

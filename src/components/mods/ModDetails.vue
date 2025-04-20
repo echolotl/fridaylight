@@ -112,25 +112,21 @@ const appSettings = inject<AppSettings>('appSettings'); // Inject app settings
 const emit = defineEmits(["update:mod", "launch-mod", "open-settings", "stop-mod"]);
 let modTerminatedListener: (() => void) | null = null;
 
-// Function to check if the current mod is running
-const checkIfModRunning = async () => {
+// Function to check if the mod is currently running
+const checkModRunningStatus = async () => {
   if (!props.mod) return;
   
   try {
-    const running = await invoke<boolean>("is_mod_running", { 
-      id: props.mod.id 
-    });
+    const running = await invoke("is_mod_running", { id: props.mod.id });
+    console.log(`Checking if mod ${props.mod.name} (${props.mod.id}) is running:`, running);
+    isModRunning.value = !!running;
     
-    // Update the mod running state
-    isModRunning.value = running;
-    
-    // If mod is not running, hide terminal
-    if (!running) {
-      showTerminalOutput.value = false;
+    // If the mod is running, show terminal output based on settings
+    if (isModRunning.value && appSettings) {
+      showTerminalOutput.value = appSettings.showTerminalOutput;
     }
   } catch (error) {
-    console.error("Failed to check if mod is running:", error);
-    isModRunning.value = false;
+    console.error("Error checking mod running status:", error);
   }
 };
 
@@ -148,7 +144,7 @@ const handleModAction = async () => {
         type: "positive",
         message: `Stopped ${props.mod.name}`,
         position: "bottom-right",
-        timeout: 2000,
+        timeout: 2000
       });
     } catch (error) {
       console.error("Failed to stop mod:", error);
@@ -220,6 +216,14 @@ const setupModTerminatedListener = async () => {
         console.log(`Received mod-terminated event for ${props.mod?.id}`);
         isModRunning.value = false;
         showTerminalOutput.value = false;
+        
+        // Display notification that the mod has terminated
+        $q.notify({
+          type: 'info',
+          message: `${props.mod.name} has terminated`,
+          position: "bottom-right",
+          timeout: 2000,
+        });
       }
     });
   }
@@ -228,8 +232,8 @@ const setupModTerminatedListener = async () => {
 // Watch for changes to props.mod and check running state
 watch(() => props.mod, async (newMod) => {
   if (newMod) {
-    // Check initial running state
-    await checkIfModRunning();
+    // Check if the mod is running
+    await checkModRunningStatus();
     
     // Set up event listener for this mod
     await setupModTerminatedListener();
@@ -257,7 +261,7 @@ watch(() => appSettings?.showTerminalOutput, (newValue) => {
 onMounted(async () => {
   // Check initial running state
   if (props.mod) {
-    await checkIfModRunning();
+    await checkModRunningStatus();
     await setupModTerminatedListener();
   }
 });

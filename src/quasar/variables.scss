@@ -387,3 +387,24 @@ hr {
   border-top: 1px solid var(--theme-border);
   margin: 0.5rem 0;
 }
+
+/* Make sure any Quasar containers are transparent */
+.q-layout,
+.q-page-container,
+.q-page {
+  background: transparent !important;
+}
+
+/* Remove all shadows from Quasar components, they shouldn't have them anyways */
+.q-shadow-1,
+.q-shadow-2,
+.q-shadow-3,
+.q-shadow-4,
+.q-shadow-5,
+.q-shadow-6,
+.q-shadow-7,
+.q-shadow-8,
+.q-shadow-9,
+.q-shadow-10 {
+  box-shadow: none !important;
+}
