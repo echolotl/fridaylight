@@ -350,12 +350,7 @@ const formatEngineType = (engineType: string | null): string => {
 
 // Function to get the mods folder path for an engine mod
 const getModsFolderPath = (engineMod: EngineMod): string => {
-  // First check if the engine has a specified mods_folder_path in the new structure
-  if (engineMod.engine && engineMod.engine.mods_folder && engineMod.engine.mods_folder_path) {
-    return engineMod.engine.mods_folder_path;
-  }
-  
-  // If not, construct the default mods folder path
+  // Get base directory first in all cases
   const basePath = engineMod.path;
   const executablePath = engineMod.executable_path || '';
   
@@ -376,7 +371,13 @@ const getModsFolderPath = (engineMod: EngineMod): string => {
     }
   }
   
-  // Construct the path to the mods folder
+  // Then check if the engine has a specified custom mods folder path
+  if (engineMod.engine && engineMod.engine.mods_folder && engineMod.engine.mods_folder_path) {
+    // Combine the base directory with the custom mods folder path
+    return `${baseDir}/${engineMod.engine.mods_folder_path}`;
+  }
+  
+  // If no custom path specified, use default mods folder
   return `${baseDir}/mods`;
 };
 
