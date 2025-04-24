@@ -1,5 +1,5 @@
 <template>
-  <div class="mod-details phantom-font" v-if="mod">
+  <q-scroll-area class="mod-details phantom-font" v-if="mod">
     <ModBanner
       :mod="mod"
       @update:title="updateTitle"
@@ -74,7 +74,7 @@
         :customModsFolder="mod.engine.mods_folder_path"
       />
     </div>
-  </div>
+  </q-scroll-area>
 
   <!-- Show welcome message when no mod is selected -->
   <div v-else class="welcome-message phantom-font">
@@ -279,6 +279,9 @@ onUnmounted(() => {
 .mod-details {
   padding: 0;
   color: var(--theme-text);
+  width: 100%;
+  height: 100%;
+  border-radius: .5rem .5rem 0 0;
 }
 
 .mod-actions {
