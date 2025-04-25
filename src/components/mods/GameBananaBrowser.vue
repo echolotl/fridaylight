@@ -172,8 +172,8 @@
       v-model="showModTypeModal"
       :modData="customModData"
       @submit="onModTypeSubmit"
-      @back="showModTypeModal = false; showCustomUrlModal = true"
-      @cancel="showModTypeModal = false; customModData = null"
+      @back="showModTypeModal = false; if(customModData?.isCustomUrl) { showCustomUrlModal = true; }"
+      @cancel="handleModTypeCancel"
     />
   </div>
 </template>
@@ -201,10 +201,10 @@ import type { GameBananaMod } from "@main-types";
 
 // For managing global download state
 import {
-  downloadingMods,
   updateDownloadProgress,
   completeDownload,
   errorDownload,
+  createDownload
 } from "../../stores/downloadState";
 
 // Declare db for TypeScript
@@ -279,6 +279,9 @@ const showCustomUrlModal = ref(false);
 const showModTypeModal = ref(false);
 const customModData = ref<any>(null);
 
+// Maintain a mapping of mod IDs to download IDs
+const modIdToDownloadIdMap = new Map<number, string>();
+
 // Watch for tab changes to load appropriate data
 watch(selectedModType, async (newType) => {
   console.log("Tab changed to:", newType);
@@ -347,20 +350,35 @@ watch(selectedModType, async (newType) => {
 const setupEventListeners = () => {
   // Set up event listeners for download events
   listen<{
-    modId: number;
+    modId?: number;
+    mod_id?: number;
     name: string;
     contentLength: number;
     thumbnailUrl: string;
   }>("download-started", (event) => {
     console.log("Download started:", event.payload);
+    
+    // Extract mod ID, supporting both modId and mod_id formats
+    const modId = event.payload.modId ?? event.payload.mod_id ?? Math.floor(Math.random() * 1000000);
+    const name = event.payload.name || "Unknown Mod";
+    
+    // Check if we already have a download entry for this mod ID
+    let downloadId = modIdToDownloadIdMap.get(modId);
+    
+    if (!downloadId) {
+      // Create a new download entry and get its unique ID
+      downloadId = createDownload(modId, name, event.payload.thumbnailUrl || "");
+      // Store this mapping for future reference
+      modIdToDownloadIdMap.set(modId, downloadId);
+    }
+    
+    // Update with initial data
     updateDownloadProgress({
-      modId: event.payload.modId,
-      name: event.payload.name,
+      id: downloadId,
       bytesDownloaded: 0,
-      totalBytes: event.payload.contentLength,
+      totalBytes: event.payload.contentLength || 0,
       percentage: 0,
       step: "Starting download...",
-      thumbnailUrl: event.payload.thumbnailUrl,
       isComplete: false,
       isError: false,
     });
@@ -369,7 +387,8 @@ const setupEventListeners = () => {
   });
 
   listen<{
-    modId: number;
+    modId?: number;
+    mod_id?: number;
     name: string;
     bytesDownloaded: number;
     totalBytes: number;
@@ -377,14 +396,47 @@ const setupEventListeners = () => {
     step: string;
   }>("download-progress", (event) => {
     console.log("Download progress:", event.payload);
+    
+    // Extract mod ID, supporting both modId and mod_id formats
+    const modId = event.payload.modId ?? event.payload.mod_id;
+    
+    // Skip events without mod IDs or necessary data
+    if (modId === undefined) {
+      console.warn("Received download progress event with undefined modId and mod_id:", event.payload);
+      return;
+    }
+    
+    // Get the download ID from our mapping
+    const downloadId = modIdToDownloadIdMap.get(modId);
+    if (!downloadId) {
+      console.warn(`No download ID found for mod ID ${modId}, creating new entry on the fly`);
+      // Create a new download entry on the fly if one doesn't exist
+      const newDownloadId = createDownload(
+        modId,
+        event.payload.name || "Unknown Mod",
+        ""
+      );
+      modIdToDownloadIdMap.set(modId, newDownloadId);
+      
+      // Update the newly created download with progress
+      updateDownloadProgress({
+        id: newDownloadId,
+        bytesDownloaded: event.payload.bytesDownloaded || 0,
+        totalBytes: event.payload.totalBytes || 100,
+        percentage: event.payload.percentage || 0,
+        step: event.payload.step || "Downloading...",
+        isComplete: false,
+        isError: false,
+      });
+      return;
+    }
+    
     updateDownloadProgress({
-      modId: event.payload.modId,
-      name: event.payload.name,
-      bytesDownloaded: event.payload.bytesDownloaded,
-      totalBytes: event.payload.totalBytes,
-      percentage: event.payload.percentage,
-      step: event.payload.step,
-      thumbnailUrl: downloadingMods[event.payload.modId]?.thumbnailUrl || "",
+      id: downloadId,
+      bytesDownloaded: event.payload.bytesDownloaded || 0,
+      totalBytes: event.payload.totalBytes || 100,
+      percentage: event.payload.percentage || 0,
+      step: event.payload.step || "Downloading...",
       isComplete: false,
       isError: false,
     });
@@ -393,26 +445,64 @@ const setupEventListeners = () => {
   });
 
   listen<{
-    modId: number;
+    modId?: number;
+    mod_id?: number;
     name: string;
     modInfo: any;
   }>("download-finished", (event) => {
     console.log("Download finished:", event.payload);
+    
+    // Extract mod ID, supporting both modId and mod_id formats
+    const modId = event.payload.modId ?? event.payload.mod_id;
+    
+    // Handle undefined mod ID
+    if (modId === undefined) {
+      console.warn("Received download finished event with undefined modId and mod_id:", event.payload);
+      return;
+    }
+    
+    // Get the download ID from our mapping
+    const downloadId = modIdToDownloadIdMap.get(modId);
+    if (!downloadId) {
+      console.warn(`No download ID found for mod ID ${modId}, creating new entry for completion`);
+      // Create a new download entry on the fly if one doesn't exist
+      const newDownloadId = createDownload(
+        modId,
+        event.payload.name || "Unknown Mod",
+        ""
+      );
+      
+      // Update it to completed state
+      updateDownloadProgress({
+        id: newDownloadId,
+        bytesDownloaded: 100,
+        totalBytes: 100,
+        percentage: 100,
+        step: "Download complete",
+        isComplete: true,
+        isError: false,
+      });
+      
+      // Remove after delay
+      setTimeout(() => completeDownload(newDownloadId), 2000);
+      return;
+    }
+    
     updateDownloadProgress({
-      modId: event.payload.modId,
-      name: event.payload.name,
+      id: downloadId,
       bytesDownloaded: 100,
       totalBytes: 100,
       percentage: 100,
       step: "Download complete",
-      thumbnailUrl: downloadingMods[event.payload.modId]?.thumbnailUrl || "",
       isComplete: true,
       isError: false,
     });
 
     // Remove from downloads list after a delay
     setTimeout(() => {
-      completeDownload(event.payload.modId);
+      completeDownload(downloadId);
+      // Clean up our mapping
+      modIdToDownloadIdMap.delete(modId);
     }, 2000);
 
     // Refresh the mods list by forcing navigation to the home page
@@ -431,27 +521,66 @@ const setupEventListeners = () => {
   });
 
   listen<{
-    modId: number;
+    modId?: number;
+    mod_id?: number;
     name: string;
     error: string;
   }>("download-error", (event) => {
     console.log("Download error:", event.payload);
+    
+
+    const modId = event.payload.mod_id;
+    
+    // Handle undefined mod ID
+    if (modId === undefined) {
+      console.warn("Received download error event with undefined modId and mod_id:", event.payload);
+      return;
+    }
+    
+    // Get the download ID from our mapping
+    const downloadId = modIdToDownloadIdMap.get(modId);
+    if (!downloadId) {
+      console.warn(`No download ID found for mod ID ${modId}, creating new entry for error state`);
+      // Create a new download entry on the fly if one doesn't exist
+      const newDownloadId = createDownload(
+        modId,
+        event.payload.name || "Unknown Mod",
+        ""
+      );
+      
+      // Update it to error state
+      updateDownloadProgress({
+        id: newDownloadId,
+        bytesDownloaded: 0,
+        totalBytes: 100,
+        percentage: 0,
+        step: "Error",
+        isComplete: false,
+        isError: true,
+        error: event.payload.error || "Unknown error",
+      });
+      
+      // Remove after delay
+      setTimeout(() => errorDownload(newDownloadId, event.payload.error || "Unknown error"), 5000);
+      return;
+    }
+    
     updateDownloadProgress({
-      modId: event.payload.modId,
-      name: event.payload.name,
+      id: downloadId,
       bytesDownloaded: 0,
       totalBytes: 100,
       percentage: 0,
       step: "Error",
-      thumbnailUrl: downloadingMods[event.payload.modId]?.thumbnailUrl || "",
       isComplete: false,
       isError: true,
-      error: event.payload.error,
+      error: event.payload.error || "Unknown error",
     });
 
     // Remove from downloads list after a delay
     setTimeout(() => {
-      errorDownload(event.payload.modId, event.payload.error);
+      errorDownload(downloadId, event.payload.error || "Unknown error");
+      // Clean up our mapping
+      modIdToDownloadIdMap.delete(modId);
     }, 5000);
   }).then((unsubscribe) => {
     removeDownloadErrorListener = unsubscribe;
@@ -774,7 +903,7 @@ const downloadMod = async (mod: GameBananaMod) => {
     const isModpack = determineIfModpack(mod);
     const modpackType = determineModpackType(mod); // 'psych', 'vslice', 'codename', or null
 
-    if (isModpack) {
+    if (isModpack && modpackType) {
       // Handle modpack download logic
       console.log("Modpack detected:", modpackType);
       const engineMods = await getCompatibleEngineMods(modpackType);
@@ -816,6 +945,35 @@ const downloadMod = async (mod: GameBananaMod) => {
         }
 
         return; // Wait for user selection of an engine
+      }
+    } else if (!isModpack && !modpackType) {
+      // First check if this is a labeled executable mod by looking at the category name
+      const isExecutable = mod.categoryName && 
+        mod.categoryName.toLowerCase().includes("executables");
+      
+      if (isExecutable) {
+        // If it's explicitly labeled as an executable, proceed with normal download
+        await startDownload(mod);
+      } else {
+        // If we can't determine the mod type automatically, let the user choose
+        customModData.value = {
+          name: mod.name,
+          url: mod.downloadUrl,
+          modId: mod.id,
+          bannerData: mod.thumbnailUrl,
+          description: mod.description,
+          version: mod.version
+        };
+        
+        // Dismiss the loading notification before showing the selection modal
+        if (pendingDownloadNotification) {
+          pendingDownloadNotification();
+          pendingDownloadNotification = null;
+        }
+        
+        // Show the mod type selection dialog
+        showModTypeModal.value = true;
+        return; // Wait for user to select mod type
       }
     } else {
       // If there's only one file or no files available and it's not a modpack, proceed with normal download
@@ -866,6 +1024,8 @@ const downloadModpackForSelectedEngine = async () => {
     });
 
     const mod = currentModpackInfo.value.mod;
+    // Store mod ID to ensure we can cleanup tracking afterward
+    const modId = mod.id;
 
     // Get the installation path for the selected engine's mods folder
     const modsFolderPath = getModsFolderPath(selectedEngineMod.value);
@@ -920,6 +1080,14 @@ const downloadModpackForSelectedEngine = async () => {
       position: "bottom-right",
       timeout: 5000,
     });
+
+    // Manual cleanup of download tracking entry
+    const downloadId = modIdToDownloadIdMap.get(modId);
+    if (downloadId) {
+      console.log(`Manually completing download tracking for modpack ${modId}`);
+      completeDownload(downloadId);
+      modIdToDownloadIdMap.delete(modId);
+    }
 
     // Trigger the refresh event to update the mod list
     const refreshEvent = new CustomEvent("refresh-mods");
@@ -1613,7 +1781,11 @@ const getInstallLocation = async (): Promise<string | null> => {
 // Custom URL download flow
 const onCustomUrlSubmit = (formData: any) => {
   console.log("Custom URL form submitted:", formData);
-  customModData.value = formData;
+  // Add isCustomUrl flag to identify the source of this mod data
+  customModData.value = {
+    ...formData,
+    isCustomUrl: true
+  };
   showCustomUrlModal.value = false;
   showModTypeModal.value = true;
 };
@@ -1768,6 +1940,28 @@ const onModTypeSubmit = async (typeData: any) => {
     // Reset state but keep the modal open to allow for corrections
     showModTypeModal.value = false;
     showCustomUrlModal.value = true;
+  }
+};
+
+// Handle cancel from mod type selection modal
+const handleModTypeCancel = () => {
+  // Check the source of the mod type modal - custom URL or regular download
+  if (customModData.value?.isCustomUrl) {
+    // If from custom URL, go back to custom URL modal
+    showModTypeModal.value = false;
+    showCustomUrlModal.value = true;
+  } else {
+    // If from regular mod download, just close the modal and clean up
+    showModTypeModal.value = false;
+    customModData.value = null;
+    
+    // Show cancellation notification
+    $q.notify({
+      type: "info",
+      message: "Download cancelled",
+      position: "bottom-right",
+      timeout: 3000,
+    });
   }
 };
 </script>

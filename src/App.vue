@@ -23,6 +23,7 @@ import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import Sidebar from "./components/layout/Sidebar.vue";
 import EngineSelectionDialog from "./components/modals/EngineSelectionDialog.vue";
+import ModTypeSelectionModal from "./components/modals/ModTypeSelectionModal.vue";
 import { DatabaseService } from "./services/dbService";
 import { StoreService } from "./services/storeService";
 import { AppSettings } from "./types";
@@ -49,6 +50,10 @@ const currentModpackType = ref<string | null>(null);
 const currentModName = ref<string>("Unknown Mod");
 const currentDownloadUrl = ref<string>("");
 const currentModId = ref<number | null>(null);
+
+// State for ModTypeSelectionModal
+const showModTypeModal = ref(false);
+const customModData = ref<any>(null);
 
 const handleSidebarResize = (width: number) => {
   sidebarWidth.value = width;

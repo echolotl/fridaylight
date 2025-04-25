@@ -3,6 +3,7 @@
   "productName": "Fridaylight",
   "version": "0.8.0",
   "identifier": "com.echolotl.fridaylight",
+  "mainBinaryName": "Fridaylight",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -22,7 +23,8 @@
             "mica"
           ]
         },
-        "transparent": true
+        "transparent": true,
+        "userAgent": "Fridaylight/0.8.0"
       }
     ],
     "security": {

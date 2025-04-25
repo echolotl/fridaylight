@@ -864,9 +864,9 @@ pub async fn download_engine(
             "Engine originally used on Mind Games Mod, intended to be a fix for the vanilla version's many issues while keeping the casual play aspect of it. Also aiming to be an easier alternative to newbie coders.",
             "1.0.4"
         ),
-        "fpsplus" => (
+        "fps-plus" => (
             "FPS Plus",
-            "https://github.com/ThatRozebudDude/FPS-Plus-Public/releases/download/v7.0.1/fpsplus_v7_0_1.zip",
+            "https://github.com/ThatRozebudDude/FPS-Plus-Public/releases/download/v7.1.0/fpsplus_v7_1_0.zip",
             "banner_fpsplus.png",
             "logo_fpsplus.png", 
             "Fps-plus.webp",

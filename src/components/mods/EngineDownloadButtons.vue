@@ -6,7 +6,7 @@
     <div class="engine-download-buttons text-center">
       <q-btn
         flat
-        label="Psych Engine"
+        label="Psych Engine (1.0.4)"
         @click="$emit('download-engine', 'psych')"
         class="engine-btn"
       >
@@ -14,7 +14,7 @@
     </q-btn>
       <q-btn
         flat
-        label="V-Slice"
+        label="V-Slice (0.6.3)"
         @click="$emit('download-engine', 'vanilla')"
         class="engine-btn"
       >
@@ -22,8 +22,8 @@
     </q-btn>
       <q-btn
         flat
-        label="FPS Plus"
-        @click="$emit('download-engine', 'fpsplus')"
+        label="FPS Plus (7.1.0)"
+        @click="$emit('download-engine', 'fps-plus')"
         class="engine-btn"
       >
         <img src="/images/engine_icons/Fps-plus.webp" alt="FPS Plus" class="engine-icon" />

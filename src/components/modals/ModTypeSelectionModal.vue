@@ -7,7 +7,7 @@
   >
     <q-card class="mod-type-selection-modal phantom-font">
       <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6 phantom-font-difficulty">Select Mod Type</div>
+        <div class="text-h6 phantom-font-difficulty">Select Type for "{{ currentModName }}"</div>
         <q-space />
         <q-btn icon="close" flat round dense v-close-popup @click="cancel" />
       </q-card-section>
@@ -407,6 +407,16 @@ declare global {
     db: any;
   }
 }
+
+// Watch for modData changes to populate with mod information
+watch(() => props.modData, (newModData) => {
+  if (newModData && Object.keys(newModData).length > 0) {
+    console.log("Received mod data in ModTypeSelectionModal:", newModData);
+    currentModName.value = newModData.name || 'Unknown Mod';
+  }
+});
+
+const currentModName = ref<string>('Unknown Mod');
 </script>
 
 <style scoped>

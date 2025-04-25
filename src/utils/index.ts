@@ -8,10 +8,10 @@ export function formatEngineName(engineType: string): string {
       return 'Kade Engine';
     case 'vanilla':
       return 'Vanilla';
-    case 'fpsplus':
+    case 'fps-plus':
       return 'FNF-Plus';
     case 'prevslice':
-      return 'Pre-vSlice';
+      return 'Ludum Dare';
     case 'codename':
       return 'Codename Engine';
     default:

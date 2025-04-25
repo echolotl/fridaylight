@@ -50,53 +50,11 @@
         <template v-if="Object.keys(downloadingMods).length > 0">
           <q-item-label header style="color: var(--theme-text-secondary)"> Downloading </q-item-label>
 
-          <q-item
-            v-for="download in downloadingMods"
-            :key="`dl-${download.modId}`"
-            class="downloading-mod"
-          >
-            <q-item-section avatar>
-              <q-spinner
-                size="32px"
-                v-if="!download.isComplete && !download.isError"
-                color="primary"
-              />
-              <q-icon
-                name="check_circle"
-                color="positive"
-                size="32px"
-                v-else-if="download.isComplete"
-              />
-              <q-icon
-                name="error"
-                color="negative"
-                size="32px"
-                v-else-if="download.isError"
-              />
-            </q-item-section>
-
-            <q-item-section>
-              <q-item-label>{{ download.name }}</q-item-label>
-              <q-item-label caption style="color: var(--theme-text-secondary)">{{ download.step }}</q-item-label>
-
-              <q-linear-progress
-                v-if="!download.isComplete && !download.isError"
-                :value="download.percentage / 100"
-                color="primary"
-                class="q-mt-xs"
-                rounded
-                size="8px"
-              />
-
-              <q-item-label
-                caption
-                class="text-negative"
-                v-if="download.isError"
-              >
-                {{ download.error }}
-              </q-item-label>
-            </q-item-section>
-          </q-item>
+          <DownloadListItem
+            v-for="[id, download] in Object.entries(downloadingMods)"
+            :key="id"
+            :download="download"
+          />
 
           <q-separator spaced />
         </template>
@@ -207,6 +165,7 @@ import { downloadingMods } from "@stores/downloadState";
 import draggable from "vuedraggable";
 import ModListItem from "@mods/list/ModListItem.vue";
 import FolderListItem from "@mods/list/FolderListItem.vue";
+import DownloadListItem from "@mods/list/DownloadListItem.vue";
 import CreateFolderModal from "@modals/CreateFolderModal.vue";
 import MessageDialog from "@modals/MessageDialog.vue";
 import { Mod, Folder, DisplayItem } from "@main-types";
