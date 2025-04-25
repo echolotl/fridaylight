@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { v4 as uuidv4 } from "uuid";
 import { Mod, Folder, DisplayItem, AppSettings } from "../types";
 import { StoreService } from "./storeService";
+import { formatEngineName } from "../utils"; 
 
 // Constants for database lock protection
 const MAX_RETRY_ATTEMPTS = 10; // Increased maximum retry attempts
@@ -481,17 +482,7 @@ export class DatabaseService {
 
   // Helper to format engine name from engine type
   private formatEngineName(engineType: string): string {
-    const engineNames: Record<string, string> = {
-      'vanilla': 'V-Slice',
-      'psych': 'Psych Engine',
-      'codename': 'Codename Engine',
-      'fps-plus': 'FPS Plus',
-      'kade': 'Kade Engine',
-      'pre-vslice': 'Pre-VSlice Engine',
-      'other': 'Custom Engine'
-    };
-    
-    return engineNames[engineType] || engineType.charAt(0).toUpperCase() + engineType.slice(1);
+    return formatEngineName(engineType); 
   }
 
   // Helper to upsert mods in a single transaction with rollback
@@ -1050,52 +1041,6 @@ export class DatabaseService {
       console.error("Failed to sync mods with backend:", error);
       // Don't throw to avoid disrupting the transaction flow
       // but still log the error
-    }
-  }
-
-  /**
-   * Update a mod's engine data directly using a simpler SQL operation
-   * This bypasses the more complex transaction logic that might be causing issues
-   */
-  public async updateModEngineData(modId: string, engineType: string): Promise<void> {
-    if (!this.db) {
-      throw new Error("Database not initialized");
-    }
-    
-    console.log(`Direct engine update - Updating mod ${modId} with engine type ${engineType}`);
-    
-    try {
-      // Create the engine object with the correct data
-      const engineName = this.formatEngineName(engineType);
-      const engine = {
-        engine_type: engineType,
-        engine_name: engineName,
-        engine_icon: "",
-        mods_folder: false,
-        mods_folder_path: ""
-      };
-      
-      // Convert to JSON string
-      const engineData = JSON.stringify(engine);
-      
-      console.log(`Direct engine update - Engine data: ${engineData}`);
-      
-      // Execute a simple direct SQL statement without withDatabaseLock
-      await this.db.execute(
-        `UPDATE mods SET engine_data = ? WHERE id = ?`,
-        [engineData, modId]
-      );
-      
-      console.log(`Direct engine update - Successfully updated mod ${modId} with engine type ${engineType}`);
-      
-      // Sync with backend after the update
-      console.log(`Direct engine update - Syncing with backend`);
-      await this.syncModsWithBackend();
-      
-      console.log(`Direct engine update - Completed successfully`);
-    } catch (error) {
-      console.error(`Direct engine update - Failed to update engine data:`, error);
-      throw error;
     }
   }
 

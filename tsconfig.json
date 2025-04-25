@@ -30,6 +30,7 @@
       "@services/*": ["services/*"],
       "@layouts/*": ["components/layout/*"],
       "@mods/*": ["components/mods/*"],
+      "@utils/*": ["utils/*"],
 
     }
   },

@@ -41,7 +41,18 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "resources/**/*": "resources/"
+      "resources/**/*": "./resources/"
+    },
+    "windows": {
+      "nsis": {
+        "headerImage": "./resources/nsistop.bmp",
+        "sidebarImage": "./resources/nsisbanner.bmp",
+        "installerIcon": "./resources/installer.ico"
+      },
+      "wix": {
+        "upgradeCode": "{B2E0F1A4-5D3C-4D7F-8A6C-9E5B1F7A2E3D}",
+        "version": "0.8.3"
+      }
     }
   },
   "plugins": {

@@ -282,6 +282,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from "vue";
 import { Mod } from "@main-types";
+import { formatEngineName } from "../../utils";
 
 const props = defineProps({
   modelValue: {
@@ -374,10 +375,23 @@ watch(
     if (newVal && props.mod) {
       // Clone the mod object to form
       form.value = JSON.parse(JSON.stringify(props.mod));
+      // Ensure engine object exists in the cloned form
+      if (!form.value.engine) {
+        form.value.engine = {
+          engine_type: "unknown",
+          engine_name: "Unknown Engine",
+          engine_icon: "",
+          mods_folder: false,
+          mods_folder_path: "",
+        };
+      }
       bannerPreview.value = null;
       logoPreview.value = null;
-      bannerFile.value = null;
-      logoFile.value = null;
+      bannerFile.value = null; // Clear file input ref
+      logoFile.value = null; // Clear file input ref
+      engineIconPreview.value = null; // Reset engine icon preview
+      engineIconFile.value = null; // Clear file input ref
+      activeSection.value = "general"; // Reset to general tab
     }
   }
 );
@@ -386,20 +400,31 @@ watch(
 watch(
   () => form.value.engine?.engine_type,
   (newEngineType) => {
-    if (newEngineType) {
+    if (newEngineType && form.value.engine) {
       // When engine.engine_type changes, update engine_type to match
       console.log("Engine type changed to:", newEngineType);
 
       // Always update engine name based on the selected engine type
-      if (form.value.engine) {
+      // Only update if the name is currently the default for the *previous* type or empty
+      const previousDefaultName = formatEngineName(
+        props.mod?.engine?.engine_type || "unknown"
+      );
+      if (
+        !form.value.engine.engine_name ||
+        form.value.engine.engine_name === previousDefaultName
+      ) {
         form.value.engine.engine_name = formatEngineName(newEngineType);
-        console.log("Updated engine name to:", form.value.engine.engine_name);
+        console.log(
+          "Updated engine name to default:",
+          form.value.engine.engine_name
+        );
       }
     }
   }
 );
 
-const handleBannerFileChange = (file: File) => {
+const handleBannerFileChange = (file: File | null) => {
+  bannerFile.value = file; // Store the file reference
   if (file) {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -408,10 +433,13 @@ const handleBannerFileChange = (file: File) => {
     reader.readAsDataURL(file);
   } else {
     bannerPreview.value = null;
+    // If file is cleared, explicitly set form data to undefined for save logic
+    form.value.banner_data = undefined;
   }
 };
 
-const handleLogoFileChange = (file: File) => {
+const handleLogoFileChange = (file: File | null) => {
+  logoFile.value = file; // Store the file reference
   if (file) {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -423,7 +451,8 @@ const handleLogoFileChange = (file: File) => {
   }
 };
 
-const handleEngineIconFileChange = (file: File) => {
+const handleEngineIconFileChange = (file: File | null) => {
+  engineIconFile.value = file; // Store the file reference
   if (file) {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -432,13 +461,14 @@ const handleEngineIconFileChange = (file: File) => {
     reader.readAsDataURL(file);
   } else {
     engineIconPreview.value = null;
+    // Don't clear form.value.engine.engine_icon here, handle removal in removeEngineIcon or save()
   }
 };
 
 const removeLogo = () => {
   form.value.logo_data = null;
   logoPreview.value = null;
-  logoFile.value = null;
+  logoFile.value = null; // Clear the file input ref
 };
 
 const removeEngineIcon = () => {
@@ -446,43 +476,35 @@ const removeEngineIcon = () => {
     form.value.engine.engine_icon = "";
   }
   engineIconPreview.value = null;
-  engineIconFile.value = null;
-};
-
-// Function to format engine name from engine type
-const formatEngineName = (engineType: string): string => {
-  const engineNames: Record<string, string> = {
-    vanilla: "V-Slice",
-    psych: "Psych Engine",
-    codename: "Codename Engine",
-    "fps-plus": "FPS Plus",
-    kade: "Kade Engine",
-    "pre-vslice": "Pre-VSlice Engine",
-    other: "Custom Engine",
-  };
-
-  return (
-    engineNames[engineType] ||
-    engineType.charAt(0).toUpperCase() + engineType.slice(1)
-  );
+  engineIconFile.value = null; // Clear the file input ref
 };
 
 const save = async () => {
   const updatedMod = { ...form.value };
 
-  // If we have a banner preview, use it
+  // Handle Banner Image
   if (bannerPreview.value) {
     updatedMod.banner_data = bannerPreview.value;
+  } else if (bannerFile.value === null) {
+    updatedMod.banner_data = undefined;
   }
 
-  // If we have a logo preview, use it
+  // Handle Logo Image
   if (logoPreview.value) {
     updatedMod.logo_data = logoPreview.value;
+  } else if (logoFile.value === null && form.value.logo_data === null) {
+    updatedMod.logo_data = undefined;
   }
 
-  // If we have an engine icon preview, use it
+  // Handle Engine Icon Image
   if (engineIconPreview.value && updatedMod.engine) {
     updatedMod.engine.engine_icon = engineIconPreview.value;
+  } else if (
+    engineIconFile.value === null &&
+    updatedMod.engine &&
+    form.value.engine?.engine_icon === ""
+  ) {
+    updatedMod.engine.engine_icon = "";
   }
 
   // First, make sure engine object exists
@@ -494,33 +516,24 @@ const save = async () => {
       mods_folder: false,
       mods_folder_path: "",
     };
+  } else {
+    const defaultName = formatEngineName(updatedMod.engine.engine_type);
+    const originalDefaultName = formatEngineName(
+      props.mod?.engine?.engine_type || "unknown"
+    );
+    if (
+      !updatedMod.engine.engine_name ||
+      updatedMod.engine.engine_name === originalDefaultName
+    ) {
+      updatedMod.engine.engine_name = defaultName;
+    }
   }
 
   console.log(
-    "Saving mod with engine data:",
-    JSON.stringify(updatedMod.engine)
+    "MODAL: Emitting save with mod data:",
+    JSON.stringify(updatedMod)
   );
 
-  try {
-    // If database service is available, use the direct engine update method for better reliability
-    if (
-      window.db &&
-      window.db.service &&
-      updatedMod.engine &&
-      updatedMod.engine.engine_type
-    ) {
-      console.log("Using direct engine update method for more reliable saving");
-      await window.db.service.updateModEngineData(
-        updatedMod.id,
-        updatedMod.engine.engine_type
-      );
-      console.log("Direct engine update successful");
-    }
-  } catch (error) {
-    console.error("Direct engine update failed:", error);
-  }
-
-  // Still emit the save event with the updated mod data for other fields
   emit("save", updatedMod);
 };
 const cancel = () => {
