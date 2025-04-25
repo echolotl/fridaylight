@@ -1313,8 +1313,8 @@ fn extract_archive(
     mod_id: i64,
     app: &tauri::AppHandle
 ) -> Result<(), String> {
-    // Depending on file extension, use appropriate extraction method
-    if download_path.extension().and_then(|e| e.to_str()) == Some("zip") {
+    // Store the extraction result in a variable
+    let result = if download_path.extension().and_then(|e| e.to_str()) == Some("zip") {
         extract_zip_archive(download_path, mod_folder, name, mod_id, app)
     } else if download_path.extension().and_then(|e| e.to_str()) == Some("7z") {
         extract_7z_archive(download_path, mod_folder, name, mod_id, app)
@@ -1338,8 +1338,23 @@ fn extract_archive(
                 Err(error_msg)
             }
         }
+    };
+    
+    // If extraction was successful, delete the archive file
+    if result.is_ok() {
+        debug!("Extraction successful, deleting archive file: {}", download_path.display());
+        if let Err(e) = fs::remove_file(download_path) {
+            warn!("Failed to delete archive file after extraction: {}", e);
+            // Continue anyway as this is not critical
+        } else {
+            debug!("Archive file deleted successfully");
+        }
     }
+    
+    // Return the original extraction result
+    result
 }
+
 
 // Function to reorganize modpack content for easier use
 // This checks if there's only one directory in the root and if so,
