@@ -612,13 +612,6 @@ const handleSaveMod = async (updatedMod: Mod) => {
         selectedMod.value = savedModCopy; // Update selected mod details if it's the one being edited
       }
     }
-
-    $q.notify({
-      type: "positive",
-      message: `"${updatedMod.name}" updated successfully.`,
-      position: "bottom-right",
-      timeout: 2000,
-    });
   } catch (error) {
     console.error("Failed to update mod details:", error);
     $q.notify({

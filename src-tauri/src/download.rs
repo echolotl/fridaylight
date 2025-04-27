@@ -871,7 +871,7 @@ pub async fn download_engine(
             "logo_fpsplus.png", 
             "Fps-plus.webp",
             "Friday Night Funkin' FPS Plus is an engine mod of Friday Night Funkin' that aims to improve gameplay and add quality of life features.",
-            "7.0.1"
+            "7.1.0"
         ),
         "codename" => (
             "Codename Engine",
@@ -884,12 +884,12 @@ pub async fn download_engine(
         ),
         "vanilla" => (
             "V-Slice",
-            "https://github.com/FunkinCrew/Funkin/releases/download/v0.6.2/funkin-windows-64bit.zip",
+            "https://github.com/FunkinCrew/Funkin/releases/latest/download/funkin-windows-64bit.zip",
             "banner_vslice.png",
             "logo_vslice.png",
             "Pre-vslice.webp",
             "Friday Night Funkin' is a rhythm game. Built using HaxeFlixel for Ludum Dare 47.",
-            "0.6.2"
+            "0.6.3"
         ),
         _ => {
             return Err(format!("Unknown engine type: {}", engine_type));

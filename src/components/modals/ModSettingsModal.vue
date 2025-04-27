@@ -30,7 +30,7 @@
         </div>
 
         <!-- Main Content Area -->
-        <div class="settings-content">
+        <q-scroll-area class="settings-content">
           <!-- General Section -->
           <q-card-section v-show="activeSection === 'general'">
             <div class="text-subtitle1 q-mb-md">General Information</div>
@@ -222,6 +222,14 @@
                   </div>
                 </template>
               </q-file>
+              <q-btn
+                v-if="bannerPreview || form.banner_data"
+                flat
+                color="negative"
+                label="Remove Banner"
+                class="q-mt-sm"
+                @click="removeBanner"
+              />
             </div>
 
             <div class="logo-upload q-mb-md">
@@ -262,7 +270,7 @@
               />
             </div>
           </q-card-section>
-        </div>
+        </q-scroll-area>
       </div>
 
       <q-card-actions align="right">
@@ -385,11 +393,13 @@ watch(
           mods_folder_path: "",
         };
       }
-      bannerPreview.value = null;
-      logoPreview.value = null;
+      // Initialize preview values with existing data
+      bannerPreview.value = form.value.banner_data || null;
+      logoPreview.value = form.value.logo_data || null;
+      engineIconPreview.value = form.value.engine?.engine_icon || null;
+      
       bannerFile.value = null; // Clear file input ref
       logoFile.value = null; // Clear file input ref
-      engineIconPreview.value = null; // Reset engine icon preview
       engineIconFile.value = null; // Clear file input ref
       activeSection.value = "general"; // Reset to general tab
     }
@@ -471,6 +481,12 @@ const removeLogo = () => {
   logoFile.value = null; // Clear the file input ref
 };
 
+const removeBanner = () => {
+  form.value.banner_data = undefined;
+  bannerPreview.value = null;
+  bannerFile.value = null; // Clear the file input ref
+};
+
 const removeEngineIcon = () => {
   if (form.value.engine) {
     form.value.engine.engine_icon = "";
@@ -485,8 +501,6 @@ const save = async () => {
   // Handle Banner Image
   if (bannerPreview.value) {
     updatedMod.banner_data = bannerPreview.value;
-  } else if (bannerFile.value === null) {
-    updatedMod.banner_data = undefined;
   }
 
   // Handle Logo Image
@@ -495,6 +509,7 @@ const save = async () => {
   } else if (logoFile.value === null && form.value.logo_data === null) {
     updatedMod.logo_data = undefined;
   }
+  // Otherwise preserve existing logo_data
 
   // Handle Engine Icon Image
   if (engineIconPreview.value && updatedMod.engine) {

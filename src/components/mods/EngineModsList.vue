@@ -1,22 +1,30 @@
 <template>
-  <div class="mods-title" v-if="mods.length > 0">
+  <div class="mods-title" v-if="mods.length >= 0">
+    <div class="header">
     <h5 class="phantom-font-difficulty">Installed Mods</h5>
+    <div class="scan-actions">
+        <q-btn
+          round
+          color="primary"
+          icon="refresh"
+          @click="scanForMods"
+          :loading="loading"
+          flat
+        />
+        <q-btn
+          color="transparent"
+          text-color="var(--theme-text-secondary)"
+          icon="folder"
+          label="Open Mods Folder"
+          flat
+          @click="openModsFolder"
+        />
+      </div>
+  </div>
     <hr />
   </div>
 
   <div class="engine-mods-container phantom-font" v-if="!isUnsupportedEngine">
-    <div class="header" v-if="mods.length >= 0">
-      <div class="scan-actions" v-if="showScanButton">
-        <q-btn
-          size="md"
-          color="primary"
-          label="Rescan"
-          @click="scanForMods"
-          :loading="loading"
-        />
-      </div>
-    </div>
-
     <div v-if="loading" class="loading">
       <q-spinner color="primary" size="36px" />
       <span>Scanning for installed mods...</span>
@@ -44,12 +52,12 @@
           >
             <template v-slot:error>
               <div class="fallback-icon">
-                <q-icon name="folder" size="24px" />
+                <q-icon name="image_not_supported" size="32px" />
               </div>
             </template>
           </q-img>
           <div v-else class="fallback-icon">
-            <q-icon name="folder" size="24px" />
+            <q-icon name="image_not_supported" size="32px" />
           </div>
         </div>
         <div class="mod-info">
@@ -75,11 +83,18 @@
       </div>
     </div>
   </div>
+  <div v-else class="engine-mods-container phantom-font">
+    <div class="loading">
+      <span>Fridaylight can't scan for mods with the current engine type. You can disable this section in the mod settings.</span>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { sep } from "@tauri-apps/api/path";
 
 interface ModMetadataFile {
   name: string;
@@ -122,12 +137,8 @@ const error = ref("");
 const hasScanned = ref(false);
 const toggleLoading = ref<Record<string, boolean>>({}); // Track loading state for each toggle
 
-const showScanButton = computed(() => {
-  return !props.autoScan || hasScanned.value;
-});
-
 const isUnsupportedEngine = computed(() => {
-  return ["pre-vslice", "kade", "other"].includes(props.engineType);
+  return ["pre-vslice", "kade", "other", "unknown"].includes(props.engineType);
 });
 
 const scanForMods = async () => {
@@ -233,6 +244,41 @@ const toggleModEnabled = async (mod: ModMetadataFile, enable: boolean) => {
   }
 };
 
+// Get the mods folder path
+const getModsFolderPath = (): string => {
+
+  // Get the directory of the executable
+  const executablePath = props.executablePath;
+  const lastSlashIndex = Math.max(
+    executablePath.lastIndexOf("/"),
+    executablePath.lastIndexOf("\\")
+  );
+  
+  const baseDir = lastSlashIndex > 0 
+    ? executablePath.substring(0, lastSlashIndex) 
+    : executablePath;
+    
+  // Most engines use "mods" folder in the same directory as the executable
+  return `${baseDir}${sep()}${props.customModsFolder || "mods"}`;
+};
+
+// Open mods folder in file explorer
+const openModsFolder = async () => {
+  try {
+    const folderPath = getModsFolderPath();
+    if (!folderPath) {
+      error.value = "Could not determine mods folder path";
+      return;
+    }
+    
+    console.log("Opening mods folder:", folderPath);
+    await revealItemInDir(folderPath);
+  } catch (e: any) {
+    console.error("Failed to open mods folder:", e);
+    error.value = `Failed to open mods folder: ${e.toString()}`;
+  }
+};
+
 // Watch for changes in executable path or engine type
 watch(
   () => [props.executablePath, props.engineType],
@@ -263,13 +309,14 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
 }
 
 h5 {
   margin: 0;
   margin-top: 2rem;
   color: var(--theme-text);
+  width: fit-content;
+  display: inline-flex;
 }
 
 .engine-badge {
@@ -288,13 +335,14 @@ h5 {
   display: flex;
   align-items: center;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--theme-card);
   border-radius: 6px;
-  transition: background 0.2s;
+  transition: background-color 0.2s;
+  border: 1px solid var(--theme-border);
 }
 
 .mod-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--theme-border);
 }
 
 .mod-icon {
@@ -357,7 +405,10 @@ h5 {
 }
 
 .scan-actions {
-  display: flex;
-  justify-content: center;
+  display: inline-flex;
+  gap: .5rem;
+  margin-left: auto;
+  margin-top: 1.5rem;
+
 }
 </style>

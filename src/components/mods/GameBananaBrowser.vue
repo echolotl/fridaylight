@@ -37,7 +37,8 @@
     </div>
 
     <!-- Home View with Featured and Latest Mods -->
-    <div v-else class="scroll-container">
+    <q-scroll-area v-else class="scroll-container">
+      <div class="main-browser">
       <div class="section-header phantom-font-difficulty">
           <div class="text-subtitle1">Featured Mods</div>
         </div>
@@ -136,7 +137,8 @@
       </div>
           <!-- Engine Download Buttons -->
     <EngineDownloadButtons @download-engine="downloadEngine" />
-    </div>
+  </div>
+    </q-scroll-area>
 
 
 
@@ -1974,9 +1976,13 @@ const handleModTypeCancel = () => {
 }
 
 .scroll-container {
-  overflow-y: auto;
   flex-grow: 1;
-  scrollbar-width: none;
+  display: block;
+}
+
+.main-browser {
+  width: 100%;
+
 }
 
 .mods-section {

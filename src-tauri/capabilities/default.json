@@ -18,6 +18,9 @@
     "store:default",
     "process:default",
     "updater:allow-check",
-    "updater:default"
+    "updater:default",
+    "opener:allow-open-path"
+
+    
   ]
 }

@@ -30,7 +30,7 @@
         </div>
 
         <!-- Main Content Area -->
-        <div class="settings-content">
+        <q-scroll-area class="settings-content">
           <!-- Appearance Section -->
           <q-card-section v-show="activeSection === 'appearance'">
             <div class="text-subtitle1 q-mb-md">Appearance</div>
@@ -276,7 +276,7 @@
               </div>
             </div>
           </q-card-section>
-        </div>
+        </q-scroll-area>
       </div>
 
       <q-card-actions align="right">
