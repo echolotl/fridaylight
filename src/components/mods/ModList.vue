@@ -69,12 +69,11 @@
           @end="onDragEnd"
           @start="onDragStart"
           class="full-width"
-          :animation="200"
           ghost-class="sortable-ghost"
           chosen-class="sortable-chosen"
           drag-class="sortable-drag"
           :force-fallback="true"
-          :delay="70"
+          :delay="100"
         >
           <template #item="{ element: item }">
             <div>
