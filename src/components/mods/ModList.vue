@@ -105,7 +105,7 @@
         <!-- Empty state when no mods -->
         <q-item v-if="mods.length === 0 || displayItems.length === 0">
           <q-item-section>
-            <q-item-label caption>
+            <q-item-label caption style="color: var(--theme-text-secondary)">
               No mods added. Click the + button to add a mod folder.
             </q-item-label>
           </q-item-section>

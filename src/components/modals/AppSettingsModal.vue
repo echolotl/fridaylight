@@ -260,7 +260,7 @@
 
               <div class="settings-reset-section q-mt-lg">
                 <q-separator class="q-my-md" />
-                <div class="text-subtitle1 q-mb-md">Settings Management</div>
+                <div class="text-subtitle1 q-mb-md">Data Management</div>
                 <q-btn
                   color="negative"
                   icon="restart_alt"
@@ -273,8 +273,26 @@
                   This will reset all app settings to their default values.
                   You'll need to save for changes to take effect.
                 </div>
+                
+                <q-btn
+                  color="negative"
+                  icon="delete_forever"
+                  label="Reset App Data"
+                  class="full-width q-mt-md"
+                  @click="showResetAppDataDialog = true"
+                  outline
+                />
+                <div class="text-caption q-mt-sm">
+                  This will wipe the database and reset all application data.
+                  All mod information will be lost, but files will not be deleted.
+                </div>
               </div>
             </div>
+            
+            <AnimationPlayer jsonPath="/images/animations/characters/bf-holding-gf.json" 
+  :width="500" 
+  :height="500" 
+  :scale="1"/>
           </q-card-section>
         </q-scroll-area>
       </div>
@@ -303,6 +321,18 @@
     confirm-color="negative"
     @confirm="resetSettings"
   />
+
+  <!-- Reset App Data Confirmation Dialog -->
+  <MessageDialog
+    v-model="showResetAppDataDialog"
+    title="Reset App Data"
+    message="This will wipe the database and reset ALL application data. All mod information will be lost, but files will not be deleted. Do you want to continue?"
+    icon="warning"
+    icon-color="negative"
+    confirm-label="Reset App Data"
+    confirm-color="negative"
+    @confirm="resetAppData"
+  />
 </template>
 
 <script setup lang="ts">
@@ -313,6 +343,7 @@ import { AppSettings } from "@main-types";
 import ThemePreview from "../common/ThemePreview.vue";
 import MessageDialog from "./MessageDialog.vue";
 import { StoreService } from "../../services/storeService";
+import { DatabaseService } from "../../services/dbService";
 
 // Use the singleton directly instead of through a ref
 const storeService = StoreService.getInstance();
@@ -413,6 +444,7 @@ const showModal = computed({
 });
 
 const showResetSettingsDialog = ref(false);
+const showResetAppDataDialog = ref(false);
 
 // Load saved settings when modal is opened
 watch(
@@ -683,6 +715,29 @@ const resetSettings = () => {
     showTerminalOutput: true,
   };
   console.log("Settings have been reset to default values.");
+};
+
+const resetAppData = async () => {
+  try {
+    console.log("Resetting application data...");
+    
+    // Get instances of our services
+    const dbService = DatabaseService.getInstance();
+    
+    // First, reset settings to default values
+    await storeService.clearSettings();
+    console.log("Settings have been cleared successfully");
+    
+    // Then clear the database (delete all data from tables)
+    await dbService.clearDatabase();
+    console.log("Database has been cleared successfully");
+    
+    // Reload the application to apply changes
+    window.location.reload();
+  } catch (error) {
+    console.error("Failed to reset app data:", error);
+    window.alert(`Failed to reset app data: ${error}`);
+  }
 };
 
 onMounted(async () => {

@@ -65,7 +65,10 @@
             :src="mod.engine.engine_icon"
             alt="Engine Icon"
             class="custom-engine-icon"
-          />
+          >
+          <q-tooltip v-if="mod.engine.engine_name" class="phantom-font" anchor="top middle">
+            {{ mod.engine.engine_name }}
+          </q-tooltip>
         </span>
         <span
           v-else-if="
@@ -82,6 +85,9 @@
               '.webp'
             "
           />
+          <q-tooltip v-if="mod.engine.engine_name" anchor="top middle" class="phantom-font" :offset="[0, 40]">
+            {{ mod.engine.engine_name }}
+          </q-tooltip>
         </span>
       </div>
     </div>

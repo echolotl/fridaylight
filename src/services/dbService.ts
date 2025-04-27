@@ -1075,6 +1075,40 @@ export class DatabaseService {
   }
 
   /**
+   * Clear all data from the database
+   * This wipes all tables but preserves the schema
+   */
+  public async clearDatabase(): Promise<void> {
+    if (!this.db) {
+      throw new Error("Database not initialized");
+    }
+
+    return withDatabaseLock(async (db) => {
+      try {
+        // Delete all mods
+        await db.execute("DELETE FROM mods");
+        console.log("Deleted all mods from database");
+        
+        // Delete all folders
+        await db.execute("DELETE FROM folders");
+        console.log("Deleted all folders from database");
+        
+        // Delete all mod folder mappings (for backward compatibility)
+        await db.execute("DELETE FROM mod_folders");
+        console.log("Deleted all mod folder mappings from database");
+        
+        // Sync with backend to reflect the cleared state
+        await this.syncModsWithBackend(db);
+        
+        console.log("Database cleared successfully");
+      } catch (error) {
+        console.error("Failed to clear database:", error);
+        throw error;
+      }
+    }, true, "clearDatabase");
+  }
+
+  /**
    * Helper method to create an empty mod
    */
   public createEmptyMod(): Mod {

@@ -259,7 +259,7 @@ const getModsFolderPath = (): string => {
     : executablePath;
     
   // Most engines use "mods" folder in the same directory as the executable
-  return `${baseDir}${sep()}${props.customModsFolder || "mods"}`;
+  return `${baseDir}${sep()}${props.customModsFolder || "mods"}${sep()}`;
 };
 
 // Open mods folder in file explorer

@@ -488,10 +488,23 @@ const selectModsParentFolder = async () => {
       );
     }
 
+    // Show loading notification
+    const loadingNotif = $q.notify({
+      type: 'ongoing',
+      message: 'Scanning for mods...',
+      caption: 'This may take a while for large folders',
+      position: 'bottom-right',
+      timeout: 0,
+      spinner: true
+    });
+
     // Call the Rust command to select a folder containing multiple mods
     const addedMods = await invoke<ModInfo[]>("select_mods_parent_folder", {
       validate: validateFnfMods,
     });
+
+    // Dismiss loading notification
+    loadingNotif();
 
     if (addedMods && addedMods.length > 0) {
       // Add each mod to the mods array
@@ -517,6 +530,15 @@ const selectModsParentFolder = async () => {
       $q.notify({
         type: "positive",
         message: `Successfully added ${addedMods.length} mods`,
+        position: "bottom-right",
+        timeout: 3000,
+      });
+    } else {
+      // Show a message when no mods were found
+      $q.notify({
+        type: "info",
+        message: "No compatible mods found",
+        caption: "Make sure the folder contains valid FNF mods",
         position: "bottom-right",
         timeout: 3000,
       });
