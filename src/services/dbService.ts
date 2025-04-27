@@ -924,6 +924,36 @@ export class DatabaseService {
   }
 
   /**
+   * Update display order for mods within a folder
+   * This performs a batch update of all mods' display_order_in_folder property
+   * in a single transaction for better performance
+   */
+  public async updateDisplayOrderInFolder(folderId: string, mods: Mod[]): Promise<void> {
+    if (!this.db) {
+      throw new Error("Database not initialized");
+    }
+
+    return withDatabaseLock(async (db) => {
+      // Begin a transaction for all updates
+      for (let i = 0; i < mods.length; i++) {
+        const mod = mods[i];
+        const displayOrderInFolder = i;
+
+        await db.execute(
+          `UPDATE mods SET display_order_in_folder = ? WHERE id = ? AND folder_id = ?`,
+          [displayOrderInFolder, mod.id, folderId]
+        );
+      }
+
+      // Sync with backend, passing the db connection to avoid nested locks
+      await this.syncModsWithBackend(db);
+    }, true, "updateDisplayOrderInFolder").catch((error) => {
+      console.error("Failed to update display order in folder:", error);
+      throw error;
+    });
+  }
+
+  /**
    * Get a setting from the store
    * @deprecated Use StoreService.getSetting() instead
    */

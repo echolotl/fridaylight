@@ -18,7 +18,7 @@
           transition-prev="slide-right"
           transition-next="slide-left"
           class="featured-carousel-inner"
-          height="50em"
+          height="75vh"
           control-color="primary"
           navigation-icon="circle"
         >
@@ -143,18 +143,12 @@ const shortenDescription = (description: string): string => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-}
-
-.featured-carousel-inner {
-  width: 100%;
 }
 
 .featured-slide {
   display: flex;
   justify-content: center;
   align-items: center;
-  
 }
 
 .featured-mod-card {
@@ -164,6 +158,7 @@ const shortenDescription = (description: string): string => {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--theme-border);
 }
 
 .featured-thumbnail {

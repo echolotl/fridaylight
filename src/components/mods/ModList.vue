@@ -74,8 +74,7 @@
           chosen-class="sortable-chosen"
           drag-class="sortable-drag"
           :force-fallback="true"
-          :delay="50"
-          :delayOnTouchOnly="true"
+          :delay="70"
         >
           <template #item="{ element: item }">
             <div>
@@ -453,7 +452,7 @@ const handleFolderModsReorder = (event: {
     mods: event.updatedMods.map((mod) => mod.id),
   };
 
-  // Update the display_order_in_folder for each mod
+  // Update all mods with their new display_order_in_folder values (locally)
   event.updatedMods.forEach((mod, index) => {
     // Find the mod in modsList to update it
     const modIndex = modsList.value.findIndex((m) => m.id === mod.id);
@@ -466,17 +465,17 @@ const handleFolderModsReorder = (event: {
 
       // Update the mod in our array
       modsList.value[modIndex] = updatedMod;
-
-      // Emit event to update the mod in parent component
-      emit("update-mod", updatedMod);
     }
   });
 
   // Update the folder in our array
   foldersList.value[folderIndex] = updatedFolder;
 
-  // Emit event to update the folder in parent component
-  emit("update-folder", updatedFolder);
+  // Emit event to update the folder and all mods in a batch operation
+  emit("reorder-folder-mods", {
+    folderId: event.folderId,
+    updatedMods: event.updatedMods
+  });
 
   // Update display items
   updateDisplayItems();

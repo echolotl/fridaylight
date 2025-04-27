@@ -53,8 +53,7 @@
             drag-class="sortable-drag" 
             :force-fallback="true" 
             :fallback-on-body="true"
-            :delay="50" 
-            :delayOnTouchOnly="true">
+            :delay="100">
             <template #item="{ element }">
                 <div class="draggable-item cursor-move" :key="element.id">
                     <ModListItem 
@@ -122,7 +121,7 @@ const emit = defineEmits(['select-mod', 'delete-mod', 'delete-folder', 'update-f
 const handleDragEnd = () => {
   console.log('Reordering mods within folder:', props.folder.name);
   
-  // Emit an event to update the order
+  // Emit an event to update the order with the batch update function
   emit('reorder-folder-mods', {
     folderId: props.folder.id,
     updatedMods: modsInFolder.value.map(item => item.data)
@@ -243,5 +242,17 @@ const handleModsChange = (event: any) => {
 
 .version-text {
   color: #999999 !important;
+}
+
+.sortable-ghost {
+  background-color: var(--theme-surface) !important;
+  border-radius: 0 1rem 1rem 0;
+  opacity: 0.5;
+}
+
+/* Add styles for when an item is being dropped */
+.sortable-chosen {
+  background-color: var(--theme-surface) !important;
+  box-shadow: 0 0 10px var(--theme-border);
 }
 </style>

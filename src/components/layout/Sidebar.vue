@@ -18,6 +18,7 @@
         @reorder-items="handleModsReorder"
         @update-mod="handleSaveMod"
         @update-folder="updateFolderDetails"
+        @reorder-folder-mods="handleFolderModsReorder"
         class="modlist"
       />
 
@@ -202,7 +203,7 @@ const emit = defineEmits<{
 
 // Default width and min/max constraints
 const sidebarWidth = ref(250);
-const minWidth = 150;
+const minWidth = 240;
 const maxWidth = 400;
 
 // Resize functionality
@@ -1032,6 +1033,29 @@ const handleModsReorder = async (newOrder: DisplayItem[]) => {
     console.log("Successfully saved display order to database");
   } catch (error) {
     console.error("Failed to save mod order:", error);
+  }
+};
+
+// Function to handle reordering mods within a folder
+const handleFolderModsReorder = async (data: { folderId: string, updatedMods: Mod[] }) => {
+  console.log(`Handling folder mods reorder for folder: ${data.folderId}, mods count: ${data.updatedMods.length}`);
+  
+  try {
+    await dbService.updateDisplayOrderInFolder(data.folderId, data.updatedMods);
+    console.log(`Successfully updated display order for ${data.updatedMods.length} mods in folder`);
+    
+    // Update the local mods array with the new display_order_in_folder values
+    data.updatedMods.forEach((updatedMod, index) => {
+      const modIndex = mods.value.findIndex((m) => m.id === updatedMod.id);
+      if (modIndex !== -1) {
+        mods.value[modIndex].display_order_in_folder = index;
+      }
+    });
+    
+    // Force reactivity update
+    mods.value = [...mods.value];
+  } catch (error) {
+    console.error("Failed to save folder mods order:", error);
   }
 };
 
