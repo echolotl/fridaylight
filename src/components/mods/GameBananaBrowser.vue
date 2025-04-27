@@ -2045,4 +2045,10 @@ const handleModTypeCancel = () => {
 :deep(.q-field__messages) {
   color: var(--theme-text-secondary) !important;
 }
+:deep(.q-tab) {
+  border-radius: 8px 8px 0 0;
+}
+:deep(.q-tabs__content) {
+  gap: 8px;
+}
 </style>
