@@ -7,6 +7,7 @@
     :active="isActive"
     active-class="active-mod"
     class="draggable-item cursor-move"
+    :class="{ 'compact-mode': compactMode }"
   >
     <q-item-section avatar v-if="mod.icon_data">
       <q-avatar size="32px" square>
@@ -16,13 +17,13 @@
     <q-item-section avatar v-else>
       <q-avatar size="32px" icon="folder" square class="default-icon" />
     </q-item-section>
-    <q-item-section>
+    <q-item-section v-if="!compactMode">
       <q-item-label>{{ mod.name }}</q-item-label>
       <q-item-label caption class="version-text" v-if="mod.version"
         >v{{ mod.version }}</q-item-label
       >
     </q-item-section>
-    <q-item-section side>
+    <q-item-section side v-if="!compactMode">
       <q-btn
         flat
         round
@@ -33,6 +34,9 @@
         class="delete-btn"
       />
     </q-item-section>
+    <q-tooltip v-if="compactMode" class="phantom-font">
+      {{ mod.name }}{{ mod.version ? ` (v${mod.version})` : '' }}
+    </q-tooltip>
   </q-item>
 </template>
 
@@ -45,6 +49,10 @@ defineProps({
     required: true,
   },
   isActive: {
+    type: Boolean,
+    default: false,
+  },
+  compactMode: {
     type: Boolean,
     default: false,
   },
@@ -79,6 +87,7 @@ defineEmits(["select-mod", "delete-mod"]);
 
 .q-item {
   border-radius: 0 1rem 1rem 0;
+  transition: padding 0.2s ease;
 }
 
 .draggable-item {
@@ -114,5 +123,11 @@ defineEmits(["select-mod", "delete-mod"]);
 
 .version-text {
   color: var(--theme-text-secondary) !important;
+}
+
+.compact-mode {
+  padding: 4px 16px;
+  min-height: 40px;
+  max-width: 60px;
 }
 </style>

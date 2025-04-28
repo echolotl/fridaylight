@@ -3,13 +3,14 @@ import { AppSettings } from '../types';
 
 // Define default settings
 export const DEFAULT_SETTINGS: AppSettings = {
-  accentColor: '#FF0088',
+  accentColor: '{ label: "Pink", value: "#DB2955" }',
   installLocation: 'C:\\Users\\Public\\Documents\\FNF Mods',
   theme: 'dark',
   useSystemTheme: true,
   customCSS: '',
   validateFnfMods: true,
   showTerminalOutput: true,
+  compactMode: false,
 };
 
 /**

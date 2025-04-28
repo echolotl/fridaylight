@@ -1,5 +1,5 @@
 <template>
-  <q-item :key="`dl-${download.id}`" class="downloading-mod">
+  <q-item :key="`dl-${download.id}`" class="downloading-mod" :class="{ 'compact-mode': compactMode }">
     <q-item-section avatar>
       <q-spinner
         size="32px"
@@ -20,7 +20,7 @@
       />
     </q-item-section>
 
-    <q-item-section>
+    <q-item-section v-if="!compactMode">
       <q-item-label>{{ download.name }}</q-item-label>
       <q-item-label caption style="color: var(--theme-text-secondary)">{{ download.step }}</q-item-label>
 
@@ -41,6 +41,21 @@
         {{ download.error }}
       </q-item-label>
     </q-item-section>
+    
+    <!-- Show progress in compact mode -->
+    <q-linear-progress
+      v-if="compactMode && !download.isComplete && !download.isError"
+      :value="download.percentage / 100"
+      color="primary"
+      class="compact-progress"
+      rounded
+      size="4px"
+    />
+    
+    <q-tooltip v-if="compactMode">
+      {{ download.name }} - {{ download.step }}
+      <div v-if="download.isError" class="text-negative">{{ download.error }}</div>
+    </q-tooltip>
   </q-item>
 </template>
 
@@ -51,6 +66,10 @@ defineProps({
   download: {
     type: Object as () => DownloadProgress,
     required: true,
+  },
+  compactMode: {
+    type: Boolean,
+    default: false
   }
 });
 </script>
@@ -58,5 +77,20 @@ defineProps({
 <style scoped>
 .downloading-mod {
   margin-bottom: 8px;
+}
+
+.compact-mode {
+  padding: 4px 8px;
+  min-height: 40px;
+  position: relative;
+}
+
+.compact-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: 0;
+  height: 3px;
 }
 </style>

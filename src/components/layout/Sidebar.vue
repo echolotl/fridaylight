@@ -2,11 +2,16 @@
   <div class="layout-container">
     <!-- The Sidebar ended up becoming the wrapper around basically everything -->
     <!-- Actual Sidebar -->
-    <div class="sidebar" :style="{ width: `${sidebarWidth}px` }">
+    <div 
+      class="sidebar" 
+      :class="{ 'compact-mode': isCompactMode }"
+      :style="{ width: isCompactMode ? '64px' : `${sidebarWidth}px` }"
+    >
       <ModList
         :mods="mods"
         :folders="folders"
         :selectedModId="selectedMod?.id"
+        :compact-mode="isCompactMode"
         @select-mod="selectMod"
         @add-mod="selectModFolder"
         @add-mods-folder="selectModsParentFolder"
@@ -251,6 +256,9 @@ const showSettingsModal = ref(false);
 const showGameBanana = ref(false);
 const showAppSettingsModal = ref(false);
 
+// Add compact mode state
+const isCompactMode = ref(false);
+
 // Load mods on component mount
 onMounted(async () => {
   // Initialize the StoreService
@@ -273,6 +281,15 @@ onMounted(async () => {
 
     // Add event listener for refreshing the mods list
     window.addEventListener("refresh-mods", handleRefreshMods);
+    
+    // Add event listener for compact mode changes
+    window.addEventListener("compact-mode-changed", (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail && customEvent.detail.compactMode !== undefined) {
+        isCompactMode.value = customEvent.detail.compactMode;
+        console.log("Applied compact mode from event:", isCompactMode.value);
+      }
+    });
   } catch (error) {
     console.error("Error loading mods:", error);
   }
@@ -963,6 +980,10 @@ const loadAppSettings = async () => {
     // Get all settings at once through the StoreService
     const settings = await storeService.getAllSettings();
 
+    // Apply compact mode setting
+    isCompactMode.value = settings.compactMode === true;
+    console.log("Applied compact mode setting:", isCompactMode.value);
+
     // Apply the accent color to CSS custom properties
     let colorValue = settings.accentColor || "#FF0088";
 
@@ -1064,7 +1085,7 @@ const handleFolderModsReorder = async (data: { folderId: string, updatedMods: Mo
   
   try {
     await dbService.updateDisplayOrderInFolder(data.folderId, data.updatedMods);
-    console.log(`Successfully updated display order for ${data.updatedMods.length} mods in folder`);
+    console.log(`Successfully updated display order for ${data.updatedMods.length} mods in folder`);    
     
     // Update the local mods array with the new display_order_in_folder values
     data.updatedMods.forEach((updatedMod, index) => {

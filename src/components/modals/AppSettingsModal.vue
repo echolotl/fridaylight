@@ -40,6 +40,7 @@
               <ThemePreview
                 :themeName="getThemeName()"
                 :accentColor="getAccentColor()"
+                :compactMode="settings.compactMode"
               />
               <q-item tag="label" class="full-width">
                 <q-item-section>
@@ -74,6 +75,18 @@
                 </template>
               </q-select>
             </div>
+
+            <q-item tag="label" class="q-mb-md">
+              <q-item-section>
+                <q-item-label>Compact Mode</q-item-label>
+                <q-item-label caption
+                  >Minimize sidebar width and show only icons</q-item-label
+                >
+              </q-item-section>
+              <q-item-section side>
+                <q-toggle v-model="settings.compactMode" color="primary" />
+              </q-item-section>
+            </q-item>
 
             <q-select
               v-model="settings.accentColor"
@@ -365,6 +378,7 @@ const settings = ref<AppSettings>({
   customCSS: "", // Default to no custom CSS
   validateFnfMods: true, // Default to validating FNF mods
   showTerminalOutput: true, // Default to showing terminal output
+  compactMode: false, // Default to not using compact mode
 });
 
 // Sidebar navigation sections
@@ -690,6 +704,15 @@ const save = async () => {
 
     // Apply theme
     await updateTheme();
+    
+    // Dispatch compact mode changed event
+    window.dispatchEvent(
+      new CustomEvent("compact-mode-changed", {
+        detail: {
+          compactMode: settings.value.compactMode
+        },
+      })
+    );
 
     // Emit save event
     emit("save", settings.value);
@@ -713,6 +736,7 @@ const resetSettings = () => {
     customCSS: "",
     validateFnfMods: true,
     showTerminalOutput: true,
+    compactMode: false,
   };
   console.log("Settings have been reset to default values.");
 };

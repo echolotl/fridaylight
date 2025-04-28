@@ -5,21 +5,21 @@
         <div class="close-button"></div>
       </div>
       <div class="window-content">
-        <div class="sidebar">
-          <div class="sidebar-item active">
+        <div class="sidebar" :class="compactMode ? 'compact' : ''">
+          <div class="sidebar-item active" :class="compactMode ? 'compact' : ''">
             <div class="sidebar-icon" :style="{ backgroundColor: accentColor }"></div>
           </div>
-          <div class="sidebar-item">
+          <div class="sidebar-item" :class="compactMode ? 'compact' : ''">
             <div class="sidebar-icon" :style="{ backgroundColor: accentColor }"></div>
           </div>
-          <div class="sidebar-item folder">
+          <div class="sidebar-item folder" :class="compactMode ? 'compact' : ''">
             <div class="sidebar-icon" :style="{ backgroundColor: accentColor }"></div>
           </div>
-          <div class="folder-contents" :style="{ borderLeftColor: accentColor }">
-            <div class="sidebar-item active">
+          <div class="folder-contents" :style="{ borderLeftColor: accentColor }" :class="compactMode ? 'compact' : ''">
+            <div class="sidebar-item active" :class="compactMode ? 'compact' : ''">
               <div class="sidebar-icon" :style="{ backgroundColor: accentColor }"></div>
             </div>
-            <div class="sidebar-item">
+            <div class="sidebar-item" :class="compactMode ? 'compact' : ''">
               <div class="sidebar-icon" :style="{ backgroundColor: accentColor }"></div>
             </div>
           </div>
@@ -48,6 +48,10 @@ defineProps({
   accentColor: {
     type: String,
     default: '#DB2955'
+  },
+  compactMode: {
+    type: Boolean,
+    default: false
   }
 });
 </script>

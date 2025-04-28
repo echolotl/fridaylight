@@ -168,6 +168,7 @@ export interface AppSettings {
   customCSS: string;
   validateFnfMods: boolean; // Whether to validate FNF mods structure before adding
   showTerminalOutput: boolean; // Whether to show terminal output from running mods
+  compactMode: boolean; // Whether to display the sidebar in compact mode with only icons
 }
 interface ColorOption {
   label: string;

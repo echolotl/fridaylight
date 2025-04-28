@@ -5,7 +5,7 @@
     v-ripple 
     @click="toggleExpanded"
     class="draggable-item cursor-move folder"
-    :class="{ 'expanded-folder': isExpanded }"
+    :class="{ 'expanded-folder': isExpanded, 'compact-mode': compactMode }"
     :style="{ borderBottomColor: isExpanded ? folder.color : 'transparent' }"
   >      
     <q-item-section avatar>
@@ -13,10 +13,10 @@
         <q-icon name="folder" size="24px" :style="{ color: folder.color}" />
       </q-avatar>
     </q-item-section>
-    <q-item-section>
+    <q-item-section v-if="!compactMode">
       <q-item-label>{{ folder.name }}</q-item-label>
     </q-item-section>
-    <q-item-section side>
+    <q-item-section side v-if="!compactMode">
       <div class="row items-center">
         <q-btn
           flat
@@ -38,9 +38,12 @@
         />
       </div>
     </q-item-section>
+    <q-tooltip v-if="compactMode" class="phantom-font">
+      {{ folder.name }}
+    </q-tooltip>
   </q-item>
   <!-- Expanded folder content with indentation -->
-  <div v-if="isExpanded" class="folder-contents" :style="{ borderLeftColor: folder.color}">            
+  <div v-if="isExpanded" class="folder-contents" :class="{ 'compact-folder-contents': compactMode }" :style="{ borderLeftColor: folder.color}">            
     <draggable 
             :group="{ name: 'mods', pull: true, put: true }" 
             :list="modsInFolder" 
@@ -59,6 +62,7 @@
                     <ModListItem 
                         :mod="element.data" 
                         :is-active="selectedModId === element.id"
+                        :compact-mode="compactMode"
                         @select-mod="$emit('select-mod', element.data)" 
                         @delete-mod="$emit('delete-mod', element)" />
                 </div>
@@ -85,6 +89,10 @@ const props = defineProps({
   selectedModId: {
     type: String,
     default: ''
+  },
+  compactMode: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -254,5 +262,17 @@ const handleModsChange = (event: any) => {
 .sortable-chosen {
   background-color: var(--theme-surface) !important;
   box-shadow: 0 0 10px var(--theme-border);
+}
+
+/* Compact mode styles */
+.compact-mode {
+  padding: 4px 12px;
+  min-height: 20px;
+  max-width: 60px;
+}
+
+.compact-folder-contents {
+  margin-left: 0px;
+  border-left-style: solid;
 }
 </style>

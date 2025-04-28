@@ -2,8 +2,8 @@
   <div>
     <q-scroll-area style="height: 100%">
       <q-list padding class="phantom-font" style="color: var(--theme-text)">
-        <q-item-label header class="flex justify-between items-center" style="color: var(--theme-text-secondary)">
-          Mods
+        <q-item-label header class="flex justify-between items-center" style="color: var(--theme-text-secondary)" :class="{'compact-mode': compactMode}" >
+          <div v-if="!compactMode">Mods</div>
           <div class="flex sticky">
             <q-btn
               flat
@@ -54,13 +54,15 @@
             v-for="[id, download] in Object.entries(downloadingMods)"
             :key="id"
             :download="download"
+            :compact-mode="compactMode"
           />
 
           <q-separator spaced />
         </template>
 
         <!-- Installed mods list -->
-        <q-item-label header style="color: var(--theme-text-secondary)"> Installed </q-item-label>
+        <q-item-label header style="color: var(--theme-text-secondary)" v-if="!compactMode"> Installed </q-item-label>
+        <q-separator spaced v-else />
         <!-- Sortable Mod list items -->
         <draggable
           v-model="displayItems"
@@ -83,6 +85,7 @@
                 :folder="item.data"
                 :all-mods="mods"
                 :selected-mod-id="selectedModId"
+                :compact-mode="compactMode"
                 @select-mod="$emit('select-mod', $event)"
                 @delete-mod="confirmDelete($event)"
                 @delete-folder="confirmDeleteFolder(item.data)"
@@ -95,6 +98,7 @@
                 v-else-if="item.type === 'mod' && !isModInFolder(item.data.id)"
                 :mod="item.data"
                 :is-active="selectedModId === item.data.id"
+                :compact-mode="compactMode"
                 @select-mod="$emit('select-mod', item.data)"
                 @delete-mod="confirmDelete(item.data)"
               />
@@ -181,6 +185,10 @@ const props = defineProps({
   selectedModId: {
     type: String,
     default: "",
+  },
+  compactMode: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -634,5 +642,12 @@ const handleFolderModsUpdate = (event: {
 }
 .q-item__label {
   line-height: 1.2;
+}
+
+.compact-mode {
+  padding: 4px 12px;
+  min-height: 40px;
+  position: relative;
+  max-width: 60px;
 }
 </style>
