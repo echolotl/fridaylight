@@ -15,7 +15,7 @@
           <div class="sidebar-item folder" :class="compactMode ? 'compact' : ''">
             <div class="sidebar-icon" :style="{ backgroundColor: accentColor }"></div>
           </div>
-          <div class="folder-contents" :style="{ borderLeftColor: accentColor }" :class="compactMode ? 'compact' : ''">
+          <div class="folder-contents" :style="{ borderLeftColor: accentColor, borderTopColor: accentColor }" :class="compactMode ? 'compact' : ''">
             <div class="sidebar-item active" :class="compactMode ? 'compact' : ''">
               <div class="sidebar-icon" :style="{ backgroundColor: accentColor }"></div>
             </div>
@@ -24,7 +24,7 @@
             </div>
           </div>
         </div>
-        <div class="main-content">
+        <div class="main-content" :class="compactMode ? 'compact' : ''">
           <div class="main-banner-container">
           <div class="main-banner" :style="{ backgroundColor: accentColor }">
           </div>
@@ -164,6 +164,15 @@ defineProps({
   gap: 2px;
 }
 
+.sidebar.compact {
+  width: 30px;
+  margin-top: 20px;
+  padding: 30px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .sidebar-item.active {
   background-color: rgba(255, 255, 255, 0.25);
   height: 20px;
@@ -241,6 +250,17 @@ defineProps({
 
 .main-content {
   width: 70%;
+  height: calc(100% - 18px);
+  margin: 10px;
+  margin-bottom: 0;
+  border-radius: 4px 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+}
+.main-content.compact {
+  width: 100%;
   height: calc(100% - 18px);
   margin: 10px;
   margin-bottom: 0;
@@ -334,6 +354,12 @@ defineProps({
 .folder-contents {
     margin-left: 9px;
     border-left: 2px dashed var(--theme-border);
+}
+
+.folder-contents.compact {
+    margin-left: 0;
+    border-left: 2px solid var(--theme-border);
+    border-top: 2px solid var(--theme-border);
 }
 
 .play-button {

@@ -43,7 +43,7 @@ None of these are required. You can you whichever ones you need!
 | Key | Value |
 |-----|-------|
 | `engine_type` | String, this allows for mods folder mod management and small cosmetic changes. See more details below. |
-| `engine_name` | String, currently unused. |
+| `engine_name` | String, shows a tooltip on engine icon hover |
 | `engine_icon` | String, path to icon relative to the `.flight` folder |
 | `mods_folder` | Boolean, tells if you want to show the mods folder mod management. Default is `true` |
 | `mods_folder_path` | String, path to mods folder relative to the executable directory |

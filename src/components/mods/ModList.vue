@@ -4,46 +4,78 @@
       <q-list padding class="phantom-font" style="color: var(--theme-text)">
         <q-item-label header class="flex justify-between items-center" style="color: var(--theme-text-secondary)" :class="{'compact-mode': compactMode}" >
           <div v-if="!compactMode">Mods</div>
-          <div class="flex sticky">
-            <q-btn
-              flat
-              round
-              dense
-              icon="settings"
-              @click="$emit('open-settings')"
-              class="q-mr-xs"
-              style="color: var(--theme-text-secondary)"
-            />
-            <q-btn
-              flat
-              round
-              dense
-              icon="add_circle_outline"
-              @click="$emit('add-mod')"
-              class="q-mr-xs"
-              style="color: var(--theme-text-secondary)"
-            />
-            <q-btn
-              flat
-              round
-              dense
-              icon="dashboard_customize"
-              class="q-mr-xs"
-              @click="$emit('add-mods-folder')"
-              tooltip="Import Folder of Mods"
-              style="color: var(--theme-text-secondary)"
-            />
-            <q-btn
-              flat
-              round
-              dense
-              icon="create_new_folder"
-              @click="showCreateFolderDialog = true"
-              class="q-mr-xs"
-              tooltip="Create Folder"
-              style="color: var(--theme-text-secondary)"
-            />
+          <div class="flex items-center">
+            <div class="flex sticky">
+              <q-btn
+                flat
+                round
+                dense
+                icon="settings"
+                @click="$emit('open-settings')"
+                class="q-mr-xs"
+                style="color: var(--theme-text-secondary)"
+              >
+                <q-tooltip anchor="bottom middle" :offset="[0, 10]" class="phantom-font">
+                  Settings
+                </q-tooltip>
+              </q-btn>
+              <q-btn
+                flat
+                round
+                dense
+                icon="add_circle_outline"
+                @click="$emit('add-mod')"
+                class="q-mr-xs"
+                style="color: var(--theme-text-secondary)"
+              >
+                <q-tooltip anchor="bottom middle" :offset="[0, 10]" class="phantom-font">
+                  Add Mod
+                </q-tooltip>
+              </q-btn>
+              <q-btn
+                flat
+                round
+                dense
+                icon="dashboard_customize"
+                class="q-mr-xs"
+                @click="$emit('add-mods-folder')"
+                tooltip="Import Folder of Mods"
+                style="color: var(--theme-text-secondary)"
+              >
+            
+                <q-tooltip anchor="bottom middle" :offset="[0, 10]" class="phantom-font">
+                  Bulk Add Mods
+                </q-tooltip>
+              </q-btn>
+              <q-btn
+                flat
+                round
+                dense
+                icon="create_new_folder"
+                @click="showCreateFolderDialog = true"
+                class="q-mr-xs"
+                tooltip="Create Folder"
+                style="color: var(--theme-text-secondary)"
+              >
+            
+                <q-tooltip anchor="bottom middle" :offset="[0, 10]" class="phantom-font">
+                  Create Folder
+                </q-tooltip>
+              </q-btn>
+            </div>
           </div>
+          <q-input 
+              v-if="!compactMode" 
+              v-model="searchQuery" 
+              dense 
+              placeholder="Search mods" 
+              class="search-input full-width"
+              rounded
+            >
+              <template v-slot:prepend>
+                <q-icon name="search" color="var(--theme-text-secondary)" />
+              </template>
+            </q-input>
         </q-item-label>
 
         <!-- Downloading mods section -->
@@ -60,60 +92,91 @@
           <q-separator spaced />
         </template>
 
-        <!-- Installed mods list -->
-        <q-item-label header style="color: var(--theme-text-secondary)" v-if="!compactMode"> Installed </q-item-label>
-        <q-separator spaced v-else />
-        <!-- Sortable Mod list items -->
-        <draggable
-          v-model="displayItems"
-          group="mods"
-          item-key="id"
-          @end="onDragEnd"
-          @start="onDragStart"
-          class="full-width"
-          ghost-class="sortable-ghost"
-          chosen-class="sortable-chosen"
-          drag-class="sortable-drag"
-          :force-fallback="true"
-          :delay="100"
-        >
-          <template #item="{ element: item }">
-            <div>
-              <!-- Show folder if it's a folder type -->
-              <FolderListItem
-                v-if="item.type === 'folder'"
-                :folder="item.data"
-                :all-mods="mods"
-                :selected-mod-id="selectedModId"
-                :compact-mode="compactMode"
-                @select-mod="$emit('select-mod', $event)"
-                @delete-mod="confirmDelete($event)"
-                @delete-folder="confirmDeleteFolder(item.data)"
-                @update-folder-mods="handleFolderModsUpdate"
-                @reorder-folder-mods="handleFolderModsReorder"
-              />
+        <!-- Search results when search is active -->
+        <template v-if="searchQuery.trim() !== ''">
+          <q-item-label header style="color: var(--theme-text-secondary)">
+            Search Results
+          </q-item-label>
+          
+          <!-- Display search results -->
+          <div v-if="filteredMods.length > 0">
+            <ModListItem
+              v-for="mod in filteredMods"
+              :key="mod.id"
+              :mod="mod"
+              :is-active="selectedModId === mod.id"
+              :compact-mode="compactMode"
+              @select-mod="$emit('select-mod', mod)"
+              @delete-mod="confirmDelete(mod)"
+            />
+          </div>
+          
+          <!-- No results message -->
+          <q-item v-else>
+            <q-item-section>
+              <q-item-label caption style="color: var(--theme-text-secondary)">
+                No mods found matching "{{ searchQuery }}"
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </template>
 
-              <!-- Show mod if it's not in any folder and is a mod type -->
-              <ModListItem
-                v-else-if="item.type === 'mod' && !isModInFolder(item.data.id)"
-                :mod="item.data"
-                :is-active="selectedModId === item.data.id"
-                :compact-mode="compactMode"
-                @select-mod="$emit('select-mod', item.data)"
-                @delete-mod="confirmDelete(item.data)"
-              />
-            </div>
-          </template>
-        </draggable>
+        <!-- Installed mods list - show only when not searching -->
+        <template v-else>
+          <q-item-label header style="color: var(--theme-text-secondary)" v-if="!compactMode"> Installed </q-item-label>
+          <q-separator spaced v-else />
+          <!-- Sortable Mod list items -->
+          <draggable
+            v-model="displayItems"
+            group="mods"
+            item-key="id"
+            @end="onDragEnd"
+            @start="onDragStart"
+            class="full-width"
+            ghost-class="sortable-ghost"
+            chosen-class="sortable-chosen"
+            drag-class="sortable-drag"
+            :force-fallback="true"
+            :delay="100"
+          >
+            <template #item="{ element: item }">
+              <div>
+                <!-- Show folder if it's a folder type -->
+                <FolderListItem
+                  v-if="item.type === 'folder'"
+                  :folder="item.data"
+                  :all-mods="mods"
+                  :selected-mod-id="selectedModId"
+                  :compact-mode="compactMode"
+                  @select-mod="$emit('select-mod', $event)"
+                  @delete-mod="confirmDelete($event)"
+                  @delete-folder="confirmDeleteFolder(item.data)"
+                  @update-folder-mods="handleFolderModsUpdate"
+                  @reorder-folder-mods="handleFolderModsReorder"
+                />
 
-        <!-- Empty state when no mods -->
-        <q-item v-if="mods.length === 0 || displayItems.length === 0">
-          <q-item-section>
-            <q-item-label caption style="color: var(--theme-text-secondary)">
-              No mods added. Click the + button to add a mod folder.
-            </q-item-label>
-          </q-item-section>
-        </q-item>
+                <!-- Show mod if it's not in any folder and is a mod type -->
+                <ModListItem
+                  v-else-if="item.type === 'mod' && !isModInFolder(item.data.id)"
+                  :mod="item.data"
+                  :is-active="selectedModId === item.data.id"
+                  :compact-mode="compactMode"
+                  @select-mod="$emit('select-mod', item.data)"
+                  @delete-mod="confirmDelete(item.data)"
+                />
+              </div>
+            </template>
+          </draggable>
+
+          <!-- Empty state when no mods -->
+          <q-item v-if="mods.length === 0 || displayItems.length === 0">
+            <q-item-section>
+              <q-item-label caption style="color: var(--theme-text-secondary)">
+                No mods added. Click the + button to add a mod folder.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </template>
       </q-list>
     </q-scroll-area>
     <!-- Delete mod confirmation dialog -->
@@ -162,7 +225,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { downloadingMods } from "@stores/downloadState";
 import draggable from "vuedraggable";
 import ModListItem from "@mods/list/ModListItem.vue";
@@ -196,6 +259,25 @@ const props = defineProps({
 const modsList = ref<Mod[]>([]);
 const foldersList = ref<Folder[]>([]);
 const displayItems = ref<DisplayItem[]>([]);
+const searchQuery = ref('');
+
+// Get all mods, including those in folders
+const getAllMods = () => {
+  return modsList.value;
+};
+
+// Filter mods based on search query
+const filteredMods = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return getAllMods();
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim();
+  return getAllMods().filter(mod => 
+    mod.name.toLowerCase().includes(query) || 
+    (mod.description && mod.description.toLowerCase().includes(query))
+  );
+});
 
 // Initialize modsList and foldersList when component is first created
 watch(
@@ -649,5 +731,26 @@ const handleFolderModsUpdate = (event: {
   min-height: 40px;
   position: relative;
   max-width: 60px;
+}
+
+.search-input {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.search-input :deep(.q-field__control) {
+  background-color: var(--theme-surface);
+  border-radius: 1rem;
+}
+
+
+.search-input :deep(.q-field__native) {
+  color: var(--theme-text);
+  
+}
+
+.search-input :deep(.q-field__marginal) {
+  color: var(--theme-text-secondary);
+  padding: 0 8px;
 }
 </style>
