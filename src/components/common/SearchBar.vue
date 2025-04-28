@@ -40,19 +40,14 @@
     <div class="search-container">
       <q-input
         v-model="searchQueryModel"
-        outlined
         dense
         placeholder="Search mods..."
         class="search-input theme-input"
         @keyup.enter="search"
+        clearable
+        @clear="clear"
       >
         <template v-slot:append>
-          <q-icon
-            v-if="searchQueryModel.length > 0"
-            name="close"
-            class="cursor-pointer theme-icon"
-            @click="clear"
-          />
           <q-icon name="search" class="cursor-pointer theme-icon" @click="search" />
         </template>
       </q-input>
@@ -116,6 +111,22 @@ const openCustomDownload = () => {
 
 .search-input {
   flex: 1;
+}
+
+.search-input :deep(.q-field__control) {
+  background-color: var(--theme-bg);
+  border-radius: 1rem;
+}
+
+
+.search-input :deep(.q-field__native) {
+  color: var(--theme-text);
+  padding: 0 12px;
+}
+
+.search-input :deep(.q-field__marginal) {
+  color: var(--theme-text-secondary);
+  padding: 0 12px;
 }
 
 .custom-download-btn {

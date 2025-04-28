@@ -11,7 +11,7 @@
 
     <!-- Search Results View -->
     <div v-if="activeView === 'search'">
-      <div class="section-header phantom-font-difficulty">
+      <div class="section-header phantom-font">
         <div class="text-subtitle1">Search Results</div>
         <q-btn
           flat

@@ -743,12 +743,10 @@ const handleFolderModsUpdate = (event: {
   border-radius: 1rem;
 }
 
-
 .search-input :deep(.q-field__native) {
   color: var(--theme-text);
   
 }
-
 .search-input :deep(.q-field__marginal) {
   color: var(--theme-text-secondary);
   padding: 0 8px;
