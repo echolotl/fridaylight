@@ -268,6 +268,18 @@
                 class="q-mt-sm"
                 @click="removeLogo"
               />
+              
+              <q-select
+                v-if="logoPreview || form.logo_data"
+                v-model="form.logo_position"
+                :options="logoPositionOptions"
+                label="Logo Position"
+                outlined
+                class="q-mt-md"
+                emit-value
+                map-options
+                hint="Position of the logo in the banner"
+              />
             </div>
           </q-card-section>
         </q-scroll-area>
@@ -344,6 +356,12 @@ const engineTypes = [
   { label: "Kade Engine", value: "kade" },
   { label: "Pre-VSlice", value: "pre-vslice" },
   { label: "Other", value: "other" },
+];
+
+const logoPositionOptions = [
+  { label: "Bottom Left (Default)", value: "left_bottom" },
+  { label: "Middle Left", value: "left_middle" },
+  { label: "Center", value: "middle" },
 ];
 
 const showModal = computed({

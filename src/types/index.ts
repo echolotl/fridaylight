@@ -35,6 +35,7 @@ export interface Mod {
   icon_data?: string;
   banner_data?: string;
   logo_data?: string | null;
+  logo_position?: string; // Position of logo in banner: left_bottom, left_middle, middle
   version?: string;
   description?: string;
   engine_type?: string; // Kept for backward compatibility

@@ -17,11 +17,19 @@
     <!-- Title overlay on the banner -->
     <div class="title-overlay">
       <!-- Show logo if available -->
-      <div v-if="mod.logo_data" class="logo-container">
+      <div 
+        v-if="mod.logo_data" 
+        class="logo-container"
+      >
         <img
           :src="mod.logo_data"
           alt="Mod Logo"
           class="mod-logo"
+          :class="{
+          'logo-left-bottom': !mod.logo_position || mod.logo_position === 'left_bottom',
+          'logo-left-middle': mod.logo_position === 'left_middle',
+          'logo-middle': mod.logo_position === 'middle'
+        }"
           @click="$emit('open-settings')"
         />
       </div>
@@ -199,23 +207,53 @@ const formatEngineType = (engineType: string) => {
 }
 
 .logo-container {
-  display: flex;
-  justify-content: flex-start;
+  display: relative;
   align-items: center;
-  max-width: 35vw;
-  max-height: 150px;
+  width: 100%;
+  height: 300px;
+}
+
+/* Logo position styles */
+.logo-left-bottom {
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+}
+
+.logo-left-bottom:hover {
+  transform: scale(1.05);
+}
+
+.logo-left-middle {
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  transform: translateY(-50%);
+}
+
+.logo-left-middle:hover {
+  transform: translateY(-50%), scale(1.05);
+}
+
+.logo-middle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 50%;
+  justify-content: center;
+}
+
+.logo-middle:hover {
+  transform: translate(-50%, -50%) scale(1.05);
 }
 
 .mod-logo {
-  max-width: 100%;
+  max-width: 35vw;
   max-height: 150px;
   cursor: pointer;
-  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.6));
-  transition: transform 0.2s ease;
-}
-
-.mod-logo:hover {
-  transform: scale(1.02);
+  transition: all 0.2s ease;
+  transform-origin: center;
 }
 
 .mod-info-overlay {

@@ -97,6 +97,7 @@ pub struct ModInfo {
     pub icon_data: Option<String>, // Base64 encoded icon data
     pub banner_data: Option<String>, // Base64 encoded banner image data
     pub logo_data: Option<String>, // Base64 encoded logo image data
+    pub logo_position: Option<String>, // Position of logo in banner: left_bottom, left_middle, middle
     pub version: Option<String>,
     pub engine_type: Option<String>, // Kept for backward compatibility
     pub engine: Option<Engine>,      // New extended engine information

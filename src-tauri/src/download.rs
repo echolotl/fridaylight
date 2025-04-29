@@ -422,6 +422,7 @@ pub async fn download_gamebanana_mod(
         description: None,
         banner_data: final_banner_data,
         logo_data: final_logo_data,
+        logo_position: Some("left_bottom".to_string()),
         version: mod_info_response.as_ref()
             .and_then(|info| info.get("_sVersion"))
             .and_then(|v| v.as_str())
@@ -811,6 +812,7 @@ pub async fn download_custom_mod(
         icon_data,
         description,
         banner_data: final_banner_data,
+        logo_position: Some("left_bottom".to_string()),
         logo_data: final_logo_data,
         version,
         engine_type: None,
@@ -1266,6 +1268,7 @@ pub async fn download_engine(
         description: Some(engine_description.to_string()),
         banner_data: banner_data,
         logo_data: logo_data,
+        logo_position: Some("left_bottom".to_string()),
         version: Some(engine_version.to_string()),
         engine_type: Some(engine_type.clone()),
         engine: Some(crate::models::Engine {

@@ -416,7 +416,20 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         },
         None => None,
     };
-      let engine_type = match &metadata {
+    
+    let logo_position = match &metadata {
+        Some(json) => {
+            if let Some(position_value) = json.get("logo_position").and_then(|v| v.as_str()) {
+                debug!("Using logo_position from metadata.json: {}", position_value);
+                Some(position_value.to_string())
+            } else {
+                None
+            }
+        },
+        None => None,
+    };
+    
+    let engine_type = match &metadata {
         Some(json) => {
             if let Some(engine_value) = json.get("engine_type").and_then(|v| v.as_str()) {
                 debug!("Using engine_type from metadata.json: {}", engine_value);
@@ -538,6 +551,7 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         icon_data,
         banner_data,
         logo_data,
+        logo_position,
         version,
         engine_type, // Keep for backward compatibility
         engine,      // Add the new engine field
