@@ -9,10 +9,10 @@
       </div>
     </div>
     
-    <div class="terminal-content" ref="terminalContent">
+    <q-scroll-area class="terminal-content" ref="terminalContent">
       <pre v-if="logs.length > 0">{{ logs.join('\n') }}</pre>
       <div v-else class="terminal-empty-message">No output available yet...</div>
-    </div>
+    </q-scroll-area>
     
     <div class="terminal-status-bar">
       <div class="terminal-info">
@@ -51,7 +51,8 @@ const emit = defineEmits(['close', 'clear']);
 
 const $q = useQuasar();
 const logs = ref<string[]>([]);
-const terminalContent = ref<HTMLElement | null>(null);
+import type { QScrollArea } from 'quasar';
+const terminalContent = ref<InstanceType<typeof QScrollArea> | null>(null);
 const autoScroll = ref(true);
 const refreshInterval = ref<number | null>(null);
 
@@ -89,10 +90,8 @@ const fetchLogs = async () => {
 
 // Scroll to the bottom of the terminal
 const scrollToBottom = () => {
-  if (terminalContent.value) {
-    terminalContent.value.scrollTop = terminalContent.value.scrollHeight;
-  }
-};
+  terminalContent.value?.setScrollPercentage('vertical', 1, 0)
+}
 
 // Copy terminal content to clipboard
 const copyToClipboard = async () => {
@@ -154,9 +153,8 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   height: 300px;
-  border: 1px solid var(--theme-border);
+  border: 2px solid var(--theme-border);
   border-radius: 8px;
-  background-color: rgba(0, 0, 0, 0.8);
   color: #e0e0e0;
   margin: 16px 0;
   overflow: hidden;

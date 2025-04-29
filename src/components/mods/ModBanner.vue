@@ -203,11 +203,12 @@ const formatEngineType = (engineType: string) => {
   justify-content: flex-start;
   align-items: center;
   max-width: 35vw;
+  max-height: 150px;
 }
 
 .mod-logo {
   max-width: 100%;
-  max-height: 200px;
+  max-height: 150px;
   cursor: pointer;
   filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.6));
   transition: transform 0.2s ease;

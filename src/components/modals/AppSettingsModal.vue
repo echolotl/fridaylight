@@ -143,7 +143,6 @@
                 outlined
                 class="custom-css-editor"
                 label="Custom CSS Rules"
-                hint="Enter your custom CSS rules here"
                 placeholder="/* Example: */&#10;:root {&#10;  --my-custom-color: #FF00FF;&#10;}&#10;&#10;.q-card {&#10;  border-radius: 16px !important;&#10;}"
                 autogrow
                 :rows="8"

@@ -84,14 +84,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, inject } from "vue";
+import { ref, watch, onMounted, onUnmounted} from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import ModBanner from "@mods/ModBanner.vue";
 import EngineModsList from "@mods/EngineModsList.vue";
 import TerminalOutput from "@common/TerminalOutput.vue";
-import { Mod, AppSettings } from "@main-types";
+import { Mod} from "@main-types";
 import { useQuasar } from "quasar";
+import { StoreService } from "@services/storeService";
+
+const appSettings = StoreService.getInstance();
 
 const $q = useQuasar();
 const props = defineProps({
@@ -107,8 +110,8 @@ const props = defineProps({
 
 const showDetails = ref(false);
 const isModRunning = ref(false);
-const showTerminalOutput = ref(true); // Default to showing terminal output
-const appSettings = inject<AppSettings>('appSettings'); // Inject app settings
+const showTerminalOutput = ref(false); 
+
 const emit = defineEmits(["update:mod", "launch-mod", "open-settings", "stop-mod"]);
 let modTerminatedListener: (() => void) | null = null;
 
@@ -121,12 +124,20 @@ const checkModRunningStatus = async () => {
     console.log(`Checking if mod ${props.mod.name} (${props.mod.id}) is running:`, running);
     isModRunning.value = !!running;
     
-    // If the mod is running, show terminal output based on settings
+    // If the mod is running, respect the app settings for terminal visibility
     if (isModRunning.value && appSettings) {
-      showTerminalOutput.value = appSettings.showTerminalOutput;
+      showTerminalOutput.value = await appSettings.getSetting("showTerminalOutput");
+      // If the setting is not found, default to false
+      if (showTerminalOutput.value === undefined) {
+        showTerminalOutput.value = false;
+      }
+      console.log(`Setting terminal visibility to ${showTerminalOutput.value} based on app settings`);
+    } else if (!isModRunning.value) {
+      showTerminalOutput.value = false;
     }
   } catch (error) {
     console.error("Error checking mod running status:", error);
+    showTerminalOutput.value = false;
   }
 };
 
@@ -162,7 +173,12 @@ const handleModAction = async () => {
     
     // Show terminal output based on user settings
     if (appSettings) {
-      showTerminalOutput.value = appSettings.showTerminalOutput;
+      showTerminalOutput.value = await appSettings.getSetting("showTerminalOutput");
+      // If the setting is not found, default to false
+      if (showTerminalOutput.value === undefined) {
+        showTerminalOutput.value = false;
+      }
+      console.log(`Setting terminal visibility to ${showTerminalOutput.value} based on app settings`);
     }
     
     // Update UI state immediately, will be confirmed when we receive the event
@@ -249,14 +265,17 @@ watch(() => props.mod, async (newMod) => {
 }, { immediate: true, deep: true });
 
 // Watch for app settings changes to update terminal visibility
-watch(() => appSettings?.showTerminalOutput, (newValue) => {
-  if (newValue !== undefined) {
-    // Only update if mod is running, otherwise keep current state
-    if (isModRunning.value) {
-      showTerminalOutput.value = newValue;
+watch(
+  () => props.mod,
+  async (newMod) => {
+    if (newMod && appSettings) {
+      const newValue = await appSettings.getSetting("showTerminalOutput");
+      if (newValue !== undefined && isModRunning.value) {
+        showTerminalOutput.value = newValue;
+      }
     }
   }
-});
+);
 
 onMounted(async () => {
   // Check initial running state
