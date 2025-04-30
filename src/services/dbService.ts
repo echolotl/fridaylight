@@ -273,6 +273,11 @@ export class DatabaseService {
           console.log("Added logo_data column to mods table");
         }
 
+        if (!columns.includes("logo_position")) {
+          await this.db.execute(`ALTER TABLE mods ADD COLUMN logo_position TEXT`);
+          console.log("Added logo_position column to mods table");
+        }
+
         if (!columns.includes("version")) {
           await this.db.execute(`ALTER TABLE mods ADD COLUMN version TEXT`);
           console.log("Added version column to mods table");
@@ -321,6 +326,7 @@ export class DatabaseService {
             icon_data TEXT,
             banner_data TEXT,
             logo_data TEXT,
+            logo_position TEXT,
             version TEXT,
             description TEXT,
             engine_type TEXT,
@@ -521,10 +527,10 @@ export class DatabaseService {
           await db.execute(
             `
             INSERT OR REPLACE INTO mods (
-              id, name, path, executable_path, icon_data, banner_data, logo_data, 
+              id, name, path, executable_path, icon_data, banner_data, logo_data, logo_position,
               version, description, engine_data, display_order, folder_id,
               display_order_in_folder
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
             [
               mod.id,
@@ -534,6 +540,7 @@ export class DatabaseService {
               mod.icon_data || null,
               mod.banner_data || null,
               mod.logo_data || null,
+              mod.logo_position || null,
               mod.version || null,
               mod.description || null,
               engineData,

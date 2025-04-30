@@ -32,14 +32,24 @@
               <q-img :src="mod.imageUrl" class="featured-thumbnail">
                 <div class="absolute-full featured-overlay"></div>
 
-                <div class="absolute-top-right q-pa-sm">
+                <div class="absolute-top-right q-pa-sm row items-center">
+                  <div class="category-icon-container">
+                    <img
+                      :src="mod.categoryIconUrl || 'https://gamebanana.com/static/img/defaults/icon.png'"
+                      class="category-icon"
+                    />
+                    <q-tooltip class="phantom-font">
+                      {{ mod.categoryName }}
+                    </q-tooltip>
+                  </div>
                   <div class="author-container">
-                    <q-avatar size="40px">
+                    <q-avatar size="40px" square>
                       <img
                         :src="mod.submitterAvatarUrl || 'https://gamebanana.com/static/img/defaults/avatar.gif'"
                       />
                     </q-avatar>
-                    <span class="author-name">{{ mod.owner }}</span>
+                    <span class="author-upic" v-if="mod.submitterUPic"><img :src="mod.submitterUPic" /></span>
+                    <span class="author-name" v-else>{{ mod.owner }}</span>
                   </div>
                 </div>
 
@@ -229,9 +239,16 @@ const shortenDescription = (description: string): string => {
   border-radius: .25rem;
 }
 
+.category-icon-container {
+  margin-right: 1rem;
+}
+
 .author-name {
   font-size: 0.9rem;
   color: white;
+}
+.author-upic {
+  margin-top: 5px;
 }
 
 .loading-content {

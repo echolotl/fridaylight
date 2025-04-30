@@ -10,18 +10,17 @@
     />
 
     <!-- Search Results View -->
-    <div v-if="activeView === 'search'">
-      <div class="section-header phantom-font">
-        <div class="text-subtitle1">Search Results</div>
+    <div class="section-header phantom-font" v-if="activeView === 'search'">
+        <div class="text-subtitle1 phantom-font-difficulty">Search Results</div>
         <q-btn
           flat
-          dense
           color="primary"
           icon="arrow_back"
           label="Back to Home"
           @click="clearSearch"
         />
       </div>
+    <q-scroll-area v-if="activeView === 'search'" class="scroll-container">
 
       <ModGrid
         :mods="searchResults"
@@ -34,7 +33,8 @@
         @download="downloadMod"
         @page-change="changePage"
       />
-    </div>
+
+    </q-scroll-area>
 
     <!-- Home View with Featured and Latest Mods -->
     <q-scroll-area v-else class="scroll-container">
@@ -2013,7 +2013,8 @@ const handleModTypeCancel = () => {
 .q-tab-panel,
 .q-tab-panels,
 .q-panel {
-  background-color: transparent !important;
+  background-color: var(--theme-bg);
+  border-radius: 0 0 1rem 1rem;
 }
 
 /* Style the tabs to use theme colors */
@@ -2023,6 +2024,7 @@ const handleModTypeCancel = () => {
 
 :deep(.q-tab--active) {
   color: var(--theme-text);
+  background-color: var(--theme-bg);
 }
 
 :deep(.q-field__native),

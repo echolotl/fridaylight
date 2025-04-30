@@ -254,6 +254,11 @@ const formatEngineType = (engineType: string) => {
   cursor: pointer;
   transition: all 0.2s ease;
   transform-origin: center;
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.0));
+}
+
+.mod-logo:hover {
+  filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.5));
 }
 
 .mod-info-overlay {

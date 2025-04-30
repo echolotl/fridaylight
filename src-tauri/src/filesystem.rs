@@ -393,6 +393,45 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         None => folder_name,
     };
     
+    // Parse contributors if they exist
+    let contributors = match &metadata {
+        Some(json) => {
+            if let Some(contributors_array) = json.get("contributors").and_then(|v| v.as_array()) {
+                debug!("Found contributors in metadata.json");
+                
+                let mut parsed_contributors = Vec::new();
+                
+                for contributor_value in contributors_array {
+                    if let Some(contributor_obj) = contributor_value.as_object() {
+                        // Extract name (required)
+                        if let Some(name) = contributor_obj.get("name").and_then(|v| v.as_str()) {
+                            // Extract optional fields
+                            let icon = contributor_obj.get("icon").and_then(|v| v.as_str()).map(|s| s.to_string());
+                            let title = contributor_obj.get("title").and_then(|v| v.as_str()).map(|s| s.to_string());
+                            
+                            // Create contributor
+                            parsed_contributors.push(crate::models::Contributor {
+                                name: name.to_string(),
+                                icon,
+                                title,
+                            });
+                        }
+                    }
+                }
+                
+                if !parsed_contributors.is_empty() {
+                    debug!("Parsed {} contributors", parsed_contributors.len());
+                    Some(parsed_contributors)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        },
+        None => None,
+    };
+    
     let description = match &metadata {
         Some(json) => {
             if let Some(desc_value) = json.get("description").and_then(|v| v.as_str()) {
@@ -556,6 +595,7 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         engine_type, // Keep for backward compatibility
         engine,      // Add the new engine field
         process_id: None, // Initialize with None since mod is not running yet
+        contributors, // Add the parsed contributors
     };
 
     Ok(mod_info)

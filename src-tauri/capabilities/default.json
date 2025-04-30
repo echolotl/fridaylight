@@ -19,8 +19,7 @@
     "process:default",
     "updater:allow-check",
     "updater:default",
-    "opener:allow-open-path"
-
-    
+    "opener:allow-open-path",
+    "fs:default"
   ]
 }

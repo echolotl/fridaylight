@@ -434,6 +434,7 @@ pub async fn download_gamebanana_mod(
             .map(|s| s.to_string()),
         engine: None, // Initialize with None for now
         process_id: None, // Initialize with None since mod is not running yet
+        contributors: None, // Initialize with None for now
     };
     
     // Add the mod to our state
@@ -818,6 +819,7 @@ pub async fn download_custom_mod(
         engine_type: None,
         engine: None,
         process_id: None,
+        contributors: None,
     };
     
     // Add the mod to our state
@@ -1279,6 +1281,7 @@ pub async fn download_engine(
             mods_folder_path: Some("mods".to_string()),
         }),
         process_id: None, // Initialize with None since mod is not running yet
+        contributors: None,
     };
     
     // Add the mod to our state

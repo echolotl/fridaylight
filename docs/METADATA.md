@@ -49,6 +49,13 @@ None of these are required. You can you whichever ones you need!
   "version": "1.0.0",
   "description": "Codenamed UPDOG, this brand-new version is a full-on reimagining built from the ground up...",
   "logo_position": "middle",
+  "contributors": [
+    {
+      "name": "Clowfoe",
+      "icon": "path/to/icon/clowfoe.png",
+      "title": "Director"
+    }
+  ],
   "engine": {
     "engine_type": "psych",
     "engine_name": "Nightmare Vision",

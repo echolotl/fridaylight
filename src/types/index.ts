@@ -14,6 +14,15 @@ export interface Engine {
 }
 
 /**
+ * Represents a contributor to a mod
+ */
+export interface Contributor {
+  name: string;
+  icon?: string;   // Path to contributor icon relative to .flight folder
+  title?: string;  // Role or title of the contributor
+}
+
+/**
  * Represents a mod folder for organization
  */
 export interface Folder {
@@ -43,6 +52,7 @@ export interface Mod {
   display_order: number; // Position in the overall list or within a folder
   folder_id?: string | null; // ID of the folder this mod belongs to, if any
   display_order_in_folder?: number; // Position within the folder
+  contributors?: Contributor[]; // List of contributors to the mod
 }
 
 /**
@@ -108,6 +118,7 @@ export interface GameBananaMod {
   submitterProfileUrl: string;
   submitterAvatarUrl: string;
   submitterMoreByUrl: string;
+  submitterUPic?: string;
 
   // Post count
   postCount: number;

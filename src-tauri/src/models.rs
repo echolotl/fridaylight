@@ -32,6 +32,7 @@ pub struct GameBananaMod {
     pub submitterProfileUrl: String,
     pub submitterAvatarUrl: String,
     pub submitterMoreByUrl: String,
+    pub submitterUPic: Option<String>,
     
     // Post count
     pub postCount: i64,
@@ -88,6 +89,13 @@ pub struct Engine {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Contributor {
+    pub name: String,
+    pub icon: Option<String>,  // Path to contributor icon or base64 data
+    pub title: Option<String>, // Role or title of the contributor
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ModInfo {
     pub id: String,
     pub name: String,
@@ -103,6 +111,7 @@ pub struct ModInfo {
     pub engine: Option<Engine>,      // New extended engine information
     pub display_order: Option<i64>,
     pub process_id: Option<u32>,    // Track the running process ID
+    pub contributors: Option<Vec<Contributor>>, // List of mod contributors
 }
 
 // Define a structure for mod metadata files

@@ -6,7 +6,7 @@
     <div class="engine-download-buttons text-center">
       <q-btn
         flat
-        label="Psych Engine (1.0.4)"
+        label="Psych Engine"
         @click="$emit('download-engine', 'psych')"
         class="engine-btn"
       >
@@ -14,7 +14,7 @@
     </q-btn>
       <q-btn
         flat
-        label="V-Slice (0.6.3)"
+        label="V-Slice"
         @click="$emit('download-engine', 'vanilla')"
         class="engine-btn"
       >
@@ -63,7 +63,7 @@ defineEmits(['download-engine']);
   width: 100%;
   transition: transform 0.2s ease;
   background-color: var(--theme-card);
-  border: 1px solid var(--theme-border);
+  border: 2px solid var(--theme-border);
 }
 .engine-btn:hover {
   transform: translateY(-2px);

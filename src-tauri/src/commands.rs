@@ -633,6 +633,7 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_fs::init())
         .manage(mods_state)
         .setup(|app| {
             // Store the app handle for event emission
