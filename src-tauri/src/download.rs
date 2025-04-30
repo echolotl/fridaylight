@@ -1,5 +1,5 @@
 use crate::filesystem::{check_for_custom_images, find_executables, extract_executable_icon};
-use crate::gamebanana::{get_mod_info, get_download_url, extract_banner_url};
+use crate::gamebanana::{get_mod_info, get_download_url, extract_banner_url, extract_contributors};
 use crate::models::{DownloadStarted, DownloadProgress, DownloadFinished, DownloadError, ModInfo};
 use crate::utils::{fetch_image_as_base64, extract_rar_archive};
 use futures_util::StreamExt;
@@ -434,7 +434,7 @@ pub async fn download_gamebanana_mod(
             .map(|s| s.to_string()),
         engine: None, // Initialize with None for now
         process_id: None, // Initialize with None since mod is not running yet
-        contributors: None, // Initialize with None for now
+        contributors: mod_info_response.as_ref().and_then(|info| extract_contributors(info)),
     };
     
     // Add the mod to our state

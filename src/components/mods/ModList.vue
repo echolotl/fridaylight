@@ -80,7 +80,8 @@
 
         <!-- Downloading mods section -->
         <template v-if="Object.keys(downloadingMods).length > 0">
-          <q-item-label header style="color: var(--theme-text-secondary)"> Downloading </q-item-label>
+          <q-item-label header style="color: var(--theme-text-secondary)" v-if="!compactMode"> Downloading </q-item-label>
+          <q-separator spaced v-else />
 
           <DownloadListItem
             v-for="[id, download] in Object.entries(downloadingMods)"
@@ -89,7 +90,7 @@
             :compact-mode="compactMode"
           />
 
-          <q-separator spaced />
+          <q-separator spaced v-if="!compactMode" />
         </template>
 
         <!-- Search results when search is active -->

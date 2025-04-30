@@ -7,72 +7,85 @@
       style="margin-bottom: 2rem"
     />
 
-    <div class="mod-actions">
-      <div class="action-buttons">
-        <q-btn
-          :color="isModRunning ? 'negative' : 'primary'"
-          class="action-button phantom-font"
-          size="lg"
-          @click="handleModAction"
-          :disabled="!mod.executable_path"
-        >
-          {{ isModRunning ? 'STOP' : 'PLAY' }}
-        </q-btn>
+    <div class="mod-content-wrapper">
+      <!-- Left column: Main content -->
+      <div class="mod-main-content">
+        <div class="mod-actions">
+          <div class="action-buttons">
+            <q-btn
+              :color="isModRunning ? 'negative' : 'primary'"
+              class="action-button phantom-font"
+              size="lg"
+              @click="handleModAction"
+              :disabled="!mod.executable_path"
+            >
+              {{ isModRunning ? 'STOP' : 'PLAY' }}
+            </q-btn>
 
-        <div v-if="!mod.executable_path" class="error-message">
-          No executable found in this mod folder
+            <div v-if="!mod.executable_path" class="error-message">
+              No executable found in this mod folder
+            </div>
+
+            <div v-if="error" class="error-message">
+              {{ error }}
+            </div>
+          </div>
+
+          <q-btn
+            flat
+            round
+            color="var(--theme-text)"
+            icon="settings"
+            class="settings-button"
+            @click="$emit('open-settings')"
+          />
+        </div>
+        
+        <!-- Terminal Output Component -->
+        <TerminalOutput 
+          v-if="isModRunning && showTerminalOutput" 
+          :modId="mod.id"
+          :isVisible="isModRunning && showTerminalOutput"
+          @close="showTerminalOutput = false"
+          @clear="clearModLogs"
+        />
+        
+        <div class="mod-path" v-if="showDetails">
+          <p>Location: {{ mod.path }}</p>
+          <p v-if="mod.executable_path">Executable: {{ mod.executable_path }}</p>
+          <p v-if="mod.version">Version: {{ mod.version }}</p>
+          <p v-if="mod.engine_type">
+            Engine: {{ formatEngineType(mod.engine_type) }}
+          </p>
         </div>
 
-        <div v-if="error" class="error-message">
-          {{ error }}
+        <div class="description" v-if="mod.description">
+          <h5 class="phantom-font-difficulty">Description</h5>
+          <hr />
+          <p>{{ mod.description }}</p>
+        </div>
+
+        <!-- Show engine-specific mods list if mod has engine type and executable path -->
+        <div
+          v-if="
+            mod.engine.engine_type && mod.executable_path && mod.engine.mods_folder
+          "
+        >
+          <EngineModsList
+            :executablePath="mod.executable_path"
+            :engineType="mod.engine.engine_type"
+            :customModsFolder="mod.engine.mods_folder_path"
+          />
         </div>
       </div>
 
-      <q-btn
-        flat
-        round
-        color="var(--theme-text)"
-        icon="settings"
-        class="settings-button"
-        @click="$emit('open-settings')"
-      />
-    </div>
-    
-    <!-- Terminal Output Component -->
-    <TerminalOutput 
-      v-if="isModRunning && showTerminalOutput" 
-      :modId="mod.id"
-      :isVisible="isModRunning && showTerminalOutput"
-      @close="showTerminalOutput = false"
-      @clear="clearModLogs"
-    />
-    
-    <div class="mod-path" v-if="showDetails">
-      <p>Location: {{ mod.path }}</p>
-      <p v-if="mod.executable_path">Executable: {{ mod.executable_path }}</p>
-      <p v-if="mod.version">Version: {{ mod.version }}</p>
-      <p v-if="mod.engine_type">
-        Engine: {{ formatEngineType(mod.engine_type) }}
-      </p>
-    </div>
-
-    <div class="description" v-if="mod.description">
-      <h5 class="phantom-font-difficulty">Description</h5>
-      <hr />
-      <p>{{ mod.description }}</p>
-    </div>
-
-    <!-- Show engine-specific mods list if mod has engine type and executable path -->
-    <div
-      v-if="
-        mod.engine.engine_type && mod.executable_path && mod.engine.mods_folder
-      "
-    >
-      <EngineModsList
-        :executablePath="mod.executable_path"
-        :engineType="mod.engine.engine_type"
-        :customModsFolder="mod.engine.mods_folder_path"
-      />
+      <!-- Right column: Contributor information -->
+      <div class="mod-sidebar" v-if="mod.contributors && mod.contributors.length > 0">
+        <ContributorInfobox 
+          :contributors="mod.contributors"
+          :folder_path="mod.path"
+        />
+      </div>
     </div>
   </q-scroll-area>
 
@@ -90,6 +103,7 @@ import { listen } from "@tauri-apps/api/event";
 import ModBanner from "@mods/ModBanner.vue";
 import EngineModsList from "@mods/EngineModsList.vue";
 import TerminalOutput from "@common/TerminalOutput.vue";
+import ContributorInfobox from "@common/ContributorInfobox.vue";
 import { Mod} from "@main-types";
 import { useQuasar } from "quasar";
 import { StoreService } from "@services/storeService";
@@ -303,8 +317,22 @@ onUnmounted(() => {
   border-radius: .5rem .5rem 0 0;
 }
 
-.mod-actions {
+.mod-content-wrapper {
+  display: flex;
   margin: 20px;
+}
+
+.mod-main-content {
+  flex: 1;
+}
+
+.mod-sidebar {
+  width: 250px;
+  margin-left: 20px;
+}
+
+.mod-actions {
+  margin: 20px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;

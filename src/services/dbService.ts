@@ -315,6 +315,11 @@ export class DatabaseService {
           await this.db.execute(`ALTER TABLE mods ADD COLUMN folder_id TEXT`);
           console.log("Added folder_id column to mods table");
         }
+
+        if (!columns.includes("contributors_data")) {
+          await this.db.execute(`ALTER TABLE mods ADD COLUMN contributors_data TEXT`);
+          console.log("Added contributors_data column to mods table");
+        }
       } else {
         // Table doesn't exist, create it with all columns
         await this.db.execute(`
@@ -331,8 +336,10 @@ export class DatabaseService {
             description TEXT,
             engine_type TEXT,
             engine_data TEXT,
-            display_order INTEGER DEFAULT 9999,
-            folder_id TEXT
+            display_order INTEGER DEFAULT 0,
+            folder_id TEXT,
+            display_order_in_folder INTEGER DEFAULT 0,
+            contributors_data TEXT
           )
         `);
         console.log("Created mods table with all columns");
@@ -359,7 +366,7 @@ export class DatabaseService {
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             color TEXT NOT NULL,
-            display_order INTEGER DEFAULT 9999
+            display_order INTEGER DEFAULT 0
           )
         `);
         console.log("Created folders table");
@@ -445,9 +452,20 @@ export class DatabaseService {
           };
         }
 
+        // Parse contributors data if it exists
+        let contributors = undefined;
+        if (mod.contributors_data) {
+          try {
+            contributors = JSON.parse(mod.contributors_data);
+          } catch (e) {
+            console.error("Failed to parse contributors data for mod:", mod.id, e);
+          }
+        }
+
         return {
           ...mod,
           engine,
+          contributors,
         };
       });
     }, false, "getAllMods").catch((error) => {
@@ -518,9 +536,13 @@ export class DatabaseService {
           // Generate fresh engine_data JSON
           const engineData = JSON.stringify(mod.engine);
           
+          // Generate contributors_data JSON if contributors exist
+          const contributorsData = mod.contributors ? JSON.stringify(mod.contributors) : null;
+          
           console.log(`_upsertMods - Final mod engine data:
             engine.engine_type: ${mod.engine?.engine_type}
             engine_data: ${engineData}
+            contributors: ${contributorsData ? 'present' : 'none'}
           `);
           
           console.log("_upsertMods - Executing SQL to save mod...");
@@ -529,8 +551,8 @@ export class DatabaseService {
             INSERT OR REPLACE INTO mods (
               id, name, path, executable_path, icon_data, banner_data, logo_data, logo_position,
               version, description, engine_data, display_order, folder_id,
-              display_order_in_folder
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              display_order_in_folder, contributors_data
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
             [
               mod.id,
@@ -549,6 +571,7 @@ export class DatabaseService {
               mod.display_order_in_folder !== undefined
                 ? mod.display_order_in_folder
                 : 0,
+              contributorsData,
             ]
           );
           console.log(`_upsertMods - Successfully saved mod: ${mod.name}`);
@@ -582,13 +605,16 @@ export class DatabaseService {
           // Generate fresh engine_data JSON
           const engineData = JSON.stringify(mod.engine);
           
+          // Generate contributors_data JSON if contributors exist
+          const contributorsData = mod.contributors ? JSON.stringify(mod.contributors) : null;
+          
           await db.execute(
             `
             INSERT OR REPLACE INTO mods (
               id, name, path, executable_path, icon_data, banner_data, logo_data, 
               version, description, engine_data, display_order, folder_id,
-              display_order_in_folder
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              display_order_in_folder, contributors_data
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
             [
               mod.id,
@@ -606,6 +632,7 @@ export class DatabaseService {
               mod.display_order_in_folder !== undefined
                 ? mod.display_order_in_folder
                 : 0,
+              contributorsData,
             ]
           );
         }
@@ -1023,9 +1050,20 @@ export class DatabaseService {
             };
           }
 
+          // Parse contributors data if it exists
+          let contributors = undefined;
+          if (mod.contributors_data) {
+            try {
+              contributors = JSON.parse(mod.contributors_data);
+            } catch (e) {
+              console.error("Failed to parse contributors data for mod:", mod.id, e);
+            }
+          }
+
           return {
             ...mod,
             engine,
+            contributors,
           };
         });
       } else {
@@ -1061,9 +1099,20 @@ export class DatabaseService {
               };
             }
 
+            // Parse contributors data if it exists
+            let contributors = undefined;
+            if (mod.contributors_data) {
+              try {
+                contributors = JSON.parse(mod.contributors_data);
+              } catch (e) {
+                console.error("Failed to parse contributors data for mod:", mod.id, e);
+              }
+            }
+
             return {
               ...mod,
               engine,
+              contributors,
             };
           });
         }, false, "syncModsWithBackend");

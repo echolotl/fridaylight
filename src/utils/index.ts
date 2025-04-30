@@ -1,4 +1,5 @@
 import { readTextFile, exists } from "@tauri-apps/plugin-fs";
+import { sep } from "@tauri-apps/api/path";
 // Function to format engine names
 /**
  * @param engineType The engine type string to format
@@ -31,7 +32,7 @@ export function formatEngineName(engineType: string): string {
 export function getMetadataJSON(modFolderPath: string): Promise<any> {
   return new Promise(async (resolve, reject) => {
     try {
-      const metadataPath = `${modFolderPath}/.flight/metadata.json`;
+      const metadataPath = `${modFolderPath}${sep()}.flight${sep()}metadata.json`;
       if (await exists(metadataPath)) {
         const metadataContent = await readTextFile(metadataPath);
         const metadata = JSON.parse(metadataContent);
