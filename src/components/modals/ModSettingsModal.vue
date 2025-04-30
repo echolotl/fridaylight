@@ -359,9 +359,9 @@ const engineTypes = [
 ];
 
 const logoPositionOptions = [
-  { label: "Bottom Left (Default)", value: "left_bottom" },
+  { label: "Bottom Left", value: "left_bottom" },
   { label: "Middle Left", value: "left_middle" },
-  { label: "Center", value: "middle" },
+  { label: "Middle", value: "middle" },
 ];
 
 const showModal = computed({

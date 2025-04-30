@@ -232,7 +232,7 @@ const formatEngineType = (engineType: string) => {
 }
 
 .logo-left-middle:hover {
-  transform: translateY(-50%), scale(1.05);
+  transform: translateY(-50%) scale(1.05);
 }
 
 .logo-middle {
@@ -252,13 +252,13 @@ const formatEngineType = (engineType: string) => {
   max-width: 35vw;
   max-height: 150px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, filter 0.2s ease;
   transform-origin: center;
   filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.0));
 }
 
 .mod-logo:hover {
-  filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 0px 5px rgba(0, 0, 0, 0.5));
 }
 
 .mod-info-overlay {

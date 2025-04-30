@@ -319,18 +319,20 @@ onUnmounted(() => {
 
 .mod-content-wrapper {
   display: flex;
+  flex-direction: row;
   margin: 20px;
+  flex-wrap: wrap; /* Allow items to wrap to next line on small screens */
+  gap: 20px; /* Add gap between main content and sidebar when they wrap */
 }
 
 .mod-main-content {
   flex: 1;
+  min-width: 300px; /* Ensure the main content has a reasonable minimum width */
 }
 
 .mod-sidebar {
-  width: 250px;
-  margin-left: 20px;
+  max-width: 250px;
 }
-
 .mod-actions {
   margin: 20px 0;
   display: flex;
@@ -347,7 +349,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 120px;
+  min-width: 200px;
+  border-radius: 1rem;
+  border: 2px solid var(--theme-border);
 }
 
 .settings-button {
