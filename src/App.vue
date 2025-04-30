@@ -1,5 +1,21 @@
 <template>
   <q-layout view="lHh Lpr lFf" class="transparent-bg">
+    <!-- Loading overlay shown during initialization -->
+    <div class="loading-overlay" v-if="isInitializing">
+      <div class="loading-container">
+        <img src="/images/fridaylight.png" class="logo"/>
+        <q-linear-progress
+          :value="initProgress"
+          size="md"
+          rounded
+          class="q-mt-md"
+          color="primary"
+        />
+        <div class="text-caption q-mt-sm phantom-font">{{ initStatusText }}</div>
+      </div>
+    </div>
+    <div v-if="!isInitializing">
+    
     <Sidebar v-model="sidebarOpen" @resize="handleSidebarResize" />
     <!-- Engine selection for modpacks from deep links -->
     <EngineSelectionDialog
@@ -10,6 +26,7 @@
       @select="onEngineSelected"
       @cancel="cancelDownload"
     />
+  </div>
   </q-layout>
 </template>
 
@@ -39,6 +56,11 @@ const $q = useQuasar();
 
 // Ensure Notify is properly registered
 Notify.create = Notify.create || (() => {});
+
+// Initialization state variables
+const isInitializing = ref(true);
+const initProgress = ref(0);
+const initStatusText = ref("Starting up...");
 
 const sidebarOpen = ref(true);
 const sidebarWidth = ref(250);
@@ -150,6 +172,7 @@ const appSettings = reactive<AppSettings>({
   customCSS: "",
   validateFnfMods: true,
   showTerminalOutput: true,
+  compactMode: false,
 });
 
 // Provide app settings to all components
@@ -711,6 +734,10 @@ const getModsFolderPath = (engineMod: any): string => {
 // Initialize the app
 onMounted(async () => {
   try {
+    // Update progress bar - Step 1: Initialize deep link handler
+    initStatusText.value = "Setting up deep link handler...";
+    initProgress.value = 0.1;
+    
     // Set up deep link handler
     onOpenUrl(async (url) => {
       console.log("Deep link received:", url[0]);
@@ -755,6 +782,10 @@ onMounted(async () => {
       }
     });
 
+    // Update progress bar - Step 2: Initialize database
+    initStatusText.value = "Initializing database...";
+    initProgress.value = 0.2;
+    
     // Initialize the database service
     const dbService = DatabaseService.getInstance();
     await dbService.initialize();
@@ -773,6 +804,10 @@ onMounted(async () => {
       service: dbService,
     };
 
+    // Update progress bar - Step 3: Load mods
+    initStatusText.value = "Loading mods...";
+    initProgress.value = 0.4;
+    
     // Load mods from the database
     const mods = await dbService.getAllMods();
     console.log("Loaded mods from database:", mods);
@@ -783,6 +818,10 @@ onMounted(async () => {
       console.log("No mods found in database");
     }
 
+    // Update progress bar - Step 4: Apply theme
+    initStatusText.value = "Applying theme...";
+    initProgress.value = 0.6;
+    
     // Apply initial theme based on system or user preference
     const useSystemTheme = await getUseSystemThemeSetting();
     if (useSystemTheme) {
@@ -798,6 +837,10 @@ onMounted(async () => {
     // Apply custom CSS
     await loadCustomCSS();
 
+    // Update progress bar - Step 5: Load settings
+    initStatusText.value = "Loading settings...";
+    initProgress.value = 0.8;
+    
     // Load app settings
     await loadAppSettings();
 
@@ -805,25 +848,23 @@ onMounted(async () => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
     mediaQuery.addEventListener("change", handleSystemThemeChange);
 
+    // Update progress bar - Step 6: Check for updates
+    initStatusText.value = "Checking for updates...";
+    initProgress.value = 0.9;
+    
     // Check for updates
     try {
       const updateResult = await check();
       if (updateResult !== null) {
-        const updateNotification = (message: string) => {
-          $q.notify({
-            type: "ongoing",
-            message: message,
-            position: "bottom-right",
-            timeout: 0,
-          });
-        };
 
+        // Update progress bar - Updates available
+        initStatusText.value = "Installing update...";
+        
         // Install the update if there is one
         await updateResult.downloadAndInstall((event) => {
           switch (event.event) {
             case "Started":
               let contentLength = event.data.contentLength;
-              updateNotification(`Downloading update...`);
               break;
             case "Progress":
               let downloaded = 0;
@@ -831,19 +872,12 @@ onMounted(async () => {
               let percent = contentLength
                 ? Math.round((downloaded / contentLength) * 100)
                 : 0;
-              updateNotification(`Downloading update... ${percent}%`);
+              initProgress.value = 0.9 + (percent / 1000);
               break;
             case "Finished":
-              updateNotification(`Update finished. Restarting application...`);
+              initProgress.value = 1.0;
               break;
           }
-        });
-
-        $q.notify({
-          type: "positive",
-          message: "Update finished. Restarting application...",
-          position: "bottom-right",
-          timeout: 5000,
         });
 
         await relaunch();
@@ -854,9 +888,27 @@ onMounted(async () => {
       console.error("Failed to check for updates:", error);
     }
 
+    // Update progress bar - Step 7: Complete
+    initStatusText.value = "Ready!";
+    initProgress.value = 1.0;
+    
+    // Hide the loading overlay after a small delay to ensure transitions are smooth
+    setTimeout(() => {
+      isInitializing.value = false;
+    }, 500);
+    
     console.log("App initialized and database tables updated");
   } catch (error) {
     console.error("Failed to initialize database:", error);
+    
+    // Update progress bar with error state
+    initStatusText.value = "Error during initialization";
+    initProgress.value = 1.0;
+    
+    // Hide the loading overlay after a delay
+    setTimeout(() => {
+      isInitializing.value = false;
+    }, 2000);
   }
 });
 
@@ -880,5 +932,44 @@ body {
 
 .transparent-bg {
   background: transparent !important;
+}
+
+/* Loading overlay styles */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--theme-bg, rgba(0, 0, 0, 0.87));
+  z-index: 9999;
+  backdrop-filter: blur(10px);
+}
+
+.loading-container {
+  width: 400px;
+  text-align: center;
+  padding: 24px;
+  border-radius: 12px;
+  background-color: var(--theme-card, rgba(255, 255, 255, 0.2));
+  
+}
+.logo {
+  width: 350px;
+  height: auto;
+}
+
+
+.loading-container h2 {
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+
+.loading-container .text-caption {
+  color: var(--theme-text-secondary, #aaaaaa);
+  margin-top: 12px;
 }
 </style>
