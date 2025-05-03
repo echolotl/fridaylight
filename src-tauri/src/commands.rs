@@ -1,6 +1,6 @@
 use crate::download::download_gamebanana_mod;
 use crate::filesystem::create_mod_info;
-use crate::gamebanana::{fetch_gamebanana_mods, get_mod_download_files};
+use crate::gamebanana::{fetch_gamebanana_mods, get_mod_download_files, get_mod_info};
 use crate::logger;
 use crate::modutils::{find_mod_metadata_files, get_executable_directory, toggle_mod_enabled_state, check_mod_enabled_state};
 use crate::models::{ModInfo, ModsState, GameBananaResponse, EngineModsResponse, ModDisableResult};
@@ -387,6 +387,12 @@ pub async fn fetch_gamebanana_mods_command(query: String, page: i64) -> Result<G
     fetch_gamebanana_mods(query, page).await
 }
 
+// Add the missing command for getting mod info from GameBanana
+#[tauri::command]
+pub async fn get_mod_info_command(mod_id: i64) -> Result<serde_json::Value, String> {
+    get_mod_info(mod_id).await
+}
+
 // Command to download a mod from GameBanana
 #[tauri::command]
 pub async fn download_gamebanana_mod_command(
@@ -572,6 +578,34 @@ pub async fn get_mod_download_files_command(mod_id: i64) -> Result<serde_json::V
     get_mod_download_files(mod_id).await
 }
 
+// Command to get a mod's metadata JSON
+#[tauri::command]
+pub fn get_mod_metadata(mod_path: String) -> Result<serde_json::Value, String> {
+    info!("Getting metadata for mod at path: {}", mod_path);
+    
+    let path_obj = Path::new(&mod_path);
+    
+    // Check if the path exists
+    if !path_obj.exists() {
+        let err_msg = format!("Mod path does not exist: {}", mod_path);
+        error!("{}", err_msg);
+        return Err(err_msg);
+    }
+    
+    // Call the filesystem function to read metadata
+    match crate::filesystem::get_mod_metadata(path_obj) {
+        Some(metadata) => {
+            debug!("Successfully retrieved metadata for mod at: {}", mod_path);
+            Ok(metadata)
+        },
+        None => {
+            let msg = format!("No metadata found for mod at: {}", mod_path);
+            warn!("{}", msg);
+            Err(msg)
+        }
+    }
+}
+
 // Command to get terminal logs for a specific mod
 #[tauri::command]
 pub fn get_mod_logs(id: String) -> Vec<String> {
@@ -663,6 +697,7 @@ pub fn run() {
             get_mods,
             launch_mod,
             fetch_gamebanana_mods_command,
+            get_mod_info_command,
             download_gamebanana_mod_command,
             download_custom_mod_command,
             download_engine_command,
@@ -674,6 +709,7 @@ pub fn run() {
             toggle_mod_enabled,
             is_windows_11,
             get_mod_download_files_command,
+            get_mod_metadata,
             remove_mica_theme,
             is_mod_running,
             stop_mod,

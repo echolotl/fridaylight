@@ -39,11 +39,24 @@ export function createDownload(modId: number, name: string, thumbnailUrl: string
 
 // Add or update a mod in the downloading list
 export function updateDownloadProgress(progress: Partial<DownloadProgress> & { id: string }) {
+  // Debug logging to identify issues
+  console.log(`Updating download progress for ID ${progress.id}:`, progress);
+  
   if (downloadingMods[progress.id]) {
+    // Ensure percentage is a number
+    if (progress.percentage !== undefined) {
+      progress.percentage = Number(progress.percentage);
+    }
+    
+    // Update the download state
     downloadingMods[progress.id] = {
       ...downloadingMods[progress.id],
       ...progress
     };
+    
+    console.log(`Updated download state:`, downloadingMods[progress.id]);
+  } else {
+    console.warn(`Could not update download progress: ID ${progress.id} not found in downloadingMods`);
   }
 }
 

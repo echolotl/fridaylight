@@ -186,6 +186,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useQuasar, Notify } from "quasar";
 import { useRouter } from "vue-router";
+import { gamebananaService } from "@services/gamebananaService";
+import type { ModpackInfo } from "@services/gamebananaService";
+import { GameBananaMod } from "../../types";
 
 // Import local components
 import SearchBar from "@components/common/SearchBar.vue";
@@ -197,9 +200,6 @@ import EngineSelectionDialog from "@modals/EngineSelectionDialog.vue";
 import CustomUrlDownloadModal from "@modals/CustomUrlDownloadModal.vue";
 import ModTypeSelectionModal from "@modals/ModTypeSelectionModal.vue";
 import { StoreService } from "../../services/storeService";
-
-// Types
-import type { GameBananaMod } from "@main-types";
 
 // For managing global download state
 import {
@@ -260,18 +260,12 @@ const selectedModType = ref("executables"); // For tabs
 
 // For file selection
 const showFileSelector = ref(false);
-const downloadFiles = ref([]);
-const alternateFileSources = ref([]);
+const downloadFiles = ref<any[]>([]);
+const alternateFileSources = ref<any[]>([]);
 const currentDownloadMod = ref<GameBananaMod | null>(null);
 let pendingDownloadNotification: any = null;
 
 // For modpack handling
-interface ModpackInfo {
-  mod: GameBananaMod;
-  type: string | null;
-  compatibleEngines: any[]; // List of compatible engine mods
-}
-
 const showEngineSelectDialog = ref(false);
 const currentModpackInfo = ref<ModpackInfo | null>(null);
 const selectedEngineMod = ref<any>(null);
@@ -433,11 +427,25 @@ const setupEventListeners = () => {
       return;
     }
     
+    // Log more detail for debugging
+    console.log(`Updating download progress for ID ${downloadId}, modId ${modId}:`, {
+      bytesDownloaded: event.payload.bytesDownloaded || 0,
+      totalBytes: event.payload.totalBytes || 100,
+      percentage: event.payload.percentage || 0,
+      step: event.payload.step || "Downloading...",
+    });
+    
+    // Make sure percentage is a number
+    const percentage = typeof event.payload.percentage === 'number' 
+      ? event.payload.percentage 
+      : parseInt(event.payload.percentage as any) || 0;
+    
+    // Update the existing download with progress
     updateDownloadProgress({
       id: downloadId,
       bytesDownloaded: event.payload.bytesDownloaded || 0,
       totalBytes: event.payload.totalBytes || 100,
-      percentage: event.payload.percentage || 0,
+      percentage: percentage,
       step: event.payload.step || "Downloading...",
       isComplete: false,
       isError: false,
@@ -867,119 +875,30 @@ const downloadMod = async (mod: GameBananaMod) => {
   try {
     currentDownloadMod.value = mod;
 
-    // Show loading notification
-    pendingDownloadNotification = $q.notify({
-      type: "ongoing",
-      message: `Preparing to download "${mod.name}"...`,
-      position: "bottom-right",
-      timeout: 0,
-    });
+    // Use the centralized gamebananaService to handle download preparations
+    const result = await gamebananaService.downloadMod(mod, selectedModType.value);
 
-    // First check if this mod has multiple download options
-    const downloadInfo = await invoke<any>("get_mod_download_files_command", {
-      modId: mod.id,
-    });
-
-    // Check if there are multiple files
-    if (downloadInfo._aFiles && downloadInfo._aFiles.length > 1) {
-      // Set the download files for the selector
-      downloadFiles.value = downloadInfo._aFiles;
-
-      // Set alternate sources if available
-      alternateFileSources.value = downloadInfo._aAlternateFileSources || [];
-
-      // Show the file selector dialog first
+    // Handle different scenarios based on the result
+    if ('showFileSelector' in result) {
+      // If we need to show file selector
+      downloadFiles.value = result.files;
+      alternateFileSources.value = result.alternateFileSources || [];
       showFileSelector.value = true;
-
-      // Dismiss the loading notification
-      if (pendingDownloadNotification) {
-        pendingDownloadNotification();
-        pendingDownloadNotification = null;
-      }
-
-      return; // Wait for user selection in the file selector
+      return;
     }
 
-    // If there's only one file or no file selection needed, continue
-    // Determine if this is a modpack
-    const isModpack = determineIfModpack(mod);
-    const modpackType = determineModpackType(mod); // 'psych', 'vslice', 'codename', or null
+    if ('showEngineSelectDialog' in result) {
+      // If we need to show engine selection dialog
+      currentModpackInfo.value = result.modpackInfo;
+      showEngineSelectDialog.value = true;
+      return;
+    }
 
-    if (isModpack && modpackType) {
-      // Handle modpack download logic
-      console.log("Modpack detected:", modpackType);
-      const engineMods = await getCompatibleEngineMods(modpackType);
-
-      if (engineMods.length === 0) {
-        // No compatible engine found, show error
-        if (pendingDownloadNotification) {
-          pendingDownloadNotification();
-          pendingDownloadNotification = null;
-        }
-
-        $q.notify({
-          type: "negative",
-          message: `Cannot download ${modpackType} modpack`,
-          caption: `You don't have any ${formatEngineType(
-            modpackType
-          )} installed. Please install it.`,
-          position: "bottom-right",
-          timeout: 5000,
-        });
-
-        return;
-      } else {
-        // Compatible engine found, proceed with showing engine selection dialog
-        // Store current modpack info for later use in the dialog
-        currentModpackInfo.value = {
-          mod,
-          type: modpackType,
-          compatibleEngines: engineMods,
-        };
-
-        // Show engine selection dialog
-        showEngineSelectDialog.value = true;
-
-        // Dismiss the loading notification
-        if (pendingDownloadNotification) {
-          pendingDownloadNotification();
-          pendingDownloadNotification = null;
-        }
-
-        return; // Wait for user selection of an engine
-      }
-    } else if (!isModpack && !modpackType) {
-      // First check if this is a labeled executable mod by looking at the category name
-      const isExecutable = mod.categoryName && 
-        mod.categoryName.toLowerCase().includes("executables");
-      
-      if (isExecutable) {
-        // If it's explicitly labeled as an executable, proceed with normal download
-        await startDownload(mod);
-      } else {
-        // If we can't determine the mod type automatically, let the user choose
-        customModData.value = {
-          name: mod.name,
-          url: mod.downloadUrl,
-          modId: mod.id,
-          bannerData: mod.thumbnailUrl,
-          description: mod.description,
-          version: mod.version
-        };
-        
-        // Dismiss the loading notification before showing the selection modal
-        if (pendingDownloadNotification) {
-          pendingDownloadNotification();
-          pendingDownloadNotification = null;
-        }
-        
-        // Show the mod type selection dialog
-        showModTypeModal.value = true;
-        return; // Wait for user to select mod type
-      }
-    } else {
-      // If there's only one file or no files available and it's not a modpack, proceed with normal download
-      await startDownload(mod);
+    if ('showModTypeModal' in result) {
+      // If we need to show mod type selection
+      customModData.value = result.customModData;
+      showModTypeModal.value = true;
+      return;
     }
   } catch (error) {
     // Show error notification
@@ -991,12 +910,6 @@ const downloadMod = async (mod: GameBananaMod) => {
       timeout: 5000,
     });
 
-    // Dismiss any pending notification
-    if (pendingDownloadNotification) {
-      pendingDownloadNotification();
-      pendingDownloadNotification = null;
-    }
-
     console.error("Failed to prepare mod download:", error);
   }
 };
@@ -1005,97 +918,26 @@ const downloadMod = async (mod: GameBananaMod) => {
 const onEngineSelected = async (engine: any) => {
   if (!currentModpackInfo.value) return;
 
-  // Store the selected engine
-  selectedEngineMod.value = engine;
-
-  // Proceed with downloading the modpack
-  await downloadModpackForSelectedEngine();
-};
-
-// Function to download modpack for the selected engine
-const downloadModpackForSelectedEngine = async () => {
-  if (!currentModpackInfo.value || !selectedEngineMod.value) return;
-
   try {
-    // Create a new notification for the download process
-    pendingDownloadNotification = $q.notify({
-      type: "ongoing",
-      message: `Downloading "${currentModpackInfo.value.mod.name}"...`,
-      position: "bottom-right",
-      timeout: 0,
-    });
+    // Hide the dialog immediately to provide feedback to the user
+    showEngineSelectDialog.value = false;
 
-    const mod = currentModpackInfo.value.mod;
-    // Store mod ID to ensure we can cleanup tracking afterward
-    const modId = mod.id;
+    // Use the centralized gamebananaService to handle modpack download
+    const result = await gamebananaService.downloadModpackForEngine(
+      currentModpackInfo.value,
+      engine
+    );
 
-    // Get the installation path for the selected engine's mods folder
-    const modsFolderPath = getModsFolderPath(selectedEngineMod.value);
-    if (!modsFolderPath) {
-      throw new Error("Could not determine mods folder path");
-    }
-    // Check if we already have a specific download URL from the file selector
-    // This happens when the user first selected a file, then selected an engine
-    if (
-      mod.downloadUrl &&
-      mod.downloadUrl !== currentModpackInfo.value.mod.downloadUrl
-    ) {
-      // A specific file was already chosen in the file selector
-      console.log("Using previously selected file URL:", mod.downloadUrl);
-
-      // Use the specific file URL that was already selected
-      const result = await invoke<string>("download_gamebanana_mod_command", {
-        url: mod.downloadUrl,
-        name: mod.name,
-        modId: mod.id,
-        installLocation: modsFolderPath,
+    if (!result.success) {
+      $q.notify({
+        type: "negative",
+        message: `Failed to install modpack`,
+        caption: String(result.error),
+        position: "bottom-right",
+        timeout: 5000,
       });
-
-      console.log("Download result:", result);
     }
-    // Not a specific file selection, use the default download URL
-    else {
-      console.log("Using default download URL:", mod.downloadUrl);
-
-      // Use the default download URL for direct download
-      const result = await invoke<string>("download_gamebanana_mod_command", {
-        url: mod.downloadUrl,
-        name: mod.name,
-        modId: mod.id,
-        installLocation: modsFolderPath,
-      });
-
-      console.log("Download result:", result);
-    }
-
-    // Dismiss the loading notification
-    if (pendingDownloadNotification) {
-      pendingDownloadNotification();
-      pendingDownloadNotification = null;
-    }
-
-    // Show success notification
-    $q.notify({
-      type: "positive",
-      message: `"${mod.name}" installed successfully!`,
-      caption: `Ready to play from the mods list`,
-      position: "bottom-right",
-      timeout: 5000,
-    });
-
-    // Manual cleanup of download tracking entry
-    const downloadId = modIdToDownloadIdMap.get(modId);
-    if (downloadId) {
-      console.log(`Manually completing download tracking for modpack ${modId}`);
-      completeDownload(downloadId);
-      modIdToDownloadIdMap.delete(modId);
-    }
-
-    // Trigger the refresh event to update the mod list
-    const refreshEvent = new CustomEvent("refresh-mods");
-    window.dispatchEvent(refreshEvent);
   } catch (error) {
-    // Show error notification
     $q.notify({
       type: "negative",
       message: `Failed to install modpack`,
@@ -1103,20 +945,10 @@ const downloadModpackForSelectedEngine = async () => {
       position: "bottom-right",
       timeout: 5000,
     });
-
-    // Dismiss any pending notification
-    if (pendingDownloadNotification) {
-      pendingDownloadNotification();
-      pendingDownloadNotification = null;
-    }
-
-    console.error("Failed to install modpack:", error);
   } finally {
     // Reset state
-    showEngineSelectDialog.value = false;
     currentModpackInfo.value = null;
     selectedEngineMod.value = null;
-    currentDownloadMod.value = null;
   }
 };
 
@@ -1415,107 +1247,6 @@ const cancelDownload = () => {
   currentDownloadMod.value = null;
 };
 
-// Original download function, renamed to startDownload
-const startDownload = async (mod: GameBananaMod) => {
-  try {
-    // First notification for downloading
-    $q.notify({
-      type: "info",
-      message: `Starting download of "${mod.name}"`,
-      position: "bottom-right",
-      timeout: 2000,
-    });
-
-    // Get the install location from settings
-    let installLocation: string | null = null;
-    try {
-      installLocation = await getInstallLocation();
-    } catch (error) {
-      console.warn("Could not get install location from settings:", error);
-    }
-
-    // Pass mod ID along with URL, name, and install location
-    const result = await invoke<string>("download_gamebanana_mod_command", {
-      url: mod.downloadUrl,
-      name: mod.name,
-      modId: mod.id,
-      installLocation,
-    });
-    console.log("download_gamebanana_mod_command result", result);
-
-    // Parse the response result - it might be a simple path string or a JSON object
-    let modInfo: any;
-    let modPath: string;
-
-    try {
-      // Try to parse as JSON first
-      const parsed = JSON.parse(result);
-      modPath = parsed.path;
-      modInfo = parsed.mod_info;
-    } catch (e) {
-      // If parsing fails, assume it's just the path string
-      modPath = result;
-      // Get mod info directly from the backend
-      const allMods = await invoke<any[]>("get_mods");
-      modInfo = allMods.find((m) => m.path === modPath);
-
-      // If we still don't have mod info, create a basic one
-      if (!modInfo) {
-        modInfo = {
-          id: crypto.randomUUID(),
-          name: mod.name,
-          path: modPath,
-          executable_path: null,
-          icon_data: null,
-          banner_data: mod.thumbnailUrl,
-          version: mod.version || null,
-          engine_type: null,
-        };
-      }
-    }
-
-    // Save the mod to the database
-    if (modInfo) {
-      await saveModToDatabase(modInfo);
-    }
-
-    // Dismiss loading notification
-    if (pendingDownloadNotification) {
-      pendingDownloadNotification();
-      pendingDownloadNotification = null;
-    }
-
-    // Show success notification
-    $q.notify({
-      type: "positive",
-      message: `"${mod.name}" downloaded and installed successfully!`,
-      caption: `Ready to play from the mods list`,
-      position: "bottom-right",
-      timeout: 5000,
-    });
-
-    // Trigger the refresh event to update the mod list
-    const refreshEvent = new CustomEvent("refresh-mods");
-    window.dispatchEvent(refreshEvent);
-  } catch (error) {
-    // Show error notification
-    $q.notify({
-      type: "negative",
-      message: `Failed to download "${mod.name}"`,
-      caption: String(error),
-      position: "bottom-right",
-      timeout: 5000,
-    });
-
-    // Dismiss any pending notification
-    if (pendingDownloadNotification) {
-      pendingDownloadNotification();
-      pendingDownloadNotification = null;
-    }
-
-    console.error("Failed to download mod:", error);
-  }
-};
 
 // Save a mod to the database
 const saveModToDatabase = async (mod: any) => {

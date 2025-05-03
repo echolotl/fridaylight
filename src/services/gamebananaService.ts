@@ -1,0 +1,1420 @@
+import { invoke } from "@tauri-apps/api/core";
+import { Notify } from "quasar";
+import { StoreService } from "./storeService";
+import { 
+  updateDownloadProgress, 
+  createDownload, 
+  completeDownload, 
+  errorDownload,
+  downloadingMods
+} from "../stores/downloadState";
+import { GameBananaMod } from "../types";
+import { formatEngineName } from "@utils/index";
+
+// Map to track mod IDs to download IDs
+const modIdToDownloadIdMap = new Map<number, string>();
+
+export interface ModpackInfo {
+  mod: GameBananaMod;
+  type: string | null;
+  compatibleEngines: any[];
+}
+
+// Define return type interfaces for clarity
+export interface FileSelectionResult {
+  showFileSelector: boolean;
+  files: any[];
+  alternateFileSources: any[];
+  mod: GameBananaMod;
+}
+
+export interface EngineSelectionResult {
+  showEngineSelectDialog: boolean;
+  modpackInfo: ModpackInfo;
+}
+
+export interface ModTypeSelectionResult {
+  showModTypeModal: boolean;
+  customModData: {
+    name: string;
+    url: string;
+    modId: number;
+    bannerData: string;
+    description?: string;
+    version?: string;
+  };
+}
+
+export interface OperationResult {
+  success: boolean;
+  error?: string;
+  modInfo?: any;
+}
+
+export interface DeepLinkEngineSelectionResult {
+  showEngineSelectDialog: boolean;
+  compatibleEngines: any[];
+  modpackType: string;
+  modName: string;
+  downloadUrl: string;
+  modId: number;
+}
+
+export type DownloadModResult = FileSelectionResult | EngineSelectionResult | ModTypeSelectionResult | OperationResult;
+
+export class GameBananaService {
+  private static instance: GameBananaService;
+  private pendingDownloadNotification: any = null;
+
+  private constructor() {}
+
+  /**
+   * Get the singleton instance of GameBananaService
+   */
+  public static getInstance(): GameBananaService {
+    if (!GameBananaService.instance) {
+      GameBananaService.instance = new GameBananaService();
+    }
+    return GameBananaService.instance;
+  }
+
+  /**
+   * Get installation location from settings
+   */
+  public async getInstallLocation(): Promise<string | null> {
+    try {
+      const storeService = StoreService.getInstance();
+      return await storeService.getSetting("installLocation");
+    } catch (error) {
+      console.warn("Could not get install location from settings:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Determine if a mod is a modpack based on its category
+   */
+  public determineIfModpack(mod: GameBananaMod, selectedModType?: string): boolean {
+    // Check if we're in a modpack tab
+    if (selectedModType && ["psychModpacks", "vsliceModpacks", "codenameModpacks"].includes(selectedModType)) {
+      return true;
+    }
+
+    // Check mod category if available
+    if (mod.categoryName) {
+      const lowerCaseCategoryName = mod.categoryName.toLowerCase();
+      if (lowerCaseCategoryName.includes("executables")) return false;
+      if (lowerCaseCategoryName.includes("psych")) return true;
+      if (lowerCaseCategoryName.includes("v-slice")) return true;
+      if (lowerCaseCategoryName.includes("codename")) return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Determine modpack type (psych, vanilla/v-slice, codename, or null if not a modpack)
+   */
+  public determineModpackType(mod: GameBananaMod, selectedModType?: string): string | null {
+    // First check the current tab
+    if (selectedModType === "psychModpacks") return "psych";
+    if (selectedModType === "vsliceModpacks") return "vanilla";
+    if (selectedModType === "codenameModpacks") return "codename";
+
+    // Check mod category if available
+    if (mod.categoryName) {
+      const lowerCaseCategoryName = mod.categoryName.toLowerCase();
+      if (lowerCaseCategoryName.includes("psych")) return "psych";
+      if (lowerCaseCategoryName.includes("v-slice")) return "vanilla";
+      if (lowerCaseCategoryName.includes("codename")) return "codename";
+    }
+    
+    return null;
+  }
+
+  /**
+   * Format engine type for display
+   */
+  public formatEngineType(engineType: string | null): string {
+    if (!engineType) return "Unknown";
+    return formatEngineName(engineType);
+  }
+
+  /**
+   * Get mods folder path for an engine mod
+   */
+  public getModsFolderPath(engineMod: any): string {
+    // Get base directory first in all cases
+    const basePath = engineMod.path;
+    const executablePath = engineMod.executable_path || "";
+
+    if (!basePath) return "Unknown path";
+
+    // Get parent directory of executable if it exists
+    let baseDir = basePath;
+    if (executablePath) {
+      // Extract the directory from the executable path
+      const lastSlashIndex = executablePath.lastIndexOf("/");
+      if (lastSlashIndex > 0) {
+        baseDir = executablePath.substring(0, lastSlashIndex);
+      } else {
+        const lastBackslashIndex = executablePath.lastIndexOf("\\");
+        if (lastBackslashIndex > 0) {
+          baseDir = executablePath.substring(0, lastBackslashIndex);
+        }
+      }
+    }
+
+    // Then check if the engine has a specified custom mods folder path
+    if (
+      engineMod.engine &&
+      engineMod.engine.mods_folder &&
+      engineMod.engine.mods_folder_path
+    ) {
+      // Combine the base directory with the custom mods folder path
+      return `${baseDir}/${engineMod.engine.mods_folder_path}`;
+    }
+
+    // If no custom path specified, use default mods folder
+    return `${baseDir}/mods`;
+  }
+
+  /**
+   * Get compatible engine mods for a modpack
+   */
+  public async getCompatibleEngineMods(engineType: string | null): Promise<any[]> {
+    if (!engineType) return [];
+
+    try {
+      // Fetch all mods
+      let allMods: any[] = [];
+      if (window.db && window.db.service) {
+        allMods = await window.db.service.getAllMods();
+      } else {
+        allMods = await invoke<any[]>("get_mods");
+      }
+
+      // Filter mods by engine type
+      return allMods.filter(
+        (mod: { engine: { engine_type: string } }) => {
+          // Check engine.engine_type 
+          if (mod.engine && mod.engine.engine_type) {
+            return (
+              mod.engine.engine_type.toLowerCase() === engineType.toLowerCase()
+            );
+          }
+          return false;
+        }
+      );
+    } catch (error) {
+      console.error("Failed to get compatible engine mods:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Save a mod to the database
+   */
+  public async saveModToDatabase(mod: any): Promise<boolean> {
+    try {
+      // Check if DatabaseService is initialized
+      if (!window.db || !window.db.service) {
+        console.warn("Database service not initialized yet, cannot save mod");
+        return false;
+      }
+
+      console.log("Saving mod to database using DatabaseService:", mod);
+
+      // Make sure the mod has an engine field required by the type
+      if (!mod.engine) {
+        mod.engine = {
+          engine_type: mod.engine_type || "unknown",
+          engine_name: mod.engine_type || "Unknown Engine",
+          engine_icon: "",
+          mods_folder: false,
+          mods_folder_path: "",
+        };
+      }
+
+      // Use the DatabaseService to save the mod
+      await window.db.service.saveMod(mod);
+
+      console.log("Mod saved successfully to database:", mod.name);
+      return true;
+    } catch (error) {
+      console.error("Failed to save mod to database:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Download a mod from GameBanana
+   */
+  public async downloadMod(mod: GameBananaMod, selectedModType?: string): Promise<DownloadModResult> {
+    try {
+      // Show loading notification
+      this.pendingDownloadNotification = Notify.create({
+        type: "ongoing",
+        message: `Preparing to download "${mod.name}"...`,
+        position: "bottom-right",
+        timeout: 0,
+      });
+
+      // First check if this mod has multiple download options
+      const downloadInfo = await invoke<any>("get_mod_download_files_command", {
+        modId: mod.id,
+      });
+
+      // Check if there are multiple files
+      if (downloadInfo._aFiles && downloadInfo._aFiles.length > 1) {
+        // Return information for file selector dialog
+        this.dismissNotification();
+        return {
+          showFileSelector: true,
+          files: downloadInfo._aFiles,
+          alternateFileSources: downloadInfo._aAlternateFileSources || [],
+          mod
+        };
+      }
+
+      // If there's only one file or no file selection needed, continue
+      // Determine if this is a modpack
+      const isModpack = this.determineIfModpack(mod, selectedModType);
+      const modpackType = this.determineModpackType(mod, selectedModType);
+
+      if (isModpack && modpackType) {
+        // Handle modpack download logic
+        console.log("Modpack detected:", modpackType);
+        const engineMods = await this.getCompatibleEngineMods(modpackType);
+
+        if (engineMods.length === 0) {
+          // No compatible engine found, show error
+          this.dismissNotification();
+
+          Notify.create({
+            type: "negative",
+            message: `Cannot download ${modpackType} modpack`,
+            caption: `You don't have any ${this.formatEngineType(
+              modpackType
+            )} installed. Please install it.`,
+            position: "bottom-right",
+            timeout: 5000,
+          });
+
+          return {
+            success: false,
+            error: `No compatible ${this.formatEngineType(modpackType)} installation found`
+          };
+        } else {
+          // Compatible engine found, proceed with showing engine selection dialog
+          this.dismissNotification();
+          
+          return {
+            showEngineSelectDialog: true,
+            modpackInfo: {
+              mod,
+              type: modpackType,
+              compatibleEngines: engineMods,
+            }
+          };
+        }
+      } else if (!isModpack && !modpackType) {
+        // First check if this is a labeled executable mod by looking at the category name
+        const isExecutable = mod.categoryName && 
+          mod.categoryName.toLowerCase().includes("executables");
+        
+        if (isExecutable) {
+          // If it's explicitly labeled as an executable, proceed with normal download
+          return await this.startDownload(mod);
+        } else {
+          // If we can't determine the mod type automatically, let the user choose
+          this.dismissNotification();
+          
+          return {
+            showModTypeModal: true,
+            customModData: {
+              name: mod.name,
+              url: mod.downloadUrl,
+              modId: mod.id,
+              bannerData: mod.thumbnailUrl,
+              description: mod.description,
+              version: mod.version
+            }
+          };
+        }
+      } else {
+        // If it's only a modpack, proceed with normal download
+        return await this.startDownload(mod);
+      }
+    } catch (error) {
+      // Show error notification
+      Notify.create({
+        type: "negative",
+        message: `Failed to prepare download for "${mod.name}"`,
+        caption: String(error),
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      this.dismissNotification();
+      console.error("Failed to prepare mod download:", error);
+      
+      return {
+        success: false,
+        error: String(error)
+      };
+    }
+  }
+
+  /**
+   * Start the download of a mod with GameBanana
+   */
+  public async startDownload(mod: GameBananaMod): Promise<OperationResult> {
+    try {
+      // First notification for downloading
+      Notify.create({
+        type: "info",
+        message: `Starting download of "${mod.name}"`,
+        position: "bottom-right",
+        timeout: 2000,
+      });
+
+      // Get the install location from settings
+      let installLocation: string | null = null;
+      try {
+        installLocation = await this.getInstallLocation();
+      } catch (error) {
+        console.warn("Could not get install location from settings:", error);
+      }
+
+      // Pass mod ID along with URL, name, and install location
+      const result = await invoke<string>("download_gamebanana_mod_command", {
+        url: mod.downloadUrl,
+        name: mod.name,
+        modId: mod.id,
+        installLocation,
+      });
+      
+      // Process the result
+      return await this.processDownloadResult(result, mod);
+    } catch (error) {
+      Notify.create({
+        type: "negative",
+        message: `Failed to download "${mod.name}"`,
+        caption: String(error),
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      console.error("Failed to download mod:", error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
+   * Process the download result and save to database
+   */
+  private async processDownloadResult(result: string, mod: GameBananaMod): Promise<OperationResult> {
+    try {
+      let modInfo: any;
+      let modPath: string;
+
+      try {
+        // Try to parse as JSON first
+        const parsed = JSON.parse(result);
+        modPath = parsed.path;
+        modInfo = parsed.mod_info;
+      } catch (e) {
+        // If parsing fails, assume it's just the path string
+        modPath = result;
+        // Get mod info directly from the backend
+        const allMods = await invoke<any[]>("get_mods");
+        modInfo = allMods.find((m) => m.path === modPath);
+
+        // If we still don't have mod info, create a basic one
+        if (!modInfo) {
+          modInfo = {
+            id: crypto.randomUUID(),
+            name: mod.name,
+            path: modPath,
+            executable_path: null,
+            icon_data: null,
+            banner_data: mod.thumbnailUrl,
+            version: mod.version || null,
+            engine_type: null,
+          };
+        }
+      }
+
+      // Save the mod to the database
+      if (modInfo) {
+        await this.saveModToDatabase(modInfo);
+      }
+
+      // Show success notification
+      Notify.create({
+        type: "positive",
+        message: `"${mod.name}" downloaded and installed successfully!`,
+        caption: `Ready to play from the mods list`,
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      // Trigger the refresh event to update the mod list
+      const refreshEvent = new CustomEvent("refresh-mods");
+      window.dispatchEvent(refreshEvent);
+
+      return { success: true, modInfo };
+    } catch (error) {
+      // Show error notification
+      Notify.create({
+        type: "negative",
+        message: `Failed to process download for "${mod.name}"`,
+        caption: String(error),
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      console.error("Failed to process download result:", error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
+   * Download a specific file from a mod
+   */
+  public async downloadModFile(mod: GameBananaMod, selectedFile: any): Promise<DownloadModResult> {
+    try {
+      // Create a new notification for the download process
+      this.pendingDownloadNotification = Notify.create({
+        type: "ongoing",
+        message: `Preparing "${mod.name}"...`,
+        position: "bottom-right",
+        timeout: 0,
+      });
+
+      // Check if the selected file contains an executable
+      if (selectedFile._bContainsExe) {
+        console.log("Selected file contains an executable, treating as standard mod");
+        
+        // Update notification to downloading
+        this.updateNotification(`Downloading "${mod.name}"...`);
+
+        // Get the install location from settings
+        let installLocation: string | null = null;
+        try {
+          installLocation = await this.getInstallLocation();
+        } catch (error) {
+          console.warn("Could not get install location from settings:", error);
+        }
+
+        console.log("Using selected file URL:", selectedFile._sDownloadUrl);
+        console.log("Using installation location:", installLocation);
+
+        // Call backend to download using the specific file URL
+        const result = await invoke<string>("download_gamebanana_mod_command", {
+          url: selectedFile._sDownloadUrl,
+          name: mod.name,
+          modId: mod.id,
+          installLocation,
+        });
+        
+        // Process the result
+        return await this.processDownloadResult(result, mod);
+      }
+
+      // If file doesn't contain an executable, check if this is a modpack
+      const isModpack = this.determineIfModpack(mod);
+      const modpackType = this.determineModpackType(mod);
+
+      if (isModpack) {
+        // Handle modpack download logic for selected file
+        const engineMods = await this.getCompatibleEngineMods(modpackType);
+
+        if (engineMods.length === 0) {
+          // No compatible engine found, show error
+          this.dismissNotification();
+
+          Notify.create({
+            type: "negative",
+            message: `Cannot download ${modpackType} modpack`,
+            caption: `You don't have any ${this.formatEngineType(
+              modpackType
+            )} installed. Please install it.`,
+            position: "bottom-right",
+            timeout: 5000,
+          });
+
+          return { success: false, error: "No compatible engine found" };
+        } else {
+          // Compatible engine found, store the selected file URL for later use
+          this.dismissNotification();
+          
+          return {
+            showEngineSelectDialog: true,
+            modpackInfo: {
+              mod: { ...mod, downloadUrl: selectedFile._sDownloadUrl }, // Override with selected URL
+              type: modpackType,
+              compatibleEngines: engineMods,
+            }
+          };
+        }
+      }
+
+      // If not a modpack and doesn't contain an executable, proceed with standard download
+      this.updateNotification(`Downloading "${mod.name}"...`);
+
+      // Get the install location from settings
+      let installLocation: string | null = null;
+      try {
+        installLocation = await this.getInstallLocation();
+      } catch (error) {
+        console.warn("Could not get install location from settings:", error);
+      }
+
+      console.log("Using selected file URL:", selectedFile._sDownloadUrl);
+      console.log("Using installation location:", installLocation);
+
+      // Call backend to download using the specific file URL
+      const result = await invoke<string>("download_gamebanana_mod_command", {
+        url: selectedFile._sDownloadUrl,
+        name: mod.name,
+        modId: mod.id,
+        installLocation,
+      });
+      
+      // Process the result
+      return await this.processDownloadResult(result, mod);
+    } catch (error) {
+      // Show error notification
+      Notify.create({
+        type: "negative",
+        message: `Failed to download "${mod.name}"`,
+        caption: String(error),
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      this.dismissNotification();
+      console.error("Failed to download mod:", error);
+      
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
+   * Download a modpack for a selected engine
+   */
+  public async downloadModpackForEngine(modpackInfo: ModpackInfo, engineMod: any): Promise<OperationResult> {
+    if (!modpackInfo || !engineMod) {
+      return { success: false, error: "Missing modpack info or engine" };
+    }
+
+    try {
+      // Create a new notification for the download process
+      this.pendingDownloadNotification = Notify.create({
+        type: "ongoing",
+        message: `Downloading "${modpackInfo.mod.name}"...`,
+        position: "bottom-right",
+        timeout: 0,
+      });
+
+      const mod = modpackInfo.mod;
+      // Store mod ID to ensure we can cleanup tracking afterward
+      const modId = mod.id;
+
+      // Get the installation path for the selected engine's mods folder
+      const modsFolderPath = this.getModsFolderPath(engineMod);
+      if (!modsFolderPath) {
+        throw new Error("Could not determine mods folder path");
+      }
+      
+      // Check if we already have a specific download URL from the file selector
+      // This happens when the user first selected a file, then selected an engine
+      let downloadUrl = mod.downloadUrl;
+      
+      console.log(`Starting download for "${mod.name}" modpack to ${modsFolderPath}`);
+
+      // Fix URL if needed
+      if (downloadUrl.startsWith("//")) {
+        downloadUrl = "https:" + downloadUrl;
+      } else if (!downloadUrl.includes("://")) {
+        downloadUrl = "https://" + downloadUrl;
+      }
+
+      // Create a download entry to track progress
+      const downloadId = createDownload(modId, mod.name, mod.thumbnailUrl || "");
+      modIdToDownloadIdMap.set(modId, downloadId);
+
+      // Use the default download URL for direct download
+      const result = await invoke<string>("download_gamebanana_mod_command", {
+        url: downloadUrl,
+        name: mod.name,
+        modId: mod.id,
+        installLocation: modsFolderPath,
+      });
+
+      console.log("Download result:", result);
+
+      // Dismiss the loading notification
+      this.dismissNotification();
+
+      // Show success notification
+      Notify.create({
+        type: "positive",
+        message: `"${mod.name}" installed successfully!`,
+        caption: `Ready to play in ${this.formatEngineType(modpackInfo.type || "")}`,
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      // Manual cleanup of download tracking entry
+      if (downloadId) {
+        console.log(`Manually completing download tracking for modpack ${modId}`);
+        completeDownload(downloadId);
+        modIdToDownloadIdMap.delete(modId);
+      }
+
+      // No need to refresh the main mods list as this mod is only in the engine's mods folder
+      // and will be displayed in the engine's mod list
+      
+      return { success: true };
+    } catch (error) {
+      // Show error notification
+      Notify.create({
+        type: "negative",
+        message: `Failed to install modpack`,
+        caption: String(error),
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      this.dismissNotification();
+      console.error("Failed to install modpack:", error);
+      
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
+   * Download an engine directly
+   */
+  public async downloadEngine(engineType: string): Promise<OperationResult> {
+    try {
+      // Show loading notification
+      this.pendingDownloadNotification = Notify.create({
+        type: "ongoing",
+        message: `Preparing to download ${this.formatEngineType(engineType)}...`,
+        position: "bottom-right",
+        timeout: 0,
+      });
+
+      // Get the install location from settings
+      let installLocation: string | null = null;
+      try {
+        if (window.db && window.db.service) {
+          installLocation = await window.db.service.getSetting("installLocation");
+        }
+      } catch (error) {
+        console.warn("Could not get install location from settings:", error);
+      }
+
+      console.log(
+        `Downloading ${engineType} engine to ${
+          installLocation || "default location"
+        }`
+      );
+
+      // Call backend to download the engine directly
+      const result = await invoke<string>("download_engine_command", {
+        engineType,
+        installLocation,
+      });
+
+      // Process the result
+      let modInfo: any;
+
+      try {
+        // Try to parse as JSON
+        const parsed = JSON.parse(result);
+        modInfo = parsed.mod_info;
+      } catch (e) {
+        // If parsing fails, assume it's just the path string
+        const modPath = result;
+        // Get mod info directly from the backend
+        const allMods = await invoke<any[]>("get_mods");
+        modInfo = allMods.find((m) => m.path === modPath);
+      }
+
+      // Save the mod to the database
+      if (modInfo) {
+        await this.saveModToDatabase(modInfo);
+      }
+
+      // Dismiss loading notification
+      this.dismissNotification();
+
+      // Show success notification
+      Notify.create({
+        type: "positive",
+        message: `${this.formatEngineType(engineType)} installed successfully!`,
+        caption: `Ready to play from the mods list`,
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      // Trigger the refresh event to update the mod list
+      const refreshEvent = new CustomEvent("refresh-mods");
+      window.dispatchEvent(refreshEvent);
+      
+      return { success: true, modInfo };
+    } catch (error) {
+      // Show error notification
+      Notify.create({
+        type: "negative",
+        message: `Failed to download ${this.formatEngineType(engineType)}`,
+        caption: String(error),
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      // Dismiss any pending notification
+      this.dismissNotification();
+      console.error(`Failed to download ${engineType} engine:`, error);
+      
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
+   * Download a mod from a deep link
+   */
+  public async downloadModFromDeepLink(downloadUrl: string, modId: number): Promise<OperationResult | DeepLinkEngineSelectionResult> {
+    try {
+      // Show notification that download is being prepared
+      this.pendingDownloadNotification = Notify.create({
+        type: "ongoing",
+        message: `Preparing to download mod...`,
+        position: "bottom-right",
+        timeout: 0,
+      });
+
+      // Get the mod info from GameBanana API to get the name and other details
+      const modInfo = await invoke<any>("get_mod_info_command", { modId });
+
+      if (!modInfo || !modInfo._sName) {
+        throw new Error("Failed to fetch mod information from GameBanana");
+      }
+
+      const modName = modInfo._sName;
+
+      // Check if this is a modpack
+      const isModpack = this.determineDeepLinkModpackStatus(modInfo);
+      const modpackType = this.determineDeepLinkModpackType(modInfo);
+
+      console.log("Mod analysis:", { isModpack, modpackType });
+
+      // Update notification
+      this.updateNotification(`Preparing to download "${modName}"...`);
+
+      // If it's a modpack, check for compatible engines
+      if (isModpack && modpackType) {
+        // Get compatible engines for this modpack
+        const engineMods = await this.getCompatibleEngineMods(modpackType);
+
+        if (engineMods.length === 0) {
+          // No compatible engine found
+          this.dismissNotification();
+
+          Notify.create({
+            type: "negative",
+            message: `Cannot download ${modpackType} modpack`,
+            caption: `You don't have any "${this.formatEngineType(
+              modpackType
+            )}" engines installed. Please install it from the GameBanana browser first.`,
+            position: "bottom-right",
+            timeout: 5000,
+          });
+
+          return { success: false, error: "No compatible engine found" };
+        } else {
+          // Return engine selection info
+          this.dismissNotification();
+          
+          return {
+            showEngineSelectDialog: true,
+            compatibleEngines: engineMods,
+            modpackType,
+            modName,
+            downloadUrl,
+            modId
+          };
+        }
+      }
+
+      // If not a modpack, proceed with standard mod download
+      // Get the install location from settings
+      let installLocation: string | null = null;
+      try {
+        const storeService = StoreService.getInstance();
+        installLocation = await storeService.getSetting("installLocation");
+      } catch (error) {
+        console.warn("Could not get install location from settings:", error);
+      }
+
+      // Fix the URL
+      let fixedUrl = downloadUrl;
+      if (fixedUrl.startsWith("//")) {
+        fixedUrl = "https:" + fixedUrl;
+      } else if (!fixedUrl.includes("://")) {
+        fixedUrl = "https://" + fixedUrl;
+      }
+
+      console.log(`Starting download for "${modName}" from URL: ${fixedUrl}`);
+      
+      // IMPORTANT: Remove any existing download tracking for this mod ID to avoid duplicates
+      const existingDownloadId = modIdToDownloadIdMap.get(modId);
+      if (existingDownloadId) {
+        console.log(`Found existing download tracking ID ${existingDownloadId} for mod ID ${modId}, cleaning up`);
+        // Delete the existing download entry
+        delete downloadingMods[existingDownloadId];
+        modIdToDownloadIdMap.delete(modId);
+      }
+      
+      // Create a new download entry to track progress
+      const downloadId = createDownload(modId, modName, `https://gamebanana.com/mods/embeddables/${modId}`);
+      modIdToDownloadIdMap.set(modId, downloadId);
+      
+      console.log(`Created download tracking with ID ${downloadId} for modId ${modId}`);
+
+      // Update the download status manually to ensure it shows up
+      updateDownloadProgress({
+        id: downloadId,
+        bytesDownloaded: 0,
+        totalBytes: 100,
+        percentage: 5,
+        step: "Preparing download...",
+        isComplete: false,
+        isError: false,
+      });
+
+      // Download the mod
+      const result = await invoke<string>("download_gamebanana_mod_command", {
+        url: fixedUrl,
+        name: modName,
+        modId,
+        installLocation,
+      });
+
+      // Process the result
+      let modInfoResult: any;
+
+      try {
+        // Try to parse as JSON
+        const parsed = JSON.parse(result);
+        modInfoResult = parsed.mod_info;
+      } catch (e) {
+        // If parsing fails, assume it's just the path string
+        const modPath = result;
+        // Get mod info directly from the backend
+        const allMods = await invoke<any[]>("get_mods");
+        modInfoResult = allMods.find((m) => m.path === modPath);
+
+        // If we still don't have mod info, create a basic one
+        if (!modInfoResult) {
+          modInfoResult = {
+            id: crypto.randomUUID(),
+            name: modName,
+            path: result,
+            executable_path: null,
+            icon_data: null,
+            banner_data: `https://gamebanana.com/mods/embeddables/${modId}`,
+            version: modInfo._sVersion || null,
+            engine_type: null,
+          };
+        }
+      }
+
+      // Save the mod to the database
+      if (modInfoResult) {
+        try {
+          if (window.db && window.db.service) {
+            await window.db.service.saveMod(modInfoResult);
+          }
+        } catch (error) {
+          console.error("Failed to save mod to database:", error);
+        }
+      }
+
+      // Update download status to complete
+      if (downloadId) {
+        console.log(`Manually completing download tracking for mod ${modId}`);
+        updateDownloadProgress({
+          id: downloadId,
+          bytesDownloaded: 100,
+          totalBytes: 100,
+          percentage: 100,
+          step: "Installation complete",
+          isComplete: true,
+          isError: false,
+        });
+        
+        setTimeout(() => {
+          completeDownload(downloadId);
+          modIdToDownloadIdMap.delete(modId);
+        }, 2000);
+      }
+
+      // Dismiss notification
+      this.dismissNotification();
+
+      // Show success notification
+      Notify.create({
+        type: "positive",
+        message: `"${modName}" downloaded and installed successfully!`,
+        caption: `Ready to play from the mods list`,
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      // Trigger refresh event to update mod list
+      const refreshEvent = new CustomEvent("refresh-mods");
+      window.dispatchEvent(refreshEvent);
+      
+      return { success: true, modInfo: modInfoResult };
+    } catch (error) {
+      // Dismiss notification
+      this.dismissNotification();
+
+      // Show error notification
+      Notify.create({
+        type: "negative",
+        message: "Failed to download mod",
+        caption: String(error),
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      console.error("Failed to download mod from deep link:", error);
+      return { success: false, error: String(error) };
+    }
+  }
+  
+  /**
+   * Download a modpack from a deep link with selected engine
+   */
+  public async downloadDeepLinkModpackWithEngine(
+    downloadUrl: string, 
+    modName: string, 
+    modId: number, 
+    engine: any
+  ): Promise<OperationResult> {
+    try {
+      // Show loading notification
+      this.pendingDownloadNotification = Notify.create({
+        type: "ongoing",
+        message: `Downloading "${modName}" to ${this.formatEngineType(
+          engine.engine?.engine_type
+        )}...`,
+        position: "bottom-right",
+        timeout: 0,
+      });
+
+      // Get the installation path for the selected engine's mods folder
+      const modsFolderPath = this.getModsFolderPath(engine);
+      if (!modsFolderPath) {
+        throw new Error("Could not determine mods folder path");
+      }
+
+      console.log(
+        `Starting download for "${modName}" modpack to ${modsFolderPath}`
+      );
+
+      // Fix the URL since it doesn't have the colon (or shouldn't have it)
+      let fixedUrl = downloadUrl;
+      if (fixedUrl.startsWith("//")) {
+        fixedUrl = "https:" + fixedUrl;
+      } else if (!fixedUrl.includes("://")) {
+        fixedUrl = "https://" + fixedUrl;
+      }
+
+      // Create a download entry to track progress
+      const downloadId = createDownload(modId, modName, `https://gamebanana.com/mods/embeddables/${modId}`);
+      modIdToDownloadIdMap.set(modId, downloadId);
+
+      // Call the backend to download the modpack to the engine's mods folder
+      const result = await invoke<string>("download_gamebanana_mod_command", {
+        url: fixedUrl,
+        name: modName,
+        modId: modId,
+        installLocation: modsFolderPath,
+      });
+
+      console.log("Download result:", result);
+
+      // Dismiss notification
+      this.dismissNotification();
+
+      // Show success notification
+      Notify.create({
+        type: "positive",
+        message: `"${modName}" installed successfully!`,
+        caption: `Ready to play in ${this.formatEngineType(engine.engine?.engine_type || "")}`,
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      // Manual cleanup of download tracking entry
+      if (downloadId) {
+        console.log(`Manually completing download tracking for modpack ${modId}`);
+        completeDownload(downloadId);
+        modIdToDownloadIdMap.delete(modId);
+      }
+
+      // No need to refresh the main mods list as this mod is only in the engine's mods folder
+      // and will be displayed in the engine's mod list
+      
+      return { success: true };
+    } catch (error) {
+      // Dismiss notification
+      this.dismissNotification();
+
+      // Show error notification
+      Notify.create({
+        type: "negative",
+        message: `Failed to download modpack "${modName}"`,
+        caption: String(error),
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      console.error("Failed to download modpack:", error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  // Utility functions for deep link modpack detection
+  private determineDeepLinkModpackStatus(modInfo: any): boolean {
+    // Check category ID
+    if (modInfo._aCategory && modInfo._aCategory._idRow) {
+      const categoryId = parseInt(modInfo._aCategory._idRow);
+      const modpackCategoryIds = [28367, 29202, 34764]; // Psych, V-Slice, Codename
+      
+      if (modpackCategoryIds.includes(categoryId)) {
+        return true;
+      }
+    }
+    
+    // Check tags
+    if (modInfo._aTags && Array.isArray(modInfo._aTags)) {
+      const modpackTags = ['psychmodpack', 'v-slicemodpack', 'codenamemodpack'];
+      
+      for (const tag of modInfo._aTags) {
+        if (typeof tag === 'string' && modpackTags.some(mpt => tag.toLowerCase().includes(mpt))) {
+          return true;
+        }
+      }
+    }
+    
+    // Check description
+    if (modInfo._sDescription) {
+      const desc = modInfo._sDescription.toLowerCase();
+      
+      if (
+        desc.includes('psych engine modpack') ||
+        desc.includes('v-slice modpack') ||
+        desc.includes('codename engine modpack')
+      ) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  private determineDeepLinkModpackType(modInfo: any): string | null {
+    // Check category ID first (most reliable)
+    if (modInfo._aCategory && modInfo._aCategory._idRow) {
+      const categoryId = parseInt(modInfo._aCategory._idRow);
+      
+      if (categoryId === 28367) return 'psych';
+      if (categoryId === 29202) return 'vanilla';
+      if (categoryId === 34764) return 'codename';
+    }
+    
+    // Check tags next
+    if (modInfo._aTags && Array.isArray(modInfo._aTags)) {
+      for (const tag of modInfo._aTags) {
+        if (typeof tag === 'string') {
+          const tagLower = tag.toLowerCase();
+          if (tagLower.includes('psych')) return 'psych';
+          if (tagLower.includes('v-slice') || tagLower.includes('vslice')) return 'vanilla';
+          if (tagLower.includes('codename')) return 'codename';
+        }
+      }
+    }
+    
+    // Check description last (least reliable)
+    if (modInfo._sDescription) {
+      const desc = modInfo._sDescription.toLowerCase();
+      
+      if (desc.includes('psych engine')) return 'psych';
+      if (desc.includes('v-slice')) return 'vanilla';
+      if (desc.includes('codename engine')) return 'codename';
+    }
+    
+    return null;
+  }
+
+  // Helper methods for notification management
+  private dismissNotification(): void {
+    if (this.pendingDownloadNotification) {
+      this.pendingDownloadNotification();
+      this.pendingDownloadNotification = null;
+    }
+  }
+
+  private updateNotification(message: string): void {
+    if (this.pendingDownloadNotification) {
+      this.dismissNotification();
+    }
+    
+    this.pendingDownloadNotification = Notify.create({
+      type: "ongoing",
+      message,
+      position: "bottom-right",
+      timeout: 0,
+    });
+  }
+}
+
+// Initialize Tauri event listeners for tracking downloads
+export function setupGameBananaEventListeners(): () => void {
+  let removeDownloadStartedListener: (() => void) | undefined;
+  let removeDownloadProgressListener: (() => void) | undefined;
+  let removeDownloadFinishedListener: (() => void) | undefined;
+  let removeDownloadErrorListener: (() => void) | undefined;
+
+  // Import Tauri event API
+  import("@tauri-apps/api/event").then(({ listen }) => {
+    // Set up event listeners for downloads
+    listen("download-started", (event: any) => {
+      console.log("Download started:", event.payload);
+      
+      // Extract mod ID, supporting both modId and mod_id formats
+      const modId = event.payload.modId ?? event.payload.mod_id ?? Math.floor(Math.random() * 1000000);
+      const name = event.payload.name || "Unknown Mod";
+      
+      // Check if we already have a download entry for this mod ID
+      let downloadId = modIdToDownloadIdMap.get(modId);
+      
+      if (!downloadId) {
+        // Create a new download entry and get its unique ID
+        downloadId = createDownload(modId, name, event.payload.thumbnailUrl || "");
+        // Store this mapping for future reference
+        modIdToDownloadIdMap.set(modId, downloadId);
+      }
+      
+      // Update with initial data
+      updateDownloadProgress({
+        id: downloadId,
+        bytesDownloaded: 0,
+        totalBytes: event.payload.contentLength || 0,
+        percentage: 0,
+        step: "Starting download...",
+        isComplete: false,
+        isError: false,
+      });
+    }).then((unsubscribe: () => void) => {
+      removeDownloadStartedListener = unsubscribe;
+    });
+
+    listen("download-progress", (event: any) => {
+      console.log("Download progress:", event.payload);
+      
+      // Extract mod ID, supporting both modId and mod_id formats
+      const modId = event.payload.modId ?? event.payload.mod_id;
+      
+      // Skip events without mod IDs or necessary data
+      if (modId === undefined) {
+        console.warn("Received download progress event with undefined modId and mod_id:", event.payload);
+        return;
+      }
+      
+      // Get the download ID from our mapping
+      const downloadId = modIdToDownloadIdMap.get(modId);
+      if (!downloadId) {
+        console.warn(`No download ID found for mod ID ${modId}, creating new entry on the fly`);
+        // Create a new download entry on the fly if one doesn't exist
+        const newDownloadId = createDownload(
+          modId,
+          event.payload.name || "Unknown Mod",
+          ""
+        );
+        modIdToDownloadIdMap.set(modId, newDownloadId);
+        
+        // Update the newly created download with progress
+        updateDownloadProgress({
+          id: newDownloadId,
+          bytesDownloaded: event.payload.bytesDownloaded || 0,
+          totalBytes: event.payload.totalBytes || 100,
+          percentage: event.payload.percentage || 0,
+          step: event.payload.step || "Downloading...",
+          isComplete: false,
+          isError: false,
+        });
+        return;
+      }
+      
+      updateDownloadProgress({
+        id: downloadId,
+        bytesDownloaded: event.payload.bytesDownloaded || 0,
+        totalBytes: event.payload.totalBytes || 100,
+        percentage: event.payload.percentage || 0,
+        step: event.payload.step || "Downloading...",
+        isComplete: false,
+        isError: false,
+      });
+    }).then((unsubscribe: () => void) => {
+      removeDownloadProgressListener = unsubscribe;
+    });
+
+    listen("download-finished", (event: any) => {
+      console.log("Download finished:", event.payload);
+      
+      // Extract mod ID, supporting both modId and mod_id formats
+      const modId = event.payload.modId ?? event.payload.mod_id;
+      
+      // Handle undefined mod ID
+      if (modId === undefined) {
+        console.warn("Received download finished event with undefined modId and mod_id:", event.payload);
+        return;
+      }
+      
+      // Get the download ID from our mapping
+      const downloadId = modIdToDownloadIdMap.get(modId);
+      if (!downloadId) {
+        console.warn(`No download ID found for mod ID ${modId}, creating new entry for completion`);
+        // Create a new download entry on the fly if one doesn't exist
+        const newDownloadId = createDownload(
+          modId,
+          event.payload.name || "Unknown Mod",
+          ""
+        );
+        
+        // Update it to completed state
+        updateDownloadProgress({
+          id: newDownloadId,
+          bytesDownloaded: 100,
+          totalBytes: 100,
+          percentage: 100,
+          step: "Download complete",
+          isComplete: true,
+          isError: false,
+        });
+        
+        // Remove after delay
+        setTimeout(() => completeDownload(newDownloadId), 2000);
+        return;
+      }
+      
+      updateDownloadProgress({
+        id: downloadId,
+        bytesDownloaded: 100,
+        totalBytes: 100,
+        percentage: 100,
+        step: "Download complete",
+        isComplete: true,
+        isError: false,
+      });
+
+      // Remove from downloads list after a delay
+      setTimeout(() => {
+        completeDownload(downloadId);
+        // Clean up our mapping
+        modIdToDownloadIdMap.delete(modId);
+      }, 2000);
+
+      // Refresh the mods list by forcing navigation to the home page
+      // This will ensure that the newly added mod appears in the list
+      setTimeout(() => {
+        // Emit a custom event to refresh mod list
+        const event = new CustomEvent("refresh-mods");
+        window.dispatchEvent(event);
+      }, 1000);
+    }).then((unsubscribe: () => void) => {
+      removeDownloadFinishedListener = unsubscribe;
+    });
+
+    listen("download-error", (event: any) => {
+      console.log("Download error:", event.payload);
+      
+      const modId = event.payload.modId ?? event.payload.mod_id;
+      
+      // Handle undefined mod ID
+      if (modId === undefined) {
+        console.warn("Received download error event with undefined modId and mod_id:", event.payload);
+        return;
+      }
+      
+      // Get the download ID from our mapping
+      const downloadId = modIdToDownloadIdMap.get(modId);
+      if (!downloadId) {
+        console.warn(`No download ID found for mod ID ${modId}, creating new entry for error state`);
+        // Create a new download entry on the fly if one doesn't exist
+        const newDownloadId = createDownload(
+          modId,
+          event.payload.name || "Unknown Mod",
+          ""
+        );
+        
+        // Update it to error state
+        updateDownloadProgress({
+          id: newDownloadId,
+          bytesDownloaded: 0,
+          totalBytes: 100,
+          percentage: 0,
+          step: "Error",
+          isComplete: false,
+          isError: true,
+          error: event.payload.error || "Unknown error",
+        });
+        
+        // Remove after delay
+        setTimeout(() => errorDownload(newDownloadId, event.payload.error || "Unknown error"), 5000);
+        return;
+      }
+      
+      updateDownloadProgress({
+        id: downloadId,
+        bytesDownloaded: 0,
+        totalBytes: 100,
+        percentage: 0,
+        step: "Error",
+        isComplete: false,
+        isError: true,
+        error: event.payload.error || "Unknown error",
+      });
+
+      // Remove from downloads list after a delay
+      setTimeout(() => {
+        errorDownload(downloadId, event.payload.error || "Unknown error");
+        // Clean up our mapping
+        modIdToDownloadIdMap.delete(modId);
+      }, 5000);
+    }).then((unsubscribe: () => void) => {
+      removeDownloadErrorListener = unsubscribe;
+    });
+  });
+
+  // Return a cleanup function to use in onBeforeUnmount
+  return () => {
+    removeDownloadStartedListener?.();
+    removeDownloadProgressListener?.();
+    removeDownloadFinishedListener?.();
+    removeDownloadErrorListener?.();
+  };
+}
+
+// Export an instance of the service
+export const gamebananaService = GameBananaService.getInstance();

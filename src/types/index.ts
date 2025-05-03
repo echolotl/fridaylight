@@ -20,6 +20,7 @@ export interface Contributor {
   name: string;
   icon?: string;   // Path to contributor icon relative to .flight folder
   title?: string;  // Role or title of the contributor
+  role?: string;   // Specific role description to be displayed under the name
 }
 
 /**

@@ -80,9 +80,8 @@
       </div>
 
       <!-- Right column: Contributor information -->
-      <div class="mod-sidebar" v-if="mod.contributors && mod.contributors.length > 0">
+      <div class="mod-sidebar">
         <ContributorInfobox 
-          :contributors="mod.contributors"
           :folder_path="mod.path"
         />
       </div>

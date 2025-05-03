@@ -452,20 +452,10 @@ export class DatabaseService {
           };
         }
 
-        // Parse contributors data if it exists
-        let contributors = undefined;
-        if (mod.contributors_data) {
-          try {
-            contributors = JSON.parse(mod.contributors_data);
-          } catch (e) {
-            console.error("Failed to parse contributors data for mod:", mod.id, e);
-          }
-        }
-
+        // Contributors data is no longer stored in database, component will load directly from metadata.json
         return {
           ...mod,
           engine,
-          contributors,
         };
       });
     }, false, "getAllMods").catch((error) => {

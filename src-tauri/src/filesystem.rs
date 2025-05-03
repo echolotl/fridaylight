@@ -1,7 +1,7 @@
 use crate::models::ModInfo;
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use image::{ImageBuffer, Rgba};
-use log::{debug, error, warn};
+use log::{debug, error, warn, info};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::ptr;
@@ -359,6 +359,44 @@ fn read_metadata_json(mod_folder: &Path) -> Option<serde_json::Value> {
                 error!("Failed to read metadata.json: {}", e);
             }
         }
+    }
+    
+    None
+}
+
+// Function to get a mod's metadata.json file
+pub fn get_mod_metadata(mod_folder: &Path) -> Option<serde_json::Value> {
+    info!("Getting mod metadata from: {}", mod_folder.display());
+    
+    // Look for .flight folder
+    let fnfml_folder = mod_folder.join(".flight");
+    let metadata_path = fnfml_folder.join("metadata.json");
+    
+    if metadata_path.exists() && metadata_path.is_file() {
+        info!("Found metadata.json at: {}", metadata_path.display());
+        
+        match fs::read_to_string(&metadata_path) {
+            Ok(content) => {
+                match serde_json::from_str(&content) {
+                    Ok(json) => {
+                        debug!("Successfully parsed metadata.json");
+                        // Log the parsed JSON data
+                        if let Ok(json_string) = serde_json::to_string(&json) {
+                            debug!("Metadata content: {}", json_string);
+                        }
+                        return Some(json);
+                    },
+                    Err(e) => {
+                        error!("Failed to parse metadata.json: {}", e);
+                    }
+                }
+            },
+            Err(e) => {
+                error!("Failed to read metadata.json: {}", e);
+            }
+        }
+    } else {
+        info!("No metadata.json found at: {}", metadata_path.display());
     }
     
     None
