@@ -387,6 +387,9 @@ export class GameBananaService {
         console.warn("Could not get install location from settings:", error);
       }
 
+      // Create a unique download entry and initialize tracking
+      this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnailUrl);
+
       // Pass mod ID along with URL, name, and install location
       const result = await invoke<string>("download_gamebanana_mod_command", {
         url: mod.downloadUrl,
@@ -511,6 +514,9 @@ export class GameBananaService {
         console.log("Using selected file URL:", selectedFile._sDownloadUrl);
         console.log("Using installation location:", installLocation);
 
+        // Ensure no duplicate download entries exist
+        this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnailUrl);
+
         // Call backend to download using the specific file URL
         const result = await invoke<string>("download_gamebanana_mod_command", {
           url: selectedFile._sDownloadUrl,
@@ -574,6 +580,9 @@ export class GameBananaService {
 
       console.log("Using selected file URL:", selectedFile._sDownloadUrl);
       console.log("Using installation location:", installLocation);
+
+      // Ensure no duplicate download entries exist
+      this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnailUrl);
 
       // Call backend to download using the specific file URL
       const result = await invoke<string>("download_gamebanana_mod_command", {
@@ -642,9 +651,8 @@ export class GameBananaService {
         downloadUrl = "https://" + downloadUrl;
       }
 
-      // Create a download entry to track progress
-      const downloadId = createDownload(modId, mod.name, mod.thumbnailUrl || "");
-      modIdToDownloadIdMap.set(modId, downloadId);
+      // Ensure no duplicate download entries exist
+      const downloadId = this.ensureUniqueDownload(modId, mod.name, mod.thumbnailUrl);
 
       // Use the default download URL for direct download
       const result = await invoke<string>("download_gamebanana_mod_command", {
@@ -669,11 +677,8 @@ export class GameBananaService {
       });
 
       // Manual cleanup of download tracking entry
-      if (downloadId) {
-        console.log(`Manually completing download tracking for modpack ${modId}`);
-        completeDownload(downloadId);
-        modIdToDownloadIdMap.delete(modId);
-      }
+      completeDownload(downloadId);
+      modIdToDownloadIdMap.delete(modId);
 
       // No need to refresh the main mods list as this mod is only in the engine's mods folder
       // and will be displayed in the engine's mod list
@@ -1185,6 +1190,42 @@ export class GameBananaService {
       position: "bottom-right",
       timeout: 0,
     });
+  }
+  
+  /**
+   * Helper method to ensure no duplicate download entries exist
+   * Returns the download ID to use for tracking
+   */
+  private ensureUniqueDownload(modId: number, modName: string, thumbnailUrl?: string): string {
+    console.log(`Ensuring unique download for mod ID ${modId}`);
+    
+    // Clean up any existing download tracking for this mod ID
+    const existingDownloadId = modIdToDownloadIdMap.get(modId);
+    if (existingDownloadId) {
+      console.log(`Found existing download tracking ID ${existingDownloadId} for mod ID ${modId}, cleaning up`);
+      // Delete the existing download entry
+      delete downloadingMods[existingDownloadId];
+      modIdToDownloadIdMap.delete(modId);
+    }
+    
+    // Create a new download entry
+    const downloadId = createDownload(modId, modName, thumbnailUrl || `https://gamebanana.com/mods/embeddables/${modId}`);
+    modIdToDownloadIdMap.set(modId, downloadId);
+    
+    console.log(`Created download tracking with ID ${downloadId} for modId ${modId}`);
+    
+    // Initialize download state
+    updateDownloadProgress({
+      id: downloadId,
+      bytesDownloaded: 0,
+      totalBytes: 100,
+      percentage: 5,
+      step: "Preparing download...",
+      isComplete: false,
+      isError: false,
+    });
+    
+    return downloadId;
   }
 }
 

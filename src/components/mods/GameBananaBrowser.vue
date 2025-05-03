@@ -183,10 +183,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import { useQuasar, Notify } from "quasar";
-import { useRouter } from "vue-router";
-import { gamebananaService } from "@services/gamebananaService";
+import { gamebananaService, setupGameBananaEventListeners } from "@services/gamebananaService";
 import type { ModpackInfo } from "@services/gamebananaService";
 import { GameBananaMod } from "../../types";
 
@@ -201,13 +199,6 @@ import CustomUrlDownloadModal from "@modals/CustomUrlDownloadModal.vue";
 import ModTypeSelectionModal from "@modals/ModTypeSelectionModal.vue";
 import { StoreService } from "../../services/storeService";
 
-// For managing global download state
-import {
-  updateDownloadProgress,
-  completeDownload,
-  errorDownload,
-  createDownload
-} from "../../stores/downloadState";
 
 // Declare db for TypeScript
 declare global {
@@ -221,13 +212,9 @@ Notify.create = Notify.create || (() => {});
 
 // Create a quasar instance at the top level of the script setup
 const $q = useQuasar();
-const router = useRouter();
 
-// Event listeners
-let removeDownloadStartedListener: (() => void) | undefined;
-let removeDownloadProgressListener: (() => void) | undefined;
-let removeDownloadFinishedListener: (() => void) | undefined;
-let removeDownloadErrorListener: (() => void) | undefined;
+// Event listener cleanup
+let eventListenerCleanup: (() => void) | undefined;
 
 // Search state
 const searchQuery = ref("");
@@ -342,261 +329,6 @@ watch(selectedModType, async (newType) => {
   }
 });
 
-// Function to set up event listeners for downloads
-const setupEventListeners = () => {
-  // Set up event listeners for download events
-  listen<{
-    modId?: number;
-    mod_id?: number;
-    name: string;
-    contentLength: number;
-    thumbnailUrl: string;
-  }>("download-started", (event) => {
-    console.log("Download started:", event.payload);
-    
-    // Extract mod ID, supporting both modId and mod_id formats
-    const modId = event.payload.modId ?? event.payload.mod_id ?? Math.floor(Math.random() * 1000000);
-    const name = event.payload.name || "Unknown Mod";
-    
-    // Check if we already have a download entry for this mod ID
-    let downloadId = modIdToDownloadIdMap.get(modId);
-    
-    if (!downloadId) {
-      // Create a new download entry and get its unique ID
-      downloadId = createDownload(modId, name, event.payload.thumbnailUrl || "");
-      // Store this mapping for future reference
-      modIdToDownloadIdMap.set(modId, downloadId);
-    }
-    
-    // Update with initial data
-    updateDownloadProgress({
-      id: downloadId,
-      bytesDownloaded: 0,
-      totalBytes: event.payload.contentLength || 0,
-      percentage: 0,
-      step: "Starting download...",
-      isComplete: false,
-      isError: false,
-    });
-  }).then((unsubscribe) => {
-    removeDownloadStartedListener = unsubscribe;
-  });
-
-  listen<{
-    modId?: number;
-    mod_id?: number;
-    name: string;
-    bytesDownloaded: number;
-    totalBytes: number;
-    percentage: number;
-    step: string;
-  }>("download-progress", (event) => {
-    console.log("Download progress:", event.payload);
-    
-    // Extract mod ID, supporting both modId and mod_id formats
-    const modId = event.payload.modId ?? event.payload.mod_id;
-    
-    // Skip events without mod IDs or necessary data
-    if (modId === undefined) {
-      console.warn("Received download progress event with undefined modId and mod_id:", event.payload);
-      return;
-    }
-    
-    // Get the download ID from our mapping
-    const downloadId = modIdToDownloadIdMap.get(modId);
-    if (!downloadId) {
-      console.warn(`No download ID found for mod ID ${modId}, creating new entry on the fly`);
-      // Create a new download entry on the fly if one doesn't exist
-      const newDownloadId = createDownload(
-        modId,
-        event.payload.name || "Unknown Mod",
-        ""
-      );
-      modIdToDownloadIdMap.set(modId, newDownloadId);
-      
-      // Update the newly created download with progress
-      updateDownloadProgress({
-        id: newDownloadId,
-        bytesDownloaded: event.payload.bytesDownloaded || 0,
-        totalBytes: event.payload.totalBytes || 100,
-        percentage: event.payload.percentage || 0,
-        step: event.payload.step || "Downloading...",
-        isComplete: false,
-        isError: false,
-      });
-      return;
-    }
-    
-    // Log more detail for debugging
-    console.log(`Updating download progress for ID ${downloadId}, modId ${modId}:`, {
-      bytesDownloaded: event.payload.bytesDownloaded || 0,
-      totalBytes: event.payload.totalBytes || 100,
-      percentage: event.payload.percentage || 0,
-      step: event.payload.step || "Downloading...",
-    });
-    
-    // Make sure percentage is a number
-    const percentage = typeof event.payload.percentage === 'number' 
-      ? event.payload.percentage 
-      : parseInt(event.payload.percentage as any) || 0;
-    
-    // Update the existing download with progress
-    updateDownloadProgress({
-      id: downloadId,
-      bytesDownloaded: event.payload.bytesDownloaded || 0,
-      totalBytes: event.payload.totalBytes || 100,
-      percentage: percentage,
-      step: event.payload.step || "Downloading...",
-      isComplete: false,
-      isError: false,
-    });
-  }).then((unsubscribe) => {
-    removeDownloadProgressListener = unsubscribe;
-  });
-
-  listen<{
-    modId?: number;
-    mod_id?: number;
-    name: string;
-    modInfo: any;
-  }>("download-finished", (event) => {
-    console.log("Download finished:", event.payload);
-    
-    // Extract mod ID, supporting both modId and mod_id formats
-    const modId = event.payload.modId ?? event.payload.mod_id;
-    
-    // Handle undefined mod ID
-    if (modId === undefined) {
-      console.warn("Received download finished event with undefined modId and mod_id:", event.payload);
-      return;
-    }
-    
-    // Get the download ID from our mapping
-    const downloadId = modIdToDownloadIdMap.get(modId);
-    if (!downloadId) {
-      console.warn(`No download ID found for mod ID ${modId}, creating new entry for completion`);
-      // Create a new download entry on the fly if one doesn't exist
-      const newDownloadId = createDownload(
-        modId,
-        event.payload.name || "Unknown Mod",
-        ""
-      );
-      
-      // Update it to completed state
-      updateDownloadProgress({
-        id: newDownloadId,
-        bytesDownloaded: 100,
-        totalBytes: 100,
-        percentage: 100,
-        step: "Download complete",
-        isComplete: true,
-        isError: false,
-      });
-      
-      // Remove after delay
-      setTimeout(() => completeDownload(newDownloadId), 2000);
-      return;
-    }
-    
-    updateDownloadProgress({
-      id: downloadId,
-      bytesDownloaded: 100,
-      totalBytes: 100,
-      percentage: 100,
-      step: "Download complete",
-      isComplete: true,
-      isError: false,
-    });
-
-    // Remove from downloads list after a delay
-    setTimeout(() => {
-      completeDownload(downloadId);
-      // Clean up our mapping
-      modIdToDownloadIdMap.delete(modId);
-    }, 2000);
-
-    // Refresh the mods list by forcing navigation to the home page
-    // This will ensure that the newly added mod appears in the list
-    setTimeout(() => {
-      if (router.currentRoute.value.path !== "/") {
-        router.push("/");
-      } else {
-        // If already on home page, emit a custom event to refresh mod list
-        const event = new CustomEvent("refresh-mods");
-        window.dispatchEvent(event);
-      }
-    }, 1000);
-  }).then((unsubscribe) => {
-    removeDownloadFinishedListener = unsubscribe;
-  });
-
-  listen<{
-    modId?: number;
-    mod_id?: number;
-    name: string;
-    error: string;
-  }>("download-error", (event) => {
-    console.log("Download error:", event.payload);
-    
-
-    const modId = event.payload.mod_id;
-    
-    // Handle undefined mod ID
-    if (modId === undefined) {
-      console.warn("Received download error event with undefined modId and mod_id:", event.payload);
-      return;
-    }
-    
-    // Get the download ID from our mapping
-    const downloadId = modIdToDownloadIdMap.get(modId);
-    if (!downloadId) {
-      console.warn(`No download ID found for mod ID ${modId}, creating new entry for error state`);
-      // Create a new download entry on the fly if one doesn't exist
-      const newDownloadId = createDownload(
-        modId,
-        event.payload.name || "Unknown Mod",
-        ""
-      );
-      
-      // Update it to error state
-      updateDownloadProgress({
-        id: newDownloadId,
-        bytesDownloaded: 0,
-        totalBytes: 100,
-        percentage: 0,
-        step: "Error",
-        isComplete: false,
-        isError: true,
-        error: event.payload.error || "Unknown error",
-      });
-      
-      // Remove after delay
-      setTimeout(() => errorDownload(newDownloadId, event.payload.error || "Unknown error"), 5000);
-      return;
-    }
-    
-    updateDownloadProgress({
-      id: downloadId,
-      bytesDownloaded: 0,
-      totalBytes: 100,
-      percentage: 0,
-      step: "Error",
-      isComplete: false,
-      isError: true,
-      error: event.payload.error || "Unknown error",
-    });
-
-    // Remove from downloads list after a delay
-    setTimeout(() => {
-      errorDownload(downloadId, event.payload.error || "Unknown error");
-      // Clean up our mapping
-      modIdToDownloadIdMap.delete(modId);
-    }, 5000);
-  }).then((unsubscribe) => {
-    removeDownloadErrorListener = unsubscribe;
-  });
-};
-
 onMounted(() => {
   // Load initial data
   fetchFeaturedMods();
@@ -611,16 +343,15 @@ onMounted(() => {
     fetchCodenameModpacks();
   }
 
-  // Set up event listeners
-  setupEventListeners();
+  // Set up event listeners using the centralized function
+  eventListenerCleanup = setupGameBananaEventListeners();
 });
 
 // Clean up event listeners when component is unmounted
 onBeforeUnmount(() => {
-  removeDownloadStartedListener?.();
-  removeDownloadProgressListener?.();
-  removeDownloadFinishedListener?.();
-  removeDownloadErrorListener?.();
+  if (eventListenerCleanup) {
+    eventListenerCleanup();
+  }
 });
 
 // Data fetching functions
@@ -1744,7 +1475,7 @@ const handleModTypeCancel = () => {
 .q-tab-panel,
 .q-tab-panels,
 .q-panel {
-  background-color: var(--theme-bg);
+  background-color: transparent;
   border-radius: 0 0 1rem 1rem;
 }
 
@@ -1755,7 +1486,7 @@ const handleModTypeCancel = () => {
 
 :deep(.q-tab--active) {
   color: var(--theme-text);
-  background-color: var(--theme-bg);
+  background-color: var(--theme-card);
 }
 
 :deep(.q-field__native),
