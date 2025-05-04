@@ -56,6 +56,7 @@
                 class="q-mr-xs"
                 tooltip="Create Folder"
                 style="color: var(--theme-text-secondary)"
+                v-if="sortBy === 'default' && !searchQuery.trim()"
               >
             
                 <q-tooltip anchor="bottom middle" :offset="[0, 10]" class="phantom-font">
