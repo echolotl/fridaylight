@@ -1,4 +1,4 @@
-use crate::models::ModInfo;
+use crate::models::{ModInfo, MIN_METADATA_VERSION};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use image::{ImageBuffer, Rgba};
 use log::{debug, error, warn, info};
@@ -345,10 +345,30 @@ fn read_metadata_json(mod_folder: &Path) -> Option<serde_json::Value> {
         
         match fs::read_to_string(&metadata_path) {
             Ok(content) => {
-                match serde_json::from_str(&content) {
+                match serde_json::from_str::<serde_json::Value>(&content) {
                     Ok(json) => {
                         debug!("Successfully parsed metadata.json");
-                        return Some(json);
+                        
+                        // Validate the metadata version
+                        let metadata_version = json.get("metadata_version")
+                            .and_then(|v| v.as_u64())
+                            .map(|v| v as u32);
+                            
+                        match metadata_version {
+                            None => {
+                                warn!("metadata.json is missing required metadata_version field");
+                                return None;
+                            }
+                            Some(version) if version < MIN_METADATA_VERSION => {
+                                warn!("metadata.json version {} is too old. Minimum supported version is {}", 
+                                      version, MIN_METADATA_VERSION);
+                                return None;
+                            }
+                            Some(_) => {
+                                // Version is valid, return the metadata
+                                return Some(json);
+                            }
+                        }
                     },
                     Err(e) => {
                         error!("Failed to parse metadata.json: {}", e);
@@ -362,6 +382,54 @@ fn read_metadata_json(mod_folder: &Path) -> Option<serde_json::Value> {
     }
     
     None
+}
+
+// Function to save metadata.json file to the .flight folder
+pub fn save_metadata_json(mod_folder: &Path, metadata: serde_json::Value) -> Result<(), String> {
+    debug!("Saving metadata.json to: {}", mod_folder.display());
+    
+    // Ensure the .flight folder exists
+    let flight_folder = mod_folder.join(".flight");
+    if !flight_folder.exists() {
+        debug!("Creating .flight directory: {}", flight_folder.display());
+        if let Err(e) = fs::create_dir_all(&flight_folder) {
+            let error_msg = format!("Failed to create .flight directory: {}", e);
+            error!("{}", error_msg);
+            return Err(error_msg);
+        }
+    }
+    
+    // Prepare metadata.json file path
+    let metadata_path = flight_folder.join("metadata.json");
+    
+    // Check if the metadata.json file already exists
+    if metadata_path.exists() {
+        info!("metadata.json already exists at: {}, skipping creation", metadata_path.display());
+        return Ok(());
+    }
+    
+    // Format the JSON with pretty-printing
+    let json_string = match serde_json::to_string_pretty(&metadata) {
+        Ok(json) => json,
+        Err(e) => {
+            let error_msg = format!("Failed to serialize metadata to JSON: {}", e);
+            error!("{}", error_msg);
+            return Err(error_msg);
+        }
+    };
+    
+    // Write the JSON to the file
+    match fs::write(&metadata_path, json_string) {
+        Ok(_) => {
+            debug!("Successfully saved metadata.json to: {}", metadata_path.display());
+            Ok(())
+        },
+        Err(e) => {
+            let error_msg = format!("Failed to write metadata.json: {}", e);
+            error!("{}", error_msg);
+            Err(error_msg)
+        }
+    }
 }
 
 // Function to get a mod's metadata.json file
@@ -418,6 +486,16 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
     // Read metadata.json if it exists
     let metadata = read_metadata_json(path_obj);
     
+    // Extract metadata version
+    let metadata_version = match &metadata {
+        Some(json) => {
+            json.get("metadata_version")
+                .and_then(|v| v.as_u64())
+                .map(|v| v as u32)
+        },
+        None => None,
+    };
+
     // Extract metadata values or use defaults
     let name = match &metadata {
         Some(json) => {
@@ -435,31 +513,54 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
     let contributors = match &metadata {
         Some(json) => {
             if let Some(contributors_array) = json.get("contributors").and_then(|v| v.as_array()) {
-                debug!("Found contributors in metadata.json");
+                debug!("Found contributors array in metadata.json");
                 
-                let mut parsed_contributors = Vec::new();
+                let mut contributor_groups = Vec::new();
                 
-                for contributor_value in contributors_array {
-                    if let Some(contributor_obj) = contributor_value.as_object() {
-                        // Extract name (required)
-                        if let Some(name) = contributor_obj.get("name").and_then(|v| v.as_str()) {
-                            // Extract optional fields
-                            let icon = contributor_obj.get("icon").and_then(|v| v.as_str()).map(|s| s.to_string());
-                            let title = contributor_obj.get("title").and_then(|v| v.as_str()).map(|s| s.to_string());
-                            
-                            // Create contributor
-                            parsed_contributors.push(crate::models::Contributor {
-                                name: name.to_string(),
-                                icon,
-                                title,
-                            });
+                for group_object in contributors_array {
+                    if let Some(group_obj) = group_object.as_object() {
+                        // Get the group name
+                        if let Some(group_name) = group_obj.get("group").and_then(|v| v.as_str()) {
+                            // Get the members array
+                            if let Some(members_array) = group_obj.get("members").and_then(|v| v.as_array()) {
+                                let mut members = Vec::new();
+                                
+                                // Process each member in this group
+                                for member_obj in members_array {
+                                    if let Some(member) = member_obj.as_object() {
+                                        // Extract name (required)
+                                        if let Some(name) = member.get("name").and_then(|v| v.as_str()) {
+                                            // Extract optional fields
+                                            let icon = member.get("icon").and_then(|v| v.as_str()).map(|s| s.to_string());
+                                            let role = member.get("role").and_then(|v| v.as_str()).map(|s| s.to_string());
+                                            
+                                            // Create contributor
+                                            members.push(crate::models::Contributor {
+                                                name: name.to_string(),
+                                                icon,
+                                                role,
+                                            });
+                                        }
+                                    }
+                                }
+                                
+                                // Only add groups with members
+                                if !members.is_empty() {
+                                    contributor_groups.push(crate::models::ContributorGroup {
+                                        group: group_name.to_string(),
+                                        members,
+                                    });
+                                }
+                            }
                         }
                     }
                 }
                 
-                if !parsed_contributors.is_empty() {
-                    debug!("Parsed {} contributors", parsed_contributors.len());
-                    Some(parsed_contributors)
+                if !contributor_groups.is_empty() {
+                    debug!("Parsed {} contributor groups with total of {} members", 
+                          contributor_groups.len(),
+                          contributor_groups.iter().map(|g| g.members.len()).sum::<usize>());
+                    Some(contributor_groups)
                 } else {
                     None
                 }
@@ -622,6 +723,7 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         id,
         name,
         path: path.to_string(),
+        metadata_version,
         description,
         display_order: Some(0), // default display order (top of the list)
         executable_path,

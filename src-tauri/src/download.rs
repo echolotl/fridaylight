@@ -1,6 +1,6 @@
 use crate::filesystem::{check_for_custom_images, find_executables, extract_executable_icon};
 use crate::gamebanana::{get_mod_info, get_download_url, extract_banner_url, extract_contributors};
-use crate::models::{DownloadStarted, DownloadProgress, DownloadFinished, DownloadError, ModInfo};
+use crate::models::{DownloadStarted, DownloadProgress, DownloadFinished, DownloadError, ModInfo, CURRENT_METADATA_VERSION};
 use crate::utils::{fetch_image_as_base64, extract_rar_archive};
 use futures_util::StreamExt;
 use log::{debug, error, info, warn};
@@ -419,7 +419,10 @@ pub async fn download_gamebanana_mod(
         executable_path,
         display_order: Some(0),
         icon_data,
-        description: None,
+        description: mod_info_response.as_ref()
+            .and_then(|info| info.get("_sDescription"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
         banner_data: final_banner_data,
         logo_data: final_logo_data,
         logo_position: Some("left_bottom".to_string()),
@@ -435,7 +438,39 @@ pub async fn download_gamebanana_mod(
         engine: None, // Initialize with None for now
         process_id: None, // Initialize with None since mod is not running yet
         contributors: mod_info_response.as_ref().and_then(|info| extract_contributors(info)),
+        metadata_version: Some(CURRENT_METADATA_VERSION),
     };
+    
+    // Create metadata.json file in the .flight folder
+    if let Some(contributors) = &mod_info.contributors {
+        // Create metadata object
+        let mut metadata = serde_json::json!({
+            "name": name,
+            "logo_position": "left_bottom",
+            "metadata_version": CURRENT_METADATA_VERSION,
+        });
+        
+        // Add optional fields if they exist
+        if let Some(version) = &mod_info.version {
+            metadata["version"] = serde_json::Value::String(version.clone());
+        }
+        
+        if let Some(description) = &mod_info.description {
+            metadata["description"] = serde_json::Value::String(description.clone());
+        }
+        
+        // Note: We don't add engine info as we won't get it from GameBanana
+        
+        // Add contributors array
+        let contributors_array = serde_json::to_value(contributors).unwrap_or(serde_json::Value::Array(vec![]));
+        metadata["contributors"] = contributors_array;
+        
+        // Save metadata.json file
+        match crate::filesystem::save_metadata_json(&mod_folder, metadata) {
+            Ok(_) => debug!("Successfully saved metadata.json with contributors"),
+            Err(e) => warn!("Failed to save metadata.json: {}", e)
+        }
+    }
     
     // Add the mod to our state
     let mods_state = app.state::<crate::models::ModsState>();
@@ -820,6 +855,7 @@ pub async fn download_custom_mod(
         engine: None,
         process_id: None,
         contributors: None,
+        metadata_version: Some(CURRENT_METADATA_VERSION),
     };
     
     // Add the mod to our state
@@ -1282,6 +1318,7 @@ pub async fn download_engine(
         }),
         process_id: None, // Initialize with None since mod is not running yet
         contributors: None,
+        metadata_version: Some(CURRENT_METADATA_VERSION),
     };
     
     // Add the mod to our state

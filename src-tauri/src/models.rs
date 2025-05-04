@@ -1,7 +1,28 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
-use tauri::{Manager, Emitter};
+use std::fmt;
+
+// Constants for metadata versioning
+pub const MIN_METADATA_VERSION: u32 = 1;
+pub const CURRENT_METADATA_VERSION: u32 = 1;
+
+// Error type for metadata validation
+#[derive(Debug, Clone)]
+pub enum MetadataError {
+    MissingVersion,
+    VersionTooLow { provided: u32, minimum: u32 },
+}
+
+impl fmt::Display for MetadataError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            MetadataError::MissingVersion => write!(f, "Missing required metadata_version field"),
+            MetadataError::VersionTooLow { provided, minimum } => 
+                write!(f, "Metadata version {} is too old. Minimum supported version is {}", provided, minimum),
+        }
+    }
+}
 
 // GameBanana API Structures
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -92,7 +113,13 @@ pub struct Engine {
 pub struct Contributor {
     pub name: String,
     pub icon: Option<String>,  // Path to contributor icon or base64 data
-    pub title: Option<String>, // Role or title of the contributor
+    pub role: Option<String>, // Role description of the contributor
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ContributorGroup {
+    pub group: String,
+    pub members: Vec<Contributor>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -100,6 +127,7 @@ pub struct ModInfo {
     pub id: String,
     pub name: String,
     pub path: String,
+    pub metadata_version: Option<u32>,
     pub description: Option<String>,
     pub executable_path: Option<String>,
     pub icon_data: Option<String>, // Base64 encoded icon data
@@ -111,7 +139,22 @@ pub struct ModInfo {
     pub engine: Option<Engine>,      // New extended engine information
     pub display_order: Option<i64>,
     pub process_id: Option<u32>,    // Track the running process ID
-    pub contributors: Option<Vec<Contributor>>, // List of mod contributors
+    pub contributors: Option<Vec<ContributorGroup>>, // List of contributor groups
+}
+
+impl ModInfo {
+    pub fn validate_metadata_version(&self) -> Result<(), MetadataError> {
+        match self.metadata_version {
+            None => Err(MetadataError::MissingVersion),
+            Some(version) if version < MIN_METADATA_VERSION => {
+                Err(MetadataError::VersionTooLow {
+                    provided: version,
+                    minimum: MIN_METADATA_VERSION,
+                })
+            }
+            Some(_) => Ok(()),
+        }
+    }
 }
 
 // Define a structure for mod metadata files

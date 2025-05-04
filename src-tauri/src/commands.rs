@@ -595,8 +595,28 @@ pub fn get_mod_metadata(mod_path: String) -> Result<serde_json::Value, String> {
     // Call the filesystem function to read metadata
     match crate::filesystem::get_mod_metadata(path_obj) {
         Some(metadata) => {
-            debug!("Successfully retrieved metadata for mod at: {}", mod_path);
-            Ok(metadata)
+            // Validate the metadata version
+            let metadata_version = metadata.get("metadata_version")
+                .and_then(|v| v.as_u64())
+                .map(|v| v as u32);
+                
+            match metadata_version {
+                None => {
+                    let msg = format!("Metadata is missing required metadata_version field");
+                    warn!("{}", msg);
+                    return Err(msg);
+                }
+                Some(version) if version < crate::models::MIN_METADATA_VERSION => {
+                    let msg = format!("Metadata version {} is too old. Minimum supported version is {}", 
+                                  version, crate::models::MIN_METADATA_VERSION);
+                    warn!("{}", msg);
+                    return Err(msg);
+                }
+                Some(_) => {
+                    debug!("Successfully retrieved metadata with valid version for mod at: {}", mod_path);
+                    Ok(metadata)
+                }
+            }
         },
         None => {
             let msg = format!("No metadata found for mod at: {}", mod_path);

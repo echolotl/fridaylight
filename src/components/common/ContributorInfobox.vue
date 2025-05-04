@@ -1,18 +1,18 @@
 <template>
-  <div class="contributor-infobox" v-if="contributorsData && contributorsData.length > 0">
+  <div class="contributor-infobox" v-if="hasContributors">
     <h5 class="phantom-font-difficulty">Contributors</h5>
     <hr />
     <div class="contributor-groups">
       <div 
-        v-for="(group, title) in groupedContributors" 
-        :key="title"
+        v-for="(group, index) in contributorsData" 
+        :key="index"
         class="contributor-group"
       >
-        <h6 class="contributor-title">{{ title }}</h6>
+        <h6 class="contributor-title">{{ group.group }}</h6>
         <div class="contributor-list">
           <div 
-            v-for="(contributor, index) in group" 
-            :key="index"
+            v-for="(contributor, memberIndex) in group.members" 
+            :key="memberIndex"
             class="contributor-item"
           >
             <div class="contributor-icon" v-if="contributor.icon">
@@ -35,13 +35,13 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, watch, reactive } from 'vue';
-import { Contributor } from '@main-types';
+import { Contributor, ContributorGroup } from '@main-types';
 import { sep } from '@tauri-apps/api/path';
 import { invoke } from '@tauri-apps/api/core';
 
 const props = defineProps({
   contributors: {
-    type: Array as () => Contributor[],
+    type: Array as () => ContributorGroup[],
     default: () => []
   },
   folder_path: {
@@ -51,11 +51,16 @@ const props = defineProps({
 });
 
 // Local state to store contributor data from metadata.json
-const contributorsData = ref<Contributor[]>([]);
+const contributorsData = ref<ContributorGroup[]>([]);
 const metadataLoaded = ref(false);
 
 // Map to store processed icon data
 const iconCache = reactive(new Map<string, string>());
+
+// Determine if there are contributors to display
+const hasContributors = computed(() => {
+  return contributorsData.value.length > 0;
+});
 
 // Function to load metadata.json and extract contributors
 const loadContributorsFromMetadata = async () => {
@@ -64,32 +69,37 @@ const loadContributorsFromMetadata = async () => {
   try {
     console.log(`Attempting to load metadata from: ${props.folder_path}`);
     
-    // Get metadata.json using the new Tauri command
+    // Get metadata.json using the Tauri command
     const metadata = await invoke('get_mod_metadata', { modPath: props.folder_path });
     console.log('Metadata loaded:', metadata);
     
-    // Check if metadata has contributors array
-    if (metadata && typeof metadata === 'object' && Array.isArray((metadata as any).contributors)) {
-      console.log('Found contributors in metadata:', (metadata as any).contributors);
-      contributorsData.value = (metadata as any).contributors;
-      metadataLoaded.value = true;
-      
-      // Preload all icon data
-      preloadIconData();
+    // Check if metadata has contributors in the supported format
+    if (metadata && typeof metadata === 'object') {
+      const meta = metadata as any;
+
+      if (Array.isArray(meta.contributors)) {
+        // Process only if it has the right structure
+        console.log('Found contributors in metadata:', meta.contributors);
+        contributorsData.value = meta.contributors;
+        metadataLoaded.value = true;
+        
+        // Preload all icon data
+        preloadIconData();
+      } else {
+        console.log('No valid contributors format found in metadata, falling back to props:', props.contributors);
+        contributorsData.value = props.contributors;
+        // Preload icon data for props contributors
+        preloadIconData();
+      }
     } else {
-      console.log('No contributors found in metadata, falling back to props:', props.contributors);
-      // Fallback to props if metadata doesn't have contributors
+      console.log('Invalid metadata format, falling back to props:', props.contributors);
       contributorsData.value = props.contributors;
-      
-      // Preload all icon data for props contributors
       preloadIconData();
     }
   } catch (error) {
     console.warn('Failed to load metadata.json for contributors:', error);
     // Fallback to props if there's an error
     contributorsData.value = props.contributors;
-    
-    // Preload all icon data for props contributors
     preloadIconData();
   }
 };
@@ -99,8 +109,18 @@ const preloadIconData = async () => {
   if (!contributorsData.value || !props.folder_path) return;
   const fileSeperator = sep();
   
+  // Extract all contributors needing icon processing
+  const allContributors: Contributor[] = [];
+  
+  // Gather all contributors from all groups
+  contributorsData.value.forEach(group => {
+    if (Array.isArray(group.members)) {
+      allContributors.push(...group.members);
+    }
+  });
+  
   // Process all contributors to load their icons
-  for (const contributor of contributorsData.value) {
+  for (const contributor of allContributors) {
     if (contributor.icon && !contributor.icon.startsWith('data:')) {
       const originalPath = contributor.icon;
       const iconPath = `${props.folder_path}${fileSeperator}.flight${fileSeperator}${originalPath}`;
@@ -136,28 +156,6 @@ const getIconSrc = (contributor: Contributor): string => {
   // Return the original path as fallback
   return contributor.icon;
 };
-
-// Group contributors by their title
-const groupedContributors = computed(() => {
-  const grouped: Record<string, Contributor[]> = {};
-  
-  if (!contributorsData.value || contributorsData.value.length === 0) {
-    return grouped;
-  }
-  
-  // Group all contributors by their title
-  contributorsData.value.forEach(contributor => {
-    const title = contributor.title || 'Contributor';
-    if (!grouped[title]) {
-      grouped[title] = [];
-    }
-    
-    // Add the contributor to the appropriate group
-    grouped[title].push(contributor);
-  });
-  
-  return grouped;
-});
 
 // Load contributors data when component mounts or folder_path changes
 onMounted(loadContributorsFromMetadata);

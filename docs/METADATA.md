@@ -12,31 +12,29 @@ Located in the same directory as the mod's executable, mod creators have the abi
 
 ### Schema
 
-None of these are required. You can you whichever ones you need! You can see a full example of a schema [here](#full-example).
+The following are the available fields for the metadata.json file. Only the `metadata_version` field is required, all others are optional. You can see a full example of a schema [here](/docs/example_metadata.json).
 
 | Key | Value |
 |-----|-------|
+|`metadata_version`| **Required**<br>Integer, current version is `1`. |
 |`name`| String, display name for the mod|
 |`version`| String, displayed version for the mod |
-| [`engine`](#engine) | Object: `engine_type`, `engine_name`, `engine_icon`, `mods_folder`, `mods_folder_path` |
+| [`engine`](#engine) | Object containing engine-specific metadata|
 |`description`| String, displayed text blurb under the mod's banner |
 |`logo_position`| String, controls the position of the logo in the banner.<br>`left_bottom`, `left_middle`, `middle` |
-| [`contributors`](#contributors) | Object: `name`, `icon`, `title` |
-
-
-## 
+| [`contributors`](#contributors) | Array of contributor groups |
 
 ### `engine`
 
 | Key | Value |
 |-----|-------|
-| [`engine_type`](#valid-engine_type-values) | String, this allows for mods folder mod management and small cosmetic changes. See more details below. |
+| `engine_type` | String, this allows for mods folder mod management and small cosmetic changes. See more details below. |
 | `engine_name` | String, shows a tooltip on engine icon hover |
 | `engine_icon` | String, path to icon relative to the `.flight` folder |
 | `mods_folder` | Boolean, tells if you want to show the mods folder mod management.<br> Default is `false`. |
 | `mods_folder_path` | String, path to mods folder relative to the executable directory<br>Default is `mods`. |
 
-#### Valid `engine_type` Values
+Valid `engine_type` values include:
 
 | Value | Features |
 |-------|----------|
@@ -44,35 +42,57 @@ None of these are required. You can you whichever ones you need! You can see a f
 | `codename` | Shows a list of installed mods and some metadata |
 | `kade`, `pre-vslice`, `other` | Cosmetic only, has no effect other than showing icon |
 
+If anything else is entered in this field, it's not automatically set to anything, but it is treated as `unknown`, showing no cosmetic changes.
+
 ### `contributors`
+
+Contributors are organized in groups, with each group containing an array of members.
+
+Each contributor group has:
+
+| Key | Value |
+|-----|-------|
+| `group` | String, the name of the group/team |
+| `members` | Array of contributor objects |
+
+Each contributor in the members array has:
 
 | Key | Value |
 |-----|-------|
 | `name` | String, displayed name |
 | `icon` | String, path to icon relative to the `.flight` folder |
-| `title` | String, displayed role. Contributors with the same title will be grouped together. |
+| `role` | String, displayed role within the group |
 
-### Full Example
+Example:
 
 ```json
 {
-  "name": "VS Impostor",
-  "version": "1.0.0",
-  "description": "Codenamed UPDOG, this brand-new version is a full-on reimagining built from the ground up...",
-  "logo_position": "middle",
   "contributors": [
     {
-      "name": "Clowfoe",
-      "icon": "path/to/icon/clowfoe.png",
-      "title": "Director"
+      "group": "Epic Team",
+      "members": [
+        {
+          "name": "Awesome Developer Man",
+          "icon": "icons/adm.webp",
+          "role": "Lead Developer"
+        },
+        {
+          "name": "SomeoneElse",
+          "icon": "icons/someone.png",
+          "role": "Artist"
+        }
+      ]
+    },
+    {
+      "group": "Music Team",
+      "members": [
+        {
+          "name": "Composer1",
+          "icon": "icons/composer1.jpg",
+          "role": "Lead Composer"
+        }
+      ]
     }
-  ],
-  "engine": {
-    "engine_type": "psych",
-    "engine_name": "Nightmare Vision",
-    "engine_icon": "path/to/icon",
-    "mods_folder": false,
-    "mods_folder_path": "",
-  }
+  ]
 }
 ```

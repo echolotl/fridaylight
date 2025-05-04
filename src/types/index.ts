@@ -19,8 +19,15 @@ export interface Engine {
 export interface Contributor {
   name: string;
   icon?: string;   // Path to contributor icon relative to .flight folder
-  title?: string;  // Role or title of the contributor
   role?: string;   // Specific role description to be displayed under the name
+}
+
+/**
+ * Represents a contributor group with members
+ */
+export interface ContributorGroup {
+  group: string;
+  members: Contributor[];
 }
 
 /**
@@ -53,7 +60,7 @@ export interface Mod {
   display_order: number; // Position in the overall list or within a folder
   folder_id?: string | null; // ID of the folder this mod belongs to, if any
   display_order_in_folder?: number; // Position within the folder
-  contributors?: Contributor[]; // List of contributors to the mod
+  contributors?: ContributorGroup[]; // List of contributors to the mod, organized by groups
 }
 
 /**

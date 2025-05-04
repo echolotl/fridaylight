@@ -482,7 +482,7 @@ pub fn extract_banner_url(mod_info: &serde_json::Value, mod_id: i64) -> Option<S
 }
 
 // Function to extract contributors from mod info
-pub fn extract_contributors(mod_info: &serde_json::Value) -> Option<Vec<crate::models::Contributor>> {
+pub fn extract_contributors(mod_info: &serde_json::Value) -> Option<Vec<crate::models::ContributorGroup>> {
     // Check if _aCredits exists
     if let Some(credits) = mod_info.get("_aCredits") {
         if let Some(credits_array) = credits.as_array() {
@@ -491,16 +491,18 @@ pub fn extract_contributors(mod_info: &serde_json::Value) -> Option<Vec<crate::m
                 return None;
             }
 
-            let mut contributors = Vec::new();
+            let mut contributor_groups = Vec::new();
 
             // Process each credit group
             for credit_group in credits_array {
-                // Get the group name (which will be used as the role/title)
+                // Get the group name 
                 let group_name = credit_group
                     .get("_sGroupName")
                     .and_then(|v| v.as_str())
                     .unwrap_or("Contributor")
                     .to_string();
+
+                let mut members = Vec::new();
 
                 // Process authors in this group
                 if let Some(authors) = credit_group.get("_aAuthors").and_then(|v| v.as_array()) {
@@ -512,22 +514,34 @@ pub fn extract_contributors(mod_info: &serde_json::Value) -> Option<Vec<crate::m
                             .unwrap_or("Unknown")
                             .to_string();
 
-                        // Get author role if available, otherwise use group name
-                        let title = group_name.clone();
-                        // Add the contributor
-                        contributors.push(crate::models::Contributor {
+                        // Get author role if available
+                        let role = author
+                            .get("_sRole")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string());
+
+                        // Add the contributor to the group's members
+                        members.push(crate::models::Contributor {
                             name,
-                            title: Some(title),
                             icon: None, // GameBanana API doesn't provide author icons in this context
+                            role,
                         });
                     }
+                }
+
+                // Only add groups with members
+                if !members.is_empty() {
+                    contributor_groups.push(crate::models::ContributorGroup {
+                        group: group_name,
+                        members,
+                    });
                 }
             }
 
             // Return only if we found any contributors
-            if !contributors.is_empty() {
-                debug!("Extracted {} contributors from mod info", contributors.len());
-                return Some(contributors);
+            if !contributor_groups.is_empty() {
+                debug!("Extracted {} contributor groups from mod info", contributor_groups.len());
+                return Some(contributor_groups);
             }
         }
     }
