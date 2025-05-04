@@ -777,7 +777,6 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: var(--theme-bg, rgba(0, 0, 0, 0.87));
   z-index: 9999;
   backdrop-filter: blur(10px);
 }
@@ -787,7 +786,7 @@ body {
   text-align: center;
   padding: 24px;
   border-radius: 12px;
-  background-color: var(--theme-card, rgba(255, 255, 255, 0.2));
+  background-color: var(--theme-card);
   
 }
 .logo {

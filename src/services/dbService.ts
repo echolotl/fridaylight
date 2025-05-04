@@ -1054,8 +1054,7 @@ export class DatabaseService {
             ...mod,
             engine,
             contributors,
-            // I have no idea what this is for, but it seems to be required by the backend
-            // I just gave it the mods_folder_id (which it shouldn't have anyways)
+            // Add the group field required by the backend
             group: mod.folder_id || "none"
           };
         });
@@ -1106,7 +1105,7 @@ export class DatabaseService {
               ...mod,
               engine,
               contributors,
-              // Add the missing group field required by backend
+              // Add the group field required by the backend
               group: mod.folder_id || "none"
             };
           });

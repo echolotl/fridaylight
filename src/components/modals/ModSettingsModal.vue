@@ -107,7 +107,7 @@
                     round
                     flat
                     icon="folder"
-                    @click="$emit('change-folder')"
+                    @click="handleChangeFolderClick"
                   />
                 </div>
               </template>
@@ -126,7 +126,7 @@
                     round
                     flat
                     icon="file_open"
-                    @click="$emit('select-executable')"
+                    @click="handleSelectExecutableClick"
                   />
                 </div>
               </template>
@@ -664,6 +664,18 @@ const cancel = () => {
   logoFile.value = null;
   engineIconPreview.value = null;
   engineIconFile.value = null;
+};
+
+const handleChangeFolderClick = () => {
+  emit("change-folder", (newPath: string) => {
+    form.value.path = newPath;
+  });
+};
+
+const handleSelectExecutableClick = () => {
+  emit("select-executable", (newExecutablePath: string) => {
+    form.value.executable_path = newExecutablePath;
+  });
 };
 </script>
 

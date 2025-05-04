@@ -592,7 +592,14 @@ const toggleGameBanana = () => {
 const syncModsWithBackend = async () => {
   try {
     console.log("Syncing mods with backend...");
-    await invoke("sync_mods_from_database", { modsData: mods.value });
+    
+    // Add the required group field to each mod
+    const modsWithGroup = mods.value.map(mod => ({
+      ...mod,
+      group: mod.folder_id || "none"
+    }));
+    
+    await invoke("sync_mods_from_database", { modsData: modsWithGroup });
     console.log("Successfully synced mods with backend");
   } catch (error) {
     console.error("Failed to sync mods with backend:", error);
@@ -667,44 +674,35 @@ const handleSaveMod = async (updatedMod: Mod) => {
   }
 };
 
-// Function to handle selecting a mod folder
-const handleSelectModFolder = async () => {
+// Function to handle selecting (updating/changing) a mod folder
+const handleSelectModFolder = async (callback?: (newPath: string) => void) => {
   if (!selectedMod.value) return;
   try {
     const result = await open({
       directory: true,
       title: "Select Mod Folder",
     });
-
+    
     if (result) {
-      const modPath = Array.isArray(result) ? result[0] : result;
-      console.log("Selected mod folder:", modPath);
-
-      // Update selected mod's path
-      const updatedMod = { ...selectedMod.value, path: modPath };
-
-      // Automatically detect executable and engine type
-      const modInfo = await invoke<Mod | null>("get_mod_info_from_path", {
-        modPath,
-      });
-      if (modInfo) {
-        updatedMod.executable_path = modInfo.executable_path;
-        updatedMod.engine = modInfo.engine; // Update engine info
-        updatedMod.name = updatedMod.name || modInfo.name; // Keep existing name if user set one, otherwise use detected
-        updatedMod.version = updatedMod.version || modInfo.version; // Keep existing version if user set one
-        updatedMod.description =
-          updatedMod.description || modInfo.description; // Keep existing description
-        // Keep existing images unless they are null/empty
-        updatedMod.icon_data = updatedMod.icon_data || modInfo.icon_data;
-        updatedMod.banner_data = updatedMod.banner_data || modInfo.banner_data;
-        updatedMod.logo_data = updatedMod.logo_data || modInfo.logo_data;
+      // Update the mod's path with the new folder path
+      console.log("Selected mod folder:", result);
+      const updatedMod = { ...selectedMod.value, path: result };
+      
+      // If a callback was provided, call it with the new path
+      if (callback && typeof callback === 'function') {
+        callback(result);
       }
-
-      // Save the updated mod details
-      await handleSaveMod(updatedMod); // Use the consolidated save function
-
-      // Reselect the mod to ensure UI updates correctly
-      selectMod(updatedMod);
+      
+      // Save the updated mod
+      await handleSaveMod(updatedMod);
+      
+      // Show success notification
+      $q.notify({
+        type: "positive",
+        message: "Mod folder updated",
+        position: "bottom-right",
+        timeout: 3000,
+      });
     }
   } catch (error) {
     console.error("Error selecting mod folder:", error);
@@ -718,8 +716,8 @@ const handleSelectModFolder = async () => {
   }
 };
 
-// Function to handle selecting an executable for the mod
-const handleSelectExecutable = async () => {
+// Function to handle selecting (updating/changing) an executable for the mod
+const handleSelectExecutable = async (callback?: (newExecutablePath: string) => void) => {
   if (!selectedMod.value) return;
   try {
     const result = await open({
@@ -730,27 +728,27 @@ const handleSelectExecutable = async () => {
       ],
       defaultPath: selectedMod.value.path, // Start in the mod's directory
     });
-
+    
     if (result) {
-      const executablePath = Array.isArray(result) ? result[0] : result;
-      console.log("Selected executable:", executablePath);
-
-      // Update selected mod's executable path
-      const updatedMod = { ...selectedMod.value, executable_path: executablePath };
-
-      // Re-detect engine type based on new executable if necessary, or just save
-      const modInfo = await invoke<Mod | null>("get_mod_info_from_path", {
-        modPath: updatedMod.path,
-      });
-      if (modInfo && modInfo.engine) {
-        updatedMod.engine = modInfo.engine; // Update engine info based on detection
+      // Update the mod's executable_path with the new executable path
+      console.log("Selected mod executable:", result);
+      const updatedMod = { ...selectedMod.value, executable_path: result};
+      
+      // If a callback was provided, call it with the new path
+      if (callback && typeof callback === 'function') {
+        callback(result);
       }
-
-      // Save the updated mod details
-      await handleSaveMod(updatedMod); // Use the consolidated save function
-
-      // Reselect the mod to ensure UI updates correctly
-      selectMod(updatedMod);
+      
+      // Save the updated mod
+      await handleSaveMod(updatedMod);
+      
+      // Show success notification
+      $q.notify({
+        type: "positive",
+        message: "Executable path updated",
+        position: "bottom-right",
+        timeout: 3000,
+      });
     }
   } catch (error) {
     console.error("Error selecting executable:", error);
