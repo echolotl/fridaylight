@@ -1071,7 +1071,6 @@ const saveAppSettings = async (settings: any) => {
   }
   // Handle if accentColor is an object with a value property
   else if (typeof colorValue !== "string" && colorValue?.value) {
-    const originalValue = colorValue;
     colorValue = colorValue.value;
   }
 

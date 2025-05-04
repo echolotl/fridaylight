@@ -262,9 +262,6 @@ const showCustomUrlModal = ref(false);
 const showModTypeModal = ref(false);
 const customModData = ref<any>(null);
 
-// Maintain a mapping of mod IDs to download IDs
-const modIdToDownloadIdMap = new Map<number, string>();
-
 // Watch for tab changes to load appropriate data
 watch(selectedModType, async (newType) => {
   console.log("Tab changed to:", newType);
