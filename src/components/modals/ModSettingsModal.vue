@@ -175,7 +175,7 @@
                 v-model="engineIconFile"
                 label="Set Engine Icon"
                 outlined
-                accept=".jpg, .jpeg, .png, .webp"
+                accept=".jpg, .jpeg, .png, .webp, .ico"
                 @update:model-value="handleEngineIconFileChange"
                 class="q-mt-sm"
               >
@@ -221,6 +221,43 @@
           <!-- Visuals Section -->
           <q-card-section v-show="activeSection === 'visuals'">
             <div class="text-subtitle1 q-mb-md">Appearance</div>
+
+            <div class="icon-upload q-mb-md">
+              <div class="text-subtitle2 q-mb-sm">Mod Icon</div>
+              <div class="icon-preview" v-if="iconPreview || form.icon_data">
+                <img
+                  :src="iconPreview || form.icon_data"
+                  alt="Mod Icon"
+                />
+              </div>
+              <div class="icon-placeholder" v-else>
+                <q-icon name="image" size="48px" />
+                <div>No icon image</div>
+              </div>
+              <q-file
+                v-model="iconFile"
+                label="Set Mod Icon"
+                outlined
+                accept=".jpg, .jpeg, .png, .webp, .ico"
+                @update:model-value="handleIconFileChange"
+                class="q-mt-sm"
+              >
+                <template v-slot:prepend>
+                  <div class="icon">
+                    <q-icon name="image" />
+                  </div>
+                </template>
+              </q-file>
+              <q-btn
+                v-if="iconPreview || form.icon_data"
+                flat
+                color="negative"
+                label="Remove Icon"
+                class="q-mt-sm"
+                @click="removeIcon"
+              />
+            </div>
+
 
             <div class="banner-upload q-mb-md">
               <div class="text-subtitle2 q-mb-sm">Banner Image</div>
@@ -310,6 +347,7 @@
                 hint="Position of the logo in the banner"
               />
             </div>
+            
           </q-card-section>
         </q-scroll-area>
       </div>
@@ -413,6 +451,8 @@ const logoFile = ref<File | null>(null);
 const logoPreview = ref<string | null>(null);
 const engineIconFile = ref<File | null>(null);
 const engineIconPreview = ref<string | null>(null);
+const iconFile = ref<File | null>(null);
+const iconPreview = ref<string | null>(null);
 
 const engineTypes = [
   { label: "Vanilla", value: "vanilla" },
@@ -483,10 +523,12 @@ watch(
       bannerPreview.value = form.value.banner_data || null;
       logoPreview.value = form.value.logo_data || null;
       engineIconPreview.value = form.value.engine?.engine_icon || null;
+      iconPreview.value = form.value.icon_data || null;
       
       bannerFile.value = null; // Clear file input ref
       logoFile.value = null; // Clear file input ref
       engineIconFile.value = null; // Clear file input ref
+      iconFile.value = null; // Clear file input ref
       activeSection.value = "general"; // Reset to general tab
     }
   }
@@ -561,6 +603,21 @@ const handleEngineIconFileChange = (file: File | null) => {
   }
 };
 
+const handleIconFileChange = (file: File | null) => {
+  iconFile.value = file; // Store the file reference
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      iconPreview.value = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    iconPreview.value = null;
+    // If file is cleared, explicitly set form data to undefined for save logic
+    form.value.icon_data = undefined;
+  }
+};
+
 const removeLogo = () => {
   form.value.logo_data = null;
   logoPreview.value = null;
@@ -579,6 +636,12 @@ const removeEngineIcon = () => {
   }
   engineIconPreview.value = null;
   engineIconFile.value = null; // Clear the file input ref
+};
+
+const removeIcon = () => {
+  form.value.icon_data = undefined;
+  iconPreview.value = null;
+  iconFile.value = null; // Clear the file input ref
 };
 
 const removeMod = () => {
@@ -628,6 +691,14 @@ const save = async () => {
     updatedMod.engine.engine_icon = "";
   }
 
+  // Handle Mod Icon Image
+  if (iconPreview.value) {
+    updatedMod.icon_data = iconPreview.value;
+  } else if (iconFile.value === null && form.value.icon_data === null) {
+    updatedMod.icon_data = undefined;
+  }
+  // Otherwise preserve existing icon_data
+
   // First, make sure engine object exists
   if (!updatedMod.engine) {
     updatedMod.engine = {
@@ -664,6 +735,8 @@ const cancel = () => {
   logoFile.value = null;
   engineIconPreview.value = null;
   engineIconFile.value = null;
+  iconPreview.value = null;
+  iconFile.value = null;
 };
 
 const handleChangeFolderClick = () => {
@@ -724,7 +797,8 @@ const handleSelectExecutableClick = () => {
 }
 
 .banner-upload,
-.logo-upload {
+.logo-upload,
+.icon-upload {
   display: flex;
   flex-direction: column;
 }
@@ -736,6 +810,14 @@ const handleSelectExecutableClick = () => {
   max-height: 150px;
   object-fit: contain;
   border-radius: 4px;
+}
+
+.icon-preview img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 4px;
+  image-rendering: pixelated;
 }
 
 .banner-placeholder,
@@ -756,6 +838,7 @@ const handleSelectExecutableClick = () => {
   object-fit: contain;
   border-radius: 4px;
 }
+
 
 .icon-placeholder {
   display: flex;

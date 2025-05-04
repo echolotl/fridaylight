@@ -28,15 +28,6 @@
           @click.stop="toggleExpanded"
           class="folder-action-btn q-mr-xs"
         />
-        <q-btn
-          flat
-          round
-          dense
-          icon="delete"
-          style="color: var(--theme-text-secondary)"
-          @click.stop="$emit('delete-folder', folder)"
-          class="delete-btn"
-        />
       </div>
     </q-item-section>
     <q-tooltip v-if="compactMode" class="phantom-font">
