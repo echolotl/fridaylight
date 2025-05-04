@@ -61,9 +61,9 @@ defineEmits(['download-engine']);
   border-radius: 8px;
   padding: 8px 16px;
   width: 100%;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   background-color: var(--theme-card);
-  border: 2px solid var(--theme-border);
+  border-bottom: 2px solid var(--theme-border);
 }
 .engine-btn:hover {
   transform: translateY(-2px);

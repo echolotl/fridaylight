@@ -20,10 +20,12 @@
         @create-folder="createFolder"
         @add-mod-to-folder="addModToFolder"
         @open-settings="openAppSettings"
+        @open-mod-settings="openModSettings"
         @reorder-items="handleModsReorder"
         @update-mod="handleSaveMod"
         @update-folder="updateFolderDetails"
         @reorder-folder-mods="handleFolderModsReorder"
+        @launch-mod="launchMod"
         class="modlist"
       />
 
@@ -1102,6 +1104,13 @@ const handleFolderModsReorder = async (data: { folderId: string, updatedMods: Mo
   }
 };
 
+// Function to handle opening settings for a specific mod
+const openModSettings = (mod: ModInfo) => {
+  // Set the selected mod and open the settings modal
+  selectedMod.value = mod;
+  showSettingsModal.value = true;
+};
+
 // Clean up event listeners
 onUnmounted(() => {
   if (isResizing) {
@@ -1184,13 +1193,13 @@ onUnmounted(() => {
 .gamebanana-button-container {
   padding: 12px;
   text-align: center;
-  border-top: 1px solid var(--theme-border);
   margin-top: auto;
 }
 
 .gamebanana-button {
   width: 100%;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
+  border-radius: .5rem;
 }
 
 .main-content-area {

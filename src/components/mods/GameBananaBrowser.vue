@@ -1486,7 +1486,6 @@ const handleModTypeCancel = () => {
 
 :deep(.q-tab--active) {
   color: var(--theme-text);
-  background-color: var(--theme-card);
 }
 
 :deep(.q-field__native),

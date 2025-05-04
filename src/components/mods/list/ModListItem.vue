@@ -4,6 +4,7 @@
     clickable
     v-ripple
     @click="$emit('select-mod', mod)"
+    @contextmenu.prevent="showContextMenu"
     :active="isActive"
     active-class="active-mod"
     class="draggable-item cursor-move"
@@ -43,7 +44,7 @@
 <script setup lang="ts">
 import { Mod } from "@main-types";
 
-defineProps({
+const props = defineProps({
   mod: {
     type: Object as () => Mod,
     required: true,
@@ -58,7 +59,54 @@ defineProps({
   },
 });
 
-defineEmits(["select-mod", "delete-mod"]);
+const emit = defineEmits(["select-mod", "delete-mod", "open-mod-settings", "launch-mod"]);
+
+// Context menu handler
+const showContextMenu = (event: MouseEvent) => {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  // Create context menu options
+  const contextMenuOptions = [
+    {
+      icon: 'settings',
+      label: 'Edit Settings',
+      action: () => emit('open-mod-settings', props.mod)
+    },
+    {
+      icon: 'play_arrow', 
+      label: 'Launch Mod',
+      action: () => {
+        // Directly emit the launch-mod event with the mod's ID
+        emit('launch-mod', props.mod.id);
+      }
+    },
+    { separator: true },
+    {
+      icon: 'delete',
+      label: 'Remove Mod',
+      action: () => emit('delete-mod', props.mod),
+      danger: true
+    }
+  ];
+  
+  // Create and dispatch custom event to show context menu
+  const customEvent = new CustomEvent('show-context-menu', {
+    detail: {
+      position: { x: event.clientX, y: event.clientY },
+      options: contextMenuOptions
+    },
+    bubbles: true
+  });
+  
+  // Safely handle the case where event.target could be null
+  if (event.target) {
+    event.target.dispatchEvent(customEvent);
+  } else {
+    // Fallback to document if target is null
+    document.dispatchEvent(customEvent);
+  }
+};
 </script>
 
 <style scoped>

@@ -114,7 +114,7 @@ const openCustomDownload = () => {
 }
 
 .search-input :deep(.q-field__control) {
-  background-color: var(--theme-bg);
+  background-color: var(--theme-card);
   border-radius: 1rem;
 }
 

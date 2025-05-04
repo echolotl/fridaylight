@@ -4,6 +4,7 @@
     clickable 
     v-ripple 
     @click="toggleExpanded"
+    @contextmenu.prevent="showContextMenu"
     class="draggable-item cursor-move folder"
     :class="{ 'expanded-folder': isExpanded, 'compact-mode': compactMode }"
     :style="{ borderBottomColor: isExpanded ? folder.color : 'transparent' }"
@@ -64,7 +65,9 @@
                         :is-active="selectedModId === element.id"
                         :compact-mode="compactMode"
                         @select-mod="$emit('select-mod', element.data)" 
-                        @delete-mod="$emit('delete-mod', element)" />
+                        @delete-mod="$emit('delete-mod', element)"
+                        @open-mod-settings="$emit('open-mod-settings', $event)"
+                        @launch-mod="$emit('launch-mod', $event)" />
                 </div>
 </template>
 </draggable>
@@ -123,7 +126,51 @@ const toggleExpanded = () => {
   isExpanded.value = !isExpanded.value;
 };
 
-const emit = defineEmits(['select-mod', 'delete-mod', 'delete-folder', 'update-folder-mods', 'reorder-folder-mods']);
+const emit = defineEmits(['select-mod', 'delete-mod', 'delete-folder', 'update-folder-mods', 'reorder-folder-mods', 'open-mod-settings', 'edit-folder', 'launch-mod']);
+
+// Context menu handler
+const showContextMenu = (event: MouseEvent) => {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  // Create context menu options
+  const contextMenuOptions = [
+    {
+      icon: 'edit',
+      label: 'Edit Folder',
+      action: () => emit('edit-folder', props.folder)
+    },
+    {
+      icon: isExpanded.value ? 'expand_less' : 'expand_more',
+      label: isExpanded.value ? 'Collapse Folder' : 'Expand Folder',
+      action: () => toggleExpanded()
+    },
+    { separator: true },
+    {
+      icon: 'delete',
+      label: 'Remove Folder',
+      action: () => emit('delete-folder', props.folder),
+      danger: true
+    }
+  ];
+  
+  // Create and dispatch custom event to show context menu
+  const customEvent = new CustomEvent('show-context-menu', {
+    detail: {
+      position: { x: event.clientX, y: event.clientY },
+      options: contextMenuOptions
+    },
+    bubbles: true
+  });
+  
+  // Safely handle the case where event.target could be null
+  if (event.target) {
+    event.target.dispatchEvent(customEvent);
+  } else {
+    // Fallback to document if target is null
+    document.dispatchEvent(customEvent);
+  };
+};
 
 // Handle drag end to update mod order within folder
 const handleDragEnd = () => {

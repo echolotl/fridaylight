@@ -43,6 +43,14 @@
         Would you like to remove this mod from your library?
       </p>
     </MessageDialog>
+    
+    <!-- Global Context Menu -->
+    <ContextMenu
+      :visible="showContextMenu"
+      :position="contextMenuPosition"
+      :options="contextMenuOptions"
+      @close="closeContextMenu"
+    />
   </div>
   </q-layout>
 </template>
@@ -59,6 +67,7 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import Sidebar from "./components/layout/Sidebar.vue";
 import EngineSelectionDialog from "./components/modals/EngineSelectionDialog.vue";
 import MessageDialog from "./components/modals/MessageDialog.vue";
+import ContextMenu from "./components/common/ContextMenu.vue";
 import { DatabaseService } from "@services/dbService";
 import { StoreService } from "@services/storeService";
 import { gamebananaService, setupGameBananaEventListeners } from "@services/gamebananaService";
@@ -198,6 +207,45 @@ const removeMissingMod = async () => {
     missingModPath.value = "";
   }
 };
+
+// State for context menu
+const showContextMenu = ref(false);
+const contextMenuPosition = ref({ x: 0, y: 0 });
+const contextMenuOptions = ref<any[]>([]);
+
+// Function to close the context menu
+const closeContextMenu = () => {
+  showContextMenu.value = false;
+  contextMenuOptions.value = [];
+};
+
+// Global event listener for custom context menu
+onMounted(() => {
+  // Prevent default context menu
+  document.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+  
+  // Listen for custom context menu events
+  document.addEventListener("show-context-menu", ((event: CustomEvent) => {
+    // Get position and options from the event
+    const { position, options } = event.detail;
+    
+    // Update context menu state
+    contextMenuPosition.value = position;
+    contextMenuOptions.value = options;
+    showContextMenu.value = true;
+  }) as EventListener);
+});
+
+// Cleanup event listeners on unmount
+onUnmounted(() => {
+  document.removeEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+  
+  document.removeEventListener("show-context-menu", (() => {}) as EventListener);
+});
 
 // Initialize application settings
 const appSettings = reactive<AppSettings>({

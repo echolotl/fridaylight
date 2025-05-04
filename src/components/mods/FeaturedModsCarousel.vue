@@ -213,6 +213,8 @@ const shortenDescription = (description: string): string => {
 
 .featured-btn {
   margin-top: 8px;
+  border: 2px solid var(--theme-border);
+  border-radius: .25rem;
 }
 
 .featured-period {

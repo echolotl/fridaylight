@@ -68,18 +68,18 @@ const formatNumber = (num: number): string => {
 
 <style scoped>
 .mod-card {
-  background: var(--theme-surface);
-  border-radius: 0.5rem;
+  background: var(--theme-card);
+  border-radius: .75rem;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s;
-  border: 2px solid var(--theme-border);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-bottom: 2px solid var(--theme-border);
 }
 
 .mod-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0px 20px rgba(0, 0, 0, 0.2);
 }
 
 .mod-thumbnail {
@@ -133,6 +133,8 @@ const formatNumber = (num: number): string => {
 
 .download-btn {
   margin: 0 12px 12px 12px;
+  border: 2px solid var(--theme-border);
+  border-radius: .5rem;
 }
 
 .mod-category-icon {

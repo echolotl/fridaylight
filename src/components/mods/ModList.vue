@@ -154,6 +154,9 @@
                   @delete-folder="confirmDeleteFolder(item.data)"
                   @update-folder-mods="handleFolderModsUpdate"
                   @reorder-folder-mods="handleFolderModsReorder"
+                  @open-mod-settings="openModSettings"
+                  @edit-folder="editFolder"
+                  @launch-mod="$emit('launch-mod', $event)"
                 />
 
                 <!-- Show mod if it's not in any folder and is a mod type -->
@@ -164,6 +167,8 @@
                   :compact-mode="compactMode"
                   @select-mod="$emit('select-mod', item.data)"
                   @delete-mod="confirmDelete(item.data)"
+                  @open-mod-settings="openModSettings"
+                  @launch-mod="$emit('launch-mod', $event)"
                 />
               </div>
             </template>
@@ -222,6 +227,13 @@
       v-model="showCreateFolderDialog"
       @create-folder="handleCreateFolder"
     />
+    
+    <!-- Edit Folder Modal -->
+    <EditFolderModal
+      v-model="showEditFolderDialog"
+      :folder="folderToEdit"
+      @save-folder="handleSaveFolder"
+    />
   </div>
 </template>
 
@@ -233,6 +245,7 @@ import ModListItem from "@mods/list/ModListItem.vue";
 import FolderListItem from "@mods/list/FolderListItem.vue";
 import DownloadListItem from "@mods/list/DownloadListItem.vue";
 import CreateFolderModal from "@modals/CreateFolderModal.vue";
+import EditFolderModal from "@modals/EditFolderModal.vue";
 import MessageDialog from "@modals/MessageDialog.vue";
 import { Mod, Folder, DisplayItem } from "@main-types";
 import { v4 as uuidv4 } from "uuid";
@@ -261,6 +274,11 @@ const modsList = ref<Mod[]>([]);
 const foldersList = ref<Folder[]>([]);
 const displayItems = ref<DisplayItem[]>([]);
 const searchQuery = ref('');
+
+// Create folder dialog state
+const showCreateFolderDialog = ref(false);
+const showEditFolderDialog = ref(false);
+const folderToEdit = ref<Folder | null>(null);
 
 // Get all mods, including those in folders
 const getAllMods = () => {
@@ -397,6 +415,8 @@ const emit = defineEmits([
   "update-folder",
   "update-mod", // Added new emit type for mod updates
   "reorder-folder-mods", // Added new emit type for reordering mods within folders
+  "open-mod-settings", 
+  "launch-mod", // Added new emit type for launching mods
 ]);
 
 const showDeleteDialog = ref(false);
@@ -429,9 +449,6 @@ const deleteMod = () => {
     modToDelete.value = null;
   }
 };
-
-// Create folder dialog state
-const showCreateFolderDialog = ref(false);
 
 // Handle folder creation
 const handleCreateFolder = (folderData: { name: string; color: string }) => {
@@ -637,6 +654,44 @@ const handleFolderModsUpdate = (event: {
 
   // Update the display items to reflect the changes
   updateDisplayItems();
+};
+
+// Handle saving an edited folder
+const handleSaveFolder = (folderData: { id: string; name: string; color: string }) => {
+  // Find the folder index
+  const folderIndex = foldersList.value.findIndex(folder => folder.id === folderData.id);
+  if (folderIndex === -1) return;
+  
+  // Create an updated folder object while preserving all existing properties
+  const updatedFolder = {
+    ...foldersList.value[folderIndex],
+    name: folderData.name,
+    color: folderData.color
+  };
+  
+  // Update our local folders list
+  const newFoldersList = [...foldersList.value];
+  newFoldersList[folderIndex] = updatedFolder;
+  foldersList.value = newFoldersList;
+  
+  // Emit the updated folder to the parent component
+  emit("update-folder", updatedFolder);
+  
+  // Update display items to reflect the changes
+  updateDisplayItems();
+};
+
+// Handle context menu actions
+const openModSettings = (mod: Mod) => {
+  // This will forward the mod to the parent component which should handle opening the settings modal
+  emit('open-mod-settings', mod);
+};
+
+// Handle edit folder action from context menu
+const editFolder = (folder: Folder) => {
+  // Set the folder to edit and open the edit folder modal
+  folderToEdit.value = folder;
+  showEditFolderDialog.value = true;
 };
 </script>
 
