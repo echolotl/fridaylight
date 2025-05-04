@@ -26,6 +26,7 @@
         @update-folder="updateFolderDetails"
         @reorder-folder-mods="handleFolderModsReorder"
         @launch-mod="launchMod"
+        @super-delete-mod="superDeleteMod"
         class="modlist"
       />
 
@@ -797,6 +798,61 @@ const deleteMod = async (modId: string) => {
     window.dispatchEvent(refreshEvent);
   } catch (error) {
     console.error("Failed to delete mod:", error);
+  }
+};
+
+// Function to super delete a mod (completely remove its folder from disk)
+const superDeleteMod = async (modId: string) => {
+  try {
+    // Show a loading notification
+    const loadingNotif = $q.notify({
+      type: 'ongoing',
+      message: 'Super deleting mod...',
+      position: 'bottom-right',
+      timeout: 0,
+      spinner: true
+    });
+
+    // Call the Rust backend to perform super delete
+    await invoke("super_delete_mod", { id: modId });
+
+    // Dismiss loading notification
+    loadingNotif();
+
+    // Remove mod from the mods array
+    mods.value = mods.value.filter((mod) => mod.id !== modId);
+
+    // If the deleted mod was the selected mod, clear the selection
+    if (selectedMod.value?.id === modId) {
+      selectedMod.value = null;
+    }
+
+    // Delete mod from the database using the service
+    await dbService.deleteMod(modId);
+
+    // Show success notification
+    $q.notify({
+      type: "positive",
+      message: "Mod completely deleted",
+      caption: "The mod folder and all its contents have been deleted",
+      position: "bottom-right",
+      timeout: 3000,
+    });
+
+    // Force a refresh of the UI to ensure the mod is removed from displayItems
+    const refreshEvent = new CustomEvent("refresh-mods");
+    window.dispatchEvent(refreshEvent);
+  } catch (error) {
+    console.error("Failed to super delete mod:", error);
+    
+    // Show error notification
+    $q.notify({
+      type: "negative",
+      message: "Failed to delete mod files",
+      caption: String(error),
+      position: "bottom-right",
+      timeout: 5000,
+    });
   }
 };
 

@@ -109,6 +109,9 @@
               :compact-mode="compactMode"
               @select-mod="$emit('select-mod', mod)"
               @delete-mod="confirmDelete(mod)"
+              @super-delete-mod="confirmSuperDelete(mod)"
+              @open-mod-settings="openModSettings"
+              @launch-mod="$emit('launch-mod', $event)"
             />
           </div>
           
@@ -167,6 +170,7 @@
                   :compact-mode="compactMode"
                   @select-mod="$emit('select-mod', item.data)"
                   @delete-mod="confirmDelete(item.data)"
+                  @super-delete-mod="confirmSuperDelete(item.data)"
                   @open-mod-settings="openModSettings"
                   @launch-mod="$emit('launch-mod', $event)"
                 />
@@ -219,6 +223,25 @@
       <p class="text-body2 q-mt-sm">
         This will only delete the folder. The mods inside will not be
         deleted but will return to the main mod list.
+      </p>
+    </MessageDialog>
+
+    <!-- Super Delete mod confirmation dialog -->
+    <MessageDialog
+      v-model="showSuperDeleteDialog"
+      title="Super Delete Mod"
+      icon="delete_forever"
+      icon-color="negative"
+      confirm-label="Super Delete"
+      confirm-color="negative"
+      @confirm="superDeleteMod"
+      v-if="modToSuperDelete"
+    >
+      <div class="text-h6">{{ modToSuperDelete?.name }}</div>
+      <div class="text-caption">{{ modToSuperDelete?.path }}</div>
+      <p class="text-body2 q-mt-sm">
+        This will <span class="text-negative text-bold">permanently delete</span> the mod folder and all its contents from your computer.
+        This action cannot be undone!
       </p>
     </MessageDialog>
 
@@ -417,16 +440,24 @@ const emit = defineEmits([
   "reorder-folder-mods", // Added new emit type for reordering mods within folders
   "open-mod-settings", 
   "launch-mod", // Added new emit type for launching mods
+  "super-delete-mod", // Added new emit type for super delete mods
 ]);
 
 const showDeleteDialog = ref(false);
 const showDeleteFolderDialog = ref(false);
+const showSuperDeleteDialog = ref(false);
 const modToDelete = ref<Mod | null>(null);
+const modToSuperDelete = ref<Mod | null>(null);
 const folderToDelete = ref<Folder | null>(null);
 
 const confirmDelete = (mod: Mod) => {
   modToDelete.value = mod;
   showDeleteDialog.value = true;
+};
+
+const confirmSuperDelete = (mod: Mod) => {
+  modToSuperDelete.value = mod;
+  showSuperDeleteDialog.value = true;
 };
 
 const confirmDeleteFolder = (folder: Folder) => {
@@ -447,6 +478,28 @@ const deleteMod = () => {
     // Then emit to parent to handle database deletion
     emit("delete-mod", modToDelete.value.id);
     modToDelete.value = null;
+  }
+};
+
+const superDeleteMod = () => {
+  if (modToSuperDelete.value) {
+    // Get the ID before deleting the reference
+    const modId = modToSuperDelete.value.id;
+    const modName = modToSuperDelete.value.name;
+    
+    // We'll start by removing the mod from our local arrays to update the UI
+    modsList.value = modsList.value.filter((mod) => mod.id !== modId);
+    
+    // Update displayItems to remove this mod
+    displayItems.value = displayItems.value.filter(
+      (item) => !(item.type === "mod" && item.data.id === modId)
+    );
+    
+    // Then emit to parent to handle the super delete (physical file deletion)
+    emit("super-delete-mod", modId);
+    
+    // Clean up the reference
+    modToSuperDelete.value = null;
   }
 };
 

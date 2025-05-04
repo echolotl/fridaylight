@@ -646,6 +646,61 @@ pub fn clear_mod_logs(id: String) -> Result<(), String> {
     Ok(())
 }
 
+// Command to delete a mod by deleting its containing folder
+#[tauri::command]
+pub async fn super_delete_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), String> {
+    info!("Attempting to super delete mod with ID: {}", id);
+    let mut mods = mods_state.0.lock().unwrap();
+    
+    // First check if the mod is running, can't delete a running mod
+    let mod_path = if let Some(mod_info) = mods.get(&id) {
+        if mod_info.process_id.is_some() {
+            let err_msg = format!("Cannot delete mod {} while it's running. Please stop it first.", mod_info.name);
+            warn!("{}", err_msg);
+            return Err(err_msg);
+        }
+        
+        // Store the path for deletion
+        mod_info.path.clone()
+    } else {
+        let err_msg = format!("Mod not found with ID: {}", id);
+        warn!("{}", err_msg);
+        return Err(err_msg);
+    };
+    
+    // Check if path exists and is a directory
+    let path = Path::new(&mod_path);
+    if !path.exists() {
+        let err_msg = format!("Path doesn't exist: {}", mod_path);
+        error!("{}", err_msg);
+        return Err(err_msg);
+    }
+    
+    if !path.is_dir() {
+        let err_msg = format!("Path is not a directory: {}", mod_path);
+        error!("{}", err_msg);
+        return Err(err_msg);
+    }
+    
+    // Delete the directory
+    info!("Deleting directory: {}", mod_path);
+    match std::fs::remove_dir_all(path) {
+        Ok(_) => {
+            info!("Successfully deleted directory: {}", mod_path);
+            
+            // Remove the mod from our state
+            mods.remove(&id);
+            
+            Ok(())
+        },
+        Err(e) => {
+            let err_msg = format!("Failed to delete directory: {}", e);
+            error!("{}", err_msg);
+            Err(err_msg)
+        }
+    }
+}
+
 async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     if let Some(update) = app.updater()?.check().await? {
       let mut downloaded = 0;
@@ -741,6 +796,7 @@ pub fn run() {
             stop_mod,
             get_mod_logs,
             clear_mod_logs,
+            super_delete_mod,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -59,7 +59,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["select-mod", "delete-mod", "open-mod-settings", "launch-mod"]);
+const emit = defineEmits(["select-mod", "delete-mod", "open-mod-settings", "launch-mod", "super-delete-mod"]);
 
 // Context menu handler
 const showContextMenu = (event: MouseEvent) => {
@@ -83,9 +83,15 @@ const showContextMenu = (event: MouseEvent) => {
     },
     { separator: true },
     {
-      icon: 'delete',
+      icon: 'close',
       label: 'Remove Mod',
       action: () => emit('delete-mod', props.mod),
+      danger: true
+    },
+    {
+      icon: 'delete_forever',
+      label: 'Delete Mod',
+      action: () => emit('super-delete-mod', props.mod),
       danger: true
     }
   ];

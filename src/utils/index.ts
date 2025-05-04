@@ -14,7 +14,7 @@ export function formatEngineName(engineType: string): string {
     case 'vanilla':
       return 'Vanilla';
     case 'fps-plus':
-      return 'FNF-Plus';
+      return 'FPS Plus';
     case 'prevslice':
       return 'Ludum Dare';
     case 'codename':
