@@ -15,26 +15,17 @@ A mod manager for Friday Night Funkin mods!<br /><br />
 
 ## Features
 
-- An organized UI, including a mod list sidebar and a dedicated mod page.
+- An organized UI
 - Integrated GameBanana browsing + downloading
 - UI Customization
 - Mod metadata support
 - Mod launching
-
-### WIP Features
-
-- [x] Engine mod management
-- [x] Folder organization
-- [x] Custom CSS/Themes
-- [x] Gamebanana download version picker
-- [x] Gamebanana deep linking
-- [x] Non-Gamebanana download links
-- [x] Import folder of FNF mod folders *(for migration)*
-- [ ] Linux/Mac builds
-- [ ] More metadata support *(feel free to recommend ideas in the Issues tab)*
+- Engine-specific mod management
+- Gamebanana deep linking support
+- Easy migration with batch importing!
 
 ## Compiling
 See [COMPILING.md](/docs/COMPILING.md) on how to compile it locally.
 
 ## Mod Metadata
-See [METADATA.md](/docs/METADATA.md) for a complete breakdown on metadata mod creators can use to display cosmetic / functional graphics.
+See [METADATA.md](/docs/METADATA.md) for a complete breakdown on metadata mod creators can use to display cosmetic / functional graphics. Always looking for more suggestions from mod creators!
