@@ -26,6 +26,23 @@
       @select="onEngineSelected"
       @cancel="cancelDownload"
     />
+    
+    <!-- Missing mod path dialog -->
+    <MessageDialog
+      v-model="showModPathMissingDialog"
+      title="Missing Mod"
+      message="The following mod folder no longer exists:"
+      icon="warning"
+      icon-color="negative"
+      confirm-label="Remove From List"
+      confirm-color="negative"
+      @confirm="removeMissingMod"
+    >
+      <div class="text-caption">{{ missingModPath }}</div>
+      <p class="text-body2 q-mt-sm">
+        Would you like to remove this mod from your library?
+      </p>
+    </MessageDialog>
   </div>
   </q-layout>
 </template>
@@ -35,11 +52,13 @@ import { ref, onMounted, onUnmounted, provide, reactive } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
 import { useQuasar, Notify } from "quasar";
 import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import Sidebar from "./components/layout/Sidebar.vue";
 import EngineSelectionDialog from "./components/modals/EngineSelectionDialog.vue";
+import MessageDialog from "./components/modals/MessageDialog.vue";
 import { DatabaseService } from "@services/dbService";
 import { StoreService } from "@services/storeService";
 import { gamebananaService, setupGameBananaEventListeners } from "@services/gamebananaService";
@@ -128,6 +147,55 @@ const onEngineSelected = async (engine: any) => {
 
     // Close the dialog
     showEngineSelectDialog.value = false;
+  }
+};
+
+// State for missing mod path dialog
+const showModPathMissingDialog = ref(false);
+const missingModPath = ref("");
+
+// Function to remove a mod when it's missing
+const removeMissingMod = async () => {
+  if (!missingModPath.value) return;
+  
+  console.log("Removing missing mod with path:", missingModPath.value);
+  
+  try {
+    // Find mod ID based on path
+    const dbService = DatabaseService.getInstance();
+    const mod = await dbService.getModByPath(missingModPath.value);
+    
+    if (mod) {
+      // Delete the mod from the database
+      await dbService.deleteMod(mod.id);
+      
+      // Show success notification
+      $q.notify({
+        type: "positive",
+        message: `Removed missing mod from library`,
+        position: "bottom-right",
+        timeout: 3000,
+      });
+      
+      // Refresh the mods list by dispatching an event
+      const refreshEvent = new CustomEvent("refresh-mods");
+      window.dispatchEvent(refreshEvent);
+    } else {
+      console.warn("Could not find mod with path:", missingModPath.value);
+    }
+  } catch (error) {
+    console.error("Error removing missing mod:", error);
+    $q.notify({
+      type: "negative",
+      message: "Failed to remove mod",
+      caption: String(error),
+      position: "bottom-right", 
+      timeout: 3000,
+    });
+  } finally {
+    // Reset state
+    showModPathMissingDialog.value = false;
+    missingModPath.value = "";
   }
 };
 
@@ -549,6 +617,13 @@ onMounted(async () => {
     
     // Load app settings
     await loadAppSettings();
+
+    // Set up listener for missing mod paths
+    await listen<string>("mod-path-missing", (event) => {
+      console.log("Received mod-path-missing event:", event);
+      missingModPath.value = event.payload;
+      showModPathMissingDialog.value = true;
+    });
 
     // Listen for system theme changes
     const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");

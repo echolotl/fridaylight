@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
 use std::sync::Mutex;
-use tauri::{Manager, State};
+use tauri::{Manager, State, Emitter};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_updater::UpdaterExt;
@@ -580,7 +580,7 @@ pub async fn get_mod_download_files_command(mod_id: i64) -> Result<serde_json::V
 
 // Command to get a mod's metadata JSON
 #[tauri::command]
-pub fn get_mod_metadata(mod_path: String) -> Result<serde_json::Value, String> {
+pub fn get_mod_metadata(mod_path: String, app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     info!("Getting metadata for mod at path: {}", mod_path);
     
     let path_obj = Path::new(&mod_path);
@@ -589,6 +589,12 @@ pub fn get_mod_metadata(mod_path: String) -> Result<serde_json::Value, String> {
     if !path_obj.exists() {
         let err_msg = format!("Mod path does not exist: {}", mod_path);
         error!("{}", err_msg);
+        
+        // Emit an event to the frontend to notify about the missing mod path
+        if let Err(emit_err) = app.emit("mod-path-missing", mod_path.clone()) {
+            error!("Failed to emit mod-path-missing event: {}", emit_err);
+        }
+        
         return Err(err_msg);
     }
     

@@ -1185,4 +1185,56 @@ export class DatabaseService {
       display_order: 9999,
     };
   }
+
+  /**
+   * Get a mod by its path
+   * @param path The filesystem path of the mod
+   * @returns The mod if found, null otherwise
+   */
+  public async getModByPath(path: string): Promise<Mod | null> {
+    if (!this.db) {
+      throw new Error("Database not initialized");
+    }
+
+    return withDatabaseLock(async (db) => {
+      const results = await db.select("SELECT * FROM mods WHERE path = ?", [path]);
+      
+      if (results.length === 0) {
+        return null;
+      }
+      
+      const mod = results[0];
+      
+      // Parse engine data if it exists
+      let engine;
+      try {
+        engine = mod.engine_data
+          ? JSON.parse(mod.engine_data)
+          : {
+              engine_type: "unknown",
+              engine_name: "Unknown Engine",
+              engine_icon: "",
+              mods_folder: false,
+              mods_folder_path: "",
+            };
+      } catch (e) {
+        console.error("Failed to parse engine data for mod:", mod.id, e);
+        engine = {
+          engine_type: "unknown",
+          engine_name: "Unknown Engine",
+          engine_icon: "",
+          mods_folder: false,
+          mods_folder_path: "",
+        };
+      }
+
+      return {
+        ...mod,
+        engine,
+      };
+    }, false, "getModByPath").catch((error) => {
+      console.error("Failed to get mod by path:", error);
+      throw error;
+    });
+  }
 }
