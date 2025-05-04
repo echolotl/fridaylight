@@ -93,7 +93,7 @@
               :options="accentColorOptions"
               label="Accent Color"
               outlined
-              class="q-mb-md selector"
+              class="q-mb-md selector phantom-font"
             >
               <template v-slot:option="scope">
                 <q-item v-bind="scope.itemProps">
@@ -104,7 +104,7 @@
                     ></div>
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label text-color="var(--theme-text)">{{
+                    <q-item-label text-color="var(--theme-text)" class="phantom-font">{{
                       scope.opt.label
                     }}</q-item-label>
                   </q-item-section>
@@ -112,14 +112,14 @@
               </template>
 
               <template v-slot:selected>
-                <div class="row items-center">
+                <div class="row items-center phantom-font">
                   <div
                     class="color-preview q-mr-sm"
                     :style="{
                       backgroundColor:
                         typeof settings.accentColor === 'string'
                           ? settings.accentColor
-                          : settings.accentColor?.value || '#FF0088',
+                          : settings.accentColor?.value || '#DB2955',
                     }"
                   ></div>
                   <div>
@@ -354,7 +354,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { AppSettings } from "@main-types";
 import ThemePreview from "../common/ThemePreview.vue";
 import MessageDialog from "./MessageDialog.vue";
-import { StoreService } from "../../services/storeService";
+import { StoreService, DEFAULT_SETTINGS } from "../../services/storeService";
 import { DatabaseService } from "../../services/dbService";
 
 // Use the singleton directly instead of through a ref
@@ -369,16 +369,7 @@ const props = defineProps({
 
 const emit = defineEmits(["update:modelValue", "save"]);
 
-const settings = ref<AppSettings>({
-  accentColor: "#DB2955", // Default magenta color
-  installLocation: "C:\\Users\\Public\\Documents\\FNF Mods",
-  theme: "dark", // Default to dark theme
-  useSystemTheme: true, // Default to using system theme
-  customCSS: "", // Default to no custom CSS
-  validateFnfMods: true, // Default to validating FNF mods
-  showTerminalOutput: true, // Default to showing terminal output
-  compactMode: false, // Default to not using compact mode
-});
+const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS });
 
 // Sidebar navigation sections
 const settingsSections = [
@@ -727,16 +718,7 @@ const cancel = () => {
 
 const resetSettings = () => {
   // Reset all settings to default values
-  settings.value = {
-    accentColor: "#DB2955",
-    installLocation: "C:\\Users\\Public\\Documents\\FNF Mods",
-    theme: "dark",
-    useSystemTheme: true,
-    customCSS: "",
-    validateFnfMods: true,
-    showTerminalOutput: true,
-    compactMode: false,
-  };
+  settings.value = { ...DEFAULT_SETTINGS };
   console.log("Settings have been reset to default values.");
 };
 

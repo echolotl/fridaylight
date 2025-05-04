@@ -140,6 +140,8 @@ pub struct ModInfo {
     pub display_order: Option<i64>,
     pub process_id: Option<u32>,    // Track the running process ID
     pub contributors: Option<Vec<ContributorGroup>>, // List of contributor groups
+    pub last_played: Option<i64>,   // Unix timestamp when mod was last played
+    pub date_added: Option<i64>,    // Unix timestamp when mod was added
 }
 
 impl ModInfo {

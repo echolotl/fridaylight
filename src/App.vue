@@ -69,7 +69,7 @@ import EngineSelectionDialog from "./components/modals/EngineSelectionDialog.vue
 import MessageDialog from "./components/modals/MessageDialog.vue";
 import ContextMenu from "./components/common/ContextMenu.vue";
 import { DatabaseService } from "@services/dbService";
-import { StoreService } from "@services/storeService";
+import { StoreService, DEFAULT_SETTINGS } from "@services/storeService";
 import { gamebananaService, setupGameBananaEventListeners } from "@services/gamebananaService";
 import { AppSettings } from "./types";
 
@@ -248,16 +248,7 @@ onUnmounted(() => {
 });
 
 // Initialize application settings
-const appSettings = reactive<AppSettings>({
-  accentColor: "#DB2955",
-  installLocation: "C:\\Users\\Public\\Documents\\FNF Mods",
-  theme: "dark",
-  useSystemTheme: true,
-  customCSS: "",
-  validateFnfMods: true,
-  showTerminalOutput: true,
-  compactMode: false,
-});
+const appSettings = reactive<AppSettings>({ ...DEFAULT_SETTINGS });
 
 // Provide app settings to all components
 provide("appSettings", appSettings);

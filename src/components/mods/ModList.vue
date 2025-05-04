@@ -127,10 +127,36 @@
 
         <!-- Installed mods list - show only when not searching -->
         <template v-else>
-          <q-item-label header style="color: var(--theme-text-secondary)" v-if="!compactMode"> Installed </q-item-label>
+          <q-item-label 
+            header 
+            style="color: var(--theme-text-secondary)" 
+            v-if="!compactMode"
+            class="cursor-pointer"
+            @click="showSortMenu"
+          > 
+            {{ sortHeaderText }} <q-icon name="arrow_drop_down" />
+          </q-item-label>
           <q-separator spaced v-else />
-          <!-- Sortable Mod list items -->
+          
+          <!-- Show a regular list (non-draggable) when sorting is applied -->
+          <template v-if="sortBy !== 'default'">
+            <ModListItem
+              v-for="item in sortedDisplayItems"
+              :key="item.id"
+              :mod="item.data as Mod"
+              :is-active="selectedModId === item.data.id"
+              :compact-mode="compactMode"
+              @select-mod="$emit('select-mod', item.data as Mod)"
+              @delete-mod="confirmDelete(item.data as Mod)"
+              @super-delete-mod="confirmSuperDelete(item.data as Mod)"
+              @open-mod-settings="openModSettings"
+              @launch-mod="$emit('launch-mod', $event)"
+            />
+          </template>
+          
+          <!-- Use draggable when no sorting is applied -->
           <draggable
+            v-else
             v-model="displayItems"
             group="mods"
             item-key="id"
@@ -300,6 +326,129 @@ const searchQuery = ref('');
 const showCreateFolderDialog = ref(false);
 const showEditFolderDialog = ref(false);
 const folderToEdit = ref<Folder | null>(null);
+
+// Sorting state
+const sortBy = ref("default");
+const sortDirection = ref("asc");
+const sortHeaderText = computed(() => {
+  switch (sortBy.value) {
+    case "name":
+      return "Name";
+    case "date_added":
+      return "Date Added";
+    case "last_played":
+      return "Last Played";
+    default:
+      return "Installed";
+  }
+});
+
+// Show sort options dropdown
+const showSortMenu = (event: MouseEvent) => {
+  // Prevent the default click behavior
+  event.preventDefault();
+  event.stopPropagation();
+  
+  // Create options for the context menu
+  const sortOptions = [
+    {
+      icon: 'sort',
+      label: 'Default Order',
+      action: () => setSortOption('default')
+    },
+    {
+      icon: 'sort_by_alpha',
+      label: 'Sort by Name',
+      action: () => setSortOption('name')
+    },
+    {
+      icon: 'date_range',
+      label: 'Sort by Date Added',
+      action: () => setSortOption('date_added')
+    },
+    {
+      icon: 'play_circle',
+      label: 'Sort by Last Played',
+      action: () => setSortOption('last_played')
+    },
+    { separator: true },
+    {
+      icon: sortDirection.value === 'asc' ? 'arrow_upward' : 'arrow_downward',
+      label: sortDirection.value === 'asc' ? 'Ascending' : 'Descending',
+      action: () => toggleSortDirection()
+    }
+  ];
+  
+  // Create and dispatch the context menu event
+  const customEvent = new CustomEvent('show-context-menu', {
+    detail: {
+      position: { x: event.clientX, y: event.clientY },
+      options: sortOptions
+    },
+    bubbles: true
+  });
+  
+  if (event.target) {
+    event.target.dispatchEvent(customEvent);
+  } else {
+    document.dispatchEvent(customEvent);
+  }
+};
+
+// Set the sort option
+const setSortOption = (option: string) => {
+  sortBy.value = option;
+  // Reset to default order when selecting default
+  if (option === 'default') {
+    updateDisplayItems();
+  }
+};
+
+// Toggle sort direction between ascending and descending
+const toggleSortDirection = () => {
+  sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+};
+
+const sortedDisplayItems = computed(() => {
+  if (sortBy.value === "default") {
+    return displayItems.value;
+  }
+
+  // Filter out only mods (we don't sort folders)
+  const onlyMods = displayItems.value.filter(item => item.type === "mod");
+  
+  // Sort the mods based on the selected criteria
+  const sortedMods = [...onlyMods].sort((a, b) => {
+    let comparison = 0;
+    
+    if (sortBy.value === "name") {
+      // Sort by name (alphabetically)
+      comparison = a.data.name.localeCompare(b.data.name);
+    } 
+    else if (sortBy.value === "date_added") {
+      // Sort by date_added (if available, otherwise by ID which is usually chronological)
+      // Type casting to ensure TypeScript knows we're only dealing with mod data
+      const modA = a.data as Mod;
+      const modB = b.data as Mod;
+      const dateA = modA.date_added ? new Date(modA.date_added).getTime() : 0;
+      const dateB = modB.date_added ? new Date(modB.date_added).getTime() : 0;
+      comparison = dateA - dateB;
+    }
+    else if (sortBy.value === "last_played") {
+      // Sort by last_played timestamp (if available)
+      const modA = a.data as Mod;
+      const modB = b.data as Mod;
+      const lastPlayedA = modA.last_played ? new Date(modA.last_played).getTime() : 0;
+      const lastPlayedB = modB.last_played ? new Date(modB.last_played).getTime() : 0;
+      comparison = lastPlayedA - lastPlayedB;
+    }
+    
+    // Apply sort direction (ascending or descending)
+    return sortDirection.value === 'asc' ? comparison : -comparison;
+  });
+  
+  return sortedMods;
+});
 
 // Get all mods, including those in folders
 const getAllMods = () => {
@@ -483,7 +632,6 @@ const superDeleteMod = () => {
   if (modToSuperDelete.value) {
     // Get the ID before deleting the reference
     const modId = modToSuperDelete.value.id;
-    const modName = modToSuperDelete.value.name;
     
     // We'll start by removing the mod from our local arrays to update the UI
     modsList.value = modsList.value.filter((mod) => mod.id !== modId);

@@ -61,6 +61,8 @@ export interface Mod {
   folder_id?: string | null; // ID of the folder this mod belongs to, if any
   display_order_in_folder?: number; // Position within the folder
   contributors?: ContributorGroup[]; // List of contributors to the mod, organized by groups
+  last_played?: number; // Unix timestamp when mod was last played
+  date_added?: number; // Unix timestamp when mod was added
 }
 
 /**

@@ -765,7 +765,35 @@ const handleSelectExecutable = async (callback?: (newExecutablePath: string) => 
 // Function that launches the selected mod
 const launchMod = async (modId: string) => {
   try {
+    // Now invoke the backend to launch the mod
     await invoke("launch_mod", { id: modId });
+
+        // Find the mod in our local array by ID
+        const mod = mods.value.find(m => m.id === modId);
+    
+    if (mod) {
+      // Update the last_played timestamp before launching
+      const updatedMod = {
+        ...mod,
+        last_played: Math.floor(Date.now() / 1000) // Current Unix timestamp in seconds
+      };
+      
+      // Save to database to persist the last_played value
+      await dbService.saveMod(updatedMod);
+      
+      // Update the local state
+      const index = mods.value.findIndex(m => m.id === modId);
+      if (index !== -1) {
+        mods.value[index] = updatedMod;
+      }
+      
+      // If this is the currently selected mod, update that reference too
+      if (selectedMod.value?.id === modId) {
+        selectedMod.value = updatedMod;
+      }
+      
+      console.log(`Updated last_played timestamp for mod ${updatedMod.name} to ${updatedMod.last_played}`);
+    }
   } catch (error) {
     console.error("Failed to launch mod:", error);
     launchError.value = "Failed to launch mod";
@@ -1001,21 +1029,59 @@ const applyCustomCSS = (customCSS: string) => {
 };
 
 // Function to save app settings
-const saveAppSettings = (settings: any) => {
+const saveAppSettings = async (settings: any) => {
   console.log("App settings saved:", settings);
 
   // Apply the accent color immediately - ensure it's a string
-  let colorValue =
-    typeof settings.accentColor === "string"
-      ? settings.accentColor
-      : settings.accentColor?.value || "#FF0088";
+  let colorValue = settings.accentColor || '#DB2955';
 
-  // Ensure colorValue is always a string
-  if (typeof colorValue !== "string" && colorValue?.value) {
+  // Handle if accentColor is stored as a JSON string (from previous version)
+  if (
+    typeof colorValue === "string" &&
+    colorValue.trim().startsWith("{") &&
+    colorValue.includes("value")
+  ) {
+    try {
+      // Validate JSON format before parsing
+      if (/^[\s]*\{.*\}[\s]*$/.test(colorValue)) {
+        const parsedColor = JSON.parse(colorValue);
+        if (parsedColor && parsedColor.value && typeof parsedColor.value === 'string') {
+          colorValue = parsedColor.value;
+          
+          // Also fix it in the database by saving it back as a string
+          await storeService.saveSetting("accentColor", colorValue);
+          console.log("Fixed accent color format in database:", colorValue);
+        } else {
+          // If parsed but invalid structure, use default
+          colorValue = '#DB2955';
+          console.log("Parsed color doesn't have a valid value property, using default");
+        }
+      } else {
+        // Not valid JSON object format
+        colorValue = '#DB2955';
+        console.log("Invalid JSON format for color value, using default");
+      }
+    } catch (e) {
+      console.error("Failed to parse accent color JSON:", e);
+      // Save the default color to fix the database
+      colorValue = '#DB2955';
+      await storeService.saveSetting("accentColor", colorValue);
+      console.log("Saved default accent color to fix invalid data");
+    }
+  }
+  // Handle if accentColor is an object with a value property
+  else if (typeof colorValue !== "string" && colorValue?.value) {
+    const originalValue = colorValue;
     colorValue = colorValue.value;
   }
 
-  document.documentElement.style.setProperty("--q-primary", String(colorValue));
+  // Ensure colorValue is always a valid CSS color string
+  if (typeof colorValue !== "string" || !colorValue.startsWith("#")) {
+    colorValue = '#DB2955'; // Fallback to default if invalid
+  }
+
+  document.documentElement.style.setProperty("--q-primary", colorValue);
+  console.log("Applied accent color from settings:", colorValue);
 
   // Update custom CSS if provided
   if (settings.customCSS !== undefined) {
@@ -1041,24 +1107,40 @@ const loadAppSettings = async () => {
     console.log("Applied compact mode setting:", isCompactMode.value);
 
     // Apply the accent color to CSS custom properties
-    let colorValue = settings.accentColor || "#FF0088";
+    let colorValue = settings.accentColor || '#DB2955';
 
     // Handle if accentColor is stored as a JSON string (from previous version)
     if (
       typeof colorValue === "string" &&
-      colorValue.startsWith("{") &&
+      colorValue.trim().startsWith("{") &&
       colorValue.includes("value")
     ) {
       try {
-        const parsedColor = JSON.parse(colorValue);
-        colorValue = parsedColor.value || "#FF0088";
-
-        // Also fix it in the database by saving it back as a string
-        await storeService.saveSetting("accentColor", colorValue);
-        console.log("Fixed accent color format in database:", colorValue);
+        // Validate JSON format before parsing
+        if (/^[\s]*\{.*\}[\s]*$/.test(colorValue)) {
+          const parsedColor = JSON.parse(colorValue);
+          if (parsedColor && parsedColor.value && typeof parsedColor.value === 'string') {
+            colorValue = parsedColor.value;
+            
+            // Also fix it in the database by saving it back as a string
+            await storeService.saveSetting("accentColor", colorValue);
+            console.log("Fixed accent color format in database:", colorValue);
+          } else {
+            // If parsed but invalid structure, use default
+            colorValue = '#DB2955';
+            console.log("Parsed color doesn't have a valid value property, using default");
+          }
+        } else {
+          // Not valid JSON object format
+          colorValue = '#DB2955';
+          console.log("Invalid JSON format for color value, using default");
+        }
       } catch (e) {
         console.error("Failed to parse accent color JSON:", e);
-        colorValue = "#FF0088"; // Fallback to default
+        // Save the default color to fix the database
+        colorValue = '#DB2955';
+        await storeService.saveSetting("accentColor", colorValue);
+        console.log("Saved default accent color to fix invalid data");
       }
     }
     // Handle if accentColor is an object with a value property
@@ -1078,7 +1160,7 @@ const loadAppSettings = async () => {
 
     // Ensure colorValue is always a valid CSS color string
     if (typeof colorValue !== "string" || !colorValue.startsWith("#")) {
-      colorValue = "#FF0088"; // Fallback to default if invalid
+      colorValue = '#DB2955'; // Fallback to default if invalid
     }
 
     document.documentElement.style.setProperty("--q-primary", colorValue);

@@ -439,6 +439,8 @@ pub async fn download_gamebanana_mod(
         process_id: None, // Initialize with None since mod is not running yet
         contributors: mod_info_response.as_ref().and_then(|info| extract_contributors(info)),
         metadata_version: Some(CURRENT_METADATA_VERSION),
+        date_added: Some(chrono::Utc::now().timestamp()), // Set current timestamp as date added
+        last_played: None, // Initialize with None since mod is not played yet
     };
     
     // Create metadata.json file in the .flight folder
@@ -856,6 +858,8 @@ pub async fn download_custom_mod(
         process_id: None,
         contributors: None,
         metadata_version: Some(CURRENT_METADATA_VERSION),
+        date_added: Some(chrono::Utc::now().timestamp()), // Set current timestamp as date added
+        last_played: None, // Initialize with None since mod is not played yet
     };
     
     // Add the mod to our state
@@ -1319,6 +1323,8 @@ pub async fn download_engine(
         process_id: None, // Initialize with None since mod is not running yet
         contributors: None,
         metadata_version: Some(CURRENT_METADATA_VERSION),
+        date_added: Some(chrono::Utc::now().timestamp()), // Set current timestamp as date added
+        last_played: None, // Initialize with None since mod is not played yet
     };
     
     // Add the mod to our state

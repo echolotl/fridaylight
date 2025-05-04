@@ -177,6 +177,7 @@ export class StoreService {
     
     try {
       await this.store.clear();
+      console.log('Settings cleared successfully');
     } catch (error) {
       console.error('Failed to clear settings:', error);
       throw error;

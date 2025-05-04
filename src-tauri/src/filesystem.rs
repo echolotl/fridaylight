@@ -718,7 +718,14 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
 
     // Create a unique ID
     let id = uuid::Uuid::new_v4().to_string();
-    debug!("Generated mod ID: {}", id);    
+    debug!("Generated mod ID: {}", id);
+    
+    // Set current timestamp for date_added
+    let current_time = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    
     let mod_info = ModInfo {
         id,
         name,
@@ -736,6 +743,8 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         engine,      // Add the new engine field
         process_id: None, // Initialize with None since mod is not running yet
         contributors, // Add the parsed contributors
+        last_played: None, // Initialize with None since the mod hasn't been played yet
+        date_added: Some(current_time), // Set the current timestamp
     };
 
     Ok(mod_info)

@@ -239,7 +239,6 @@ export class DatabaseService {
       // Create or update tables with lock protection
       await withDatabaseLock(() => this.createModsTable(), false, "createModsTable");
       await withDatabaseLock(() => this.createFoldersTable(), false, "createFoldersTable");
-      await withDatabaseLock(() => this.createModFoldersTable(), false, "createModFoldersTable");
 
       // Set initialized flag
       this.initialized = true;
@@ -316,9 +315,18 @@ export class DatabaseService {
           console.log("Added folder_id column to mods table");
         }
 
-        if (!columns.includes("contributors_data")) {
-          await this.db.execute(`ALTER TABLE mods ADD COLUMN contributors_data TEXT`);
-          console.log("Added contributors_data column to mods table");
+        // Note: We no longer need to check for or add contributors_data column
+        // as it's now parsed on-demand from metadata.json
+
+        // Add our new timestamp fields if they don't exist
+        if (!columns.includes("last_played")) {
+          await this.db.execute(`ALTER TABLE mods ADD COLUMN last_played INTEGER`);
+          console.log("Added last_played column to mods table");
+        }
+
+        if (!columns.includes("date_added")) {
+          await this.db.execute(`ALTER TABLE mods ADD COLUMN date_added INTEGER`);
+          console.log("Added date_added column to mods table");
         }
       } else {
         // Table doesn't exist, create it with all columns
@@ -339,7 +347,8 @@ export class DatabaseService {
             display_order INTEGER DEFAULT 0,
             folder_id TEXT,
             display_order_in_folder INTEGER DEFAULT 0,
-            contributors_data TEXT
+            last_played INTEGER,
+            date_added INTEGER
           )
         `);
         console.log("Created mods table with all columns");
@@ -382,36 +391,6 @@ export class DatabaseService {
       }
     } catch (error) {
       console.error("Failed to initialize folders table:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Create or update the mod_folders table
-   * Note: We're moving away from this table in favor of using folder_id in the mods table
-   * but keeping it for backward compatibility
-   */
-  private async createModFoldersTable(): Promise<void> {
-    try {
-      const modFoldersTableInfo: any[] = await this.db.select(
-        `PRAGMA table_info(mod_folders)`
-      );
-
-      if (modFoldersTableInfo.length === 0) {
-        // Table doesn't exist, create it
-        await this.db.execute(`
-          CREATE TABLE IF NOT EXISTS mod_folders (
-            mod_id TEXT NOT NULL,
-            folder_id TEXT NOT NULL,
-            PRIMARY KEY (mod_id, folder_id),
-            FOREIGN KEY (mod_id) REFERENCES mods (id) ON DELETE CASCADE,
-            FOREIGN KEY (folder_id) REFERENCES folders (id) ON DELETE CASCADE
-          )
-        `);
-        console.log("Created mod_folders mapping table");
-      }
-    } catch (error) {
-      console.error("Failed to initialize mod_folders table:", error);
       throw error;
     }
   }
@@ -526,13 +505,17 @@ export class DatabaseService {
           // Generate fresh engine_data JSON
           const engineData = JSON.stringify(mod.engine);
           
-          // Generate contributors_data JSON if contributors exist
-          const contributorsData = mod.contributors ? JSON.stringify(mod.contributors) : null;
+          // If date_added is not set, set it to the current timestamp
+          if (!mod.date_added) {
+            mod.date_added = Math.floor(Date.now() / 1000);
+            console.log(`_upsertMods - Setting date_added to ${mod.date_added} for new mod`);
+          }
           
           console.log(`_upsertMods - Final mod engine data:
             engine.engine_type: ${mod.engine?.engine_type}
             engine_data: ${engineData}
-            contributors: ${contributorsData ? 'present' : 'none'}
+            last_played: ${mod.last_played || 'none'}
+            date_added: ${mod.date_added}
           `);
           
           console.log("_upsertMods - Executing SQL to save mod...");
@@ -541,8 +524,8 @@ export class DatabaseService {
             INSERT OR REPLACE INTO mods (
               id, name, path, executable_path, icon_data, banner_data, logo_data, logo_position,
               version, description, engine_data, display_order, folder_id,
-              display_order_in_folder, contributors_data
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              display_order_in_folder, last_played, date_added
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
             [
               mod.id,
@@ -561,7 +544,8 @@ export class DatabaseService {
               mod.display_order_in_folder !== undefined
                 ? mod.display_order_in_folder
                 : 0,
-              contributorsData,
+              mod.last_played || null,
+              mod.date_added || null,
             ]
           );
           console.log(`_upsertMods - Successfully saved mod: ${mod.name}`);
@@ -580,7 +564,6 @@ export class DatabaseService {
         console.log("_upsertMods - Got database lock, processing mods...");
         
         for (const mod of mods) {
-          // Reuse the same code as above, but with our own db connection
           // Create engine object if it doesn't exist
           if (!mod.engine) {
             mod.engine = {
@@ -595,16 +578,18 @@ export class DatabaseService {
           // Generate fresh engine_data JSON
           const engineData = JSON.stringify(mod.engine);
           
-          // Generate contributors_data JSON if contributors exist
-          const contributorsData = mod.contributors ? JSON.stringify(mod.contributors) : null;
+          // If date_added is not set, set it to the current timestamp
+          if (!mod.date_added) {
+            mod.date_added = Math.floor(Date.now() / 1000);
+          }
           
           await db.execute(
             `
             INSERT OR REPLACE INTO mods (
-              id, name, path, executable_path, icon_data, banner_data, logo_data, 
+              id, name, path, executable_path, icon_data, banner_data, logo_data, logo_position,
               version, description, engine_data, display_order, folder_id,
-              display_order_in_folder, contributors_data
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              display_order_in_folder, last_played, date_added
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
             [
               mod.id,
@@ -614,6 +599,7 @@ export class DatabaseService {
               mod.icon_data || null,
               mod.banner_data || null,
               mod.logo_data || null,
+              mod.logo_position || null,
               mod.version || null,
               mod.description || null,
               engineData,
@@ -622,7 +608,8 @@ export class DatabaseService {
               mod.display_order_in_folder !== undefined
                 ? mod.display_order_in_folder
                 : 0,
-              contributorsData,
+              mod.last_played || null,
+              mod.date_added || null,
             ]
           );
         }
@@ -1040,20 +1027,9 @@ export class DatabaseService {
             };
           }
 
-          // Parse contributors data if it exists
-          let contributors = undefined;
-          if (mod.contributors_data) {
-            try {
-              contributors = JSON.parse(mod.contributors_data);
-            } catch (e) {
-              console.error("Failed to parse contributors data for mod:", mod.id, e);
-            }
-          }
-
           return {
             ...mod,
             engine,
-            contributors,
             // Add the group field required by the backend
             group: mod.folder_id || "none"
           };
@@ -1091,20 +1067,9 @@ export class DatabaseService {
               };
             }
 
-            // Parse contributors data if it exists
-            let contributors = undefined;
-            if (mod.contributors_data) {
-              try {
-                contributors = JSON.parse(mod.contributors_data);
-              } catch (e) {
-                console.error("Failed to parse contributors data for mod:", mod.id, e);
-              }
-            }
-
             return {
               ...mod,
               engine,
-              contributors,
               // Add the group field required by the backend
               group: mod.folder_id || "none"
             };

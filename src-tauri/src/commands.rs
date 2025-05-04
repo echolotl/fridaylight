@@ -260,9 +260,18 @@ pub fn launch_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), St
             let pid = child.id();
             info!("Successfully launched: {} with PID: {}", executable_path, pid);
             
-            // Store the process ID in the ModInfo
+            // Store the process ID in the ModInfo and update last_played timestamp
             if let Some(mod_info) = mods.get_mut(&id) {
                 mod_info.process_id = Some(pid);
+                
+                // Update last_played timestamp
+                let current_time = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_secs() as i64)
+                    .unwrap_or(0);
+                mod_info.last_played = Some(current_time);
+                
+                info!("Updated last_played timestamp for mod {} to {}", mod_info.name, current_time);
             }
             
             // Clone the id for use in threads
