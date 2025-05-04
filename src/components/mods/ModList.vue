@@ -192,7 +192,7 @@
     <!-- Delete mod confirmation dialog -->
     <MessageDialog
       v-model="showDeleteDialog"
-      title="Delete Mod"
+      title="Remove Mod"
       icon="warning"
       icon-color="negative"
       confirm-label="Delete"
@@ -203,8 +203,7 @@
       <div class="text-h6">{{ modToDelete?.name }}</div>
       <div class="text-caption">{{ modToDelete?.path }}</div>
       <p class="text-body2 q-mt-sm">
-        This will only remove the mod from the launcher. The mod files will
-        not be deleted.
+        Are you sure you want to remove this mod from Fridaylight? The mod files will remain on your system.
       </p>
     </MessageDialog>
 
@@ -229,7 +228,7 @@
     <!-- Super Delete mod confirmation dialog -->
     <MessageDialog
       v-model="showSuperDeleteDialog"
-      title="Super Delete Mod"
+      title="Delete Mod"
       icon="delete_forever"
       icon-color="negative"
       confirm-label="Super Delete"
@@ -240,8 +239,7 @@
       <div class="text-h6">{{ modToSuperDelete?.name }}</div>
       <div class="text-caption">{{ modToSuperDelete?.path }}</div>
       <p class="text-body2 q-mt-sm">
-        This will <span class="text-negative text-bold">permanently delete</span> the mod folder and all its contents from your computer.
-        This action cannot be undone!
+        This will PERMANENTLY DELETE the mod folder and all its contents from your computer. This action cannot be undone!
       </p>
     </MessageDialog>
 

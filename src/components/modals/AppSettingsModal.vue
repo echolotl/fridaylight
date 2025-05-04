@@ -272,7 +272,7 @@
 
               <div class="settings-reset-section q-mt-lg">
                 <q-separator class="q-my-md" />
-                <div class="text-subtitle1 q-mb-md">Data Management</div>
+                <div class="text-subtitle1 q-mb-md">Danger Zone</div>
                 <q-btn
                   color="negative"
                   icon="restart_alt"
@@ -867,6 +867,8 @@ a {
   cursor: pointer;
   transition: transform 0.2s;
   display: inline-block;
+  width: 48px;
+  height: 48px;
 }
 
 .logo:hover {

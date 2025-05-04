@@ -59,6 +59,35 @@
               class="q-mb-md"
               placeholder="e.g. 1.0.0"
             />
+            
+            <div class="danger-zone q-mt-lg">
+              <q-separator class="q-my-md" />
+              <div class="text-subtitle1 q-mb-md">Danger Zone</div>
+              <q-btn
+                color="negative"
+                icon="delete"
+                label="Remove Mod"
+                class="full-width"
+                @click="showRemoveDialog = true"
+                outline
+              />
+              <div class="text-caption q-mt-sm" style="color: var(--theme-text-secondary)">
+                This will remove the mod from Fridaylight but keep the files on your system.
+              </div>
+              
+              <q-btn
+                color="negative"
+                icon="delete_forever"
+                label="Delete Mod Files"
+                class="full-width q-mt-md"
+                @click="showSuperDeleteDialog = true"
+                outline
+              />
+              <div class="text-caption q-mt-sm" style="color: var(--theme-text-secondary)">
+                This will <span class="text-negative text-bold">permanently delete</span> the mod folder and all its contents from your computer.
+                This action cannot be undone!
+              </div>
+            </div>
           </q-card-section>
 
           <!-- Location Section -->
@@ -297,12 +326,47 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+
+  <!-- Remove Mod Confirmation Dialog -->
+  <MessageDialog
+    v-model="showRemoveDialog"
+    title="Remove Mod"
+    icon="warning"
+    icon-color="negative"
+    confirm-label="Remove Mod"
+    confirm-color="negative"
+    @confirm="removeMod"
+  >
+  <div class="text-h6">{{ form.name }}</div>
+  <div class="text-caption">{{ form.path }}</div>
+  <p class="text-body2 q-mt-sm">
+        Are you sure you want to remove this mod from Fridaylight? The mod files will remain on your system.
+      </p>
+</MessageDialog>
+
+  <!-- Super Delete Mod Confirmation Dialog -->
+  <MessageDialog
+    v-model="showSuperDeleteDialog"
+    title="Delete Mod"
+    icon="delete_forever"
+    icon-color="negative"
+    confirm-label="Delete Forever"
+    confirm-color="negative"
+    @confirm="superDeleteMod"
+  >
+    <div class="text-h6">{{ form.name }}</div>
+    <div class="text-caption">{{ form.path }}</div>
+    <p class="text-body2 q-mt-sm">
+        This will PERMANENTLY DELETE the mod folder and all its contents from your computer. This action cannot be undone!
+      </p>
+  </MessageDialog>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from "vue";
 import { Mod } from "@main-types";
 import { formatEngineName } from "../../utils";
+import MessageDialog from "./MessageDialog.vue";
 
 const props = defineProps({
   modelValue: {
@@ -320,6 +384,8 @@ const emit = defineEmits([
   "save",
   "change-folder",
   "select-executable",
+  "delete-mod",
+  "super-delete-mod"
 ]);
 
 const form = ref<Mod>({
@@ -377,6 +443,8 @@ const modSettingsSections = [
 ];
 
 const activeSection = ref("general");
+const showRemoveDialog = ref(false);
+const showSuperDeleteDialog = ref(false);
 
 // Add style to dropdown menu when component is mounted
 onMounted(() => {
@@ -513,6 +581,26 @@ const removeEngineIcon = () => {
   engineIconFile.value = null; // Clear the file input ref
 };
 
+const removeMod = () => {
+  console.log("Removing mod:", form.value.name);
+  // Close the dialog
+  showRemoveDialog.value = false;
+  // Close the settings modal
+  showModal.value = false;
+  // Emit the event to the parent component to handle the actual deletion
+  emit("delete-mod", props.mod);
+};
+
+const superDeleteMod = () => {
+  console.log("Super deleting mod:", form.value.name);
+  // Close the dialog
+  showSuperDeleteDialog.value = false;
+  // Close the settings modal
+  showModal.value = false;
+  // Emit the event to the parent component to handle the actual deletion
+  emit("super-delete-mod", props.mod);
+};
+
 const save = async () => {
   const updatedMod = { ...form.value };
 
@@ -581,8 +669,8 @@ const cancel = () => {
 
 <style scoped>
 .settings-modal {
-  width: 700px;
-  height: 500px;
+  width: 90vw;
+  height: 90vh;
   max-width: 90vw;
   max-height: 90vh;
   background-color: var(--solid);

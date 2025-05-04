@@ -24,17 +24,6 @@
         >v{{ mod.version }}</q-item-label
       >
     </q-item-section>
-    <q-item-section side v-if="!compactMode">
-      <q-btn
-        flat
-        round
-        dense
-        icon="delete"
-        style="color: var(--theme-text-secondary)"
-        @click.stop="$emit('delete-mod', mod)"
-        class="delete-btn"
-      />
-    </q-item-section>
     <q-tooltip v-if="compactMode" class="phantom-font">
       {{ mod.name }}{{ mod.version ? ` (v${mod.version})` : '' }}
     </q-tooltip>
