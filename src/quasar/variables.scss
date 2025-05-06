@@ -62,6 +62,7 @@ $theme-corruption-surface: #140f16;
 $theme-corruption-text: #ffa0b0;
 $theme-corruption-text-secondary: rgba(255, 160, 184, 0.7);
 $theme-corruption-border: rgba(255, 160, 184, 0.25);
+$theme-corruption-solid: #241721;
 
 // Theme colors - Shaggy
 $theme-shaggy-bg: #152423;
@@ -248,7 +249,7 @@ body.corruption-theme {
   --theme-text: #{$theme-corruption-text};
   --theme-text-secondary: #{$theme-corruption-text-secondary};
   --theme-border: #{$theme-corruption-border};
-  --solid: #{$theme-corruption-surface-solid};
+  --solid: #{$theme-corruption-solid};
 }
 
 body.shaggy-theme {
