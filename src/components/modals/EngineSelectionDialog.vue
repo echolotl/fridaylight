@@ -55,6 +55,7 @@
 </template>
 
 <script setup lang="ts">
+import { sep } from '@tauri-apps/api/path';
 import { ref, watch } from 'vue';
 
 interface EngineMod {
@@ -159,11 +160,11 @@ const getModsFolderPath = (engineMod: EngineMod): string => {
   // Then check if the engine has a specified custom mods folder path
   if (engineMod.engine && engineMod.engine.mods_folder && engineMod.engine.mods_folder_path) {
     // Combine the base directory with the custom mods folder path
-    return `${baseDir}/${engineMod.engine.mods_folder_path}`;
+    return `${baseDir}${sep()}${engineMod.engine.mods_folder_path}`;
   }
   
   // If no custom path specified, use default mods folder
-  return `${baseDir}/mods`;
+  return `${baseDir}${sep()}mods`;
 };
 </script>
 
