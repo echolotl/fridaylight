@@ -455,7 +455,7 @@ const selectModFolder = async () => {
         // Ensure the mod has an engine object before saving
         if (!modInfo.engine) {
           modInfo.engine = {
-            engine_type: modInfo.engine_type || "unknown",
+            engine_type: "unknown",
             engine_name: "",
             engine_icon: "",
             mods_folder: false,
@@ -532,7 +532,7 @@ const selectModsParentFolder = async () => {
         // Ensure the mod has an engine object before saving
         if (!modInfo.engine) {
           modInfo.engine = {
-            engine_type: modInfo.engine_type || "unknown",
+            engine_type: "unknown",
             engine_name: "",
             engine_icon: "",
             mods_folder: false,

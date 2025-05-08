@@ -607,18 +607,6 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         None => None,
     };
     
-    let engine_type = match &metadata {
-        Some(json) => {
-            if let Some(engine_value) = json.get("engine_type").and_then(|v| v.as_str()) {
-                debug!("Using engine_type from metadata.json: {}", engine_value);
-                Some(engine_value.to_string())
-            } else {
-                None
-            }
-        },
-        None => None,
-    };
-    
     // Parse the new engine field if it exists
     let engine = match &metadata {
         Some(json) => {
@@ -739,7 +727,6 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         logo_data,
         logo_position,
         version,
-        engine_type, // Keep for backward compatibility
         engine,      // Add the new engine field
         process_id: None, // Initialize with None since mod is not running yet
         contributors, // Add the parsed contributors

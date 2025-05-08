@@ -55,7 +55,6 @@ export interface Mod {
   logo_position?: string; // Position of logo in banner: left_bottom, left_middle, middle
   version?: string;
   description?: string;
-  engine_type?: string; // Kept for backward compatibility
   engine: Engine; // Extended engine information
   display_order: number; // Position in the overall list or within a folder
   folder_id?: string | null; // ID of the folder this mod belongs to, if any

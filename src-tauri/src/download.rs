@@ -430,11 +430,6 @@ pub async fn download_gamebanana_mod(
             .and_then(|info| info.get("_sVersion"))
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
-        engine_type: mod_info_response.as_ref()
-            .and_then(|info| info.get("_aMetadata"))
-            .and_then(|meta| meta.get("engine"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
         engine: None, // Initialize with None for now
         process_id: None, // Initialize with None since mod is not running yet
         contributors: mod_info_response.as_ref().and_then(|info| extract_contributors(info)),
@@ -853,7 +848,6 @@ pub async fn download_custom_mod(
         logo_position: Some("left_bottom".to_string()),
         logo_data: final_logo_data,
         version,
-        engine_type: None,
         engine: None,
         process_id: None,
         contributors: None,
@@ -1299,7 +1293,7 @@ pub async fn download_engine(
     };
     
     // Create the mod info
-    let id = uuid::Uuid::new_v4().to_string();
+    let id = uuid::Uuid::new_v4().to_string();    
     let mod_info = ModInfo {
         id: id.clone(),
         name: engine_name.to_string(),
@@ -1312,7 +1306,6 @@ pub async fn download_engine(
         logo_data: logo_data,
         logo_position: Some("left_bottom".to_string()),
         version: Some(engine_version.to_string()),
-        engine_type: Some(engine_type.clone()),
         engine: Some(crate::models::Engine {
             engine_type: Some(engine_type.clone()),
             engine_name: Some(engine_name.to_string()),

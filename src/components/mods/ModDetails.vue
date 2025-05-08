@@ -54,8 +54,8 @@
           <p>Location: {{ mod.path }}</p>
           <p v-if="mod.executable_path">Executable: {{ mod.executable_path }}</p>
           <p v-if="mod.version">Version: {{ mod.version }}</p>
-          <p v-if="mod.engine_type">
-            Engine: {{ formatEngineType(mod.engine_type) }}
+          <p v-if="mod.engine && mod.engine.engine_type">
+            Engine: {{ formatEngineType(mod.engine.engine_type) }}
           </p>
         </div>
 

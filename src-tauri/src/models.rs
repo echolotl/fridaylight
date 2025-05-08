@@ -135,8 +135,7 @@ pub struct ModInfo {
     pub logo_data: Option<String>, // Base64 encoded logo image data
     pub logo_position: Option<String>, // Position of logo in banner: left_bottom, left_middle, middle
     pub version: Option<String>,
-    pub engine_type: Option<String>, // Kept for backward compatibility
-    pub engine: Option<Engine>,      // New extended engine information
+    pub engine: Option<Engine>,      // Extended engine information
     pub display_order: Option<i64>,
     pub process_id: Option<u32>,    // Track the running process ID
     pub contributors: Option<Vec<ContributorGroup>>, // List of contributor groups

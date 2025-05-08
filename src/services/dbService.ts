@@ -342,7 +342,6 @@ export class DatabaseService {
             logo_position TEXT,
             version TEXT,
             description TEXT,
-            engine_type TEXT,
             engine_data TEXT,
             display_order INTEGER DEFAULT 0,
             folder_id TEXT,

@@ -990,8 +990,8 @@ const saveModToDatabase = async (mod: any) => {
     // Make sure the mod has an engine field required by the type
     if (!mod.engine) {
       mod.engine = {
-        engine_type: mod.engine_type || "unknown",
-        engine_name: mod.engine_type || "Unknown Engine",
+        engine_type: "unknown",
+        engine_name: "",
         engine_icon: "",
         mods_folder: false,
         mods_folder_path: "",
