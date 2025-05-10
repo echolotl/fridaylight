@@ -443,7 +443,7 @@ const currentModName = ref<string>('Unknown Mod');
   cursor: pointer;
   transition: all 0.3s ease;
   border: 2px solid transparent;
-  background-color: var(--theme-bg-darker);
+  background-color: var(--theme-bg);
 }
 
 .mod-type-card:not(.disabled-card):hover {
@@ -480,21 +480,25 @@ const currentModName = ref<string>('Unknown Mod');
 
 /* Engine list styling */
 .engine-item {
-  color: var(--theme-text) !important;
+  color: var(--theme-text);
+  border-radius: 1rem;
 }
 
 .selected-engine {
-  background-color: var(--q-primary) !important;
-  color: white !important;
+  background-color: var(--q-primary);
+  color: white;
 }
 
 .engine-path-caption {
-  color: var(--theme-text-secondary) !important;
+  color: var(--theme-text-secondary) ;
+}
+
+.selected-engine .q-item__label {
+  color: white;
 }
 
 .q-list {
-  background-color: var(--theme-bg-darker) !important;
-  border: var(--theme-border) 1px solid;
+  border: none;
   margin-top: 8px;
   margin-bottom: 16px;
 }
@@ -502,7 +506,7 @@ const currentModName = ref<string>('Unknown Mod');
 code {
   display: block;
   padding: 8px;
-  background-color: var(--theme-bg-darker);
+  background-color: var(--theme-card);
   border-radius: 4px;
   font-family: monospace;
   white-space: pre-wrap;

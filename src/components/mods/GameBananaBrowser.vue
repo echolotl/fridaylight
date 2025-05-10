@@ -604,7 +604,7 @@ const downloadMod = async (mod: GameBananaMod) => {
     currentDownloadMod.value = mod;
 
     // Use the centralized gamebananaService to handle download preparations
-    const result = await gamebananaService.downloadMod(mod, selectedModType.value);
+    const result = await gamebananaService.downloadMod(mod);
 
     // Handle different scenarios based on the result
     if ('showFileSelector' in result) {
@@ -1011,14 +1011,6 @@ const saveModToDatabase = async (mod: any) => {
 
 // Determine if a mod is a modpack based on the current tab or mod properties
 const determineIfModpack = (mod: GameBananaMod): boolean => {
-  // Check if we're in a modpack tab
-  if (
-    ["psychModpacks", "vsliceModpacks", "codenameModpacks"].includes(
-      selectedModType.value
-    )
-  ) {
-    return true;
-  }
 
   // Check mod category if available
   if (mod.categoryName) {
@@ -1034,15 +1026,7 @@ const determineIfModpack = (mod: GameBananaMod): boolean => {
 
 // Determine modpack type (psych, vslice, codename, or null if not a modpack)
 const determineModpackType = (mod: GameBananaMod): string | null => {
-  // First check the current tab
-  if (selectedModType.value === "psychModpacks") return "psych";
-  if (selectedModType.value === "vsliceModpacks") return "vanilla";
-  if (selectedModType.value === "codenameModpacks") return "codename";
 
-
-  console.log("Mod category:", mod.categoryName);
-
-  // Check mod category if available
   if (mod.categoryName) {
     const lowerCaseCategoryName = mod.categoryName.toLowerCase();
     if (lowerCaseCategoryName.includes("psych")) return "psych";

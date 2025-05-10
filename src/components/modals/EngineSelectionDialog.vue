@@ -188,12 +188,8 @@ const getModsFolderPath = (engineMod: EngineMod): string => {
   color: white !important;
 }
 
-.engine-path-caption {
-  color: var(--theme-text-secondary) !important;
-}
-
 .q-list {
-  background-color: var(--theme-card) !important;
+  background-color: var(--theme-card);
   border: var(--theme-border) 1px solid;
 }
 
@@ -204,6 +200,7 @@ const getModsFolderPath = (engineMod: EngineMod): string => {
 .q-item-label {
   font-weight: 500;
 }
+
 
 .q-item-label + .q-item-label {
   margin-top: 4px;
