@@ -312,8 +312,10 @@ export class GameBananaService {
       // Determine if this is a modpack
       const isModpack = this.determineIfModpack(mod, selectedModType);
       const modpackType = this.determineModpackType(mod, selectedModType);
+      const modDownloadFile = downloadInfo._aFiles[0];
+      const hasExecutable = modDownloadFile._bContainsExe;
 
-      if (isModpack && modpackType) {
+      if (isModpack && modpackType && !hasExecutable) {
         // Handle modpack download logic
         console.log("Modpack detected:", modpackType);
         const engineMods = await this.getCompatibleEngineMods(modpackType);
@@ -350,14 +352,6 @@ export class GameBananaService {
           };
         }
       } else if (!isModpack && !modpackType) {
-        // First check if this is a labeled executable mod by looking at the category name
-        const isExecutable = mod.categoryName && 
-          mod.categoryName.toLowerCase().includes("executables");
-        
-        if (isExecutable) {
-          // If it's explicitly labeled as an executable, proceed with normal download
-          return await this.startDownload(mod);
-        } else {
           // If we can't determine the mod type automatically, let the user choose
           this.dismissNotification();
           
@@ -372,7 +366,6 @@ export class GameBananaService {
               version: mod.version
             }
           };
-        }
       } else {
         // If it's only a modpack, proceed with normal download
         return await this.startDownload(mod);

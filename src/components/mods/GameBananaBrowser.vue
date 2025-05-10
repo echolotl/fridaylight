@@ -631,7 +631,6 @@ const downloadMod = async (mod: GameBananaMod) => {
   try {
     currentDownloadMod.value = mod;
 
-    // Use the centralized gamebananaService to handle download preparations
     const result = await gamebananaService.downloadMod(mod);
 
     // Handle different scenarios based on the result

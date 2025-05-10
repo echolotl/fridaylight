@@ -985,12 +985,11 @@ export class DatabaseService {
     );
     await this.storeService.saveSetting(key as keyof AppSettings, value as any);
   }
-
   /**
    * Sync mods with the Rust backend
    * @param existingDb Optional database connection from parent operation
    */
-  private async syncModsWithBackend(existingDb?: any): Promise<void> {
+  public async syncModsWithBackend(existingDb?: any): Promise<void> {
     try {
       let mods: Mod[];
       
@@ -1030,7 +1029,10 @@ export class DatabaseService {
             ...mod,
             engine,
             // Add the group field required by the backend
-            group: mod.folder_id || "none"
+            group: mod.folder_id || "none",
+            // Convert timestamp fields to integers to avoid Rust type errors
+            last_played: mod.last_played ? Math.floor(Number(mod.last_played)) : null,
+            date_added: mod.date_added ? Math.floor(Number(mod.date_added)) : null
           };
         });
       } else {
@@ -1070,16 +1072,24 @@ export class DatabaseService {
               ...mod,
               engine,
               // Add the group field required by the backend
-              group: mod.folder_id || "none"
+              group: mod.folder_id || "none",
+              // Convert timestamp fields to integers to avoid Rust type errors
+              last_played: mod.last_played ? Math.floor(Number(mod.last_played)) : null,
+              date_added: mod.date_added ? Math.floor(Number(mod.date_added)) : null
             };
           });
         }, false, "syncModsWithBackend");
-      }
-
-      // Add a small delay to ensure any active transaction has settled
+      }      // Add a small delay to ensure any active transaction has settled
       await new Promise((resolve) => setTimeout(resolve, 50));
 
-      await invoke("sync_mods_from_database", { modsData: mods });
+      // Ensure all mods have properly formatted timestamp values before sending to the backend
+      const sanitizedMods = mods.map(mod => ({
+        ...mod,
+        last_played: mod.last_played ? Math.floor(Number(mod.last_played)) : null,
+        date_added: mod.date_added ? Math.floor(Number(mod.date_added)) : null
+      }));
+
+      await invoke("sync_mods_from_database", { modsData: sanitizedMods });
       console.log("Successfully synced mods with backend");
     } catch (error) {
       console.error("Failed to sync mods with backend:", error);
