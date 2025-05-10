@@ -57,8 +57,9 @@ pub fn toggle_mod_enabled_state(
 
     match engine_type.to_lowercase().as_str() {
         "psych" => toggle_psych_engine_mod(executable_path, mod_folder_path, enable),
-        "vanilla" | "fps-plus" => toggle_polymod_mod(mod_folder_path, enable),
-        // I don't use Codename Engine often so I'd have to look at how to do this
+        "vanilla" => toggle_polymod_mod(mod_folder_path, enable),
+        "fps-plus" => toggle_fpsplus_polymod_mod(mod_folder_path, enable),
+        // TODO: Implement Codename Engine mod toggling (and launching??)
         "codename" => Err("Disabling Codename Engine mods is not currently supported".to_string()),
         _ => Err(format!("Unsupported engine type: {}", engine_type)),
     }
@@ -208,6 +209,67 @@ fn toggle_polymod_mod(mod_folder_path: &str, enable: bool) -> Result<ModDisableR
     }
 }
 
+/// Toggle a FPS Plus mod (similar to Polymod but with different file names)
+fn toggle_fpsplus_polymod_mod(mod_folder_path: &str, enable: bool) -> Result<ModDisableResult, String> {
+    debug!("Toggling FPS Plus mod: {}", mod_folder_path);
+    
+    let path = Path::new(mod_folder_path);
+    let meta_path = path.join("meta.json");
+    let disabled_meta_path = path.join("meta_disabled.json");
+    
+    if enable {
+        // If enabling, rename meta_disabled.json to meta.json if it exists
+        if disabled_meta_path.exists() {
+            debug!("Renaming meta_disabled.json to meta.json");
+            if let Err(e) = fs::rename(&disabled_meta_path, &meta_path) {
+                error!("Failed to enable FPS Plus mod: {}", e);
+                return Err(format!("Failed to enable mod: {}", e));
+            }
+            
+            info!("Successfully enabled FPS Plus mod");
+            return Ok(ModDisableResult {
+                success: true,
+                enabled: true,
+                message: "Mod has been enabled".to_string(),
+            });
+        } else if meta_path.exists() {
+            debug!("Mod is already enabled");
+            return Ok(ModDisableResult {
+                success: true,
+                enabled: true,
+                message: "Mod is already enabled".to_string(),
+            });
+        } else {
+            return Err("No metadata file found for this mod".to_string());
+        }
+    } else {
+        // If disabling, rename meta.json to meta_disabled.json if it exists
+        if meta_path.exists() {
+            debug!("Renaming meta.json to meta_disabled.json");
+            if let Err(e) = fs::rename(&meta_path, &disabled_meta_path) {
+                error!("Failed to disable FPS Plus mod: {}", e);
+                return Err(format!("Failed to disable mod: {}", e));
+            }
+            
+            info!("Successfully disabled FPS Plus mod");
+            return Ok(ModDisableResult {
+                success: true,
+                enabled: false,
+                message: "Mod has been disabled".to_string(),
+            });
+        } else if disabled_meta_path.exists() {
+            debug!("Mod is already disabled");
+            return Ok(ModDisableResult {
+                success: true,
+                enabled: false,
+                message: "Mod is already disabled".to_string(),
+            });
+        } else {
+            return Err("No metadata file found for this mod".to_string());
+        }
+    }
+}
+
 /// Check if a mod is enabled based on engine type
 pub fn check_mod_enabled_state(
     executable_path: &str, 
@@ -216,7 +278,8 @@ pub fn check_mod_enabled_state(
 ) -> Result<bool, String> {
     match engine_type.to_lowercase().as_str() {
         "psych" => check_psych_engine_mod_enabled(executable_path, mod_folder_path),
-        "vanilla" | "fps-plus" => check_polymod_mod_enabled(mod_folder_path),
+        "vanilla" => check_polymod_mod_enabled(mod_folder_path),
+        "fps-plus" => check_fpsplus_polymod_mod_enabled(mod_folder_path),
         "codename" => Ok(true), // Always enabled for Codename Engine
         _ => Err(format!("Unsupported engine type: {}", engine_type)),
     }
@@ -290,6 +353,27 @@ fn check_polymod_mod_enabled(mod_folder_path: &str) -> Result<bool, String> {
     Err("No metadata file found for this mod".to_string())
 }
 
+/// Check if a FPS Plus mod is enabled by checking if the metadata file exists
+/// This is similar to the Polymod function but with different file names
+fn check_fpsplus_polymod_mod_enabled(mod_folder_path: &str) -> Result<bool, String> {
+    let path = Path::new(mod_folder_path);
+    let meta_path = path.join("meta.json");
+    let disabled_meta_path = path.join("meta_disabled.json");
+    
+    // If meta.json exists, the mod is enabled
+    if meta_path.exists() {
+        return Ok(true);
+    }
+    
+    // If meta_disabled.json exists, the mod is disabled
+    if disabled_meta_path.exists() {
+        return Ok(false);
+    }
+    
+    // If neither file exists, something is wrong
+    Err("No metadata file found for this mod".to_string())
+}
+
 //
 // FUNCTIONALITY FROM MODFILES.RS
 //
@@ -318,11 +402,16 @@ pub fn find_mod_metadata_files(executable_folder: &Path, engine_type: &str, cust
             let result = find_psych_engine_mods(&mods_folder)?;
             metadata_files.extend(result);
         },
-        "vanilla" | "fps-plus" => {
-            // For Vanilla/FPS Plus: Look for _polymod_meta.json and _polymod_icon.png
+        "vanilla" => {
+            // For Vanilla: Look for _polymod_meta.json and _polymod_icon.png
             let result = find_polymod_mods(&mods_folder)?;
             metadata_files.extend(result);
         },
+        "fps-plus" => {
+            // For FPS Plus: Look for meta.json and icon.png
+            let result = find_fpsplus_polymod_mods(&mods_folder)?;
+            metadata_files.extend(result);
+        }
         "codename" => {
             // For Codename: Look for data/config/credits.xml
             let result = find_codename_mods(&mods_folder)?;
@@ -446,7 +535,7 @@ fn find_psych_engine_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, St
     Ok(metadata_files)
 }
 
-/// Find Polymod mods (Vanilla/FPS Plus) (looks for _polymod_meta.json and _polymod_icon.png)
+/// Find Polymod mods (Vanilla) (looks for _polymod_meta.json and _polymod_icon.png)
 fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String> {
     debug!("Searching for Polymod mods in {}", mods_folder.display());
     let mut metadata_files = Vec::new();
@@ -596,6 +685,160 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
     
     Ok(metadata_files)
 }
+
+/// Find FPS Plus mods (looks for meta.json and icon.png)
+/// This is similar to the Polymod function but with different file names
+
+fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String> {
+    debug!("Searching for Polymod mods in {}", mods_folder.display());
+    let mut metadata_files = Vec::new();
+    
+    match fs::read_dir(mods_folder) {
+        Ok(entries) => {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let path = entry.path();
+                
+                if path.is_dir() {
+                    debug!("Checking mod folder: {}", path.display());
+                    
+                    // Look for meta.json
+                    let json_path = path.join("meta.json");
+                    let mut json_content = None;
+                    
+                    if json_path.exists() && json_path.is_file() {
+                        match fs::read_to_string(&json_path) {
+                            Ok(content) => {
+                                match serde_json::from_str::<serde_json::Value>(&content) {
+                                    Ok(json) => {
+                                        json_content = Some(json);
+                                        debug!("Found meta.json in {}", path.display());
+                                    },
+                                    Err(e) => {
+                                        warn!("Failed to parse meta.json in {}: {}", path.display(), e);
+                                    }
+                                }
+                            },
+                            Err(e) => {
+                                warn!("Failed to read meta.json in {}: {}", path.display(), e);
+                            }
+                        }
+                    }
+                    
+                    // Look for icon.png
+                    let icon_path = path.join("icon.png");
+                    let icon_exists = icon_path.exists() && icon_path.is_file();
+                    
+                    if json_content.is_some() || icon_exists {
+                        let title = json_content.as_ref()
+                            .and_then(|json| json.get("title").and_then(|v| v.as_str()).map(|s| s.to_string())) // Convert Option<&str> to Option<String>
+                            .unwrap_or_else(|| { 
+                                path.file_name().map_or_else(
+                                    || "Unknown Mod".to_string(), 
+                                    |n| n.to_string_lossy().to_string() 
+                                )
+                            }); // title is now String
+                        
+                        // Get version information
+                        let version = json_content.as_ref()
+                            .and_then(|json| json.get("mod_version").and_then(|v| v.as_str()))
+                            .map(|v| v.to_string());
+                            
+                        // Format name with version if available
+                        let name = if let Some(v) = &version {
+                            format!("{} (v{})", title, v)
+                        } else {
+                            title.to_string()
+                        };
+                        
+                        // Extract description
+                        let base_description = json_content.as_ref()
+                            .and_then(|json| json.get("description").and_then(|v| v.as_str()))
+                            .map(|s| s.to_string());
+                        
+                        // Get homepage if available
+                        let homepage = json_content.as_ref()
+                            .and_then(|json| json.get("homepage").and_then(|v| v.as_str()))
+                            .map(|s| s.to_string());
+                        
+                        // Get license if available
+                        let license = json_content.as_ref()
+                            .and_then(|json| json.get("license").and_then(|v| v.as_str()))
+                            .map(|s| s.to_string());
+                        
+                        // Format contributor information
+                        let mut contributors_info = Vec::new();
+                        
+                        if let Some(contributors) = json_content.as_ref()
+                            .and_then(|json| json.get("contributors").and_then(|v| v.as_array())) {
+                            for contributor in contributors {
+                                if let Some(name) = contributor.get("name").and_then(|v| v.as_str()) {
+                                    let role = contributor.get("role")
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("Contributor");
+                                        
+                                    contributors_info.push(format!("{}: {}", role, name));
+                                }
+                            }
+                        }
+                        
+                        // Build a comprehensive description
+                        let mut description_parts = Vec::new();
+                        
+                        if let Some(desc) = base_description {
+                            description_parts.push(desc);
+                        }
+                        
+                        if let Some(site) = homepage {
+                            description_parts.push(format!("Website: {}", site));
+                        }
+                        
+                        if !contributors_info.is_empty() {
+                            description_parts.push(format!("Credits: {}", contributors_info.join(", ")));
+                        }
+                        
+                        if let Some(lic) = license {
+                            description_parts.push(format!("License: {}", lic));
+                        }
+                        
+                        // Join all parts into a single description
+                        let full_description = if !description_parts.is_empty() {
+                            Some(description_parts.join("\n"))
+                        } else {
+                            None
+                        };
+                          metadata_files.push(ModMetadataFile {
+                            name,
+                            description: full_description,
+                            folder_path: path.to_string_lossy().to_string(),
+                            config_file_path: if json_content.is_some() { 
+                                Some(json_path.to_string_lossy().to_string()) 
+                            } else { 
+                                None 
+                            },
+                            icon_file_path: if icon_exists { 
+                                Some(icon_path.to_string_lossy().to_string()) 
+                            } else { 
+                                None 
+                            },
+                            icon_data: if icon_exists { 
+                                Some(get_mod_icon_data(&icon_path.to_string_lossy().to_string())?) 
+                            } else { 
+                                None 
+                            },
+                            enabled: None, // Will be set by the command handler
+                        });
+                    }
+                }
+            }
+        },
+        Err(e) => {
+            return Err(format!("Failed to read directory {}: {}", mods_folder.display(), e));
+        }
+    }
+    
+    Ok(metadata_files)
+}
+
 
 /// Find Codename Engine mods (looks for data/config/credits.xml)
 fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String> {
