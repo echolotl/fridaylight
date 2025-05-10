@@ -433,10 +433,11 @@ pub async fn download_custom_mod_command(
 pub async fn download_engine_command(
     engine_type: String, 
     install_location: Option<String>,
+    custom_name: Option<String>,
     app: tauri::AppHandle
 ) -> Result<String, String> {
     info!("Starting direct download process for {} engine", engine_type);
-    crate::download::download_engine(engine_type, install_location, app).await
+    crate::download::download_engine(engine_type, install_location, custom_name, app).await
 }
 
 // Command to sync mods from database
@@ -456,6 +457,46 @@ pub async fn sync_mods_from_database(mods_data: Vec<ModInfo>, mods_state: State<
     
     info!("Successfully synced {} mods from database", mods.len());
     Ok(())
+}
+
+// Command to check if a mod folder already exists
+#[tauri::command]
+pub fn check_mod_folder_exists(name: String, install_location: Option<String>, app: tauri::AppHandle) -> Result<bool, String> {
+    info!("Checking if mod folder exists for: {}", name);
+    
+    // Sanitize mod name for folder name (same process as in download.rs)
+    let sanitized_name = name
+        .replace(' ', "-")
+        .replace('/', "_")
+        .replace('\\', "_")
+        .replace(':', "")
+        .replace('*', "")
+        .replace('?', "")
+        .replace('"', "")
+        .replace('<', "")
+        .replace('>', "")
+        .replace('|', "");
+    
+    // Get the install location - use provided location or fall back to default
+    let install_dir = if let Some(location) = install_location {
+        let path = std::path::PathBuf::from(&location);
+        info!("Using provided install location: {}", path.display());
+        path
+    } else {
+        let default_path = crate::download::get_default_install_location(&app);
+        info!("Using default install location: {}", default_path.display());
+        default_path
+    };
+    
+    // Build the potential mod folder path
+    let mod_folder = install_dir.join(&sanitized_name);
+    debug!("Checking if folder exists: {}", mod_folder.display());
+    
+    // Check if the directory exists
+    let exists = mod_folder.exists();
+    info!("Mod folder {} for mod '{}': {}", if exists { "exists" } else { "does not exist" }, name, mod_folder.display());
+    
+    Ok(exists)
 }
 
 #[tauri::command]
@@ -806,6 +847,7 @@ pub fn run() {
             get_mod_logs,
             clear_mod_logs,
             super_delete_mod,
+            check_mod_folder_exists,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

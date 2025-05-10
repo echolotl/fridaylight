@@ -14,6 +14,13 @@ import { formatEngineName } from "@utils/index";
 // Map to track mod IDs to download IDs
 const modIdToDownloadIdMap = new Map<number, string>();
 
+// Define an interface for the folder existence check result
+export interface FolderExistsResult {
+  showFolderExistsDialog: boolean;
+  modName: string;
+  continueDownload: () => Promise<OperationResult | DownloadModResult>;
+}
+
 export interface ModpackInfo {
   mod: GameBananaMod;
   type: string | null;
@@ -60,7 +67,7 @@ export interface DeepLinkEngineSelectionResult {
   modId: number;
 }
 
-export type DownloadModResult = FileSelectionResult | EngineSelectionResult | ModTypeSelectionResult | OperationResult;
+export type DownloadModResult = FileSelectionResult | EngineSelectionResult | ModTypeSelectionResult | OperationResult | FolderExistsResult;
 
 export class GameBananaService {
   private static instance: GameBananaService;
@@ -88,6 +95,30 @@ export class GameBananaService {
     } catch (error) {
       console.warn("Could not get install location from settings:", error);
       return null;
+    }
+  }
+
+  /**
+   * Check if a mod folder already exists before downloading
+   */
+  public async checkModFolderExists(modName: string): Promise<boolean> {
+    try {
+      // Get the install location from settings
+      let installLocation: string | null = null;
+      try {
+        installLocation = await this.getInstallLocation();
+      } catch (error) {
+        console.warn("Could not get install location from settings:", error);
+      }
+      
+      // Call the backend command to check if the folder exists
+      return await invoke<boolean>("check_mod_folder_exists", {
+        name: modName,
+        installLocation
+      });
+    } catch (error) {
+      console.error("Error checking if mod folder exists:", error);
+      return false; // Assume it doesn't exist in case of error
     }
   }
 
@@ -369,7 +400,43 @@ export class GameBananaService {
   /**
    * Start the download of a mod with GameBanana
    */
-  public async startDownload(mod: GameBananaMod): Promise<OperationResult> {
+  public async startDownload(mod: GameBananaMod): Promise<OperationResult | FolderExistsResult> {
+    try {
+      // Check if the mod folder already exists before downloading
+      const folderExists = await this.checkModFolderExists(mod.name);
+      
+      if (folderExists) {
+        // Return a folder exists result with a function to continue the download
+        return {
+          showFolderExistsDialog: true,
+          modName: mod.name,
+          continueDownload: async () => {
+            // Continue with the actual download
+            return this.proceedWithDownload(mod, true);
+          }
+        };
+      }
+      
+      // No folder exists, proceed with the download directly
+      return await this.proceedWithDownload(mod);
+    } catch (error) {
+      Notify.create({
+        type: "negative",
+        message: `Failed to download "${mod.name}"`,
+        caption: String(error),
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      console.error("Failed to download mod:", error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
+   * Proceed with the actual download after checks
+   */
+  private async proceedWithDownload(mod: GameBananaMod, isRetry: boolean = false): Promise<OperationResult> {
     try {
       // First notification for downloading
       Notify.create({
@@ -387,19 +454,27 @@ export class GameBananaService {
         console.warn("Could not get install location from settings:", error);
       }
 
+      // If this is a retry (folder exists case), append a timestamp to make the folder unique
+      let modName = mod.name;
+      if (isRetry) {
+
+        modName = `${modName} (${mod.id.toString(16).slice(0, 4)})`;
+        console.log(`Folder already exists, using unique name: ${modName}`);
+      }
+
       // Create a unique download entry and initialize tracking
-      this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnailUrl);
+      this.ensureUniqueDownload(mod.id, modName, mod.thumbnailUrl);
 
       // Pass mod ID along with URL, name, and install location
       const result = await invoke<string>("download_gamebanana_mod_command", {
         url: mod.downloadUrl,
-        name: mod.name,
+        name: modName,
         modId: mod.id,
         installLocation,
       });
       
       // Process the result
-      return await this.processDownloadResult(result, mod);
+      return await this.processDownloadResult(result, { ...mod, name: modName });
     } catch (error) {
       Notify.create({
         type: "negative",
@@ -704,7 +779,46 @@ export class GameBananaService {
   /**
    * Download an engine directly
    */
-  public async downloadEngine(engineType: string): Promise<OperationResult> {
+  public async downloadEngine(engineType: string): Promise<OperationResult | FolderExistsResult> {
+    try {
+      // Check if the engine folder already exists before downloading
+      // Determine the folder name based on engine type
+      const engineName = this.formatEngineType(engineType);
+      const folderExists = await this.checkModFolderExists(engineName);
+      
+      if (folderExists) {
+        // Return a folder exists result with a function to continue the download
+        return {
+          showFolderExistsDialog: true,
+          modName: engineName,
+          continueDownload: async () => {
+            // Continue with the actual download
+            return this.proceedWithEngineDownload(engineType, true);
+          }
+        };
+      }
+      
+      // No folder exists, proceed with the download directly
+      return await this.proceedWithEngineDownload(engineType);
+    } catch (error) {
+      // Show error notification
+      Notify.create({
+        type: "negative",
+        message: `Failed to download ${this.formatEngineType(engineType)}`,
+        caption: String(error),
+        position: "bottom-right",
+        timeout: 5000,
+      });
+
+      console.error(`Failed to download ${engineType} engine:`, error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
+   * Proceed with the actual engine download after checks
+   */
+  private async proceedWithEngineDownload(engineType: string, isRetry: boolean = false): Promise<OperationResult> {
     try {
       // Show loading notification
       this.pendingDownloadNotification = Notify.create({
@@ -724,16 +838,25 @@ export class GameBananaService {
         console.warn("Could not get install location from settings:", error);
       }
 
+      // If this is a retry (folder exists case), append a timestamp to make the folder unique
+      let engineName = this.formatEngineType(engineType);
+      if (isRetry) {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        engineName = `${engineName}_${timestamp}`;
+        console.log(`Folder already exists, using unique name: ${engineName}`);
+      }
+
       console.log(
         `Downloading ${engineType} engine to ${
           installLocation || "default location"
-        }`
+        } with name ${engineName}`
       );
 
       // Call backend to download the engine directly
       const result = await invoke<string>("download_engine_command", {
         engineType,
         installLocation,
+        customName: isRetry ? engineName : undefined // Only send custom name if it's a retry
       });
 
       // Process the result

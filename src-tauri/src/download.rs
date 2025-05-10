@@ -887,6 +887,7 @@ pub async fn download_custom_mod(
 pub async fn download_engine(
     engine_type: String,
     install_location: Option<String>,
+    custom_name: Option<String>,
     app: tauri::AppHandle
 ) -> Result<String, String> {
     info!("Starting direct engine download for: {}", engine_type);
@@ -1152,9 +1153,22 @@ pub async fn download_engine(
         }
     }
     
-    // Create engine folder
-    let sanitized_name = engine_name.replace(' ', "-");
-    let engine_folder = install_dir.join(&sanitized_name);
+    // Use the custom name if provided, otherwise use the default engine name
+    let folder_name = match custom_name {
+        Some(name) => {
+            info!("Using custom name for engine folder: {}", name);
+            name
+        },
+        None => {
+            // Create sanitized name from engine name as before
+            let sanitized_name = engine_name.replace(' ', "-");
+            info!("Using default name for engine folder: {}", sanitized_name);
+            sanitized_name
+        }
+    };
+    
+    // Create engine folder with the determined name
+    let engine_folder = install_dir.join(&folder_name);
     
     if engine_folder.exists() {
         debug!("Engine folder already exists, removing it: {}", engine_folder.display());
