@@ -1300,7 +1300,7 @@ onUnmounted(() => {
   right: -5px;
   width: 10px;
   height: 100%;
-  cursor: col-resize;
+  cursor: ew-resize;
   z-index: 100;
   display: flex;
   justify-content: center;

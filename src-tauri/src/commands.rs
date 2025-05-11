@@ -259,8 +259,7 @@ pub fn launch_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), St
         Ok(mut child) => {
             let pid = child.id();
             info!("Successfully launched: {} with PID: {}", executable_path, pid);
-            
-            // Store the process ID in the ModInfo and update last_played timestamp
+              // Store the process ID in the ModInfo and update last_played timestamp
             if let Some(mod_info) = mods.get_mut(&id) {
                 mod_info.process_id = Some(pid);
                 
@@ -272,6 +271,19 @@ pub fn launch_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), St
                 mod_info.last_played = Some(current_time);
                 
                 info!("Updated last_played timestamp for mod {} to {}", mod_info.name, current_time);
+                
+                // Also update the global state
+                if let Ok(mut global_mods) = crate::models::GLOBAL_MODS_STATE.lock() {
+                    if let Some(global_mod_info) = global_mods.get_mut(&id) {
+                        global_mod_info.process_id = Some(pid);
+                        global_mod_info.last_played = Some(current_time);
+                        info!("Updated global state for mod {}: pid={}, last_played={}", mod_info.name, pid, current_time);
+                    } else {
+                        warn!("Mod {} not found in global state when updating process info", mod_info.name);
+                    }
+                } else {
+                    warn!("Failed to acquire lock on global state when updating process info");
+                }
             }
             
             // Clone the id for use in threads
@@ -339,13 +351,45 @@ pub fn launch_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), St
 // Command to check if a mod is running
 #[tauri::command]
 pub fn is_mod_running(id: String, mods_state: State<'_, ModsState>) -> bool {
-    let mods = mods_state.0.lock().unwrap();
+    // First check in the Tauri state
+    let running_in_tauri_state = {
+        let mods = mods_state.0.lock().unwrap();
+        
+        if let Some(mod_info) = mods.get(&id) {
+            let running = mod_info.process_id.is_some();
+            info!("Mod {} is running in Tauri state: {} (pid: {:?})", mod_info.name, running, mod_info.process_id);
+            running
+        } else {
+            info!("Mod with ID {} not found in Tauri state", id);
+            false
+        }
+    };
     
-    if let Some(mod_info) = mods.get(&id) {
-        mod_info.process_id.is_some()
-    } else {
-        false
+    // Also check in the global state for debugging
+    let running_in_global_state = {
+        if let Ok(global_mods) = crate::models::GLOBAL_MODS_STATE.lock() {
+            if let Some(mod_info) = global_mods.get(&id) {
+                let running = mod_info.process_id.is_some();
+                info!("Mod {} is running in global state: {} (pid: {:?})", mod_info.name, running, mod_info.process_id);
+                running
+            } else {
+                info!("Mod with ID {} not found in global state", id);
+                false
+            }
+        } else {
+            info!("Could not acquire lock on global state");
+            false
+        }
+    };
+    
+    // If there's a discrepancy between the states, log it
+    if running_in_tauri_state != running_in_global_state {
+        warn!("State inconsistency detected! Tauri state: {}, Global state: {}", 
+              running_in_tauri_state, running_in_global_state);
     }
+    
+    // Return the Tauri state value (as before)
+    running_in_tauri_state
 }
 
 // Command to stop a running mod
@@ -369,6 +413,19 @@ pub fn stop_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), Stri
                     Ok(_) => {
                         info!("Successfully stopped process with PID: {}", pid);
                         mod_info.process_id = None;
+                        
+                        // Also update the global state
+                        if let Ok(mut global_mods) = crate::models::GLOBAL_MODS_STATE.lock() {
+                            if let Some(global_mod_info) = global_mods.get_mut(&id) {
+                                global_mod_info.process_id = None;
+                                info!("Updated global state for mod {}: pid=None", mod_info.name);
+                            } else {
+                                warn!("Mod {} not found in global state when stopping", mod_info.name);
+                            }
+                        } else {
+                            warn!("Failed to acquire lock on global state when stopping mod");
+                        }
+                        
                         Ok(())
                     },
                     Err(e) => {
@@ -445,14 +502,35 @@ pub async fn download_engine_command(
 pub async fn sync_mods_from_database(mods_data: Vec<ModInfo>, mods_state: State<'_, ModsState>) -> Result<(), String> {
     info!("Syncing {} mods from database to ModsState", mods_data.len());
     
+    // First, capture the process_id from existing mods
+    let process_ids: HashMap<String, Option<u32>> = {
+        let current_mods = mods_state.0.lock().unwrap();
+        current_mods.iter()
+            .map(|(id, mod_info)| (id.clone(), mod_info.process_id))
+            .collect()
+    };
+    
     // Clear current mods and add all the ones from the database
     let mut mods = mods_state.0.lock().unwrap();
     mods.clear(); // Remove existing mods
     
-    // Insert all mods from the database
-    for mod_info in mods_data {
+    // Insert all mods from the database, preserving process_id values
+    for mut mod_info in mods_data {
+        // If this mod was running, preserve its process_id
+        if let Some(pid) = process_ids.get(&mod_info.id).and_then(|&pid| pid) {
+            info!("Preserving process_id {} for mod {}", pid, mod_info.name);
+            mod_info.process_id = Some(pid);
+        }
+        
         debug!("Syncing mod from database: {} ({})", mod_info.name, mod_info.id);
         mods.insert(mod_info.id.clone(), mod_info);
+    }
+    
+    // Also sync with the global state
+    {
+        let mut global_mods = crate::models::GLOBAL_MODS_STATE.lock().unwrap();
+        *global_mods = mods.clone();
+        info!("Updated global mods state with {} mods", global_mods.len());
     }
     
     info!("Successfully synced {} mods from database", mods.len());
