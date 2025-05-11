@@ -242,6 +242,9 @@ export class DatabaseService {
 
       // Set initialized flag
       this.initialized = true;
+      
+      // Sync with backend
+      await this.syncModsWithBackend();
       console.log("Database initialized successfully");
     } catch (error) {
       console.error("Failed to initialize database:", error);
