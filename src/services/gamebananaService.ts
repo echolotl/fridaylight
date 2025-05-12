@@ -1,13 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Notify } from "quasar";
 import { StoreService } from "./storeService";
-import { 
-  updateDownloadProgress, 
-  createDownload, 
-  completeDownload, 
-  errorDownload,
-  downloadingMods
-} from "../stores/downloadState";
+import { downloadState, downloadingMods } from "../stores/downloadState";
 import { GameBananaMod } from "../types";
 import { formatEngineName } from "@utils/index";
 
@@ -351,7 +345,7 @@ export class GameBananaService {
             }
           };
         }
-      } else if (!isModpack && !modpackType) {
+      } else if (!isModpack && !modpackType && !hasExecutable) {
           // If we can't determine the mod type automatically, let the user choose
           this.dismissNotification();
           
@@ -745,7 +739,7 @@ export class GameBananaService {
       });
 
       // Manual cleanup of download tracking entry
-      completeDownload(downloadId);
+      downloadState.completeDownload(downloadId);
       modIdToDownloadIdMap.delete(modId);
 
       // No need to refresh the main mods list as this mod is only in the engine's mods folder
@@ -1003,13 +997,13 @@ export class GameBananaService {
       }
       
       // Create a new download entry to track progress
-      const downloadId = createDownload(modId, modName, `https://gamebanana.com/mods/embeddables/${modId}`);
+      const downloadId = downloadState.createDownload(modId, modName, `https://gamebanana.com/mods/embeddables/${modId}`);
       modIdToDownloadIdMap.set(modId, downloadId);
       
       console.log(`Created download tracking with ID ${downloadId} for modId ${modId}`);
 
       // Update the download status manually to ensure it shows up
-      updateDownloadProgress({
+      downloadState.updateDownloadProgress({
         id: downloadId,
         bytesDownloaded: 0,
         totalBytes: 100,
@@ -1070,7 +1064,7 @@ export class GameBananaService {
       // Update download status to complete
       if (downloadId) {
         console.log(`Manually completing download tracking for mod ${modId}`);
-        updateDownloadProgress({
+        downloadState.updateDownloadProgress({
           id: downloadId,
           bytesDownloaded: 100,
           totalBytes: 100,
@@ -1081,7 +1075,7 @@ export class GameBananaService {
         });
         
         setTimeout(() => {
-          completeDownload(downloadId);
+          downloadState.completeDownload(downloadId);
           modIdToDownloadIdMap.delete(modId);
         }, 2000);
       }
@@ -1156,11 +1150,10 @@ export class GameBananaService {
       if (fixedUrl.startsWith("//")) {
         fixedUrl = "https:" + fixedUrl;
       } else if (!fixedUrl.includes("://")) {
-        fixedUrl = "https://" + fixedUrl;
-      }
+        fixedUrl = "https://" + fixedUrl;      }
 
       // Create a download entry to track progress
-      const downloadId = createDownload(modId, modName, `https://gamebanana.com/mods/embeddables/${modId}`);
+      const downloadId = downloadState.createDownload(modId, modName, `https://gamebanana.com/mods/embeddables/${modId}`);
       modIdToDownloadIdMap.set(modId, downloadId);
 
       // Call the backend to download the modpack to the engine's mods folder
@@ -1188,7 +1181,7 @@ export class GameBananaService {
       // Manual cleanup of download tracking entry
       if (downloadId) {
         console.log(`Manually completing download tracking for modpack ${modId}`);
-        completeDownload(downloadId);
+        downloadState.completeDownload(downloadId);
         modIdToDownloadIdMap.delete(modId);
       }
 
@@ -1286,20 +1279,32 @@ export class GameBananaService {
     
     return null;
   }
-
   // Helper methods for notification management
   private dismissNotification(): void {
     if (this.pendingDownloadNotification) {
-      this.pendingDownloadNotification();
+      try {
+        // Call the notification function to dismiss it
+        this.pendingDownloadNotification();
+      } catch (e) {
+        console.warn("Error dismissing notification:", e);
+      }
+      // Always clear the reference regardless of whether the dismiss operation succeeded
       this.pendingDownloadNotification = null;
     }
-  }
-
-  private updateNotification(message: string): void {
+  }  private updateNotification(message: string): void {
+    // First dismiss any existing notification
     if (this.pendingDownloadNotification) {
-      this.dismissNotification();
+      try {
+        // Call the notification function to dismiss it
+        this.pendingDownloadNotification();
+      } catch (e) {
+        console.warn("Error dismissing notification:", e);
+      }
+      // Always clear the reference
+      this.pendingDownloadNotification = null;
     }
     
+    // Then create a new notification
     this.pendingDownloadNotification = Notify.create({
       type: "ongoing",
       message,
@@ -1325,13 +1330,13 @@ export class GameBananaService {
     }
     
     // Create a new download entry
-    const downloadId = createDownload(modId, modName, thumbnailUrl || `https://gamebanana.com/mods/embeddables/${modId}`);
+    const downloadId = downloadState.createDownload(modId, modName, thumbnailUrl || `https://gamebanana.com/mods/embeddables/${modId}`);
     modIdToDownloadIdMap.set(modId, downloadId);
     
     console.log(`Created download tracking with ID ${downloadId} for modId ${modId}`);
     
     // Initialize download state
-    updateDownloadProgress({
+    downloadState.updateDownloadProgress({
       id: downloadId,
       bytesDownloaded: 0,
       totalBytes: 100,
@@ -1367,13 +1372,13 @@ export function setupGameBananaEventListeners(): () => void {
       
       if (!downloadId) {
         // Create a new download entry and get its unique ID
-        downloadId = createDownload(modId, name, event.payload.thumbnailUrl || "");
+        downloadId = downloadState.createDownload(modId, name, event.payload.thumbnailUrl || "");
         // Store this mapping for future reference
         modIdToDownloadIdMap.set(modId, downloadId);
       }
       
       // Update with initial data
-      updateDownloadProgress({
+      downloadState.updateDownloadProgress({
         id: downloadId,
         bytesDownloaded: 0,
         totalBytes: event.payload.contentLength || 0,
@@ -1403,7 +1408,7 @@ export function setupGameBananaEventListeners(): () => void {
       if (!downloadId) {
         console.warn(`No download ID found for mod ID ${modId}, creating new entry on the fly`);
         // Create a new download entry on the fly if one doesn't exist
-        const newDownloadId = createDownload(
+        const newDownloadId = downloadState.createDownload(
           modId,
           event.payload.name || "Unknown Mod",
           ""
@@ -1411,7 +1416,7 @@ export function setupGameBananaEventListeners(): () => void {
         modIdToDownloadIdMap.set(modId, newDownloadId);
         
         // Update the newly created download with progress
-        updateDownloadProgress({
+        downloadState.updateDownloadProgress({
           id: newDownloadId,
           bytesDownloaded: event.payload.bytesDownloaded || 0,
           totalBytes: event.payload.totalBytes || 100,
@@ -1423,7 +1428,7 @@ export function setupGameBananaEventListeners(): () => void {
         return;
       }
       
-      updateDownloadProgress({
+      downloadState.updateDownloadProgress({
         id: downloadId,
         bytesDownloaded: event.payload.bytesDownloaded || 0,
         totalBytes: event.payload.totalBytes || 100,
@@ -1453,14 +1458,14 @@ export function setupGameBananaEventListeners(): () => void {
       if (!downloadId) {
         console.warn(`No download ID found for mod ID ${modId}, creating new entry for completion`);
         // Create a new download entry on the fly if one doesn't exist
-        const newDownloadId = createDownload(
+        const newDownloadId = downloadState.createDownload(
           modId,
           event.payload.name || "Unknown Mod",
           ""
         );
         
         // Update it to completed state
-        updateDownloadProgress({
+        downloadState.updateDownloadProgress({
           id: newDownloadId,
           bytesDownloaded: 100,
           totalBytes: 100,
@@ -1471,11 +1476,11 @@ export function setupGameBananaEventListeners(): () => void {
         });
         
         // Remove after delay
-        setTimeout(() => completeDownload(newDownloadId), 2000);
+        setTimeout(() => downloadState.completeDownload(newDownloadId), 2000);
         return;
       }
       
-      updateDownloadProgress({
+      downloadState.updateDownloadProgress({
         id: downloadId,
         bytesDownloaded: 100,
         totalBytes: 100,
@@ -1487,7 +1492,7 @@ export function setupGameBananaEventListeners(): () => void {
 
       // Remove from downloads list after a delay
       setTimeout(() => {
-        completeDownload(downloadId);
+        downloadState.completeDownload(downloadId);
         // Clean up our mapping
         modIdToDownloadIdMap.delete(modId);
       }, 2000);
@@ -1519,14 +1524,14 @@ export function setupGameBananaEventListeners(): () => void {
       if (!downloadId) {
         console.warn(`No download ID found for mod ID ${modId}, creating new entry for error state`);
         // Create a new download entry on the fly if one doesn't exist
-        const newDownloadId = createDownload(
+        const newDownloadId = downloadState.createDownload(
           modId,
           event.payload.name || "Unknown Mod",
           ""
         );
         
         // Update it to error state
-        updateDownloadProgress({
+        downloadState.updateDownloadProgress({
           id: newDownloadId,
           bytesDownloaded: 0,
           totalBytes: 100,
@@ -1538,11 +1543,11 @@ export function setupGameBananaEventListeners(): () => void {
         });
         
         // Remove after delay
-        setTimeout(() => errorDownload(newDownloadId, event.payload.error || "Unknown error"), 5000);
+        setTimeout(() => downloadState.errorDownload(newDownloadId, event.payload.error || "Unknown error"), 5000);
         return;
       }
       
-      updateDownloadProgress({
+      downloadState.updateDownloadProgress({
         id: downloadId,
         bytesDownloaded: 0,
         totalBytes: 100,
@@ -1555,7 +1560,7 @@ export function setupGameBananaEventListeners(): () => void {
 
       // Remove from downloads list after a delay
       setTimeout(() => {
-        errorDownload(downloadId, event.payload.error || "Unknown error");
+        downloadState.errorDownload(downloadId, event.payload.error || "Unknown error");
         // Clean up our mapping
         modIdToDownloadIdMap.delete(modId);
       }, 5000);

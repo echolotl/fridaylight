@@ -769,7 +769,6 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  backdrop-filter: blur(10px);
 }
 
 .loading-container {
@@ -778,7 +777,8 @@ body {
   padding: 24px;
   border-radius: 12px;
   background-color: var(--theme-card);
-  
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border: 2px solid var(--theme-border);
 }
 .logo {
   width: 350px;

@@ -140,12 +140,6 @@ const handleModAction = async () => {
       console.log(`Stop command successful, updating UI state`);
       isModRunning.value = false;
       showTerminalOutput.value = false; // Hide terminal immediately
-      $q.notify({
-        type: "positive",
-        message: `Stopped ${props.mod.name}`,
-        position: "bottom-right",
-        timeout: 2000
-      });
     } catch (error) {
       console.error("Failed to stop mod:", error);
       $q.notify({
@@ -229,7 +223,7 @@ const setupModTerminatedListener = async () => {
         // Display notification that the mod has terminated
         $q.notify({
           type: 'info',
-          message: `${props.mod.name} has terminated`,
+          message: `${props.mod.name} has stopped`,
           position: "bottom-right",
           timeout: 2000,
         });

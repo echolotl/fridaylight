@@ -16,72 +16,100 @@ export interface DownloadProgress {
   error?: string;
 }
 
-// Store to track all currently downloading mods
-export const downloadingMods = reactive<Record<string, DownloadProgress>>({});
-
-// Create a new download entry and return its ID
-export function createDownload(modId: number, name: string, thumbnailUrl: string = ""): string {
-  const id = uuidv4();
-  downloadingMods[id] = {
-    id,
-    modId,
-    name,
-    bytesDownloaded: 0,
-    totalBytes: 0,
-    percentage: 0,
-    step: "Preparing...",
-    thumbnailUrl,
-    isComplete: false,
-    isError: false
-  };
-  return id;
-}
-
-// Add or update a mod in the downloading list
-export function updateDownloadProgress(progress: Partial<DownloadProgress> & { id: string }) {
-  // Debug logging to identify issues
-  console.log(`Updating download progress for ID ${progress.id}:`, progress);
+/**
+ * DownloadStateManager - Singleton class for managing download state
+ */
+class DownloadStateManager {
+  private static instance: DownloadStateManager;
   
-  if (downloadingMods[progress.id]) {
-    // Ensure percentage is a number
-    if (progress.percentage !== undefined) {
-      progress.percentage = Number(progress.percentage);
+  // Store to track all currently downloading mods
+  public downloadingMods = reactive<Record<string, DownloadProgress>>({});
+
+  // Private constructor to prevent direct instantiation
+  private constructor() {}
+
+  // Get the singleton instance
+  public static getInstance(): DownloadStateManager {
+    if (!DownloadStateManager.instance) {
+      DownloadStateManager.instance = new DownloadStateManager();
     }
-    
-    // Update the download state
-    downloadingMods[progress.id] = {
-      ...downloadingMods[progress.id],
-      ...progress
+    return DownloadStateManager.instance;
+  }
+
+  // Create a new download entry and return its ID
+  public createDownload(modId: number, name: string, thumbnailUrl: string = ""): string {
+    const id = uuidv4();
+    this.downloadingMods[id] = {
+      id,
+      modId,
+      name,
+      bytesDownloaded: 0,
+      totalBytes: 0,
+      percentage: 0,
+      step: "Preparing...",
+      thumbnailUrl,
+      isComplete: false,
+      isError: false
     };
+    return id;
+  }
+
+  // Add or update a mod in the downloading list
+  public updateDownloadProgress(progress: Partial<DownloadProgress> & { id: string }) {
+    // Debug logging to identify issues
+    console.log(`Updating download progress for ID ${progress.id}:`, progress);
     
-    console.log(`Updated download state:`, downloadingMods[progress.id]);
-  } else {
-    console.warn(`Could not update download progress: ID ${progress.id} not found in downloadingMods`);
+    if (this.downloadingMods[progress.id]) {
+      // Ensure percentage is a number
+      if (progress.percentage !== undefined) {
+        progress.percentage = Number(progress.percentage);
+      }
+      
+      // Update the download state
+      this.downloadingMods[progress.id] = {
+        ...this.downloadingMods[progress.id],
+        ...progress
+      };
+      
+      console.log(`Updated download state:`, this.downloadingMods[progress.id]);
+    } else {
+      console.warn(`Could not update download progress: ID ${progress.id} not found in downloadingMods`);
+    }
+  }
+
+  // Mark a download as complete and remove it after a delay
+  public completeDownload(id: string) {
+    if (this.downloadingMods[id]) {
+      this.downloadingMods[id].isComplete = true;
+      this.downloadingMods[id].percentage = 100;
+      
+      // Remove from list after a delay to allow the user to see the completion
+      setTimeout(() => {
+        delete this.downloadingMods[id];
+      }, 3000);
+    }
+  }
+
+  // Mark a download as failed
+  public errorDownload(id: string, error: string) {
+    if (this.downloadingMods[id]) {
+      this.downloadingMods[id].isError = true;
+      this.downloadingMods[id].error = error;
+      
+      // Keep error state visible for a while
+      setTimeout(() => {
+        delete this.downloadingMods[id];
+      }, 5000);
+    }
   }
 }
 
-// Mark a download as complete and remove it after a delay
-export function completeDownload(id: string) {
-  if (downloadingMods[id]) {
-    downloadingMods[id].isComplete = true;
-    downloadingMods[id].percentage = 100;
-    
-    // Remove from list after a delay to allow the user to see the completion
-    setTimeout(() => {
-      delete downloadingMods[id];
-    }, 3000);
-  }
-}
+// Export the singleton instance
+export const downloadState = DownloadStateManager.getInstance();
 
-// Mark a download as failed
-export function errorDownload(id: string, error: string) {
-  if (downloadingMods[id]) {
-    downloadingMods[id].isError = true;
-    downloadingMods[id].error = error;
-    
-    // Keep error state visible for a while
-    setTimeout(() => {
-      delete downloadingMods[id];
-    }, 5000);
-  }
-}
+// Export convenience references to the methods for backwards compatibility
+export const downloadingMods = downloadState.downloadingMods;
+export const createDownload = downloadState.createDownload.bind(downloadState);
+export const updateDownloadProgress = downloadState.updateDownloadProgress.bind(downloadState);
+export const completeDownload = downloadState.completeDownload.bind(downloadState);
+export const errorDownload = downloadState.errorDownload.bind(downloadState);
