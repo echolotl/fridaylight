@@ -224,6 +224,9 @@
                     <a @click="openUrl('https://www.echolotl.lol')">echolotl</a>
                     - Coder, Designer, Director, Creator of Fridaylight
                   </li>
+                </ul>
+                                  <div class="text-subtitle2 q-mb-sm q-mt-sm">Special Thanks</div>
+                <ul>
                   <li>
                     <a
                       @click="openUrl('https://gamebanana.com/members/1844732')"

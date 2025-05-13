@@ -1,0 +1,563 @@
+<template>  <q-dialog
+    :model-value="isOpen"
+    @update:model-value="$emit('update:isOpen', $event)"
+    maximized
+    transition-show="slide-up"
+    transition-hide="slide-down"
+    class="mod-details-modal"
+  >
+    <q-card class="mod-details-card">
+      <q-card-section class="row items-center q-pb-none">
+        <div class="text-h6 phantom-font-difficulty header-text" v-if="!loading">
+          <img :src="modInfo?._aCategory._sIconUrl" class="mod-details-icon" />
+          {{ modInfo?._sName }}
+        </div>
+        <q-space />
+        <q-btn flat round icon="close" @click="closeModal" class="close-btn" />
+      </q-card-section>
+      
+      <q-scroll-area class="mod-details-scroll-area">
+
+      <q-card-section v-if="loading" class="flex flex-center">
+        <q-spinner color="primary" size="3em" />
+        <div class="q-ml-sm">Loading mod details...</div>
+      </q-card-section>
+
+      <q-card-section v-else-if="error" class="text-center text-negative">
+        <q-icon name="error" size="2em" />
+        <div class="q-mt-sm">{{ error }}</div>
+      </q-card-section>
+
+      <template v-else-if="modInfo">
+        <q-card-section class="mod-details-content">
+          <div class="mod-details-left">
+            <q-carousel
+              v-if="modInfo._aPreviewMedia?._aImages?.length >= 1"
+              v-model="currentSlide"
+              animated
+              autoplay
+              infinite
+              navigation
+              swipeable
+              class="mod-carousel"
+              height="400px"
+            >
+              <q-carousel-slide
+                v-for="(image, index) in modInfo._aPreviewMedia._aImages"
+                :key="index"
+                :name="index"
+                class="flex"
+              >
+                <img
+                  :src="getImageUrl(image)"
+                  class="carousel-image"
+                  alt="Mod preview image"
+                />
+              </q-carousel-slide>
+            </q-carousel>
+            <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
+              <div class="flex">
+                              Description
+              <q-space />
+            <div class="text-subtitle1 phantom-font text-right" style="color: var(--theme-text-secondary)">{{ modInfo._sDescription }}</div>
+              </div>
+              <hr />
+            </h6>
+            <div>
+              <div v-html="modInfo._sText" class="phantom-font"></div>
+            </div>
+          </div>
+          <div class="mod-details-right phantom-font">
+            <div class="mod-badges">
+              <div v-if="modInfo._nLikeCount > 0" class="custom-badge">
+                <q-icon name="thumb_up" class="q-mr-xs" />
+                {{ formatNumber(modInfo._nLikeCount) }}
+              </div>
+              <div v-if="modInfo._nDownloadCount > 0" class="custom-badge">
+                <q-icon name="download" class="q-mr-xs" />
+                {{ formatNumber(modInfo._nDownloadCount) }}
+              </div>
+              <div v-if="modInfo._nViewCount > 0" class="custom-badge">
+                <q-icon name="visibility" class="q-mr-xs" />
+                {{ formatNumber(modInfo._nViewCount) }}
+              </div>
+              <div v-if="modInfo._nPostCount > 0" class="custom-badge">
+                <q-icon name="comment" class="q-mr-xs" />
+                {{ formatNumber(modInfo._nPostCount) }}
+              </div>
+              <div v-if="modInfo._tsDateAdded > 0" class="custom-badge">
+                <q-icon name="add" class="q-mr-xs" />
+                {{ formatDate(modInfo._tsDateAdded) }}
+              </div>
+              <div v-if="modInfo._tsDateModified > 0" class="custom-badge">
+                <q-icon name="edit" class="q-mr-xs" />
+                {{ formatDate(modInfo._tsDateModified) }}
+              </div>
+              <div v-if="modInfo._tsDateUpdated > 0" class="custom-badge">
+                <q-icon name="update" class="q-mr-xs" />
+                {{ formatDate(modInfo._tsDateUpdated) }}
+                </div>
+            </div>
+            <div class="q-mt-md">
+                        <q-btn            color="primary"
+            icon="download"
+            label="Download"
+            @click="downloadMod"
+            size="lg"
+            class="action-button"
+          />
+                        <q-btn
+            icon="launch"
+            label="View on GameBanana"
+            class="action-button-secondary"
+            flat
+            @click="openUrl(modInfo._sProfileUrl)"
+          />
+            </div>
+            <div class="q-mt-md">
+              <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">Submitter<hr/></h6>
+              <div class="flex">
+                <img :src="modInfo._aSubmitter._sAvatarUrl" class="mod-details-icon" />
+                <div class="text-subtitle1 phantom-font text-right" style="color: var(--theme-text-secondary)" @click="openUrl(modInfo._aSubmitter._sProfileUrl)" :style="modInfo._aSubmitter._sProfileUrl ? { cursor: 'pointer' } : {}">
+                  {{ modInfo._aSubmitter._sName }}
+                </div>
+              </div>
+            </div>
+            <div class="q-mt-md" v-if="hasCredits">
+              <div class="credits-section">
+                <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">Credits<hr/></h6>
+                <div class="credits-groups">
+                  <div 
+                    v-for="(group, index) in modInfo._aCredits" 
+                    :key="index"
+                    class="credits-group"
+                  >
+                    <h6 class="credits-title">{{ group._sGroupName }}</h6>
+                    <div class="credits-list">
+                      <div 
+                        v-for="(author, authorIndex) in group._aAuthors" 
+                        :key="authorIndex"
+                        class="credits-item"
+                      >
+                        <div class="credits-info">
+                          <div v-if="author._sUpicUrl" @click="openUrl(author._sProfileUrl ? author._sProfileUrl : author._sUrl ? author._sUrl : '')" :style="author._sProfileUrl || author._sUrl ? { cursor: 'pointer' } : {}">
+                            <img :src="author._sUpicUrl" :alt="`${author._sName}'s upic`" />
+                          </div>
+                          <div v-else class="credits-name" @click="openUrl(author._sProfileUrl ? author._sProfileUrl : author._sUrl ? author._sUrl : '')" :style="author._sProfileUrl || author._sUrl ? { cursor: 'pointer' } : {}">
+                            {{ author._sName }}
+                          </div>
+                          <div class="credits-role" v-if="author._sRole">
+                            {{ author._sRole }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </q-card-section>
+      </template>
+      </q-scroll-area>
+    </q-card>
+  </q-dialog>
+</template>
+
+<script setup lang="ts">
+import { ref, watch, onMounted, defineEmits, defineProps, computed } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
+
+const props = defineProps({
+  modId: {
+    type: Number,
+    required: true,
+  },
+  isOpen: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const emit = defineEmits(["update:isOpen", "download"]);
+
+const modInfo = ref<any>(null);
+const loading = ref(true);
+const error = ref("");
+const currentSlide = ref(0);
+
+// Determine if there are credits to display
+const hasCredits = computed(() => {
+  return modInfo.value?._aCredits && 
+         Array.isArray(modInfo.value._aCredits) && 
+         modInfo.value._aCredits.length > 0;
+});
+
+// Fetch mod details when component is mounted and isOpen changes to true
+watch(
+  () => props.isOpen,
+  async (newVal) => {
+    if (newVal) {
+      await fetchModInfo();
+    }
+  }
+);
+
+onMounted(async () => {
+  if (props.isOpen) {
+    await fetchModInfo();
+  }
+});
+
+async function fetchModInfo() {
+  loading.value = true;
+  error.value = "";
+
+  try {
+    const result = await invoke<any>("get_mod_info_command", {
+      modId: props.modId,
+    });
+
+    if (!result) {
+      throw new Error("Failed to fetch mod information");
+    }
+
+    // Process the result into a GameBananaMod type
+    modInfo.value = result;
+  } catch (err: any) {
+    error.value = err.message || "Failed to fetch mod information";
+    console.error("Error fetching mod info:", err);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Close the modal
+function closeModal() {
+  emit("update:isOpen", false);
+}
+
+// Helper function to format numbers (e.g., 1000 -> 1K)
+function formatNumber(num: number): string {
+  if (!num) return "0";
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + "M";
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + "K";
+  }
+  return num.toString();
+}
+
+// Helper function to format date as relative time
+function formatDate(timestamp: number): string {
+  if (!timestamp) return "N/A";
+  
+  const date = new Date(timestamp * 1000);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  // Convert to appropriate time units
+  if (diffInSeconds < 60) {
+    return `${diffInSeconds}s`;
+  } else if (diffInSeconds < 3600) {
+    return `${Math.floor(diffInSeconds / 60)}m`;
+  } else if (diffInSeconds < 86400) {
+    return `${Math.floor(diffInSeconds / 3600)}h`;
+  } else if (diffInSeconds < 2592000) { // ~30 days
+    return `${Math.floor(diffInSeconds / 86400)}d`;
+  } else if (diffInSeconds < 31536000) { // ~365 days
+    return `${Math.floor(diffInSeconds / 2592000)}mo`;
+  } else {
+    return `${Math.floor(diffInSeconds / 31536000)}y`;
+  }
+}
+
+// Helper function to get image URL
+function getImageUrl(image: any): string {
+  // Use the largest available image size
+  if (image._sFile) {
+    return `${image._sBaseUrl}/${image._sFile}`;
+  } else if (image._sFile800) {
+    return `${image._sBaseUrl}/${image._sFile800}`;
+  } else if (image._sFile530) {
+    return `${image._sBaseUrl}/${image._sFile530}`;
+  } else if (image._sFile220) {
+    return `${image._sBaseUrl}/${image._sFile220}`;
+  } else if (image._sFile100) {
+    return `${image._sBaseUrl}/${image._sFile100}`;
+  }
+  return "";
+}
+
+// Function to transform the raw API response into a proper GameBananaMod object
+function transformToGameBananaMod(rawModInfo: any): any {
+  if (!rawModInfo) return null;
+
+  let previewImages: any[] = [];
+  
+  // Convert preview images if available
+  if (rawModInfo._aPreviewMedia?._aImages && Array.isArray(rawModInfo._aPreviewMedia._aImages)) {
+    previewImages = rawModInfo._aPreviewMedia._aImages.map((image: any) => {
+      return {
+        imageType: image._sType || "",
+        baseUrl: image._sBaseUrl || "",
+        fileName: image._sFile || "",
+        file100: image._sFile100 || "",
+        file220: image._sFile220 || "",
+        file530: image._sFile530 || "",
+        file800: image._sFile800 || "",
+        height100: image._nHeight100 || 0,
+        width100: image._nWidth100 || 0,
+        height220: image._nHeight220 || 0,
+        width220: image._nWidth220 || 0,
+        height530: image._nHeight530 || 0,
+        width530: image._nWidth530 || 0,
+        height800: image._nHeight800 || 0,
+        width800: image._nWidth800 || 0,
+      };
+    });
+  }
+  
+  // Build a properly formatted GameBananaMod object
+  return {
+    id: rawModInfo._idRow || props.modId,
+    name: rawModInfo._sName || "",
+    owner: rawModInfo._aSubmitter?._sName || "",
+    description: rawModInfo._sDescription || "",
+    thumbnailUrl: rawModInfo._sIconUrl || "",
+    downloadUrl: "", // This will be set correctly by the GameBananaBrowser
+    views: rawModInfo._nViewCount || 0,
+    downloads: rawModInfo._nDownloadCount || 0,
+    likes: rawModInfo._nLikeCount || 0,
+    
+    // Additional fields
+    modelName: rawModInfo._sModelName || "",
+    profileUrl: rawModInfo._sProfileUrl || "",
+    imageUrl: rawModInfo._sImageUrl || "",
+    initialVisibility: rawModInfo._sInitialVisibility || "",
+    period: rawModInfo._sPeriod || "",
+    
+    // Submitter details
+    submitterId: rawModInfo._aSubmitter?._idRow || 0,
+    submitterName: rawModInfo._aSubmitter?._sName || "",
+    submitterIsOnline: rawModInfo._aSubmitter?._bIsOnline || false,
+    submitterHasRipe: rawModInfo._aSubmitter?._bHasRipe || false,
+    submitterProfileUrl: rawModInfo._aSubmitter?._sProfileUrl || "",
+    submitterAvatarUrl: rawModInfo._aSubmitter?._sAvatarUrl || "",
+    submitterMoreByUrl: rawModInfo._aSubmitter?._sMoreByUrl || "",
+    submitterUPic: rawModInfo._aSubmitter?._sUPic || "",
+    
+    // Post count
+    postCount: rawModInfo._nPostCount || 0,
+    
+    // Category details
+    categoryName: rawModInfo._aCategory?._sName || "",
+    categoryProfileUrl: rawModInfo._aCategory?._sProfileUrl || "",
+    categoryIconUrl: rawModInfo._aCategory?._sIconUrl || "",
+    
+    // Additional fields
+    singularTitle: rawModInfo._sSingularTitle || "",
+    iconClasses: rawModInfo._sIconClasses || "",
+    dateAdded: rawModInfo._tsDateAdded || 0,
+    dateModified: rawModInfo._tsDateModified || 0,
+    dateUpdated: rawModInfo._tsDateUpdated || 0,
+    hasFiles: true,
+    tags: rawModInfo._aTags || [],
+    previewImages: previewImages,
+    version: rawModInfo._sVersion || "",
+    isObsolete: rawModInfo._bIsObsolete || false,
+    hasContentRatings: rawModInfo._bHasContentRatings || false,
+    viewCount: rawModInfo._nViewCount || 0,
+    isOwnedByAccessor: rawModInfo._bIsOwnedByAccessor || false,
+    wasFeatured: rawModInfo._bWasFeatured || false
+  };
+}
+
+// Function to handle the download button click
+function downloadMod() {
+  const formattedMod = transformToGameBananaMod(modInfo.value);
+  if (formattedMod) {
+    emit('download', formattedMod);
+  }
+}
+</script>
+
+<style scoped>
+.mod-details-modal {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.mod-details-card {
+  background: var(--solid);
+  width: 80vw;
+  margin-top: 5vh;
+  border-radius: 1rem !important;
+  height: 100%;
+  overflow-y: auto;
+  border: 2px solid var(--theme-border);
+}
+.header-text {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+}
+.mod-details-icon {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+    object-fit: contain;
+}
+.mod-details-content {
+  display: flex;
+  flex-direction: row;
+  padding: 16px;
+}
+
+.mod-details-left {
+  flex: 1;
+  padding-right: 16px;
+}
+
+.mod-details-right {
+  flex: 1;
+  padding-left: 16px;
+  min-width: 200px;
+  max-width: 20%;
+}
+
+.mod-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.custom-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 0.5rem;
+  background-color: var(--theme-surface);
+  color: var(--theme-text-secondary);
+  border: 2px solid var(--theme-border);
+  font-size: 1.25rem;
+}
+
+.mod-carousel {
+  max-width: 100%;
+  max-height: 100%;
+  height: max-content;
+  width: fit-content;
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--theme-border);
+  background: transparent;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  border: 2px solid var(--theme-border);
+  width: 100%;
+}
+.action-button-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.q-carousel__slide {
+  padding: 0;
+}
+
+.carousel-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+}
+
+.mod-details {  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.mod-details-scroll-area {
+  height: calc(95vh - 50px);
+}
+
+/* Credits section styles */
+.credits-section {
+  padding: 10px 0;
+}
+
+.credits-groups {
+  margin-top: 10px;
+}
+
+.credits-group {
+  margin-bottom: 15px;
+}
+
+.credits-title {
+  color: var(--theme-primary);
+  font-weight: bold;
+  margin: 5px 0;
+  font-size: 1rem;
+}
+
+.credits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.credits-item {
+  display: flex;
+  align-items: center;
+  padding: 0 .9rem;
+}
+
+.credits-icon {
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-right: .5rem;
+  border-radius: 50%;
+}
+
+.credits-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.credits-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.credits-name {
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.credits-role {
+  font-size: 0.8rem;
+  color: var(--theme-text-secondary);
+  opacity: 0.85;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: bold;
+}
+</style>

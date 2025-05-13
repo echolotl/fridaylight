@@ -16,8 +16,17 @@
         :key="mod.id"
         :mod="mod"
         @download="$emit('download', mod)"
+        @showDetails="openModDetails"
       />
     </div>
+    
+    <!-- Mod Details Modal -->
+    <ModDetailsModal
+      :modId="selectedModId"
+      :isOpen="isModalOpen"
+      @update:isOpen="isModalOpen = $event"
+      @download="$emit('download', $event)"
+    />
     
     <div class="pagination" v-if="showPagination && mods.length > 0">
       <q-pagination
@@ -34,9 +43,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { GameBananaMod } from "@main-types";
 import ModCard from './ModCard.vue';
+import ModDetailsModal from '../modals/ModDetailsModal.vue';
 
 const props = defineProps({
   mods: {
@@ -81,6 +91,14 @@ const currentPageModel = computed({
     emit('page-change', value);
   }
 });
+
+const selectedModId = ref<number>(0);
+const isModalOpen = ref<boolean>(false);
+
+function openModDetails(modId: number) {
+  selectedModId.value = modId;
+  isModalOpen.value = true;
+}
 
 const emit = defineEmits(['download', 'page-change']);
 </script>

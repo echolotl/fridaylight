@@ -1,37 +1,39 @@
 <template>
   <div class="mod-card">
-    <q-img
-      :src="previewImageUrl"
-      class="mod-thumbnail"
-    >
-    <img :src="mod.categoryIconUrl" class="mod-category-icon" />
-    <img :src="mod.submitterAvatarUrl" class="author-avatar" v-if="mod.submitterAvatarUrl" />
-    </q-img>
-    <div class="mod-info">
-      <div class="mod-title">{{ mod.name }}</div>
-      <div class="mod-author-container">
-        <div class="author-upic" v-if="mod.submitterUPic">
-          <span>by</span><img :src="mod.submitterUPic" alt="User Picture" />
+    <div class="mod-card-content" @click="$emit('showDetails', mod.id)">
+      <q-img
+        :src="previewImageUrl"
+        class="mod-thumbnail"
+      >
+      <img :src="mod.categoryIconUrl" class="mod-category-icon" />
+      <img :src="mod.submitterAvatarUrl" class="author-avatar" v-if="mod.submitterAvatarUrl" />
+      </q-img>
+      <div class="mod-info">
+        <div class="mod-title">{{ mod.name }}</div>
+        <div class="mod-author-container">
+          <div class="author-upic" v-if="mod.submitterUPic">
+            <span>by</span><img :src="mod.submitterUPic" alt="User Picture" />
+          </div>
+          <div class="mod-author" v-else>by {{ mod.owner }}</div>
         </div>
-        <div class="mod-author" v-else>by {{ mod.owner }}</div>
-      </div>
-      
-      <div class="mod-stats">
-        <span>
-          <q-icon name="thumb_up" size="xs" />
-          {{ formatNumber(mod.likes) }}
-        </span>
-        <span v-if="mod.postCount !== undefined">
-          <q-icon name="messages" size="xs" />
-          {{ formatNumber(mod.postCount) }}
-        </span>
+        
+        <div class="mod-stats">
+          <span>
+            <q-icon name="thumb_up" size="xs" />
+            {{ formatNumber(mod.likes) }}
+          </span>
+          <span v-if="mod.postCount !== undefined">
+            <q-icon name="messages" size="xs" />
+            {{ formatNumber(mod.postCount) }}
+          </span>
+        </div>
       </div>
     </div>
     <q-btn
       color="primary"
       label="Download"
       class="download-btn"
-      @click="$emit('download', mod)"
+      @click.stop="$emit('download', mod)"
     />
   </div>
 </template>
@@ -47,7 +49,7 @@ const props = defineProps({
   }
 });
 
-defineEmits(['download']);
+defineEmits(['download', 'showDetails']);
 
 const previewImageUrl = computed(() => {
   return props.mod.previewImages && props.mod.previewImages.length > 0
@@ -80,6 +82,13 @@ const formatNumber = (num: number): string => {
 .mod-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 0px 20px rgba(0, 0, 0, 0.2);
+}
+
+.mod-card-content {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
 }
 
 .mod-thumbnail {
