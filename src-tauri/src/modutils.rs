@@ -387,9 +387,20 @@ pub fn find_mod_metadata_files(executable_folder: &Path, engine_type: &str, cust
     } else {
         mods_folder = executable_folder.join(custom_mods_folder);
     }
+
+    // For Codename Engine, we have to check mods and addons folders
+    // so only error if we're not dealing with Codename or the folder doesn't exist
+    let is_codename = engine_type.to_lowercase() == "codename";
     
-    if !mods_folder.exists() || !mods_folder.is_dir() {
+    if (!mods_folder.exists() || !mods_folder.is_dir()) && !is_codename {
         return Err(format!("Mods folder not found: {}", mods_folder.display()));
+    } else if (!mods_folder.exists() || !mods_folder.is_dir()) && is_codename {
+        // For Codename, try addons folder if mods folder doesn't exist
+        let addons_folder = executable_folder.join("addons");
+        if !addons_folder.exists() || !addons_folder.is_dir() {
+            return Err(format!("Neither mods nor addons folders found: {} / {}", 
+                mods_folder.display(), addons_folder.display()));
+        }
     }
     
     info!("Searching for mods in {} with engine type: {}", mods_folder.display(), engine_type);
@@ -411,11 +422,26 @@ pub fn find_mod_metadata_files(executable_folder: &Path, engine_type: &str, cust
             // For FPS Plus: Look for meta.json and icon.png
             let result = find_fpsplus_polymod_mods(&mods_folder)?;
             metadata_files.extend(result);
-        }
-        "codename" => {
-            // For Codename: Look for data/config/credits.xml
-            let result = find_codename_mods(&mods_folder)?;
-            metadata_files.extend(result);
+        }        "codename" => {
+            // For Codename: Look for data/config/credits.xml in both mods and addons folders
+            
+            // First check the mods folder if it exists
+            if mods_folder.exists() && mods_folder.is_dir() {
+                let result = find_codename_mods(&mods_folder)?;
+                metadata_files.extend(result);
+            } else {
+                debug!("Mods folder not found at {}, skipping", mods_folder.display());
+            }
+            
+            // Then also check the addons folder
+            let addons_folder = executable_folder.join("addons");
+            if addons_folder.exists() && addons_folder.is_dir() {
+                info!("Also searching for Codename Engine mods in {}", addons_folder.display());
+                let addons_result = find_codename_mods(&addons_folder)?;
+                metadata_files.extend(addons_result);
+            } else {
+                debug!("Addons folder not found at {}, skipping", addons_folder.display());
+            }
         },
         _ => {
             return Err(format!("Unsupported engine type: {}", engine_type));
@@ -923,8 +949,42 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
                             },
                             Err(e) => {
                                 warn!("Failed to read credits.xml in {}: {}", path.display(), e);
+                                // Still add the mod with folder name even if we can't read the credits.xml
+                                let name = path.file_name().map_or_else(
+                                    || "Unknown Mod".to_string(), 
+                                    |n| n.to_string_lossy().to_string()
+                                );
+                                
+                                metadata_files.push(ModMetadataFile {
+                                    name,
+                                    description: Some("No metadata found.".to_string()),
+                                    folder_path: path.to_string_lossy().to_string(),
+                                    config_file_path: Some(credits_path.to_string_lossy().to_string()),
+                                    icon_file_path: None,
+                                    icon_data: None,
+                                    enabled: None, // Will be set by the command handler
+                                });
                             }
                         }
+                    } 
+                    else {
+                        // No credits.xml found, but still add the mod with folder name
+                        let name = path.file_name().map_or_else(
+                            || "Unknown Mod".to_string(), 
+                            |n| n.to_string_lossy().to_string()
+                        );
+                        
+                        debug!("No credits.xml found in {}, using folder name: {}", path.display(), name);
+                        
+                        metadata_files.push(ModMetadataFile {
+                            name,
+                            description: Some("No metadata found.".to_string()),
+                            folder_path: path.to_string_lossy().to_string(),
+                            config_file_path: None,
+                            icon_file_path: None,
+                            icon_data: None,
+                            enabled: None, // Will be set by the command handler
+                        });
                     }
                 }
             }
