@@ -66,6 +66,25 @@
             <div>
               <div v-html="modInfo._sText" class="phantom-font"></div>
             </div>
+            <div v-if="modInfo._nUpdatesCount > 0">
+            <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
+              <div class="flex">
+                              Updates
+              <q-space />
+            <div class="text-subtitle1 phantom-font text-right" style="color: var(--theme-text-secondary)">{{ modInfo._nUpdatesCount }} updates total</div>
+              </div>
+              <hr />
+            </h6>
+            <div v-for="update in modUpdates._aRecords" :key="update._idRow">
+                <q-expansion-item dense :label="update._sName" :caption="update._sVersion" class="phantom-font" group="updates">
+                  <div class="q-mt-sm">
+                    <div v-html="update._sText" class="phantom-font"></div>
+                  </div>
+                  
+                </q-expansion-item>
+              <hr />
+            </div>
+            </div>
           </div>
           <div class="mod-details-right phantom-font">
             <div class="mod-badges">
@@ -183,6 +202,8 @@ const props = defineProps({
 const emit = defineEmits(["update:isOpen", "download"]);
 
 const modInfo = ref<any>(null);
+const modUpdates = ref<any>(null);
+const modComments = ref<any>(null);
 const loading = ref(true);
 const error = ref("");
 const currentSlide = ref(0);
@@ -215,16 +236,36 @@ async function fetchModInfo() {
   error.value = "";
 
   try {
-    const result = await invoke<any>("get_mod_info_command", {
+    const infoResult = await invoke<any>("get_mod_info_command", {
       modId: props.modId,
     });
 
-    if (!result) {
+    const updatesResult = await invoke<any>("get_mod_updates_command", {
+      modId: props.modId,
+      page: 1,
+    });
+    console.log("Updates result:", updatesResult);
+
+    const commentsResult = await invoke<any>("get_mod_posts_command", {
+      modId: props.modId,
+      page: 1,
+    });
+
+    console.log("Comments result:", commentsResult);
+
+    if (!infoResult) {
       throw new Error("Failed to fetch mod information");
     }
+    if (!updatesResult) {
+      throw new Error("Failed to fetch mod updates");
+    }
+    if (!commentsResult) {
+      throw new Error("Failed to fetch mod comments");
+    }
 
-    // Process the result into a GameBananaMod type
-    modInfo.value = result;
+    modInfo.value = infoResult;
+    modUpdates.value = updatesResult;
+    modComments.value = commentsResult;
   } catch (err: any) {
     error.value = err.message || "Failed to fetch mod information";
     console.error("Error fetching mod info:", err);

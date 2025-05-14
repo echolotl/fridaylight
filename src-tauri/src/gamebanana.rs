@@ -444,7 +444,62 @@ pub async fn get_mod_download_files(mod_id: i64) -> Result<serde_json::Value, St
         }
     }
 }
+// Function to get a mod's posts
+pub async fn get_mod_posts(mod_id: i64, page: i64) -> Result<serde_json::Value, String> {
+    let mod_posts_url = format!("https://gamebanana.com/apiv11/Mod/{}/Posts?_nPage={}&_nPerpage=15&_sSort=popular", mod_id, page);
+    debug!("Fetching mod posts from: {}", mod_posts_url);
+    
+    let client = reqwest::Client::new();
+    match client.get(&mod_posts_url).send().await {
+        Ok(resp) => {
+            if !resp.status().is_success() {
+                warn!("Failed to fetch mod posts, status: {}", resp.status());
+                return Err(format!("Failed to fetch mod posts, status: {}", resp.status()));
+            }
+            
+            match resp.json::<serde_json::Value>().await {
+                Ok(data) => Ok(data),
+                Err(e) => {
+                    warn!("Failed to parse mod posts: {}", e);
+                    Err(format!("Failed to parse mod posts: {}", e))
+                }
+            }
+        },
+        Err(e) => {
+            warn!("Failed to fetch mod posts: {}", e);
+            Err(format!("Failed to fetch mod posts: {}", e))
+        }
+    }
+}
 
+
+// Function to get a mod's updates
+pub async fn get_mod_updates(mod_id: i64, page: i64) -> Result<serde_json::Value, String> {
+    let mod_updates_url = format!("https://gamebanana.com/apiv11/Mod/{}/Updates?_nPage={}&_nPerpage=5", mod_id, page);
+    debug!("Fetching mod updates from: {}", mod_updates_url);
+    
+    let client = reqwest::Client::new();
+    match client.get(&mod_updates_url).send().await {
+        Ok(resp) => {
+            if !resp.status().is_success() {
+                warn!("Failed to fetch mod updates, status: {}", resp.status());
+                return Err(format!("Failed to fetch mod updates, status: {}", resp.status()));
+            }
+            
+            match resp.json::<serde_json::Value>().await {
+                Ok(data) => Ok(data),
+                Err(e) => {
+                    warn!("Failed to parse mod updates: {}", e);
+                    Err(format!("Failed to parse mod updates: {}", e))
+                }
+            }
+        },
+        Err(e) => {
+            warn!("Failed to fetch mod updates: {}", e);
+            Err(format!("Failed to fetch mod updates: {}", e))
+        }
+    }
+}
 // Function to extract the first banner image URL from mod info
 pub fn extract_banner_url(mod_info: &serde_json::Value, mod_id: i64) -> Option<String> {
     mod_info

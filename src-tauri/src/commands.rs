@@ -453,10 +453,20 @@ pub async fn fetch_gamebanana_mods_command(query: String, page: i64) -> Result<G
     fetch_gamebanana_mods(query, page).await
 }
 
-// Add the missing command for getting mod info from GameBanana
 #[tauri::command]
 pub async fn get_mod_info_command(mod_id: i64) -> Result<serde_json::Value, String> {
     get_mod_info(mod_id).await
+}
+
+// Command to get mod posts
+#[tauri::command]
+pub async fn get_mod_posts_command(mod_id: i64, page: i64) -> Result<serde_json::Value, String> {
+    crate::gamebanana::get_mod_posts(mod_id, page).await
+}
+
+#[tauri::command]
+pub async fn get_mod_updates_command(mod_id: i64, page: i64) -> Result<serde_json::Value, String> {
+    crate::gamebanana::get_mod_updates(mod_id, page).await
 }
 
 // Command to download a mod from GameBanana
@@ -926,6 +936,8 @@ pub fn run() {
             clear_mod_logs,
             super_delete_mod,
             check_mod_folder_exists,
+            get_mod_posts_command,
+            get_mod_updates_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
