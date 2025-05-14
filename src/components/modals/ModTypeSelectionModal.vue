@@ -140,11 +140,14 @@
               </q-item-section>
             </q-item>
           </q-list>
-          
-          <!-- Installation path preview -->
+            <!-- Installation path preview -->
           <div class="text-caption q-mt-sm" v-if="selectedEngine">
+                        <!-- Codename Engine Addon Option -->
+            <div v-if="isCodename" class="q-pt-none q-mb-md">
+              <q-toggle v-model="isAddon" label="Install as Addon (will run on all mods)" />
+            </div>
             <p>The modpack will be installed to:</p>
-            <code>{{ getModsFolderPath(selectedEngine) }}</code>
+            <code>{{ getInstallPath() }}</code>
           </div>
         </div>
       </q-card-section>
@@ -205,6 +208,12 @@ const selectedType = ref('executable');
 const selectedEngine = ref<EngineMod | null>(null);
 const compatibleEngines = ref<EngineMod[]>([]);
 const allEngines = ref<EngineMod[]>([]);
+const isAddon = ref(false);
+
+// Computed property to check if selected type is Codename Engine
+const isCodename = computed(() => {
+  return selectedType.value === 'codename';
+});
 
 // Computed property to check if form is valid
 const isFormValid = computed(() => {
@@ -218,9 +227,10 @@ const isFormValid = computed(() => {
 watch(() => props.modelValue, (val) => {
   isOpen.value = val;
   
-  // When dialog opens, load all engines to check availability
+  // When dialog opens, load all engines to check availability and reset state
   if (val) {
     loadAllEngines();
+    isAddon.value = false;
   }
 });
 
@@ -237,6 +247,11 @@ watch(selectedType, async (newType) => {
     // Clear selection when switching to executable type
     selectedEngine.value = null;
     compatibleEngines.value = [];
+  }
+  
+  // Reset addon flag when changing type
+  if (newType !== 'codename') {
+    isAddon.value = false;
   }
 });
 
@@ -382,12 +397,46 @@ const getModsFolderPath = (engineMod: EngineMod): string => {
   return `${baseDir}${sep()}mods`;
 };
 
+// Get the installation path based on engine type and addon setting
+const getInstallPath = (): string => {
+  if (!selectedEngine.value) return 'Unknown path';
+  
+  // If it's a Codename Engine addon, use addons folder instead of mods
+  if (isCodename.value && isAddon.value) {
+    const basePath = selectedEngine.value.path;
+    const executablePath = selectedEngine.value.executable_path || '';
+    
+    if (!basePath) return 'Unknown path';
+    
+    // Get parent directory of executable if it exists
+    let baseDir = basePath;
+    if (executablePath) {
+      // Extract the directory from the executable path
+      const lastSlashIndex = executablePath.lastIndexOf('/');
+      if (lastSlashIndex > 0) {
+        baseDir = executablePath.substring(0, lastSlashIndex);
+      } else {
+        const lastBackslashIndex = executablePath.lastIndexOf('\\');
+        if (lastBackslashIndex > 0) {
+          baseDir = executablePath.substring(0, lastBackslashIndex);
+        }
+      }
+    }
+    
+    return `${baseDir}${sep()}addons`;
+  }
+  
+  // Otherwise use the regular mods folder path
+  return getModsFolderPath(selectedEngine.value);
+};
+
 // Form submission
 const onSubmit = () => {
   if (isFormValid.value) {
     emit('submit', {
       modType: selectedType.value,
-      engineMod: selectedEngine.value
+      engineMod: selectedEngine.value,
+      isAddon: isCodename.value ? isAddon.value : false
     });
   }
 };
@@ -424,7 +473,7 @@ const currentModName = ref<string>('Unknown Mod');
 .mod-type-selection-modal {
   width: 700px;
   max-width: 90vw;
-  background-color: var(--theme-card);
+  background-color: var(--solid);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
   backdrop-filter: blur(30px);
@@ -443,7 +492,7 @@ const currentModName = ref<string>('Unknown Mod');
   cursor: pointer;
   transition: all 0.3s ease;
   border: 2px solid transparent;
-  background-color: var(--theme-bg);
+  background-color: var(--theme-card);
 }
 
 .mod-type-card:not(.disabled-card):hover {
@@ -453,7 +502,7 @@ const currentModName = ref<string>('Unknown Mod');
 
 .mod-type-card.selected {
   border-color: var(--q-primary);
-  background-color: var(--theme-bg);
+    background-color: var(--solid);
 }
 
 .disabled-card {

@@ -12,7 +12,7 @@
         <q-btn icon="close" flat round dense v-close-popup @click="cancel" />
       </q-card-section>
 
-      <q-card-section>
+      <q-card-section class="q-mb-sm">
         <p>Select which {{ formatEngineType(engineType) }} installation to add this modpack to:</p>
         
         <q-list bordered separator class="rounded-borders">
@@ -39,11 +39,14 @@
             </q-item-section>
           </q-item>
         </q-list>
-      </q-card-section>
-
-      <q-card-section class="text-caption" v-if="selectedEngineMod">
+      </q-card-section> 
+            <!-- Codename Engine Addon Option -->
+      <q-card-section v-if="isCodename && selectedEngineMod" class="q-pt-none q-pb-none">
+        <q-toggle v-model="isAddon" label="Install as Addon (will run on all mods)" />
+     </q-card-section>    
+       <q-card-section class="text-caption" v-if="selectedEngineMod">
         <p>The modpack will be installed to:</p>
-        <code>{{ getModsFolderPath(selectedEngineMod) }}</code>
+        <code>{{ getInstallPath() }}</code>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -56,7 +59,7 @@
 
 <script setup lang="ts">
 import { sep } from '@tauri-apps/api/path';
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 
 interface EngineMod {
   id: string;
@@ -95,6 +98,12 @@ const emit = defineEmits(['update:modelValue', 'select', 'cancel']);
 
 const isOpen = ref(props.modelValue);
 const selectedEngineMod = ref<EngineMod | null>(null);
+const isAddon = ref(false);
+
+// Computed property to check if the selected engine is Codename
+const isCodename = computed(() => {
+  return props.engineType?.toLowerCase() === 'codename';
+});
 
 // Set the default selected engine to the first one in the list
 watch(() => props.compatibleEngines, (newEngines) => {
@@ -113,7 +122,11 @@ watch(isOpen, (val) => {
 
 const confirm = () => {
   if (selectedEngineMod.value) {
-    emit('select', selectedEngineMod.value);
+    // Include isAddon in the emitted data
+    emit('select', { 
+      ...selectedEngineMod.value, 
+      isAddon: isAddon.value 
+    });
     isOpen.value = false;
   }
 };
@@ -165,6 +178,39 @@ const getModsFolderPath = (engineMod: EngineMod): string => {
   
   // If no custom path specified, use default mods folder
   return `${baseDir}${sep()}mods`;
+};
+
+// Get the installation path based on engine type and addon setting
+const getInstallPath = (): string => {
+  if (!selectedEngineMod.value) return 'Unknown path';
+  
+  // If it's a Codename Engine addon, use addons folder instead of mods
+  if (isCodename.value && isAddon.value) {
+    const basePath = selectedEngineMod.value.path;
+    const executablePath = selectedEngineMod.value.executable_path || '';
+    
+    if (!basePath) return 'Unknown path';
+    
+    // Get parent directory of executable if it exists
+    let baseDir = basePath;
+    if (executablePath) {
+      // Extract the directory from the executable path
+      const lastSlashIndex = executablePath.lastIndexOf('/');
+      if (lastSlashIndex > 0) {
+        baseDir = executablePath.substring(0, lastSlashIndex);
+      } else {
+        const lastBackslashIndex = executablePath.lastIndexOf('\\');
+        if (lastBackslashIndex > 0) {
+          baseDir = executablePath.substring(0, lastBackslashIndex);
+        }
+      }
+    }
+    
+    return `${baseDir}${sep()}addons`;
+  }
+  
+  // Otherwise use the regular mods folder path
+  return getModsFolderPath(selectedEngineMod.value);
 };
 </script>
 
