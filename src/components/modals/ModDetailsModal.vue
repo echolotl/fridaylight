@@ -1,4 +1,5 @@
-<template>  <q-dialog
+<template>
+  <q-dialog
     :model-value="isOpen"
     @update:model-value="$emit('update:isOpen', $event)"
     maximized
@@ -8,165 +9,300 @@
   >
     <q-card class="mod-details-card">
       <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6 phantom-font-difficulty header-text" v-if="!loading">
+        <div
+          class="text-h6 phantom-font-difficulty header-text"
+          v-if="!loading"
+        >
           <img :src="modInfo?._aCategory._sIconUrl" class="mod-details-icon" />
           {{ modInfo?._sName }}
         </div>
         <q-space />
         <q-btn flat round icon="close" @click="closeModal" class="close-btn" />
       </q-card-section>
-      
+
       <q-scroll-area class="mod-details-scroll-area">
+        <q-card-section v-if="loading" class="flex flex-center">
+          <q-spinner color="primary" size="3em" />
+          <div class="q-ml-sm">Loading mod details...</div>
+        </q-card-section>
 
-      <q-card-section v-if="loading" class="flex flex-center">
-        <q-spinner color="primary" size="3em" />
-        <div class="q-ml-sm">Loading mod details...</div>
-      </q-card-section>
+        <q-card-section v-else-if="error" class="text-center text-negative">
+          <q-icon name="error" size="2em" />
+          <div class="q-mt-sm">{{ error }}</div>
+        </q-card-section>
 
-      <q-card-section v-else-if="error" class="text-center text-negative">
-        <q-icon name="error" size="2em" />
-        <div class="q-mt-sm">{{ error }}</div>
-      </q-card-section>
-
-      <template v-else-if="modInfo">
-        <q-card-section class="mod-details-content">
-          <div class="mod-details-left">
-            <q-carousel
-              v-if="modInfo._aPreviewMedia?._aImages?.length >= 1"
-              v-model="currentSlide"
-              animated
-              autoplay
-              infinite
-              navigation
-              swipeable
-              class="mod-carousel"
-              height="400px"
-            >
-              <q-carousel-slide
-                v-for="(image, index) in modInfo._aPreviewMedia._aImages"
-                :key="index"
-                :name="index"
-                class="flex"
+        <template v-else-if="modInfo">
+          <q-card-section class="mod-details-content">
+            <div class="mod-details-left">
+              <q-carousel
+                v-if="modInfo._aPreviewMedia?._aImages?.length >= 1"
+                v-model="currentSlide"
+                animated
+                autoplay
+                infinite
+                navigation
+                swipeable
+                class="mod-carousel"
+                height="400px"
               >
-                <img
-                  :src="getImageUrl(image)"
-                  class="carousel-image"
-                  alt="Mod preview image"
-                />
-              </q-carousel-slide>
-            </q-carousel>
-            <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
-              <div class="flex">
-                              Description
-              <q-space />
-            <div class="text-subtitle1 phantom-font text-right" style="color: var(--theme-text-secondary)">{{ modInfo._sDescription }}</div>
-              </div>
-              <hr />
-            </h6>
-            <div>
-              <div v-html="modInfo._sText" class="phantom-font"></div>
-            </div>
-            <div v-if="modInfo._nUpdatesCount > 0">
-            <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
-              <div class="flex">
-                              Updates
-              <q-space />
-            <div class="text-subtitle1 phantom-font text-right" style="color: var(--theme-text-secondary)">{{ modInfo._nUpdatesCount }} updates total</div>
-              </div>
-              <hr />
-            </h6>
-            <div v-for="update in modUpdates._aRecords" :key="update._idRow">
-                <q-expansion-item dense :label="update._sName" :caption="update._sVersion" class="phantom-font" group="updates">
-                  <div class="q-mt-sm">
-                    <div v-html="update._sText" class="phantom-font"></div>
-                  </div>
-                  
-                </q-expansion-item>
-              <hr />
-            </div>
-            </div>
-          </div>
-          <div class="mod-details-right phantom-font">
-            <div class="mod-badges">
-              <div v-if="modInfo._nLikeCount > 0" class="custom-badge">
-                <q-icon name="thumb_up" class="q-mr-xs" />
-                {{ formatNumber(modInfo._nLikeCount) }}
-              </div>
-              <div v-if="modInfo._nDownloadCount > 0" class="custom-badge">
-                <q-icon name="download" class="q-mr-xs" />
-                {{ formatNumber(modInfo._nDownloadCount) }}
-              </div>
-              <div v-if="modInfo._nViewCount > 0" class="custom-badge">
-                <q-icon name="visibility" class="q-mr-xs" />
-                {{ formatNumber(modInfo._nViewCount) }}
-              </div>
-              <div v-if="modInfo._nPostCount > 0" class="custom-badge">
-                <q-icon name="comment" class="q-mr-xs" />
-                {{ formatNumber(modInfo._nPostCount) }}
-              </div>
-              <div v-if="modInfo._tsDateAdded > 0" class="custom-badge">
-                <q-icon name="add" class="q-mr-xs" />
-                {{ formatDate(modInfo._tsDateAdded) }}
-              </div>
-              <div v-if="modInfo._tsDateModified > 0" class="custom-badge">
-                <q-icon name="edit" class="q-mr-xs" />
-                {{ formatDate(modInfo._tsDateModified) }}
-              </div>
-              <div v-if="modInfo._tsDateUpdated > 0" class="custom-badge">
-                <q-icon name="update" class="q-mr-xs" />
-                {{ formatDate(modInfo._tsDateUpdated) }}
-                </div>
-            </div>
-            <div class="q-mt-md">
-                        <q-btn            color="primary"
-            icon="download"
-            label="Download"
-            @click="downloadMod"
-            size="lg"
-            class="action-button"
-          />
-                        <q-btn
-            icon="launch"
-            label="View on GameBanana"
-            class="action-button-secondary"
-            flat
-            @click="openUrl(modInfo._sProfileUrl)"
-          />
-            </div>
-            <div class="q-mt-md">
-              <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">Submitter<hr/></h6>
-              <div class="flex">
-                <img :src="modInfo._aSubmitter._sAvatarUrl" class="mod-details-icon" />
-                <div class="text-subtitle1 phantom-font text-right" style="color: var(--theme-text-secondary)" @click="openUrl(modInfo._aSubmitter._sProfileUrl)" :style="modInfo._aSubmitter._sProfileUrl ? { cursor: 'pointer' } : {}">
-                  {{ modInfo._aSubmitter._sName }}
-                </div>
-              </div>
-            </div>
-            <div class="q-mt-md" v-if="hasCredits">
-              <div class="credits-section">
-                <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">Credits<hr/></h6>
-                <div class="credits-groups">
-                  <div 
-                    v-for="(group, index) in modInfo._aCredits" 
-                    :key="index"
-                    class="credits-group"
+                <q-carousel-slide
+                  v-for="(image, index) in modInfo._aPreviewMedia._aImages"
+                  :key="index"
+                  :name="index"
+                  class="flex"
+                >
+                  <img
+                    :src="getImageUrl(image)"
+                    class="carousel-image"
+                    alt="Mod preview image"
+                  />
+                </q-carousel-slide>
+              </q-carousel>
+              <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
+                <div class="flex">
+                  Description
+                  <q-space />
+                  <div
+                    class="text-subtitle1 phantom-font text-right"
+                    style="color: var(--theme-text-secondary)"
                   >
-                    <h6 class="credits-title">{{ group._sGroupName }}</h6>
-                    <div class="credits-list">
-                      <div 
-                        v-for="(author, authorIndex) in group._aAuthors" 
-                        :key="authorIndex"
-                        class="credits-item"
-                      >
-                        <div class="credits-info">
-                          <div v-if="author._sUpicUrl" @click="openUrl(author._sProfileUrl ? author._sProfileUrl : author._sUrl ? author._sUrl : '')" :style="author._sProfileUrl || author._sUrl ? { cursor: 'pointer' } : {}">
-                            <img :src="author._sUpicUrl" :alt="`${author._sName}'s upic`" />
+                    {{ modInfo._sDescription }}
+                  </div>
+                </div>
+                <hr />
+              </h6>
+              <div>
+                <div
+                  v-html="modInfo._sText"
+                  class="phantom-font mod-info-text"
+                ></div>
+              </div>
+              <div v-if="modInfo._nUpdatesCount > 0">
+                <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
+                  <div class="flex">
+                    Updates
+                    <q-space />
+                    <div
+                      class="text-subtitle1 phantom-font text-right"
+                      style="color: var(--theme-text-secondary)"
+                    >
+                      {{ modInfo._nUpdatesCount }} updates total
+                    </div>
+                  </div>
+                  <hr />
+                </h6>
+                <div
+                  v-for="update in modUpdates._aRecords"
+                  :key="update._idRow"
+                >
+                  <q-expansion-item dense class="phantom-font" group="updates">
+                    <template v-slot:header>
+                      <div class="flex column">
+                        <div class="text-subtitle1">
+                          {{ update._sName }}
+                        </div>
+                        <div class="">
+                          <div
+                            class="phantom-font"
+                            style="color: var(--theme-text-secondary)"
+                            v-if="update._sVersion"
+                          >
+                            {{ update._sVersion }}
                           </div>
-                          <div v-else class="credits-name" @click="openUrl(author._sProfileUrl ? author._sProfileUrl : author._sUrl ? author._sUrl : '')" :style="author._sProfileUrl || author._sUrl ? { cursor: 'pointer' } : {}">
-                            {{ author._sName }}
+                          <div class="flex row">
+                            <div
+                              v-for="(count, category) in groupChanges(
+                                update._aChangeLog
+                              )"
+                              class="phantom-font"
+                              style="color: var(--theme-text-secondary)"
+                            >
+                              <q-badge
+                                :style="{
+                                  backgroundColor: getCategoryColor(category),
+                                }"
+                                >{{ category }}
+                                <span
+                                  style="
+                                    color: var(--theme-text-secondary);
+                                    margin-left: 0.25rem;
+                                  "
+                                  v-if="count > 1"
+                                  >{{ count }}</span
+                                ></q-badge
+                              >
+                            </div>
                           </div>
-                          <div class="credits-role" v-if="author._sRole">
-                            {{ author._sRole }}
+                        </div>
+                      </div>
+                      <q-space />
+                    </template>
+                    <div class="q-mt-sm">
+                      <div class="changelog q-ml-sm q-mb-sm">
+                        <div
+                          v-for="change in update._aChangeLog"
+                          :key="change.cat"
+                          class="phantom-font flex row items-center q-mb-xs"
+                        >
+                          <q-chip
+                            :clickable="false"
+                            :ripple="false"
+                            :style="{
+                              backgroundColor: getCategoryColor(change.cat),
+                              color: 'white',
+                            }"
+                            >{{ change.cat }}</q-chip
+                          >
+                          <div>{{ change.text }}</div>
+                        </div>
+                      </div>
+                      <div
+                        v-html="update._sText"
+                        class="phantom-font update-text"
+                      ></div>
+                    </div>
+                  </q-expansion-item>
+                  <hr />
+                </div>
+              </div>
+            </div>
+            <div class="mod-details-right phantom-font">
+              <div class="mod-badges">
+                <div v-if="modInfo._nLikeCount > 0" class="custom-badge">
+                  <q-icon name="thumb_up" class="q-mr-xs" />
+                  {{ formatNumber(modInfo._nLikeCount) }}
+                </div>
+                <div v-if="modInfo._nDownloadCount > 0" class="custom-badge">
+                  <q-icon name="download" class="q-mr-xs" />
+                  {{ formatNumber(modInfo._nDownloadCount) }}
+                </div>
+                <div v-if="modInfo._nViewCount > 0" class="custom-badge">
+                  <q-icon name="visibility" class="q-mr-xs" />
+                  {{ formatNumber(modInfo._nViewCount) }}
+                </div>
+                <div v-if="modInfo._nPostCount > 0" class="custom-badge">
+                  <q-icon name="comment" class="q-mr-xs" />
+                  {{ formatNumber(modInfo._nPostCount) }}
+                </div>
+                <div v-if="modInfo._tsDateAdded > 0" class="custom-badge">
+                  <q-icon name="add" class="q-mr-xs" />
+                  {{ formatDate(modInfo._tsDateAdded) }}
+                </div>
+                <div v-if="modInfo._tsDateModified > 0" class="custom-badge">
+                  <q-icon name="edit" class="q-mr-xs" />
+                  {{ formatDate(modInfo._tsDateModified) }}
+                </div>
+                <div v-if="modInfo._tsDateUpdated > 0" class="custom-badge">
+                  <q-icon name="update" class="q-mr-xs" />
+                  {{ formatDate(modInfo._tsDateUpdated) }}
+                </div>
+              </div>
+              <div class="q-mt-md">
+                <q-btn
+                  color="primary"
+                  icon="download"
+                  label="Download"
+                  @click="downloadMod"
+                  size="lg"
+                  class="action-button"
+                />
+                <q-btn
+                  icon="launch"
+                  label="View on GameBanana"
+                  class="action-button-secondary"
+                  flat
+                  @click="openUrl(modInfo._sProfileUrl)"
+                />
+              </div>
+              <div class="q-mt-md">
+                <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
+                  Submitter
+                  <hr />
+                </h6>
+                <div class="flex">
+                  <img
+                    :src="modInfo._aSubmitter._sAvatarUrl"
+                    class="mod-details-icon"
+                  />
+                  <div
+                    class="text-subtitle1 phantom-font text-right"
+                    style="color: var(--theme-text-secondary)"
+                    @click="openUrl(modInfo._aSubmitter._sProfileUrl)"
+                    :style="
+                      modInfo._aSubmitter._sProfileUrl
+                        ? { cursor: 'pointer' }
+                        : {}
+                    "
+                  >
+                    {{ modInfo._aSubmitter._sName }}
+                  </div>
+                </div>
+              </div>
+              <div class="q-mt-md" v-if="hasCredits">
+                <div class="credits-section">
+                  <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
+                    Credits
+                    <hr />
+                  </h6>
+                  <div class="credits-groups">
+                    <div
+                      v-for="(group, index) in modInfo._aCredits"
+                      :key="index"
+                      class="credits-group"
+                    >
+                      <h6 class="credits-title">{{ group._sGroupName }}</h6>
+                      <div class="credits-list">
+                        <div
+                          v-for="(author, authorIndex) in group._aAuthors"
+                          :key="authorIndex"
+                          class="credits-item"
+                        >
+                          <div class="credits-info">
+                            <div
+                              v-if="author._sUpicUrl"
+                              @click="
+                                openUrl(
+                                  author._sProfileUrl
+                                    ? author._sProfileUrl
+                                    : author._sUrl
+                                    ? author._sUrl
+                                    : ''
+                                )
+                              "
+                              :style="
+                                author._sProfileUrl || author._sUrl
+                                  ? { cursor: 'pointer' }
+                                  : {}
+                              "
+                            >
+                              <img
+                                :src="author._sUpicUrl"
+                                :alt="`${author._sName}'s upic`"
+                              />
+                            </div>
+                            <div
+                              v-else
+                              class="credits-name"
+                              @click="
+                                openUrl(
+                                  author._sProfileUrl
+                                    ? author._sProfileUrl
+                                    : author._sUrl
+                                    ? author._sUrl
+                                    : ''
+                                )
+                              "
+                              :style="
+                                author._sProfileUrl || author._sUrl
+                                  ? { cursor: 'pointer' }
+                                  : {}
+                              "
+                            >
+                              {{ author._sName }}
+                            </div>
+                            <div class="credits-role" v-if="author._sRole">
+                              {{ author._sRole }}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -175,9 +311,8 @@
                 </div>
               </div>
             </div>
-          </div>
-        </q-card-section>
-      </template>
+          </q-card-section>
+        </template>
       </q-scroll-area>
     </q-card>
   </q-dialog>
@@ -210,9 +345,11 @@ const currentSlide = ref(0);
 
 // Determine if there are credits to display
 const hasCredits = computed(() => {
-  return modInfo.value?._aCredits && 
-         Array.isArray(modInfo.value._aCredits) && 
-         modInfo.value._aCredits.length > 0;
+  return (
+    modInfo.value?._aCredits &&
+    Array.isArray(modInfo.value._aCredits) &&
+    modInfo.value._aCredits.length > 0
+  );
 });
 
 // Fetch mod details when component is mounted and isOpen changes to true
@@ -293,11 +430,11 @@ function formatNumber(num: number): string {
 // Helper function to format date as relative time
 function formatDate(timestamp: number): string {
   if (!timestamp) return "N/A";
-  
+
   const date = new Date(timestamp * 1000);
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
+
   // Convert to appropriate time units
   if (diffInSeconds < 60) {
     return `${diffInSeconds}s`;
@@ -305,9 +442,11 @@ function formatDate(timestamp: number): string {
     return `${Math.floor(diffInSeconds / 60)}m`;
   } else if (diffInSeconds < 86400) {
     return `${Math.floor(diffInSeconds / 3600)}h`;
-  } else if (diffInSeconds < 2592000) { // ~30 days
+  } else if (diffInSeconds < 2592000) {
+    // ~30 days
     return `${Math.floor(diffInSeconds / 86400)}d`;
-  } else if (diffInSeconds < 31536000) { // ~365 days
+  } else if (diffInSeconds < 31536000) {
+    // ~365 days
     return `${Math.floor(diffInSeconds / 2592000)}mo`;
   } else {
     return `${Math.floor(diffInSeconds / 31536000)}y`;
@@ -336,9 +475,12 @@ function transformToGameBananaMod(rawModInfo: any): any {
   if (!rawModInfo) return null;
 
   let previewImages: any[] = [];
-  
+
   // Convert preview images if available
-  if (rawModInfo._aPreviewMedia?._aImages && Array.isArray(rawModInfo._aPreviewMedia._aImages)) {
+  if (
+    rawModInfo._aPreviewMedia?._aImages &&
+    Array.isArray(rawModInfo._aPreviewMedia._aImages)
+  ) {
     previewImages = rawModInfo._aPreviewMedia._aImages.map((image: any) => {
       return {
         imageType: image._sType || "",
@@ -359,7 +501,7 @@ function transformToGameBananaMod(rawModInfo: any): any {
       };
     });
   }
-  
+
   // Build a properly formatted GameBananaMod object
   return {
     id: rawModInfo._idRow || props.modId,
@@ -371,14 +513,14 @@ function transformToGameBananaMod(rawModInfo: any): any {
     views: rawModInfo._nViewCount || 0,
     downloads: rawModInfo._nDownloadCount || 0,
     likes: rawModInfo._nLikeCount || 0,
-    
+
     // Additional fields
     modelName: rawModInfo._sModelName || "",
     profileUrl: rawModInfo._sProfileUrl || "",
     imageUrl: rawModInfo._sImageUrl || "",
     initialVisibility: rawModInfo._sInitialVisibility || "",
     period: rawModInfo._sPeriod || "",
-    
+
     // Submitter details
     submitterId: rawModInfo._aSubmitter?._idRow || 0,
     submitterName: rawModInfo._aSubmitter?._sName || "",
@@ -388,15 +530,15 @@ function transformToGameBananaMod(rawModInfo: any): any {
     submitterAvatarUrl: rawModInfo._aSubmitter?._sAvatarUrl || "",
     submitterMoreByUrl: rawModInfo._aSubmitter?._sMoreByUrl || "",
     submitterUPic: rawModInfo._aSubmitter?._sUPic || "",
-    
+
     // Post count
     postCount: rawModInfo._nPostCount || 0,
-    
+
     // Category details
     categoryName: rawModInfo._aCategory?._sName || "",
     categoryProfileUrl: rawModInfo._aCategory?._sProfileUrl || "",
     categoryIconUrl: rawModInfo._aCategory?._sIconUrl || "",
-    
+
     // Additional fields
     singularTitle: rawModInfo._sSingularTitle || "",
     iconClasses: rawModInfo._sIconClasses || "",
@@ -411,15 +553,59 @@ function transformToGameBananaMod(rawModInfo: any): any {
     hasContentRatings: rawModInfo._bHasContentRatings || false,
     viewCount: rawModInfo._nViewCount || 0,
     isOwnedByAccessor: rawModInfo._bIsOwnedByAccessor || false,
-    wasFeatured: rawModInfo._bWasFeatured || false
+    wasFeatured: rawModInfo._bWasFeatured || false,
   };
 }
 
 // Function to handle the download button click
+// Function to group changelog categories and count occurrences
+function groupChanges(changes: any[]): Record<string, number> {
+  const grouped: Record<string, number> = {};
+
+  if (Array.isArray(changes)) {
+    changes.forEach((change) => {
+      if (change.cat) {
+        if (grouped[change.cat]) {
+          grouped[change.cat]++;
+        } else {
+          grouped[change.cat] = 1;
+        }
+      }
+    });
+  }
+
+  return grouped;
+}
+
+// Function to determine the color for a category
+function getCategoryColor(category: string): string {
+  switch (category) {
+    case "Bugfix":
+    case "Overhaul":
+      return "var(--red)";
+    case "Adjustment":
+    case "Amendment":
+      return "var(--green)";
+    case "Improvement":
+    case "Optimization":
+    case "Tweak":
+      return "var(--pink)";
+    case "Addition":
+    case "Suggestion":
+    case "Feature":
+      return "var(--blue)";
+    case "Removal":
+    case "Refactor":
+      return "var(--theme-border)";
+    default:
+      return ""; // Use default background
+  }
+}
+
 function downloadMod() {
   const formattedMod = transformToGameBananaMod(modInfo.value);
   if (formattedMod) {
-    emit('download', formattedMod);
+    emit("download", formattedMod);
   }
 }
 </script>
@@ -447,12 +633,13 @@ function downloadMod() {
   width: 40px;
   height: 40px;
   margin-right: 10px;
-    object-fit: contain;
+  object-fit: contain;
 }
 .mod-details-content {
   display: flex;
   flex-direction: row;
   padding: 16px;
+  max-width: 100%;
 }
 
 .mod-details-left {
@@ -484,7 +671,7 @@ function downloadMod() {
 }
 
 .mod-carousel {
-  max-width: 100%;
+  max-width: 800px;
   max-height: 100%;
   height: max-content;
   width: fit-content;
@@ -522,7 +709,8 @@ function downloadMod() {
   object-fit: cover;
 }
 
-.mod-details {  max-width: 800px;
+.mod-details {
+  max-width: 800px;
   margin: 0 auto;
   padding: 0 16px;
 }
@@ -561,7 +749,7 @@ function downloadMod() {
 .credits-item {
   display: flex;
   align-items: center;
-  padding: 0 .9rem;
+  padding: 0 0.9rem;
 }
 
 .credits-icon {
@@ -569,7 +757,7 @@ function downloadMod() {
   height: 32px;
   overflow: hidden;
   flex-shrink: 0;
-  margin-right: .5rem;
+  margin-right: 0.5rem;
   border-radius: 50%;
 }
 
@@ -597,8 +785,124 @@ function downloadMod() {
   line-height: 1.2;
 }
 
-h1 {
-  font-size: 2rem;
+.changelog {
+  border-left: 2px solid var(--theme-border);
+  padding-left: 1rem;
+}
+</style>
+
+<!-- Styles for v-html content (not scoped) -->
+<style>
+.mod-info-text,
+.update-text {
+  line-height: 1.2;
+  text-wrap: break-chars;
+  max-width: 100%;
+}
+
+.mod-info-text img,
+.update-text img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Additional styles for injected HTML content */
+.mod-info-text a,
+.update-text a {
+  color: var(--q-primary);
+  text-decoration: none;
+}
+
+.mod-info-text a:hover,
+.update-text a:hover {
+  text-decoration: underline;
+}
+
+.mod-info-text p,
+.update-text p {
+  margin-bottom: 1rem;
+}
+
+.mod-info-text h1,
+.mod-info-text h2,
+.mod-info-text h3,
+.mod-info-text h4,
+.mod-info-text h5,
+.mod-info-text h6,
+.update-text h1,
+.update-text h2,
+.update-text h3,
+.update-text h4,
+.update-text h5,
+.update-text h6 {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
   font-weight: bold;
+}
+
+.mod-info-text h1,
+.update-text h1 {
+  font-size: 1.5rem;
+}
+
+.mod-info-text h2,
+.update-text h2 {
+  font-size: 1.75rem;
+}
+
+.mod-info-text h3,
+.update-text h3 {
+  font-size: 1.5rem;
+}
+
+.mod-info-text h4,
+.update-text h4 {
+  font-size: 1.25rem;
+}
+
+.mod-info-text h5,
+.update-text h5 {
+  font-size: 1.125rem;
+}
+
+.mod-info-text h6,
+.update-text h6 {
+  font-size: 1rem;
+}
+
+.mod-info-text ul,
+.mod-info-text ol,
+.update-text ul,
+.update-text ol {
+  margin-left: 2rem;
+  margin-bottom: 1rem;
+}
+
+.mod-info-text li,
+.update-text li {
+  margin-bottom: 0.5rem;
+}
+
+.BlueColor {
+  color: var(--blue);
+}
+.RedColor {
+  color: var(--red);
+}
+.GreenColor {
+  color: var(--green);
+}
+.PurpleColor {
+  color: var(--purple);
+}
+.OrangeColor {
+  color: var(--orange);
+}
+.YellowColor {
+  color: var(--yellow);
+}
+.PinkColor {
+  color: var(--pink);
 }
 </style>

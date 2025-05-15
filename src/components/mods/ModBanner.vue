@@ -1,6 +1,7 @@
 <template>
   <div class="mod-banner">
     <!-- Banner image -->
+    
     <div
       class="banner-image"
       :style="
