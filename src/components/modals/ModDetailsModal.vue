@@ -183,9 +183,13 @@
                   :key="comment._idRow"
                 >
                   <div class="flex column" v-if="comment._aPoster">
-                    <div class="flex row items-center phantom-font ">
+                    <div class="flex row items-center phantom-font">
                       <img
-                        :src="comment._aPoster._sAvatarUrl ? comment._aPoster._sAvatarUrl : 'https://images.gamebanana.com/static/img/defaults/avatar.gif'"
+                        :src="
+                          comment._aPoster._sAvatarUrl
+                            ? comment._aPoster._sAvatarUrl
+                            : 'https://images.gamebanana.com/static/img/defaults/avatar.gif'
+                        "
                         class="mod-details-icon"
                       />
                       <div
@@ -205,8 +209,9 @@
                         "
                       >
                         <img
-                        v-if="comment._aPoster._sUpicUrl"
-                          :src="comment._aPoster._sUpicUrl">
+                          v-if="comment._aPoster._sUpicUrl"
+                          :src="comment._aPoster._sUpicUrl"
+                        />
                         <span v-else>{{ comment._aPoster._sName }}</span>
                       </div>
                       <div>
@@ -218,23 +223,23 @@
                             color="primary"
                             outline
                             >{{ label }}</q-badge
-                          ></span>
-                          
+                          ></span
+                        >
+
                         <q-icon
-                        v-if="comment._iPinLevel > 0"
+                          v-if="comment._iPinLevel > 0"
                           name="push_pin"
                           size="xs"
                           class="q-ml-xs BlueColor"
                         />
-                        <q-icon name="add" size="xs" class="q-ml-xs"/>
+                        <q-icon name="add" size="xs" class="q-ml-xs" />
                         <span>
                           {{ formatDate(comment._tsDateAdded) }}
                         </span>
                       </div>
-
                     </div>
                     <div class="q-mt-sm">
-                      <div 
+                      <div
                         v-html="comment._sText"
                         class="phantom-font comment-text"
                       ></div>
@@ -246,29 +251,40 @@
                               comment._aPoster._sProfileUrl
                                 ? comment._aPoster._sProfileUrl
                                 : ''
-                            )"
+                            )
+                          "
                           :style="
                             comment._aPoster._sProfileUrl
                               ? { cursor: 'pointer' }
                               : {}
-                              "
+                          "
                         />
                       </div>
-                      <i v-else class="phantom-font" style="color: var(--theme-text-secondary)">
+                      <i
+                        v-else
+                        class="phantom-font"
+                        style="color: var(--theme-text-secondary)"
+                      >
                         {{ comment._aPoster._sUserTitle }}
                       </i>
                     </div>
                     <div v-if="comment._nReplyCount > 0">
-                      <div class="phantom-font text-right" style="color: var(--theme-text-secondary)">
+                      <div
+                        class="phantom-font text-right"
+                        style="color: var(--theme-text-secondary)"
+                      >
                         + {{ comment._nReplyCount }} replies
                       </div>
                     </div>
                   </div>
                   <div v-else>
-                    <span class="phantom-font" style="color: var(--theme-text-secondary)">Comment trashed</span>
+                    <span
+                      class="phantom-font"
+                      style="color: var(--theme-text-secondary)"
+                      >Comment trashed</span
+                    >
                   </div>
-                  <hr style="border-top-style: dashed;" />
-
+                  <hr style="border-top-style: dashed" />
                 </div>
               </div>
             </div>
@@ -425,7 +441,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, defineEmits, defineProps, computed } from "vue";
+import { ref, watch, onMounted, onUnmounted, defineEmits, defineProps, computed } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
@@ -458,12 +474,25 @@ const hasCredits = computed(() => {
   );
 });
 
+// Function to clear all data from the component
+function clearData() {
+  modInfo.value = null;
+  modUpdates.value = null;
+  modComments.value = null;
+  error.value = "";
+  currentSlide.value = 0;
+  loading.value = true; // Reset loading state for next time
+}
+
 // Fetch mod details when component is mounted and isOpen changes to true
 watch(
   () => props.isOpen,
   async (newVal) => {
     if (newVal) {
       await fetchModInfo();
+    } else {
+      // Clear data when modal is closed
+      clearData();
     }
   }
 );
@@ -472,6 +501,11 @@ onMounted(async () => {
   if (props.isOpen) {
     await fetchModInfo();
   }
+});
+
+// Clear data when component is unmounted
+onUnmounted(() => {
+  clearData();
 });
 
 async function fetchModInfo() {
@@ -504,9 +538,7 @@ async function fetchModInfo() {
     }
     if (!commentsResult) {
       throw new Error("Failed to fetch mod comments");
-    }
-
-    modInfo.value = infoResult;
+    }    modInfo.value = infoResult;
     modUpdates.value = updatesResult;
     modComments.value = commentsResult;
   } catch (err: any) {
