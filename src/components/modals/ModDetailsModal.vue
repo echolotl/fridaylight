@@ -23,12 +23,12 @@
       <q-scroll-area class="mod-details-scroll-area">
         <q-card-section v-if="loading" class="flex flex-center">
           <q-spinner color="primary" size="3em" />
-          <div class="q-ml-sm">Loading mod details...</div>
+          <div class="q-ml-sm phantom-font">Loading mod details...</div>
         </q-card-section>
 
         <q-card-section v-else-if="error" class="text-center text-negative">
           <q-icon name="error" size="2em" />
-          <div class="q-mt-sm">{{ error }}</div>
+          <div class="q-mt-sm phantom-font">{{ error }}</div>
         </q-card-section>
 
         <template v-else-if="modInfo">
@@ -109,7 +109,7 @@
                           >
                             {{ update._sVersion }}
                           </div>
-                          <div class="flex row">
+                          <div class="flex row badge-container">
                             <div
                               v-for="(count, category) in groupChanges(
                                 update._aChangeLog
@@ -162,7 +162,113 @@
                       ></div>
                     </div>
                   </q-expansion-item>
+                </div>
+              </div>
+              <div v-if="modComments._aRecords.length > 0">
+                <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
+                  <div class="flex">
+                    Comments
+                    <q-space />
+                    <div
+                      class="text-subtitle1 phantom-font text-right"
+                      style="color: var(--theme-text-secondary)"
+                    >
+                      {{ modComments._aRecords.length }} comments total
+                    </div>
+                  </div>
                   <hr />
+                </h6>
+                <div
+                  v-for="comment in modComments._aRecords"
+                  :key="comment._idRow"
+                >
+                  <div class="flex column" v-if="comment._aPoster">
+                    <div class="flex row items-center phantom-font ">
+                      <img
+                        :src="comment._aPoster._sAvatarUrl ? comment._aPoster._sAvatarUrl : 'https://images.gamebanana.com/static/img/defaults/avatar.gif'"
+                        class="mod-details-icon"
+                      />
+                      <div
+                        class="text-subtitle1"
+                        style="color: var(--theme-text-secondary)"
+                        @click="
+                          openUrl(
+                            comment._aPoster._sProfileUrl
+                              ? comment._aPoster._sProfileUrl
+                              : ''
+                          )
+                        "
+                        :style="
+                          comment._aPoster._sProfileUrl
+                            ? { cursor: 'pointer' }
+                            : {}
+                        "
+                      >
+                        <img
+                        v-if="comment._aPoster._sUpicUrl"
+                          :src="comment._aPoster._sUpicUrl">
+                        <span v-else>{{ comment._aPoster._sName }}</span>
+                      </div>
+                      <div>
+                        <span v-if="comment._aLabels">
+                          <q-badge
+                            v-for="(label, index) in comment._aLabels"
+                            :key="index"
+                            class="q-ml-xs"
+                            color="primary"
+                            outline
+                            >{{ label }}</q-badge
+                          ></span>
+                          
+                        <q-icon
+                        v-if="comment._iPinLevel > 0"
+                          name="push_pin"
+                          size="xs"
+                          class="q-ml-xs BlueColor"
+                        />
+                        <q-icon name="add" size="xs" class="q-ml-xs"/>
+                        <span>
+                          {{ formatDate(comment._tsDateAdded) }}
+                        </span>
+                      </div>
+
+                    </div>
+                    <div class="q-mt-sm">
+                      <div 
+                        v-html="comment._sText"
+                        class="phantom-font comment-text"
+                      ></div>
+                      <div v-if="comment._aPoster._sSigUrl">
+                        <img
+                          :src="comment._aPoster._sSigUrl"
+                          @click="
+                            openUrl(
+                              comment._aPoster._sProfileUrl
+                                ? comment._aPoster._sProfileUrl
+                                : ''
+                            )"
+                          :style="
+                            comment._aPoster._sProfileUrl
+                              ? { cursor: 'pointer' }
+                              : {}
+                              "
+                        />
+                      </div>
+                      <i v-else class="phantom-font" style="color: var(--theme-text-secondary)">
+                        {{ comment._aPoster._sUserTitle }}
+                      </i>
+                    </div>
+                    <div v-if="comment._nReplyCount > 0">
+                      <div class="phantom-font text-right" style="color: var(--theme-text-secondary)">
+                        + {{ comment._nReplyCount }} replies
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else>
+                    <span class="phantom-font" style="color: var(--theme-text-secondary)">Comment trashed</span>
+                  </div>
+                  <hr style="border-top-style: dashed;" />
+
                 </div>
               </div>
             </div>
@@ -788,6 +894,10 @@ function downloadMod() {
 .changelog {
   border-left: 2px solid var(--theme-border);
   padding-left: 1rem;
+}
+
+.badge-container {
+  gap: 0.5rem;
 }
 </style>
 
