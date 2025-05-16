@@ -1,6 +1,5 @@
 <template>
   <div class="gamebanana-browser phantom-font">
-
     <SearchBar
       :searchQuery="searchQuery"
       @update:searchQuery="searchQuery = $event"
@@ -11,17 +10,16 @@
 
     <!-- Search Results View -->
     <div class="section-header phantom-font" v-if="activeView === 'search'">
-        <div class="text-subtitle1 phantom-font-difficulty">Search Results</div>
-        <q-btn
-          flat
-          color="primary"
-          icon="arrow_back"
-          label="Back to Home"
-          @click="clearSearch"
-        />
-      </div>
+      <div class="text-subtitle1 phantom-font-difficulty">Search Results</div>
+      <q-btn
+        flat
+        color="primary"
+        icon="arrow_back"
+        label="Back to Home"
+        @click="clearSearch"
+      />
+    </div>
     <q-scroll-area v-if="activeView === 'search'" class="scroll-container">
-
       <ModGrid
         :mods="searchResults"
         :loading="isLoadingSearch"
@@ -32,115 +30,118 @@
         :input-pagination="true"
         @download="downloadMod"
         @page-change="changePage"
+        @showDetails="openModDetails"
       />
-
     </q-scroll-area>
 
     <!-- Home View with Featured and Latest Mods -->
     <q-scroll-area v-else class="scroll-container">
       <div class="main-browser">
-      <div class="section-header phantom-font-difficulty">
+        <div class="section-header phantom-font-difficulty">
           <div class="text-subtitle1">Featured Mods</div>
         </div>
-      <div class="mods-section">
-        <FeaturedModsCarousel
-          :mods="featuredMods"
-          :loading="isLoadingFeatured"
-          @download="downloadMod"
-        />
-      </div>
-      <hr />
-      
-      <!-- Latest Mods Section -->
-      <div class="mods-section">
-        <div class="section-header phantom-font-difficulty">
-          <div class="text-subtitle1">Latest Mods</div>
+        <div class="mods-section">
+          <FeaturedModsCarousel
+            :mods="featuredMods"
+            :loading="isLoadingFeatured"
+            @download="downloadMod"
+            @showDetails="openModDetails"
+          />
         </div>
+        <hr />
 
-        <!-- Tab navigation -->
-        <q-tabs
-          v-model="selectedModType"
-          dense
-          class="mod-tabs"
-          active-color="primary"
-          indicator-color="primary"
-          align="justify"
-          narrow-indicator
-        >
-          <q-tab name="executables" label="Executables" />
-          <q-tab name="psychModpacks" label="Psych Engine Modpacks" />
-          <q-tab name="vsliceModpacks" label="V-Slice Modpacks" />
-          <q-tab name="codenameModpacks" label="Codename Engine Modpacks" />
-        </q-tabs>
+        <!-- Latest Mods Section -->
+        <div class="mods-section">
+          <div class="section-header phantom-font-difficulty">
+            <div class="text-subtitle1">Latest Mods</div>
+          </div>
 
-        <q-tab-panels v-model="selectedModType" animated>
-          <!-- Executables Tab -->
-          <q-tab-panel name="executables">
-            <ModGrid
-              :mods="latestMods"
-              :loading="isLoadingLatest"
-              loadingMessage="Loading latest mods..."
-              emptyMessage="No mods found"
-              :currentPage="currentPage"
-              :totalPages="totalPages"
-              :inputPagination="true"
-              @download="downloadMod"
-              @page-change="changePage"
-            />
-          </q-tab-panel>
+          <!-- Tab navigation -->
+          <q-tabs
+            v-model="selectedModType"
+            dense
+            class="mod-tabs"
+            active-color="primary"
+            indicator-color="primary"
+            align="justify"
+            narrow-indicator
+          >
+            <q-tab name="executables" label="Executables" />
+            <q-tab name="psychModpacks" label="Psych Engine Modpacks" />
+            <q-tab name="vsliceModpacks" label="V-Slice Modpacks" />
+            <q-tab name="codenameModpacks" label="Codename Engine Modpacks" />
+          </q-tabs>
 
-          <!-- Psych Engine Modpacks Tab -->
-          <q-tab-panel name="psychModpacks">
-            <ModGrid
-              :mods="psychModpacks"
-              :loading="isLoadingPsychModpacks"
-              loadingMessage="Loading Psych Engine modpacks..."
-              emptyMessage="No Psych Engine modpacks found"
-              :currentPage="currentPage"
-              :totalPages="totalPages"
-              :inputPagination="true"
-              @download="downloadMod"
-              @page-change="changePage"
-            />
-          </q-tab-panel>
+          <q-tab-panels v-model="selectedModType" animated>
+            <!-- Executables Tab -->
+            <q-tab-panel name="executables">
+              <ModGrid
+                :mods="latestMods"
+                :loading="isLoadingLatest"
+                loadingMessage="Loading latest mods..."
+                emptyMessage="No mods found"
+                :currentPage="currentPage"
+                :totalPages="totalPages"
+                :inputPagination="true"
+                @download="downloadMod"
+                @page-change="changePage"
+                @showDetails="openModDetails"
+              />
+            </q-tab-panel>
 
-          <!-- V-Slice Modpacks Tab -->
-          <q-tab-panel name="vsliceModpacks">
-            <ModGrid
-              :mods="vsliceModpacks"
-              :loading="isLoadingVsliceModpacks"
-              loadingMessage="Loading V-Slice modpacks..."
-              emptyMessage="No V-Slice modpacks found"
-              :currentPage="currentPage"
-              :totalPages="totalPages"
-              :inputPagination="true"
-              @download="downloadMod"
-              @page-change="changePage"
-            />
-          </q-tab-panel>
+            <!-- Psych Engine Modpacks Tab -->
+            <q-tab-panel name="psychModpacks">
+              <ModGrid
+                :mods="psychModpacks"
+                :loading="isLoadingPsychModpacks"
+                loadingMessage="Loading Psych Engine modpacks..."
+                emptyMessage="No Psych Engine modpacks found"
+                :currentPage="currentPage"
+                :totalPages="totalPages"
+                :inputPagination="true"
+                @download="downloadMod"
+                @page-change="changePage"
+                @showDetails="openModDetails"
+              />
+            </q-tab-panel>
 
-          <!-- Codename Engine Modpacks Tab -->
-          <q-tab-panel name="codenameModpacks">
-            <ModGrid
-              :mods="codenameModpacks"
-              :loading="isLoadingCodenameModpacks"
-              loadingMessage="Loading Codename Engine modpacks..."
-              emptyMessage="No Codename Engine modpacks found"
-              :currentPage="currentPage"
-              :totalPages="totalPages"
-              :inputPagination="true"
-              @download="downloadMod"
-              @page-change="changePage"
-            />
-          </q-tab-panel>
-        </q-tab-panels>
+            <!-- V-Slice Modpacks Tab -->
+            <q-tab-panel name="vsliceModpacks">
+              <ModGrid
+                :mods="vsliceModpacks"
+                :loading="isLoadingVsliceModpacks"
+                loadingMessage="Loading V-Slice modpacks..."
+                emptyMessage="No V-Slice modpacks found"
+                :currentPage="currentPage"
+                :totalPages="totalPages"
+                :inputPagination="true"
+                @download="downloadMod"
+                @page-change="changePage"
+                @showDetails="openModDetails"
+              />
+            </q-tab-panel>
+
+            <!-- Codename Engine Modpacks Tab -->
+            <q-tab-panel name="codenameModpacks">
+              <ModGrid
+                :mods="codenameModpacks"
+                :loading="isLoadingCodenameModpacks"
+                loadingMessage="Loading Codename Engine modpacks..."
+                emptyMessage="No Codename Engine modpacks found"
+                :currentPage="currentPage"
+                :totalPages="totalPages"
+                :inputPagination="true"
+                @download="downloadMod"
+                @page-change="changePage"
+                @showDetails="openModDetails"
+              />
+            </q-tab-panel>
+          </q-tab-panels>
+        </div>
+        <!-- Engine Download Buttons -->
+        <EngineDownloadButtons @download-engine="downloadEngine" />
       </div>
-          <!-- Engine Download Buttons -->
-    <EngineDownloadButtons @download-engine="downloadEngine" />
-  </div>
     </q-scroll-area>
-
-
 
     <!-- Download File Selector Dialog -->
     <DownloadFileSelector
@@ -151,7 +152,7 @@
       @select="onFileSelected"
       @cancel="cancelDownload"
     />
-    
+
     <!-- Engine Selection Dialog for Modpacks -->
     <EngineSelectionDialog
       v-model="showEngineSelectDialog"
@@ -174,7 +175,12 @@
       v-model="showModTypeModal"
       :modData="customModData"
       @submit="onModTypeSubmit"
-      @back="showModTypeModal = false; if(customModData?.isCustomUrl) { showCustomUrlModal = true; }"
+      @back="
+        showModTypeModal = false;
+        if (customModData?.isCustomUrl) {
+          showCustomUrlModal = true;
+        }
+      "
       @cancel="handleModTypeCancel"
     />
 
@@ -192,12 +198,20 @@
       <div class="text-h6">{{ folderExistsModName }}</div>
       <p class="text-body1 q-mt-sm">
         The mod folder already exists in your mods directory.
-        </p>
+      </p>
       <p class="text-body2 q-mt-sm">
-        This mod has already been downloaded with Fridaylight. Downloading again will download it into a separate instance.
-        Would you like to continue?
+        This mod has already been downloaded with Fridaylight. Downloading again
+        will download it into a separate instance. Would you like to continue?
       </p>
     </MessageDialog>
+
+    <!-- Mod Details Modal -->
+    <ModDetailsModal
+      :modId="selectedModId"
+      :isOpen="isModDetailsModalOpen"
+      @update:isOpen="isModDetailsModalOpen = $event"
+      @download="downloadMod"
+    />
   </div>
 </template>
 
@@ -205,7 +219,10 @@
 import { ref, onMounted, onBeforeUnmount, watch } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { useQuasar, Notify } from "quasar";
-import { gamebananaService, setupGameBananaEventListeners } from "@services/gamebananaService";
+import {
+  gamebananaService,
+  setupGameBananaEventListeners,
+} from "@services/gamebananaService";
 import type { ModpackInfo } from "@services/gamebananaService";
 import { GameBananaMod } from "../../types";
 
@@ -219,8 +236,8 @@ import EngineSelectionDialog from "@modals/EngineSelectionDialog.vue";
 import CustomUrlDownloadModal from "@modals/CustomUrlDownloadModal.vue";
 import ModTypeSelectionModal from "@modals/ModTypeSelectionModal.vue";
 import MessageDialog from "@modals/MessageDialog.vue";
+import ModDetailsModal from "@modals/ModDetailsModal.vue";
 import { StoreService } from "../../services/storeService";
-
 
 // Declare db for TypeScript
 declare global {
@@ -288,8 +305,14 @@ const customModData = ref<any>(null);
 const showFolderExistsDialog = ref(false);
 const folderExistsModName = ref("");
 
+// For mod details modal
+const selectedModId = ref<number>(0);
+const isModDetailsModalOpen = ref<boolean>(false);
+
 // Variables for handling folder existence check
-const folderExistsDownloadContinueFunction = ref<(() => Promise<any>) | null>(null);
+const folderExistsDownloadContinueFunction = ref<(() => Promise<any>) | null>(
+  null
+);
 
 watch(selectedModType, async (newType) => {
   console.log("Tab changed to:", newType);
@@ -521,6 +544,12 @@ const clearSearch = () => {
   hasSearched.value = false;
 };
 
+// Function to open mod details modal
+const openModDetails = (modId: number) => {
+  selectedModId.value = modId;
+  isModDetailsModalOpen.value = true;
+};
+
 // Pagination handling
 const changePage = async (page: number) => {
   currentPage.value = page;
@@ -634,7 +663,7 @@ const downloadMod = async (mod: GameBananaMod) => {
     const result = await gamebananaService.downloadMod(mod);
 
     // Handle different scenarios based on the result
-    if ('showFileSelector' in result) {
+    if ("showFileSelector" in result) {
       // If we need to show file selector
       downloadFiles.value = result.files;
       alternateFileSources.value = result.alternateFileSources || [];
@@ -642,21 +671,21 @@ const downloadMod = async (mod: GameBananaMod) => {
       return;
     }
 
-    if ('showEngineSelectDialog' in result) {
+    if ("showEngineSelectDialog" in result) {
       // If we need to show engine selection dialog
       currentModpackInfo.value = result.modpackInfo;
       showEngineSelectDialog.value = true;
       return;
     }
 
-    if ('showModTypeModal' in result) {
+    if ("showModTypeModal" in result) {
       // If we need to show mod type selection
       customModData.value = result.customModData;
       showModTypeModal.value = true;
       return;
     }
 
-    if ('showFolderExistsDialog' in result) {
+    if ("showFolderExistsDialog" in result) {
       // If the mod folder already exists, show confirmation dialog
       folderExistsModName.value = result.modName;
       folderExistsDownloadContinueFunction.value = result.continueDownload;
@@ -737,8 +766,10 @@ const onFileSelected = async (selectedFile: any) => {
     // Check if the selected file contains an executable
     // If it does, treat it as an executable mod regardless of other factors
     if (selectedFile._bContainsExe) {
-      console.log("Selected file contains an executable, treating as standard mod");
-      
+      console.log(
+        "Selected file contains an executable, treating as standard mod"
+      );
+
       // Update notification to downloading
       if (pendingDownloadNotification) {
         pendingDownloadNotification();
@@ -768,7 +799,7 @@ const onFileSelected = async (selectedFile: any) => {
         modId: mod.id,
         installLocation,
       });
-      
+
       // Process the result
       let modInfo: any;
       let modPath: string;
@@ -1010,7 +1041,6 @@ const cancelDownload = () => {
   currentDownloadMod.value = null;
 };
 
-
 // Save a mod to the database
 const saveModToDatabase = async (mod: any) => {
   try {
@@ -1046,7 +1076,6 @@ const saveModToDatabase = async (mod: any) => {
 
 // Determine if a mod is a modpack based on the current tab or mod properties
 const determineIfModpack = (mod: GameBananaMod): boolean => {
-
   // Check mod category if available
   if (mod.categoryName) {
     const lowerCaseCategoryName = mod.categoryName.toLowerCase();
@@ -1061,7 +1090,6 @@ const determineIfModpack = (mod: GameBananaMod): boolean => {
 
 // Determine modpack type (psych, vslice, codename, or null if not a modpack)
 const determineModpackType = (mod: GameBananaMod): string | null => {
-
   if (mod.categoryName) {
     const lowerCaseCategoryName = mod.categoryName.toLowerCase();
     if (lowerCaseCategoryName.includes("psych")) return "psych";
@@ -1087,17 +1115,15 @@ const getCompatibleEngineMods = async (
     }
 
     // Filter mods by engine type
-    return allMods.filter(
-      (mod: { engine: { engine_type: string } }) => {
-        // Check engine.engine_type 
-        if (mod.engine && mod.engine.engine_type) {
-          return (
-            mod.engine.engine_type.toLowerCase() === engineType.toLowerCase()
-          );
-        }
-        return false;
+    return allMods.filter((mod: { engine: { engine_type: string } }) => {
+      // Check engine.engine_type
+      if (mod.engine && mod.engine.engine_type) {
+        return (
+          mod.engine.engine_type.toLowerCase() === engineType.toLowerCase()
+        );
       }
-    );
+      return false;
+    });
   } catch (error) {
     console.error("Failed to get compatible engine mods:", error);
     return [];
@@ -1163,7 +1189,7 @@ const downloadEngine = async (engineType: string) => {
     const result = await gamebananaService.downloadEngine(engineType);
 
     // Check if we need to show the folder exists dialog
-    if ('showFolderExistsDialog' in result) {
+    if ("showFolderExistsDialog" in result) {
       // If the engine folder already exists, show confirmation dialog
       folderExistsModName.value = result.modName;
       folderExistsDownloadContinueFunction.value = result.continueDownload;
@@ -1172,7 +1198,7 @@ const downloadEngine = async (engineType: string) => {
     }
 
     // Otherwise, the download was successful or failed without folder conflict
-    if ('success' in result && !result.success) {
+    if ("success" in result && !result.success) {
       $q.notify({
         type: "negative",
         message: `Failed to download ${formatEngineType(engineType)}`,
@@ -1212,7 +1238,7 @@ const onCustomUrlSubmit = (formData: any) => {
   // Add isCustomUrl flag to identify the source of this mod data
   customModData.value = {
     ...formData,
-    isCustomUrl: true
+    isCustomUrl: true,
   };
   showCustomUrlModal.value = false;
   showModTypeModal.value = true;
@@ -1233,8 +1259,8 @@ const onModTypeSubmit = async (typeData: any) => {
 
     // Determine install location based on mod type
     let installLocation: string | null = null;
-    
-    if (typeData.modType === 'executable') {
+
+    if (typeData.modType === "executable") {
       // For standalone mods, use the standard install location
       installLocation = await getInstallLocation();
     } else {
@@ -1242,11 +1268,17 @@ const onModTypeSubmit = async (typeData: any) => {
       if (typeData.engineMod) {
         installLocation = getModsFolderPath(typeData.engineMod);
       } else {
-        throw new Error(`No ${formatEngineType(typeData.modType)} installation found`);
+        throw new Error(
+          `No ${formatEngineType(typeData.modType)} installation found`
+        );
       }
     }
 
-    console.log(`Downloading ${customModData.value.name} to ${installLocation || 'default location'}`);
+    console.log(
+      `Downloading ${customModData.value.name} to ${
+        installLocation || "default location"
+      }`
+    );
 
     // Generate a random modId for tracking the download
     const modId = Math.floor(Math.random() * 1000000);
@@ -1259,7 +1291,7 @@ const onModTypeSubmit = async (typeData: any) => {
       installLocation,
       thumbnailUrl: customModData.value.bannerData,
       description: customModData.value.description,
-      version: customModData.value.version
+      version: customModData.value.version,
     });
 
     // Process the result
@@ -1291,30 +1323,36 @@ const onModTypeSubmit = async (typeData: any) => {
         logo_data: customModData.value.logoData,
         description: customModData.value.description,
         version: customModData.value.version || null,
-        engine_type: typeData.modType !== 'executable' ? typeData.modType : null,
-        engine: typeData.modType !== 'executable' ? {
-          engine_type: typeData.modType,
-          engine_name: formatEngineType(typeData.modType),
-          mods_folder: true,
-          mods_folder_path: "mods"
-        } : null
+        engine_type:
+          typeData.modType !== "executable" ? typeData.modType : null,
+        engine:
+          typeData.modType !== "executable"
+            ? {
+                engine_type: typeData.modType,
+                engine_name: formatEngineType(typeData.modType),
+                mods_folder: true,
+                mods_folder_path: "mods",
+              }
+            : null,
       };
     } else {
       // Update the mod info with custom data
       modInfo.name = customModData.value.name;
-      modInfo.banner_data = customModData.value.bannerData || modInfo.banner_data;
+      modInfo.banner_data =
+        customModData.value.bannerData || modInfo.banner_data;
       modInfo.logo_data = customModData.value.logoData || modInfo.logo_data;
-      modInfo.description = customModData.value.description || modInfo.description;
+      modInfo.description =
+        customModData.value.description || modInfo.description;
       modInfo.version = customModData.value.version || modInfo.version;
-      
-      if (typeData.modType !== 'executable') {
+
+      if (typeData.modType !== "executable") {
         modInfo.engine_type = typeData.modType;
         modInfo.engine = {
           ...(modInfo.engine || {}),
           engine_type: typeData.modType,
           engine_name: formatEngineType(typeData.modType),
           mods_folder: true,
-          mods_folder_path: "mods"
+          mods_folder_path: "mods",
         };
       }
     }
@@ -1346,7 +1384,6 @@ const onModTypeSubmit = async (typeData: any) => {
     // Reset state
     showModTypeModal.value = false;
     customModData.value = null;
-
   } catch (error) {
     // Show error notification
     $q.notify({
@@ -1382,7 +1419,7 @@ const handleModTypeCancel = () => {
     // If from regular mod download, just close the modal and clean up
     showModTypeModal.value = false;
     customModData.value = null;
-    
+
     // Show cancellation notification
     $q.notify({
       type: "info",
@@ -1396,7 +1433,7 @@ const handleModTypeCancel = () => {
 // Function to continue download when folder exists
 const continueFolderExistsDownload = async () => {
   showFolderExistsDialog.value = false;
-  
+
   try {
     // Show downloading notification
     pendingDownloadNotification = $q.notify({
@@ -1405,32 +1442,32 @@ const continueFolderExistsDownload = async () => {
       position: "bottom-right",
       timeout: 0,
     });
-    
+
     // Call the continue download function that was stored
     if (folderExistsDownloadContinueFunction.value) {
       const result = await folderExistsDownloadContinueFunction.value();
-      
+
       // Handle the result based on its type
-      if ('showFileSelector' in result) {
+      if ("showFileSelector" in result) {
         // If we need to show file selector
         downloadFiles.value = result.files;
         alternateFileSources.value = result.alternateFileSources || [];
         showFileSelector.value = true;
-      } else if ('showEngineSelectDialog' in result) {
+      } else if ("showEngineSelectDialog" in result) {
         // If we need to show engine selection dialog
         currentModpackInfo.value = result.modpackInfo;
         showEngineSelectDialog.value = true;
-      } else if ('showModTypeModal' in result) {
+      } else if ("showModTypeModal" in result) {
         // If we need to show mod type selection
         customModData.value = result.customModData;
         showModTypeModal.value = true;
-      } else if ('success' in result) {
+      } else if ("success" in result) {
         // If it's a direct download result
         if (pendingDownloadNotification) {
           pendingDownloadNotification();
           pendingDownloadNotification = null;
         }
-        
+
         if (result.success) {
           // Show success notification
           $q.notify({
@@ -1440,7 +1477,7 @@ const continueFolderExistsDownload = async () => {
             position: "bottom-right",
             timeout: 5000,
           });
-          
+
           // Trigger the refresh event to update the mod list
           const refreshEvent = new CustomEvent("refresh-mods");
           window.dispatchEvent(refreshEvent);
@@ -1465,13 +1502,13 @@ const continueFolderExistsDownload = async () => {
       position: "bottom-right",
       timeout: 5000,
     });
-    
+
     // Dismiss any pending notification
     if (pendingDownloadNotification) {
       pendingDownloadNotification();
       pendingDownloadNotification = null;
     }
-    
+
     console.error("Failed to download mod:", error);
   } finally {
     // Reset state
@@ -1495,7 +1532,6 @@ const continueFolderExistsDownload = async () => {
 
 .main-browser {
   width: 100%;
-
 }
 
 .mods-section {

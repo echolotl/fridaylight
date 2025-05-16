@@ -1,6 +1,5 @@
 <template>
   <div>
-
     <div class="loading-content" v-if="loading">
       <q-spinner color="primary" size="48px" />
       <div>Loading featured mods...</div>
@@ -28,14 +27,20 @@
             :name="index"
             class="featured-slide"
           >
-            <div class="featured-mod-card">
+            <div
+              class="featured-mod-card"
+              @click="$emit('showDetails', mod.id)"
+            >
               <q-img :src="mod.imageUrl" class="featured-thumbnail">
                 <div class="absolute-full featured-overlay"></div>
 
                 <div class="absolute-top-right q-pa-sm row items-center">
                   <div class="category-icon-container">
                     <img
-                      :src="mod.categoryIconUrl || 'https://gamebanana.com/static/img/defaults/icon.png'"
+                      :src="
+                        mod.categoryIconUrl ||
+                        'https://gamebanana.com/static/img/defaults/icon.png'
+                      "
                       class="category-icon"
                     />
                     <q-tooltip class="phantom-font">
@@ -45,10 +50,15 @@
                   <div class="author-container">
                     <q-avatar size="40px" square>
                       <img
-                        :src="mod.submitterAvatarUrl || 'https://gamebanana.com/static/img/defaults/avatar.gif'"
+                        :src="
+                          mod.submitterAvatarUrl ||
+                          'https://gamebanana.com/static/img/defaults/avatar.gif'
+                        "
                       />
                     </q-avatar>
-                    <span class="author-upic" v-if="mod.submitterUPic"><img :src="mod.submitterUPic" /></span>
+                    <span class="author-upic" v-if="mod.submitterUPic"
+                      ><img :src="mod.submitterUPic"
+                    /></span>
                     <span class="author-name" v-else>{{ mod.owner }}</span>
                   </div>
                 </div>
@@ -58,11 +68,14 @@
                     color="primary"
                     text-color="white"
                     class="mod-period-badge"
-                  >{{ formatPeriod(mod.period) }}</q-badge>
+                    >{{ formatPeriod(mod.period) }}</q-badge
+                  >
                 </div>
 
                 <div class="absolute-bottom featured-info">
-                  <div class="featured-title phantom-font-display">{{ mod.name }}</div>
+                  <div class="featured-title phantom-font-display">
+                    {{ mod.name }}
+                  </div>
                   <div class="featured-description">
                     {{ shortenDescription(mod.description) }}
                   </div>
@@ -85,7 +98,6 @@
                       </span>
                     </div>
                   </div>
-
                 </div>
               </q-img>
             </div>
@@ -97,21 +109,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref } from "vue";
 import type { GameBananaMod } from "../../types";
 
 defineProps({
   mods: {
     type: Array as () => GameBananaMod[],
-    default: () => []
+    default: () => [],
   },
   loading: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
-defineEmits(['download']);
+defineEmits(["download", "showDetails"]);
 
 const currentSlide = ref(0);
 
@@ -142,8 +154,8 @@ const formatPeriod = (period: string): string => {
 
 // Shorten description for display
 const shortenDescription = (description: string): string => {
-  return description?.length > 100 
-    ? description.slice(0, 100) + "..." 
+  return description?.length > 100
+    ? description.slice(0, 100) + "..."
     : description || "";
 };
 </script>
@@ -214,7 +226,7 @@ const shortenDescription = (description: string): string => {
 .featured-btn {
   margin-top: 8px;
   border: 2px solid var(--theme-border);
-  border-radius: .25rem;
+  border-radius: 0.25rem;
 }
 
 .featured-period {
@@ -225,7 +237,7 @@ const shortenDescription = (description: string): string => {
 .mod-period-badge {
   font-size: 0.8rem;
   padding: 0.5rem 0.5rem;
-  border-radius: .25rem;
+  border-radius: 0.25rem;
 }
 
 .absolute-top-right {
@@ -238,7 +250,7 @@ const shortenDescription = (description: string): string => {
   gap: 8px;
   padding: 1rem;
   background-color: rgba(0, 0, 0, 0.5);
-  border-radius: .25rem;
+  border-radius: 0.25rem;
 }
 
 .category-icon-container {

@@ -8,6 +8,7 @@
     class="mod-details-modal"
   >
     <q-card class="mod-details-card">
+          <q-linear-progress indeterminate color="primary" v-if="loading"></q-linear-progress>
       <q-card-section class="row items-center q-pb-none">
         <div
           class="text-h6 phantom-font-difficulty header-text"
@@ -16,14 +17,15 @@
           <img :src="modInfo?._aCategory._sIconUrl" class="mod-details-icon" />
           {{ modInfo?._sName }}
         </div>
+        <div v-else class="text-h6 phantom-font-difficulty header-text">
+          Loading...
+        </div>
         <q-space />
         <q-btn flat round icon="close" @click="closeModal" class="close-btn" />
       </q-card-section>
 
       <q-scroll-area class="mod-details-scroll-area">
         <q-card-section v-if="loading" class="flex flex-center">
-          <q-spinner color="primary" size="3em" />
-          <div class="q-ml-sm phantom-font">Loading mod details...</div>
         </q-card-section>
 
         <q-card-section v-else-if="error" class="text-center text-negative">
@@ -98,9 +100,15 @@
                   <q-expansion-item dense class="phantom-font" group="updates">
                     <template v-slot:header>
                       <div class="flex column">
+                        <div class="flex row">
                         <div class="text-subtitle1">
                           {{ update._sName }}
                         </div>
+                      <div class="q-ml-xs flex row items-cente custom-badge-small">
+                                                <q-icon name="add" size="xs"/>
+                    {{ formatDate(update._tsDateAdded) }}
+
+                      </div></div>
                         <div class="">
                           <div
                             class="phantom-font"
@@ -225,17 +233,18 @@
                             >{{ label }}</q-badge
                           ></span
                         >
-
-                        <q-icon
-                          v-if="comment._iPinLevel > 0"
-                          name="push_pin"
-                          size="xs"
-                          class="q-ml-xs BlueColor"
-                        />
-                        <q-icon name="add" size="xs" class="q-ml-xs" />
-                        <span>
-                          {{ formatDate(comment._tsDateAdded) }}
+                        <div class="flex row items-center custom-badge-small q-ml-xs">
+                          <q-icon
+                            v-if="comment._iPinLevel > 0"
+                            name="push_pin"
+                            size="xs"
+                            class="q-ml-xs BlueColor"
+                          />
+                          <q-icon name="add" size="xs"/>
+                          <span>
+                            {{ formatDate(comment._tsDateAdded) }}
                         </span>
+                      </div>
                       </div>
                     </div>
                     <div class="q-mt-sm">
@@ -808,6 +817,14 @@ function downloadMod() {
   font-size: 1.25rem;
 }
 
+.custom-badge-small {
+  padding: 4px 8px;
+  border-radius: 0.5rem;
+  color: var(--theme-text-secondary);
+  border: 2px solid var(--theme-border);
+  font-size: 0.75rem;
+}
+
 .mod-carousel {
   max-width: 800px;
   max-height: 100%;
@@ -936,33 +953,37 @@ function downloadMod() {
 <!-- Styles for v-html content (not scoped) -->
 <style>
 .mod-info-text,
-.update-text {
+.update-textm
+.comment-text {
   line-height: 1.2;
   text-wrap: break-chars;
   max-width: 100%;
 }
 
 .mod-info-text img,
-.update-text img {
+.update-text img,
+.comment-text img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
 }
 
-/* Additional styles for injected HTML content */
 .mod-info-text a,
-.update-text a {
+.update-text a,
+.comment-text a {
   color: var(--q-primary);
   text-decoration: none;
 }
 
 .mod-info-text a:hover,
-.update-text a:hover {
+.update-text a:hover,
+.comment-text a:hover {
   text-decoration: underline;
 }
 
 .mod-info-text p,
-.update-text p {
+.update-text p,
+.comment-text p {
   margin-bottom: 1rem;
 }
 
@@ -977,53 +998,78 @@ function downloadMod() {
 .update-text h3,
 .update-text h4,
 .update-text h5,
-.update-text h6 {
+.update-text h6,
+.comment-text h1,
+.comment-text h2,
+.comment-text h3,
+.comment-text h4,
+.comment-text h5,
+.comment-text h6 {
   margin-top: 1.5rem;
   margin-bottom: 1rem;
   font-weight: bold;
+  line-height: 1.2;
 }
 
 .mod-info-text h1,
-.update-text h1 {
+.update-text h1,
+.comment-text h1 {
   font-size: 1.5rem;
 }
 
 .mod-info-text h2,
-.update-text h2 {
+.update-text h2,
+.comment-text h2 {
   font-size: 1.75rem;
 }
 
 .mod-info-text h3,
-.update-text h3 {
+.update-text h3,
+.comment-text h3 {
   font-size: 1.5rem;
 }
 
 .mod-info-text h4,
-.update-text h4 {
+.update-text h4,
+.comment-text h4 {
   font-size: 1.25rem;
 }
 
 .mod-info-text h5,
-.update-text h5 {
+.update-text h5,
+.comment-text h5 {
   font-size: 1.125rem;
 }
 
 .mod-info-text h6,
-.update-text h6 {
+.update-text h6,
+.comment-text h6 {
   font-size: 1rem;
 }
 
 .mod-info-text ul,
 .mod-info-text ol,
 .update-text ul,
-.update-text ol {
+.update-text ol,
+.comment-text ul,
+.comment-text ol {
   margin-left: 2rem;
   margin-bottom: 1rem;
 }
 
 .mod-info-text li,
-.update-text li {
+.update-text li,
+.comment-text li {
   margin-bottom: 0.5rem;
+}
+
+.mod-info-text iframe,
+.update-text iframe,
+.comment-text iframe {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border: 2px solid var(--theme-border);
 }
 
 .BlueColor {

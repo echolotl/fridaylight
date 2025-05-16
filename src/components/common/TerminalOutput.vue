@@ -11,7 +11,7 @@
     
     <q-scroll-area class="terminal-content" ref="terminalContent">
       <pre v-if="logs.length > 0">{{ logs.join('\n') }}</pre>
-      <div v-else class="terminal-empty-message">No output available yet...</div>
+      <div v-else class="terminal-empty-message">Getting latest output...</div>
     </q-scroll-area>
     
     <div class="terminal-status-bar">
@@ -155,7 +155,7 @@ onBeforeUnmount(() => {
   height: 300px;
   border: 2px solid var(--theme-border);
   border-radius: 8px;
-  color: #e0e0e0;
+  color: var(--theme-text);
   margin: 16px 0;
   overflow: hidden;
 }
@@ -188,6 +188,7 @@ onBeforeUnmount(() => {
   white-space: pre-wrap;
   line-height: 1.4;
   scrollbar-width: thin;
+  background-color: var(--theme-bg);
 }
 
 .terminal-content::-webkit-scrollbar {
@@ -204,7 +205,7 @@ onBeforeUnmount(() => {
 }
 
 .terminal-empty-message {
-  color: #888;
+  color: var(--theme-text-secondary);
   font-style: italic;
   text-align: center;
   margin-top: 20px;

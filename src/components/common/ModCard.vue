@@ -1,12 +1,13 @@
 <template>
   <div class="mod-card">
     <div class="mod-card-content" @click="$emit('showDetails', mod.id)">
-      <q-img
-        :src="previewImageUrl"
-        class="mod-thumbnail"
-      >
-      <img :src="mod.categoryIconUrl" class="mod-category-icon" />
-      <img :src="mod.submitterAvatarUrl" class="author-avatar" v-if="mod.submitterAvatarUrl" />
+      <q-img :src="previewImageUrl" class="mod-thumbnail">
+        <img :src="mod.categoryIconUrl" class="mod-category-icon" />
+        <img
+          :src="mod.submitterAvatarUrl"
+          class="author-avatar"
+          v-if="mod.submitterAvatarUrl"
+        />
       </q-img>
       <div class="mod-info">
         <div class="mod-title">{{ mod.name }}</div>
@@ -16,7 +17,7 @@
           </div>
           <div class="mod-author" v-else>by {{ mod.owner }}</div>
         </div>
-        
+
         <div class="mod-stats">
           <span>
             <q-icon name="thumb_up" size="xs" />
@@ -39,17 +40,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from "vue";
 import type { GameBananaMod } from "@main-types";
 
 const props = defineProps({
   mod: {
     type: Object as () => GameBananaMod,
-    required: true
-  }
+    required: true,
+  },
 });
 
-defineEmits(['download', 'showDetails']);
+defineEmits(["download", "showDetails"]);
 
 const previewImageUrl = computed(() => {
   return props.mod.previewImages && props.mod.previewImages.length > 0
@@ -71,7 +72,7 @@ const formatNumber = (num: number): string => {
 <style scoped>
 .mod-card {
   background: var(--theme-card);
-  border-radius: .75rem;
+  border-radius: 0.75rem;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -121,7 +122,6 @@ const formatNumber = (num: number): string => {
   color: var(--theme-text-secondary);
   margin-bottom: 8px;
   font-size: 0.9rem;
-
 }
 
 .author-avatar {
@@ -143,7 +143,7 @@ const formatNumber = (num: number): string => {
 .download-btn {
   margin: 0 12px 12px 12px;
   border: 2px solid var(--theme-border);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
 }
 
 .mod-category-icon {
