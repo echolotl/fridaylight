@@ -102,7 +102,13 @@
               class="q-mb-md"
             >
               <template v-slot:append>
-                <div class="icon">
+                <div class="icon" v-if="form.path">
+                  <q-btn
+                    icon="open_in_new"
+                    round
+                    flat
+                    @click="handleOpenFileLocationClick(form.path)"
+                  />
                   <q-btn
                     round
                     flat
@@ -120,8 +126,14 @@
               readonly
               class="q-mb-md"
             >
-              <template v-slot:append>
+              <template v-slot:append v-if="form.executable_path">
                 <div class="icon">
+                  <q-btn
+                    icon="open_in_new"
+                    round
+                    flat
+                    @click="handleOpenFileLocationClick(form.executable_path)"
+                  />
                   <q-btn
                     round
                     flat
@@ -405,6 +417,7 @@ import { ref, watch, computed, onMounted } from "vue";
 import { Mod } from "@main-types";
 import { formatEngineName } from "../../utils";
 import MessageDialog from "./MessageDialog.vue";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
 
 const props = defineProps({
   modelValue: {
@@ -749,6 +762,10 @@ const handleSelectExecutableClick = () => {
   emit("select-executable", (newExecutablePath: string) => {
     form.value.executable_path = newExecutablePath;
   });
+};
+
+const handleOpenFileLocationClick = async ( path: string ) => {
+  await revealItemInDir(path);
 };
 </script>
 
