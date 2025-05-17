@@ -1,6 +1,10 @@
 <template>
   <div class="mod-card">
-    <div class="mod-card-content" @click="$emit('showDetails', mod.id)">
+    <div
+      class="mod-card-content"
+      @click="$emit('showDetails', mod.id)"
+      @contextmenu.prevent="showContextMenu"
+    >
       <q-img :src="previewImageUrl" class="mod-thumbnail">
         <img :src="mod.categoryIconUrl" class="mod-category-icon" />
         <img
@@ -42,6 +46,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { GameBananaMod } from "@main-types";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 const props = defineProps({
   mod: {
@@ -50,7 +55,7 @@ const props = defineProps({
   },
 });
 
-defineEmits(["download", "showDetails"]);
+const emit = defineEmits(["download", "showDetails"]);
 
 const previewImageUrl = computed(() => {
   return props.mod.previewImages && props.mod.previewImages.length > 0
@@ -66,6 +71,48 @@ const formatNumber = (num: number): string => {
     return (num / 1000).toFixed(1) + "K";
   }
   return num.toString();
+};
+
+// Context menu handler
+const showContextMenu = (event: MouseEvent) => {
+  event.preventDefault();
+  event.stopPropagation();
+
+  // Create context menu options
+  const contextMenuOptions = [
+    {
+      icon: "download",
+      label: "Download Mod",
+      action: () => emit("download", props.mod),
+    },
+    {
+      icon: "info",
+      label: "Show Details",
+      action: () => emit("showDetails", props.mod.id),
+    },
+    {
+      icon: "open_in_new",
+      label: "Open GameBanana Page",
+      action: () => openUrl(props.mod.profileUrl),
+    }
+  ];
+
+  // Create and dispatch custom event to show context menu
+  const customEvent = new CustomEvent("show-context-menu", {
+    detail: {
+      position: { x: event.clientX, y: event.clientY },
+      options: contextMenuOptions,
+    },
+    bubbles: true,
+  });
+
+  // Safely handle the case where event.target could be null
+  if (event.target) {
+    event.target.dispatchEvent(customEvent);
+  } else {
+    // Fallback to document if target is null
+    document.dispatchEvent(customEvent);
+  }
 };
 </script>
 
@@ -95,6 +142,7 @@ const formatNumber = (num: number): string => {
 .mod-thumbnail {
   height: 160px;
   object-fit: cover;
+  border-bottom: 2px solid var(--theme-border);
 }
 
 .mod-info {

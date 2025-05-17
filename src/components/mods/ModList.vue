@@ -428,27 +428,33 @@ const sortedDisplayItems = computed(() => {
     if (sortBy.value === "name") {
       // Sort by name (alphabetically)
       comparison = a.data.name.localeCompare(b.data.name);
-    } 
-    else if (sortBy.value === "date_added") {
+    }    else if (sortBy.value === "date_added") {
       // Sort by date_added (if available, otherwise by ID which is usually chronological)
       // Type casting to ensure TypeScript knows we're only dealing with mod data
       const modA = a.data as Mod;
       const modB = b.data as Mod;
-      const dateA = modA.date_added ? new Date(modA.date_added).getTime() : 0;
-      const dateB = modB.date_added ? new Date(modB.date_added).getTime() : 0;
-      comparison = dateA - dateB;
+      const dateA = modA.date_added ? modA.date_added : 0;
+      const dateB = modB.date_added ? modB.date_added : 0;
+      // Default sort should be newest first (descending), so we use B - A
+      comparison = dateB - dateA;
     }
     else if (sortBy.value === "last_played") {
       // Sort by last_played timestamp (if available)
       const modA = a.data as Mod;
       const modB = b.data as Mod;
-      const lastPlayedA = modA.last_played ? new Date(modA.last_played).getTime() : 0;
-      const lastPlayedB = modB.last_played ? new Date(modB.last_played).getTime() : 0;
-      comparison = lastPlayedA - lastPlayedB;
+      const lastPlayedA = modA.last_played ? modA.last_played : 0;
+      const lastPlayedB = modB.last_played ? modB.last_played : 0;
+      // Default sort should be most recently played first (descending), so we use B - A
+      comparison = lastPlayedB - lastPlayedA;
     }
-    
-    // Apply sort direction (ascending or descending)
-    return sortDirection.value === 'asc' ? comparison : -comparison;
+      // For date_added and last_played, we've already set the default comparison to be newest/most recent first
+    // So we invert the sort direction logic for those fields
+    if (sortBy.value === "date_added" || sortBy.value === "last_played") {
+      return sortDirection.value === 'desc' ? comparison : -comparison;
+    } else {
+      // For other fields like name, use the normal sort direction
+      return sortDirection.value === 'asc' ? comparison : -comparison;
+    }
   });
   
   return sortedMods;

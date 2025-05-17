@@ -132,7 +132,7 @@
                                 >{{ category }}
                                 <span
                                   style="
-                                    color: var(--theme-text-secondary);
+                                    color: lightgray;
                                     margin-left: 0.25rem;
                                   "
                                   v-if="count > 1"
@@ -222,7 +222,7 @@
                         />
                         <span v-else>{{ comment._aPoster._sName }}</span>
                       </div>
-                      <div>
+                      <div class="flex row items-center q-ml-xs">
                         <span v-if="comment._aLabels">
                           <q-badge
                             v-for="(label, index) in comment._aLabels"
@@ -331,7 +331,6 @@
               <div class="q-mt-md">
                 <q-btn
                   color="primary"
-                  icon="download"
                   label="Download"
                   @click="downloadMod"
                   size="lg"

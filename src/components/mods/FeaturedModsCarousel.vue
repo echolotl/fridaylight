@@ -30,6 +30,7 @@
             <div
               class="featured-mod-card"
               @click="$emit('showDetails', mod.id)"
+              @contextmenu.prevent="showContextMenu($event, mod)"
             >
               <q-img :src="mod.imageUrl" class="featured-thumbnail">
                 <div class="absolute-full featured-overlay"></div>
@@ -80,12 +81,11 @@
                     {{ shortenDescription(mod.description) }}
                   </div>
 
-                  <div class="featured-stats-container">
-                    <q-btn
+                  <div class="featured-stats-container">                    <q-btn
                       color="primary"
                       label="Download"
                       class="featured-btn q-mt-sm"
-                      @click="$emit('download', mod)"
+                      @click.stop="$emit('download', mod)"
                     />
                     <div class="featured-stats">
                       <span>
@@ -111,6 +111,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import type { GameBananaMod } from "../../types";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 defineProps({
   mods: {
@@ -123,9 +124,51 @@ defineProps({
   },
 });
 
-defineEmits(["download", "showDetails"]);
+const emit = defineEmits(["download", "showDetails"]);
 
 const currentSlide = ref(0);
+
+// Context menu handler
+const showContextMenu = (event: MouseEvent, mod: GameBananaMod) => {
+  event.preventDefault();
+  event.stopPropagation();
+
+  // Create context menu options
+  const contextMenuOptions = [
+    {
+      icon: "download",
+      label: "Download Mod",
+      action: () => emit("download", mod),
+    },
+    {
+      icon: "info",
+      label: "Show Details",
+      action: () => emit("showDetails", mod.id),
+    },
+    {
+      icon: "open_in_new",
+      label: "Open GameBanana Page",
+      action: () => openUrl(mod.profileUrl),
+    },
+  ];
+
+  // Create and dispatch custom event to show context menu
+  const customEvent = new CustomEvent("show-context-menu", {
+    detail: {
+      position: { x: event.clientX, y: event.clientY },
+      options: contextMenuOptions,
+    },
+    bubbles: true,
+  });
+
+  // Safely handle the case where event.target could be null
+  if (event.target) {
+    event.target.dispatchEvent(customEvent);
+  } else {
+    // Fallback to document if target is null
+    document.dispatchEvent(customEvent);
+  }
+};
 
 // Helper function to format file sizes
 const formatNumber = (num: number): string => {
