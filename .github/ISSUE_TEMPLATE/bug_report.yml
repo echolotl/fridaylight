@@ -16,7 +16,6 @@ body:
       label: Issue Checklist
       options:
       - label: I have looked for similar issues before creating this one.
-        value: searched
     validations:
       required: true
       min_selected: 1
@@ -27,7 +26,9 @@ body:
       value: |
         # Description
         ### Please provide a clear and concise description of the bug you are experiencing.
-
   - type: textarea
-    label: Describe the bug and how to reproduce it.
-    placeholder: Please describe the bug and how to reproduce it.
+    attributes:
+      label: Describe the bug and how to reproduce it.
+      placeholder: Please describe the bug and how to reproduce it.
+    validations:
+      required: true
