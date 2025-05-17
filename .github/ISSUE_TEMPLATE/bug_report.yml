@@ -1,0 +1,33 @@
+name: Bug Report
+description: Report a bug or issue with Fridaylight.
+title: "Bug:  "
+labels: bug
+body:
+  - type: input
+    attributes:
+      label: Version
+      description: Please provide the version of Fridaylight you are using.
+      placeholder: e.g. 0.9.0
+    validations:
+      required: true
+
+  - type: checkboxes
+    attributes:
+      label: Issue Checklist
+      options:
+      - label: I have looked for similar issues before creating this one.
+        value: searched
+    validations:
+      required: true
+      min_selected: 1
+      max_selected: 1
+  
+  - type: markdown
+    attributes:
+      value: |
+        # Description
+        ### Please provide a clear and concise description of the bug you are experiencing.
+
+  - type: textarea
+    label: Describe the bug and how to reproduce it.
+    placeholder: Please describe the bug and how to reproduce it.

@@ -1,0 +1,17 @@
+name: Question
+description: Ask a question about Fridaylight.
+title: "Question:  "
+labels: question
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Description
+        ### Please provide a clear and concise description of your question.
+
+  - type: textarea
+    attributes:
+      label: Question
+      placeholder: Please describe your question in detail.
+    validations:
+      required: true
