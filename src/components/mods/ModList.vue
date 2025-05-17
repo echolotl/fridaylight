@@ -113,6 +113,7 @@
               @super-delete-mod="confirmSuperDelete(mod)"
               @open-mod-settings="openModSettings"
               @launch-mod="$emit('launch-mod', $event)"
+              @open-mod-folder="$emit('open-mod-folder', mod)"
             />
           </div>
           
@@ -152,6 +153,7 @@
               @super-delete-mod="confirmSuperDelete(item.data as Mod)"
               @open-mod-settings="openModSettings"
               @launch-mod="$emit('launch-mod', $event)"
+              @open-mod-folder="$emit('open-mod-folder', item.data as Mod)"
             />
           </template>
           
@@ -200,6 +202,7 @@
                   @super-delete-mod="confirmSuperDelete(item.data)"
                   @open-mod-settings="openModSettings"
                   @launch-mod="$emit('launch-mod', $event)"
+                  @open-mod-folder="$emit('open-mod-folder', item.data as Mod)"
                 />
               </div>
             </template>
@@ -584,11 +587,12 @@ const emit = defineEmits([
   "open-settings",
   "reorder-items",
   "update-folder",
-  "update-mod", // Added new emit type for mod updates
-  "reorder-folder-mods", // Added new emit type for reordering mods within folders
+  "update-mod",
+  "reorder-folder-mods", 
   "open-mod-settings", 
-  "launch-mod", // Added new emit type for launching mods
-  "super-delete-mod", // Added new emit type for super delete mods
+  "launch-mod", 
+  "super-delete-mod", 
+  "open-mod-folder", 
 ]);
 
 const showDeleteDialog = ref(false);

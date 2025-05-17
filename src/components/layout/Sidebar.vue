@@ -27,6 +27,7 @@
         @reorder-folder-mods="handleFolderModsReorder"
         @launch-mod="launchMod"
         @super-delete-mod="superDeleteMod"
+        @open-mod-folder="openModFolder"
         class="modlist"
       />
 
@@ -184,6 +185,8 @@ import { useQuasar } from "quasar";
 import { StoreService } from "../../services/storeService";
 import { DatabaseService } from "@services/dbService";
 import { formatEngineName } from "@utils/index";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { sep } from "@tauri-apps/api/path";
 
 // Use the singleton directly instead of through a ref
 const storeService = StoreService.getInstance();
@@ -800,6 +803,7 @@ const launchMod = async (modId: string) => {
   }
 };
 
+
 // Function that opens the setting modal
 const openSettingsModal = () => {
   showSettingsModal.value = true;
@@ -1244,6 +1248,11 @@ const openModSettings = (mod: ModInfo) => {
   // Set the selected mod and open the settings modal
   selectedMod.value = mod;
   showSettingsModal.value = true;
+};
+
+const openModFolder = async (mod: ModInfo) => {
+  // Open the mod folder in the file explorer
+  await revealItemInDir(mod.path + sep());
 };
 
 // Clean up event listeners

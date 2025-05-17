@@ -75,6 +75,7 @@ const handleEscapeKey = (event: KeyboardEvent) => {
   }
 };
 
+
 // Add global event listeners when component is mounted
 onMounted(() => {
   document.addEventListener('click', handleGlobalClick);

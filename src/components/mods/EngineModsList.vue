@@ -94,7 +94,7 @@
 import { ref, watch, onMounted, computed } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import { sep } from "@tauri-apps/api/path";
+import { getEngineModsFolderPath } from "@utils/index";
 
 interface ModMetadataFile {
   name: string;
@@ -244,28 +244,11 @@ const toggleModEnabled = async (mod: ModMetadataFile, enable: boolean) => {
   }
 };
 
-// Get the mods folder path
-const getModsFolderPath = (): string => {
-
-  // Get the directory of the executable
-  const executablePath = props.executablePath;
-  const lastSlashIndex = Math.max(
-    executablePath.lastIndexOf("/"),
-    executablePath.lastIndexOf("\\")
-  );
-  
-  const baseDir = lastSlashIndex > 0 
-    ? executablePath.substring(0, lastSlashIndex) 
-    : executablePath;
-    
-  // Most engines use "mods" folder in the same directory as the executable
-  return `${baseDir}${sep()}${props.customModsFolder || "mods"}${sep()}`;
-};
 
 // Open mods folder in file explorer
 const openModsFolder = async () => {
   try {
-    const folderPath = getModsFolderPath();
+    const folderPath = getEngineModsFolderPath(props.executablePath, props.customModsFolder);
     if (!folderPath) {
       error.value = "Could not determine mods folder path";
       return;

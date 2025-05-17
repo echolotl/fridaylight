@@ -48,7 +48,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["select-mod", "delete-mod", "open-mod-settings", "launch-mod", "super-delete-mod"]);
+const emit = defineEmits(["select-mod", "delete-mod", "open-mod-settings", "launch-mod", "super-delete-mod", "open-mod-folder"]);
 
 // Context menu handler
 const showContextMenu = (event: MouseEvent) => {
@@ -58,11 +58,6 @@ const showContextMenu = (event: MouseEvent) => {
   // Create context menu options
   const contextMenuOptions = [
     {
-      icon: 'settings',
-      label: 'Edit Settings',
-      action: () => emit('open-mod-settings', props.mod)
-    },
-    {
       icon: 'play_arrow', 
       label: 'Launch Mod',
       action: () => {
@@ -70,6 +65,17 @@ const showContextMenu = (event: MouseEvent) => {
         emit('launch-mod', props.mod.id);
       }
     },
+    {
+      icon: 'settings',
+      label: 'Edit Settings',
+      action: () => emit('open-mod-settings', props.mod)
+    },
+    {
+      icon: 'folder_open',
+      label: 'Open Mod Folder',
+      action: () => emit('open-mod-folder', props.mod)
+    },
+
     { separator: true },
     {
       icon: 'close',
@@ -147,7 +153,6 @@ const showContextMenu = (event: MouseEvent) => {
 }
 
 .cursor-move {
-  cursor: move; /* fallback for older browsers */
   cursor: grab;
 }
 
