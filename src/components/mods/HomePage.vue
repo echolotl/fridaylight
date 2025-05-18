@@ -84,9 +84,15 @@
           </div>
           <span>Best of Today</span>
         </h6>
-        <q-btn>
-          flat dense icon="open_in_new" class="phantom-font" label="Open
-          Gamebanana" @click="openGamebanana"
+        <q-btn
+          flat
+          dense
+          icon="open_in_new"
+          class="phantom-font"
+          label="Open
+          Gamebanana"
+          @click="openGamebanana"
+        >
         </q-btn>
       </div>
       <div class="featured-mods-section">
@@ -127,10 +133,18 @@
         </div>
       </div>
       <div class="all-mods">
-        <h6 class="phantom-font-difficulty">
+        <h6 class="phantom-font-difficulty all-mods-header">
           All Mods
-          <hr />
+          <q-btn
+            flat
+            dense
+            icon="sort"
+            class="phantom-font"
+            @click="showSortMenu"
+            :label="`Sort by ${sortHeaderText}`"
+          ></q-btn>
         </h6>
+        <hr />
         <div class="mod-card-container">
           <div v-if="isLoadingInstalled" class="loading-state">
             <q-spinner color="primary" size="2rem" />
@@ -141,7 +155,7 @@
           </p>
           <InstalledModCard
             v-else
-            v-for="mod in installedMods"
+            v-for="mod in sortedInstalledMods"
             :key="mod.id"
             :mod="mod"
             @play="playMod"
@@ -163,7 +177,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { GameBananaMod, Mod } from "../../types";
 import { gamebananaService } from "@services/gamebananaService";
@@ -181,6 +195,22 @@ const isLoadingFeatured = ref(false);
 const installedMods = ref<Mod[]>([]);
 const isLoadingInstalled = ref(false);
 
+// Sorting state for All Mods section
+const sortBy = ref("default");
+const sortDirection = ref("asc");
+const sortHeaderText = computed(() => {
+  switch (sortBy.value) {
+    case "name":
+      return "Name";
+    case "date_added":
+      return "Date Added";
+    case "last_played":
+      return "Last Played";
+    default:
+      return "Name";
+  }
+});
+
 // Recently played mods state
 const recentlyPlayedMods = ref<Mod[]>([]);
 
@@ -194,6 +224,104 @@ const emit = defineEmits([
   "open-mod-settings",
   "gamebanana-browser",
 ]);
+
+// Show sort options dropdown for All Mods
+const showSortMenu = (evt: Event) => {
+  // Cast to MouseEvent to access mouse properties
+  const event = evt as MouseEvent;
+
+  // Prevent the default click behavior
+  event.preventDefault();
+  event.stopPropagation();
+
+  // Create options for the context menu
+  const sortOptions = [
+    {
+      icon: "sort_by_alpha",
+      label: "Sort by Name",
+      action: () => setSortOption("name"),
+    },
+    {
+      icon: "date_range",
+      label: "Sort by Date Added",
+      action: () => setSortOption("date_added"),
+    },
+    {
+      icon: "play_circle",
+      label: "Sort by Last Played",
+      action: () => setSortOption("last_played"),
+    },
+    { separator: true },
+    {
+      icon: sortDirection.value === "asc" ? "arrow_upward" : "arrow_downward",
+      label: sortDirection.value === "asc" ? "Ascending" : "Descending",
+      action: () => toggleSortDirection(),
+    },
+  ];
+
+  // Create and dispatch the context menu event
+  const customEvent = new CustomEvent("show-context-menu", {
+    detail: {
+      position: { x: event.clientX, y: event.clientY },
+      options: sortOptions,
+    },
+    bubbles: true,
+  });
+
+  if (event.target) {
+    event.target.dispatchEvent(customEvent);
+  } else {
+    document.dispatchEvent(customEvent);
+  }
+};
+
+// Set the sort option
+const setSortOption = (option: string) => {
+  sortBy.value = option;
+};
+
+// Toggle sort direction between ascending and descending
+const toggleSortDirection = () => {
+  sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+};
+
+// Computed property for sorted mods
+const sortedInstalledMods = computed(() => {
+  if (sortBy.value === "default") {
+    return installedMods.value;
+  }
+
+  // Sort the mods based on the selected criteria
+  return [...installedMods.value].sort((a, b) => {
+    let comparison = 0;
+
+    if (sortBy.value === "name") {
+      // Sort by name (alphabetically)
+      comparison = a.name.localeCompare(b.name);
+    } else if (sortBy.value === "date_added") {
+      // Sort by date_added (if available, otherwise by ID which is usually chronological)
+      const dateA = a.date_added ? a.date_added : 0;
+      const dateB = b.date_added ? b.date_added : 0;
+      // Default sort should be newest first (descending), so we use B - A
+      comparison = dateB - dateA;
+    } else if (sortBy.value === "last_played") {
+      // Sort by last_played timestamp (if available)
+      const lastPlayedA = a.last_played ? a.last_played : 0;
+      const lastPlayedB = b.last_played ? b.last_played : 0;
+      // Default sort should be most recently played first (descending), so we use B - A
+      comparison = lastPlayedB - lastPlayedA;
+    }
+    
+    // For date_added and last_played, we've already set the default comparison to be newest/most recent first
+    // So we invert the sort direction logic for those fields
+    if (sortBy.value === "date_added" || sortBy.value === "last_played") {
+      return sortDirection.value === "desc" ? comparison : -comparison;
+    } else {
+      // For other fields like name, use the normal sort direction
+      return sortDirection.value === "asc" ? comparison : -comparison;
+    }
+  });
+});
 
 // Function to get most recently played mods
 const getRecentlyPlayedMods = (count: number = 5): Mod[] => {
@@ -372,5 +500,15 @@ onMounted(() => {
   background-color: var(--theme-text);
   image-rendering: optimizeQuality;
   margin-bottom: 1rem;
+}
+.all-mods-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  margin-top: 3rem;
+}
+.all-mods hr {
+  margin-bottom: 3rem;
 }
 </style>

@@ -321,7 +321,7 @@ export class GameBananaService {
           Notify.create({
             type: "negative",
             message: `Cannot download ${modpackType} modpack`,
-            caption: `You don't have any ${this.formatEngineType(
+            caption: `You don't have ${this.formatEngineType(
               modpackType
             )} installed. Please install it.`,
             position: "bottom-right",
@@ -606,7 +606,7 @@ export class GameBananaService {
           Notify.create({
             type: "negative",
             message: `Cannot download ${modpackType} modpack`,
-            caption: `You don't have any ${this.formatEngineType(
+            caption: `You don't have ${this.formatEngineType(
               modpackType
             )} installed. Please install it.`,
             position: "bottom-right",
@@ -944,7 +944,7 @@ export class GameBananaService {
           Notify.create({
             type: "negative",
             message: `Cannot download ${modpackType} modpack`,
-            caption: `You don't have any "${this.formatEngineType(
+            caption: `You don't have "${this.formatEngineType(
               modpackType
             )}" engines installed. Please install it from the GameBanana browser first.`,
             position: "bottom-right",

@@ -208,12 +208,12 @@ const showContextMenu = (event: MouseEvent) => {
   const contextMenuOptions = [
     {
       icon: "play_arrow",
-      label: "Play Mod",
+      label: "Launch Mod",
       action: () => emit("play", props.mod.id),
     },
     {
       icon: "settings",
-      label: "Configure Mod",
+      label: "Edit Settings",
       action: () => emit("configure", props.mod.id),
     },
     {
@@ -222,8 +222,8 @@ const showContextMenu = (event: MouseEvent) => {
       action: () => emit("showDetails", props.mod.id),
     },
     {
-      icon: "folder",
-      label: "Open Folder Location",
+      icon: "folder_open",
+      label: "Open Mod Folder",
       action: () => {
         // Dispatch custom event for opening folder
         const openEvent = new CustomEvent("open-folder", {

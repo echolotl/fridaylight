@@ -1,6 +1,6 @@
 <template>
   <div class="contributor-infobox" v-if="hasContributors">
-    <h5 class="phantom-font-difficulty">Contributors</h5>
+    <h6 class="phantom-font-difficulty">Credits</h6>
     <hr />
     <div class="contributor-groups">
       <div
@@ -256,8 +256,9 @@ hr {
   margin-bottom: 10px;
 }
 
-h5 {
+h6 {
   margin: 0;
   color: var(--theme-text);
+  margin-right: 6rem;
 }
 </style>

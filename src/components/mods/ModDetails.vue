@@ -62,8 +62,7 @@
         </div>
 
         <div class="description" v-if="mod.description">
-          <h5 class="phantom-font-difficulty">Description</h5>
-          <hr />
+          <h6 class="phantom-font-difficulty">Description<hr /></h6>
           <p>{{ mod.description }}</p>
         </div>
 
@@ -441,7 +440,7 @@ onUnmounted(() => {
   margin-top: 8px;
 }
 
-h5 {
+h6 {
   margin: 0;
   color: var(--theme-text);
 }

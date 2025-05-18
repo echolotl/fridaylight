@@ -877,7 +877,7 @@ const onFileSelected = async (selectedFile: any) => {
         $q.notify({
           type: "negative",
           message: `Cannot download ${modpackType} modpack`,
-          caption: `You don't have any ${formatEngineType(
+          caption: `You don't have ${formatEngineType(
             modpackType
           )} installed. Please install it.`,
           position: "bottom-right",
