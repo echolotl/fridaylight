@@ -80,6 +80,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Mod } from "@main-types";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
 
 const props = defineProps({
   mod: {
@@ -217,22 +218,16 @@ const showContextMenu = (event: MouseEvent) => {
       action: () => emit("configure", props.mod.id),
     },
     {
-      icon: "info",
-      label: "Show Details",
-      action: () => emit("showDetails", props.mod.id),
-    },
-    {
       icon: "folder_open",
       label: "Open Mod Folder",
       action: () => {
-        // Dispatch custom event for opening folder
-        const openEvent = new CustomEvent("open-folder", {
-          detail: { path: props.mod.path },
-          bubbles: true,
-        });
-        event.target?.dispatchEvent(openEvent) ||
-          document.dispatchEvent(openEvent);
+        revealItemInDir(props.mod.path);
       },
+    },
+    {
+      icon: "info",
+      label: "Show Details",
+      action: () => emit("showDetails", props.mod.id),
     },
   ];
 
