@@ -1,5 +1,9 @@
 <template>
-  <q-item :key="`dl-${download.id}`" class="downloading-mod" :class="{ 'compact-mode': compactMode }">
+  <q-item
+    :key="`dl-${download.id}`"
+    class="downloading-mod"
+    :class="{ 'compact-mode': compactMode }"
+  >
     <q-item-section avatar>
       <q-spinner
         size="32px"
@@ -22,7 +26,9 @@
 
     <q-item-section v-if="!compactMode">
       <q-item-label>{{ download.name }}</q-item-label>
-      <q-item-label caption style="color: var(--theme-text-secondary)">{{ download.step }}</q-item-label>
+      <q-item-label caption style="color: var(--theme-text-secondary)">{{
+        download.step
+      }}</q-item-label>
 
       <q-linear-progress
         v-if="!download.isComplete && !download.isError"
@@ -33,15 +39,11 @@
         size="8px"
       />
 
-      <q-item-label
-        caption
-        class="text-negative"
-        v-if="download.isError"
-      >
+      <q-item-label caption class="text-negative" v-if="download.isError">
         {{ download.error }}
       </q-item-label>
     </q-item-section>
-    
+
     <!-- Show progress in compact mode -->
     <q-linear-progress
       v-if="compactMode && !download.isComplete && !download.isError"
@@ -51,10 +53,12 @@
       rounded
       size="4px"
     />
-    
+
     <q-tooltip v-if="compactMode">
       {{ download.name }} - {{ download.step }}
-      <div v-if="download.isError" class="text-negative">{{ download.error }}</div>
+      <div v-if="download.isError" class="text-negative">
+        {{ download.error }}
+      </div>
     </q-tooltip>
   </q-item>
 </template>
@@ -69,8 +73,8 @@ defineProps({
   },
   compactMode: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 </script>
 

@@ -1,15 +1,15 @@
 <template>
   <transition name="fade">
-    <div 
-      v-if="visible" 
+    <div
+      v-if="visible"
       class="context-menu shadow-10 phantom-font"
       :style="{ top: `${position.y}px`, left: `${position.x}px` }"
     >
       <div v-for="(option, index) in options" :key="index">
         <q-separator v-if="option.separator" />
-        <div 
-          v-else 
-          class="context-menu-item" 
+        <div
+          v-else
+          class="context-menu-item"
           :class="{ 'text-negative': option.danger }"
           @click="handleOptionClick(option)"
         >
@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, defineProps, defineEmits } from 'vue';
+import { onMounted, onUnmounted, defineProps, defineEmits } from "vue";
 
 // Define context menu option type
 export interface ContextMenuOption {
@@ -37,62 +37,61 @@ export interface ContextMenuOption {
 defineProps({
   options: {
     type: Array as () => ContextMenuOption[],
-    required: true
+    required: true,
   },
   visible: {
     type: Boolean,
-    default: false
+    default: false,
   },
   position: {
-    type: Object as () => { x: number, y: number },
-    default: () => ({ x: 0, y: 0 })
-  }
+    type: Object as () => { x: number; y: number },
+    default: () => ({ x: 0, y: 0 }),
+  },
 });
 
 // Emits
-const emit = defineEmits(['close']);
+const emit = defineEmits(["close"]);
 
 // Handle option click
 const handleOptionClick = (option: ContextMenuOption) => {
   if (option.action) {
     option.action();
   }
-  emit('close');
+  emit("close");
 };
 
 // Close the menu when clicking outside
 const handleGlobalClick = (event: MouseEvent) => {
-  const contextMenu = document.querySelector('.context-menu') as HTMLElement;
+  const contextMenu = document.querySelector(".context-menu") as HTMLElement;
   if (contextMenu && !contextMenu.contains(event.target as Node)) {
-    emit('close');
+    emit("close");
   }
 };
 
 // Close the menu when pressing escape
 const handleEscapeKey = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') {
-    emit('close');
+  if (event.key === "Escape") {
+    emit("close");
   }
 };
 
-
 // Add global event listeners when component is mounted
 onMounted(() => {
-  document.addEventListener('click', handleGlobalClick);
-  document.addEventListener('keydown', handleEscapeKey);
-  
+  document.addEventListener("click", handleGlobalClick);
+  document.addEventListener("keydown", handleEscapeKey);
+
   // Adjust position if menu would go off screen
   setTimeout(() => {
-    const contextMenu = document.querySelector('.context-menu') as HTMLElement;
+    const contextMenu = document.querySelector(".context-menu") as HTMLElement;
     if (contextMenu) {
       const rect = contextMenu.getBoundingClientRect();
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
-      
+
       if (rect.right > windowWidth) {
         contextMenu.style.left = `${windowWidth - rect.width - 10}px`;
       }
-      
+
       if (rect.bottom > windowHeight) {
         contextMenu.style.top = `${windowHeight - rect.height - 10}px`;
       }
@@ -102,8 +101,8 @@ onMounted(() => {
 
 // Remove global event listeners when component is unmounted
 onUnmounted(() => {
-  document.removeEventListener('click', handleGlobalClick);
-  document.removeEventListener('keydown', handleEscapeKey);
+  document.removeEventListener("click", handleGlobalClick);
+  document.removeEventListener("keydown", handleEscapeKey);
 });
 </script>
 
@@ -113,7 +112,7 @@ onUnmounted(() => {
   z-index: 9999;
   background-color: var(--solid);
   border: 2px solid var(--theme-border);
-  border-radius: .5rem;
+  border-radius: 0.5rem;
   min-width: 150px;
   max-width: 250px;
   padding: 8px 0;
@@ -121,7 +120,7 @@ onUnmounted(() => {
 }
 
 .context-menu-item {
-  padding: .25rem 1rem;
+  padding: 0.25rem 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;

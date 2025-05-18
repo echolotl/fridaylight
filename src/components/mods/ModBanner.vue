@@ -1,7 +1,7 @@
 <template>
   <div class="mod-banner">
     <!-- Banner image -->
-    
+
     <div
       class="banner-image"
       :style="
@@ -18,19 +18,17 @@
     <!-- Title overlay on the banner -->
     <div class="title-overlay">
       <!-- Show logo if available -->
-      <div 
-        v-if="mod.logo_data" 
-        class="logo-container"
-      >
+      <div v-if="mod.logo_data" class="logo-container">
         <img
           :src="mod.logo_data"
           alt="Mod Logo"
           class="mod-logo"
           :class="{
-          'logo-left-bottom': !mod.logo_position || mod.logo_position === 'left_bottom',
-          'logo-left-middle': mod.logo_position === 'left_middle',
-          'logo-middle': mod.logo_position === 'middle'
-        }"
+            'logo-left-bottom':
+              !mod.logo_position || mod.logo_position === 'left_bottom',
+            'logo-left-middle': mod.logo_position === 'left_middle',
+            'logo-middle': mod.logo_position === 'middle',
+          }"
           @click="$emit('open-settings')"
         />
       </div>
@@ -74,8 +72,12 @@
             :src="mod.engine.engine_icon"
             alt="Engine Icon"
             class="custom-engine-icon"
+          />
+          <q-tooltip
+            v-if="mod.engine.engine_name"
+            class="phantom-font"
+            anchor="top middle"
           >
-          <q-tooltip v-if="mod.engine.engine_name" class="phantom-font" anchor="top middle">
             {{ mod.engine.engine_name }}
           </q-tooltip>
         </span>
@@ -94,7 +96,12 @@
               '.webp'
             "
           />
-          <q-tooltip v-if="mod.engine.engine_name" anchor="top middle" class="phantom-font" :offset="[0, 40]">
+          <q-tooltip
+            v-if="mod.engine.engine_name"
+            anchor="top middle"
+            class="phantom-font"
+            :offset="[0, 40]"
+          >
             {{ mod.engine.engine_name }}
           </q-tooltip>
         </span>
@@ -255,7 +262,7 @@ const formatEngineType = (engineType: string) => {
   cursor: pointer;
   transition: transform 0.2s ease, filter 0.2s ease;
   transform-origin: center;
-  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.0));
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0));
 }
 
 .mod-logo:hover {

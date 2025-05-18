@@ -25,7 +25,7 @@
       >
     </q-item-section>
     <q-tooltip v-if="compactMode" class="phantom-font">
-      {{ mod.name }}{{ mod.version ? ` (v${mod.version})` : '' }}
+      {{ mod.name }}{{ mod.version ? ` (v${mod.version})` : "" }}
     </q-tooltip>
   </q-item>
 </template>
@@ -48,58 +48,65 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["select-mod", "delete-mod", "open-mod-settings", "launch-mod", "super-delete-mod", "open-mod-folder"]);
+const emit = defineEmits([
+  "select-mod",
+  "delete-mod",
+  "open-mod-settings",
+  "launch-mod",
+  "super-delete-mod",
+  "open-mod-folder",
+]);
 
 // Context menu handler
 const showContextMenu = (event: MouseEvent) => {
   event.preventDefault();
   event.stopPropagation();
-  
+
   // Create context menu options
   const contextMenuOptions = [
     {
-      icon: 'play_arrow', 
-      label: 'Launch Mod',
+      icon: "play_arrow",
+      label: "Launch Mod",
       action: () => {
         // Directly emit the launch-mod event with the mod's ID
-        emit('launch-mod', props.mod.id);
-      }
+        emit("launch-mod", props.mod.id);
+      },
     },
     {
-      icon: 'settings',
-      label: 'Edit Settings',
-      action: () => emit('open-mod-settings', props.mod)
+      icon: "settings",
+      label: "Edit Settings",
+      action: () => emit("open-mod-settings", props.mod),
     },
     {
-      icon: 'folder_open',
-      label: 'Open Mod Folder',
-      action: () => emit('open-mod-folder', props.mod)
+      icon: "folder_open",
+      label: "Open Mod Folder",
+      action: () => emit("open-mod-folder", props.mod),
     },
 
     { separator: true },
     {
-      icon: 'close',
-      label: 'Remove Mod',
-      action: () => emit('delete-mod', props.mod),
-      danger: true
+      icon: "close",
+      label: "Remove Mod",
+      action: () => emit("delete-mod", props.mod),
+      danger: true,
     },
     {
-      icon: 'delete_forever',
-      label: 'Delete Mod',
-      action: () => emit('super-delete-mod', props.mod),
-      danger: true
-    }
+      icon: "delete_forever",
+      label: "Delete Mod",
+      action: () => emit("super-delete-mod", props.mod),
+      danger: true,
+    },
   ];
-  
+
   // Create and dispatch custom event to show context menu
-  const customEvent = new CustomEvent('show-context-menu', {
+  const customEvent = new CustomEvent("show-context-menu", {
     detail: {
       position: { x: event.clientX, y: event.clientY },
-      options: contextMenuOptions
+      options: contextMenuOptions,
     },
-    bubbles: true
+    bubbles: true,
   });
-  
+
   // Safely handle the case where event.target could be null
   if (event.target) {
     event.target.dispatchEvent(customEvent);

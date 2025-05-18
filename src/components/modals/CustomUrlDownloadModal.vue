@@ -14,7 +14,7 @@
 
       <q-card-section>
         <p>Enter the direct download link and metadata for your mod:</p>
-        
+
         <q-form @submit="onSubmit" class="q-gutter-md">
           <!-- Required Fields -->
           <q-input
@@ -33,7 +33,7 @@
             v-model="form.name"
             label="Mod Name"
             outlined
-            :rules="[val => !!val || 'Name is required']"
+            :rules="[(val) => !!val || 'Name is required']"
           >
             <template v-slot:prepend>
               <q-icon name="title" />
@@ -46,7 +46,7 @@
             label="Additional Options (Optional)"
             arrow-icon-color="white"
           >
-            <q-card style="background-color: transparent;">
+            <q-card style="background-color: transparent">
               <q-card-section>
                 <!-- Version Field -->
                 <q-input
@@ -115,15 +115,27 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" color="primary" v-close-popup @click="cancel" />
-        <q-btn flat label="Next" color="primary" @click="onSubmit" :disable="!isFormValid" />
+        <q-btn
+          flat
+          label="Cancel"
+          color="primary"
+          v-close-popup
+          @click="cancel"
+        />
+        <q-btn
+          flat
+          label="Next"
+          color="primary"
+          @click="onSubmit"
+          :disable="!isFormValid"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch } from "vue";
 
 // Interface for the form data
 interface FormData {
@@ -138,16 +150,16 @@ interface FormData {
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
-const emit = defineEmits(['update:modelValue', 'submit', 'cancel']);
+const emit = defineEmits(["update:modelValue", "submit", "cancel"]);
 
 // Form state
 const form = ref<FormData>({
-  url: '',
-  name: ''
+  url: "",
+  name: "",
 });
 
 // File uploads
@@ -164,9 +176,9 @@ const isValidUrl = (url: string): boolean => {
   try {
     // Check if it's a valid URL format
     new URL(url);
-    
+
     // Check if it's an HTTP/HTTPS URL
-    return url.startsWith('http://') || url.startsWith('https://');
+    return url.startsWith("http://") || url.startsWith("https://");
   } catch (e) {
     return false;
   }
@@ -174,26 +186,28 @@ const isValidUrl = (url: string): boolean => {
 
 // URL validation message function
 const urlValidationMessage = (url: string): string | boolean => {
-  if (!url) return 'URL is required';
-  if (!isValidUrl(url)) return 'Please enter a valid URL (must start with http:// or https://)';
+  if (!url) return "URL is required";
+  if (!isValidUrl(url))
+    return "Please enter a valid URL (must start with http:// or https://)";
   return true;
 };
 
 // Computed property to check if form is valid
 const isFormValid = computed(() => {
-  return !!form.value.url && 
-         !!form.value.name && 
-         isValidUrl(form.value.url);
+  return !!form.value.url && !!form.value.name && isValidUrl(form.value.url);
 });
 
 // Watch for changes in props
-watch(() => props.modelValue, (val) => {
-  isOpen.value = val;
-});
+watch(
+  () => props.modelValue,
+  (val) => {
+    isOpen.value = val;
+  }
+);
 
 // Watch for changes in isOpen
 watch(isOpen, (val) => {
-  emit('update:modelValue', val);
+  emit("update:modelValue", val);
 });
 
 // File handling methods
@@ -228,22 +242,22 @@ const handleLogoFileChange = (file: File) => {
 // Form submission
 const onSubmit = () => {
   if (isFormValid.value) {
-    emit('submit', form.value);
+    emit("submit", form.value);
     resetForm();
   }
 };
 
 // Cancel form
 const cancel = () => {
-  emit('cancel');
+  emit("cancel");
   resetForm();
 };
 
 // Reset the form
 const resetForm = () => {
   form.value = {
-    url: '',
-    name: ''
+    url: "",
+    name: "",
   };
   bannerFile.value = null;
   logoFile.value = null;
@@ -261,7 +275,8 @@ const resetForm = () => {
   color: var(--theme-text);
 }
 
-.banner-preview, .logo-preview {
+.banner-preview,
+.logo-preview {
   width: 100%;
   overflow: hidden;
   border-radius: 8px;
@@ -281,7 +296,7 @@ const resetForm = () => {
   object-fit: contain;
 }
 
-:deep(.q-field__native), 
+:deep(.q-field__native),
 :deep(.q-field__input) {
   color: var(--theme-text) !important;
 }
@@ -305,5 +320,4 @@ const resetForm = () => {
 :deep(.q-expansion-item__toggle-icon) {
   color: var(--theme-text);
 }
-
 </style>

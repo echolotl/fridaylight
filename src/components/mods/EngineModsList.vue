@@ -1,8 +1,8 @@
 <template>
   <div class="mods-title" v-if="mods.length >= 0">
     <div class="header">
-    <h5 class="phantom-font-difficulty">Installed Mods</h5>
-    <div class="scan-actions">
+      <h5 class="phantom-font-difficulty">Installed Mods</h5>
+      <div class="scan-actions">
         <q-btn
           round
           color="primary"
@@ -20,7 +20,7 @@
           @click="openModsFolder"
         />
       </div>
-  </div>
+    </div>
     <hr />
   </div>
 
@@ -85,7 +85,10 @@
   </div>
   <div v-else class="engine-mods-container phantom-font">
     <div class="loading">
-      <span>Fridaylight can't scan for mods with the current engine type. You can disable this section in the mod settings.</span>
+      <span
+        >Fridaylight can't scan for mods with the current engine type. You can
+        disable this section in the mod settings.</span
+      >
     </div>
   </div>
 </template>
@@ -244,16 +247,18 @@ const toggleModEnabled = async (mod: ModMetadataFile, enable: boolean) => {
   }
 };
 
-
 // Open mods folder in file explorer
 const openModsFolder = async () => {
   try {
-    const folderPath = getEngineModsFolderPath(props.executablePath, props.customModsFolder);
+    const folderPath = getEngineModsFolderPath(
+      props.executablePath,
+      props.customModsFolder
+    );
     if (!folderPath) {
       error.value = "Could not determine mods folder path";
       return;
     }
-    
+
     console.log("Opening mods folder:", folderPath);
     await revealItemInDir(folderPath);
   } catch (e: any) {
@@ -389,9 +394,8 @@ h5 {
 
 .scan-actions {
   display: inline-flex;
-  gap: .5rem;
+  gap: 0.5rem;
   margin-left: auto;
   margin-top: 1.5rem;
-
 }
 </style>

@@ -104,9 +104,11 @@
                     ></div>
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label text-color="var(--theme-text)" class="phantom-font">{{
-                      scope.opt.label
-                    }}</q-item-label>
+                    <q-item-label
+                      text-color="var(--theme-text)"
+                      class="phantom-font"
+                      >{{ scope.opt.label }}</q-item-label
+                    >
                   </q-item-section>
                 </q-item>
               </template>
@@ -225,7 +227,7 @@
                     - Coder, Designer, Director, Creator of Fridaylight
                   </li>
                 </ul>
-                                  <div class="text-subtitle2 q-mb-sm q-mt-sm">Special Thanks</div>
+                <div class="text-subtitle2 q-mb-sm q-mt-sm">Special Thanks</div>
                 <ul>
                   <li>
                     <a
@@ -288,7 +290,7 @@
                   This will reset all app settings to their default values.
                   You'll need to save for changes to take effect.
                 </div>
-                
+
                 <q-btn
                   color="negative"
                   icon="delete_forever"
@@ -299,15 +301,18 @@
                 />
                 <div class="text-caption q-mt-sm">
                   This will wipe the database and reset all application data.
-                  All mod information will be lost, but files will not be deleted.
+                  All mod information will be lost, but files will not be
+                  deleted.
                 </div>
               </div>
             </div>
-            
-            <AnimationPlayer jsonPath="/images/animations/characters/bf-holding-gf.json" 
-  :width="500" 
-  :height="500" 
-  :scale="1"/>
+
+            <AnimationPlayer
+              jsonPath="/images/animations/characters/bf-holding-gf.json"
+              :width="500"
+              :height="500"
+              :scale="1"
+            />
           </q-card-section>
         </q-scroll-area>
       </div>
@@ -664,7 +669,10 @@ const save = async () => {
     if (typeof settings.value.accentColor !== "string") {
       // If it's an object with a value property
       if (settings.value.accentColor?.value) {
-        console.log("Converting accent color object to string value:", settings.value.accentColor);
+        console.log(
+          "Converting accent color object to string value:",
+          settings.value.accentColor
+        );
         settings.value.accentColor = settings.value.accentColor.value;
       }
       // If it's null or undefined or another non-string type
@@ -675,34 +683,47 @@ const save = async () => {
     }
 
     // Ensure accentColor is a valid CSS color value (starts with #)
-    if (typeof settings.value.accentColor !== 'string' || !settings.value.accentColor.startsWith('#')) {
+    if (
+      typeof settings.value.accentColor !== "string" ||
+      !settings.value.accentColor.startsWith("#")
+    ) {
       console.log("Fixing invalid accent color format");
       settings.value.accentColor = "#DB2955"; // Default
     }
 
     // Process the theme value to ensure it's a string
-    if (typeof settings.value.theme === "object" && settings.value.theme !== null && "value" in settings.value.theme) {
+    if (
+      typeof settings.value.theme === "object" &&
+      settings.value.theme !== null &&
+      "value" in settings.value.theme
+    ) {
       console.log("Converting theme object to string value");
       settings.value.theme = (settings.value.theme as { value: string }).value;
     }
 
-    console.log("Saving settings with accent color:", settings.value.accentColor);
+    console.log(
+      "Saving settings with accent color:",
+      settings.value.accentColor
+    );
 
     // Save all settings at once using the StoreService
     await storeService.saveSettings(settings.value);
     console.log("Settings saved via StoreService:", settings.value);
 
     // Apply the accent color to CSS custom properties
-    document.documentElement.style.setProperty("--q-primary", settings.value.accentColor);
+    document.documentElement.style.setProperty(
+      "--q-primary",
+      settings.value.accentColor
+    );
 
     // Apply theme
     await updateTheme();
-    
+
     // Dispatch compact mode changed event
     window.dispatchEvent(
       new CustomEvent("compact-mode-changed", {
         detail: {
-          compactMode: settings.value.compactMode
+          compactMode: settings.value.compactMode,
         },
       })
     );
@@ -728,18 +749,18 @@ const resetSettings = () => {
 const resetAppData = async () => {
   try {
     console.log("Resetting application data...");
-    
+
     // Get instances of our services
     const dbService = DatabaseService.getInstance();
-    
+
     // First, reset settings to default values
     await storeService.clearSettings();
     console.log("Settings have been cleared successfully");
-    
+
     // Then clear the database (delete all data from tables)
     await dbService.clearDatabase();
     console.log("Database has been cleared successfully");
-    
+
     // Reload the application to apply changes
     window.location.reload();
   } catch (error) {

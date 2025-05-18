@@ -10,36 +10,40 @@
         <div class="mod-thumbnail" :style="bannerStyle">
           <!-- Show engine icon -->
           <img :src="engineIconUrl" class="engine-icon" v-if="engineIconUrl" />
-          
+
           <!-- Show logo if available -->
-          <img 
-            v-if="mod.logo_data" 
-            :src="mod.logo_data" 
-            class="mod-logo" 
-            :class="logoPositionClass" 
+          <img
+            v-if="mod.logo_data"
+            :src="mod.logo_data"
+            class="mod-logo"
+            :class="logoPositionClass"
           />
         </div>
       </div>
-      
+
       <div class="mod-info">
         <div class="mod-title">{{ mod.name }}</div>
-        
+
         <div class="mod-metadata">
           <!-- Show version if available -->
           <span class="badge" v-if="mod.version">v{{ mod.version }}</span>
-          
+
           <!-- Show engine name -->
-          <span class="badge" v-if="mod.engine.engine_name != 'unknown'">{{ mod.engine.engine_name }}</span>
+          <span class="badge" v-if="mod.engine.engine_name != 'unknown'">{{
+            mod.engine.engine_name
+          }}</span>
         </div>
-        
+
         <!-- Contributors if available -->
         <div class="contributors" v-if="hasContributors">
           <div class="contributor-list">
             <span>by {{ primaryContributor }}</span>
-            <span v-if="contributorCount > 1">+{{ contributorCount - 1 }} more</span>
+            <span v-if="contributorCount > 1"
+              >+{{ contributorCount - 1 }} more</span
+            >
           </div>
         </div>
-        
+
         <div class="mod-stats">
           <span v-if="mod.last_played">
             <q-icon name="schedule" size="xs" />
@@ -91,14 +95,14 @@ const bannerStyle = computed(() => {
   if (props.mod.banner_data) {
     return {
       backgroundImage: `url(${props.mod.banner_data})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center'
+      backgroundSize: "cover",
+      backgroundPosition: "center",
     };
   }
   return {
     backgroundImage: 'url("/images/menuBG.png")',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center'
+    backgroundSize: "cover",
+    backgroundPosition: "center",
   };
 });
 
@@ -113,36 +117,38 @@ const engineIconUrl = computed(() => {
 // Handle logo positioning
 const logoPositionClass = computed(() => {
   switch (props.mod.logo_position) {
-    case 'left_bottom':
-      return 'logo-left-bottom';
-    case 'left_middle':
-      return 'logo-left-middle';
-    case 'middle':
-      return 'logo-middle';
+    case "left_bottom":
+      return "logo-left-bottom";
+    case "left_middle":
+      return "logo-left-middle";
+    case "middle":
+      return "logo-middle";
     default:
-      return 'logo-left-bottom';
+      return "logo-left-bottom";
   }
 });
 
 // Format date to relative time (e.g. "2 days ago")
 const formatDate = (timestamp: number): string => {
   // Convert timestamp to milliseconds if it's in seconds format (has decimal point)
-  const normalizedTimestamp = timestamp.toString().includes('.') 
-    ? Math.floor(timestamp * 1000) 
+  const normalizedTimestamp = timestamp.toString().includes(".")
+    ? Math.floor(timestamp * 1000)
     : timestamp;
 
   const now = Date.now();
   const difference = now - normalizedTimestamp;
-  
+
   // Debug info
   console.log(`Current time: ${now}`);
   console.log(`Original timestamp: ${timestamp}`);
   console.log(`Normalized timestamp: ${normalizedTimestamp}`);
-  
+
   // Convert milliseconds to days, hours, etc.
   const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  
+  const hours = Math.floor(
+    (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+  );
+
   if (days > 30) {
     return new Date(normalizedTimestamp).toLocaleDateString();
   } else if (days > 0) {
@@ -150,39 +156,44 @@ const formatDate = (timestamp: number): string => {
   } else if (hours > 0) {
     return `${hours}h ago`;
   } else {
-    return 'Just now';
+    return "Just now";
   }
 };
 
 // Contributor-related computed properties
 const hasContributors = computed(() => {
-  return props.mod.contributors && props.mod.contributors.length > 0 && 
-         props.mod.contributors.some(group => group.members && group.members.length > 0);
+  return (
+    props.mod.contributors &&
+    props.mod.contributors.length > 0 &&
+    props.mod.contributors.some(
+      (group) => group.members && group.members.length > 0
+    )
+  );
 });
 
 const primaryContributor = computed(() => {
   if (!hasContributors.value) {
-    return 'Unknown';
+    return "Unknown";
   }
-  
+
   // Try to find a "Creator" or "Main" group first
-  const mainGroups = ['Creator', 'Main', 'Developer', 'Author'];
+  const mainGroups = ["Creator", "Main", "Developer", "Author"];
   for (const groupName of mainGroups) {
-    const group = props.mod.contributors?.find(g => 
-      g.group.toLowerCase() === groupName.toLowerCase()
+    const group = props.mod.contributors?.find(
+      (g) => g.group.toLowerCase() === groupName.toLowerCase()
     );
     if (group && group.members.length > 0) {
       return group.members[0].name;
     }
   }
-  
+
   // Fallback to first contributor in the first group
-  return props.mod.contributors?.[0]?.members[0]?.name || 'Unknown';
+  return props.mod.contributors?.[0]?.members[0]?.name || "Unknown";
 });
 
 const contributorCount = computed(() => {
   if (!props.mod.contributors) return 0;
-  
+
   return props.mod.contributors.reduce((total, group) => {
     return total + (group.members ? group.members.length : 0);
   }, 0);
@@ -219,9 +230,10 @@ const showContextMenu = (event: MouseEvent) => {
           detail: { path: props.mod.path },
           bubbles: true,
         });
-        event.target?.dispatchEvent(openEvent) || document.dispatchEvent(openEvent);
+        event.target?.dispatchEvent(openEvent) ||
+          document.dispatchEvent(openEvent);
       },
-    }
+    },
   ];
 
   // Create and dispatch custom event to show context menu
@@ -373,7 +385,6 @@ const showContextMenu = (event: MouseEvent) => {
   padding: 0 12px 12px;
   gap: 10px;
 }
-
 
 .play-btn {
   width: 100%;

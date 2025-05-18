@@ -33,7 +33,11 @@
             icon="colorize"
             class="color-button custom-color-btn"
             :class="{ 'color-selected': isCustomColor }"
-            :style="isCustomColor ? { backgroundColor: customColor } : { backgroundColor: 'transparent'}"
+            :style="
+              isCustomColor
+                ? { backgroundColor: customColor }
+                : { backgroundColor: 'transparent' }
+            "
             @click="openColorPicker"
           />
           <input

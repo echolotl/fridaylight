@@ -1,4 +1,5 @@
-<template>  <q-dialog
+<template>
+  <q-dialog
     v-model="isOpen"
     persistent
     transition-show="fade"
@@ -12,13 +13,16 @@
       </q-card-section>
 
       <q-card-section>
-        <p>This mod, "{{ modName }}", has multiple download options. Please select one:</p>
+        <p>
+          This mod, "{{ modName }}", has multiple download options. Please
+          select one:
+        </p>
 
         <q-list separator>
-          <q-item 
-            v-for="(file, index) in files" 
-            :key="index" 
-            clickable 
+          <q-item
+            v-for="(file, index) in files"
+            :key="index"
+            clickable
             v-ripple
             @click="selectFile(file)"
             :active="selectedFile && selectedFile._idRow === file._idRow"
@@ -26,24 +30,53 @@
             class="selected-file-inactive"
           >
             <q-item-section>
-              <q-item-label>{{ file._sFile }}
-                <q-icon v-if="file._bContainsExe" name="terminal" class="q-ml-xs" color="secondary" size="xs" />
-                <q-icon v-if="file._sAnalysisState === 'pending'" name="hourglass_empty" class="q-ml-xs" color="orange" size="xs" />
+              <q-item-label
+                >{{ file._sFile }}
+                <q-icon
+                  v-if="file._bContainsExe"
+                  name="terminal"
+                  class="q-ml-xs"
+                  color="secondary"
+                  size="xs"
+                />
+                <q-icon
+                  v-if="file._sAnalysisState === 'pending'"
+                  name="hourglass_empty"
+                  class="q-ml-xs"
+                  color="orange"
+                  size="xs"
+                />
               </q-item-label>
-              <q-item-label caption v-if="file._sDescription" class="file-description">
+              <q-item-label
+                caption
+                v-if="file._sDescription"
+                class="file-description"
+              >
                 {{ file._sDescription }}
               </q-item-label>
               <q-item-label caption>
-                <span class="file-size">{{ formatFileSize(file._nFilesize) }}</span>
-                <span class="file-date">{{ formatDate(file._tsDateAdded) }}</span>
-                <span class="file-downloads q-ml-xs"><q-icon name="download"></q-icon>{{ file._nDownloadCount }}</span>
+                <span class="file-size">{{
+                  formatFileSize(file._nFilesize)
+                }}</span>
+                <span class="file-date">{{
+                  formatDate(file._tsDateAdded)
+                }}</span>
+                <span class="file-downloads q-ml-xs"
+                  ><q-icon name="download"></q-icon
+                  >{{ file._nDownloadCount }}</span
+                >
               </q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
-        
-        <div v-if="alternateFileSources && alternateFileSources.length > 0" class="alternate-sources q-mt-md">
-          <div class="text-subtitle1">Alternative Download Sources (Manual Install)</div>
+
+        <div
+          v-if="alternateFileSources && alternateFileSources.length > 0"
+          class="alternate-sources q-mt-md"
+        >
+          <div class="text-subtitle1">
+            Alternative Download Sources (Manual Install)
+          </div>
           <q-list separator>
             <q-item
               v-for="(source, index) in alternateFileSources"
@@ -57,7 +90,9 @@
             >
               <q-item-section>
                 <q-item-label>{{ source.description }}</q-item-label>
-                <q-item-label caption class="altsource-description">{{ source.url }}</q-item-label>
+                <q-item-label caption class="altsource-description">{{
+                  source.url
+                }}</q-item-label>
               </q-item-section>
               <q-item-section side>
                 <q-icon name="open_in_new" />
@@ -65,16 +100,29 @@
             </q-item>
           </q-list>
         </div>
-      </q-card-section>      <q-card-actions align="right">
-        <q-btn flat label="Cancel" color="primary" v-close-popup @click="cancel" />
-        <q-btn flat label="Download" color="primary" :disable="!selectedFile" @click="confirm" />
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn
+          flat
+          label="Cancel"
+          color="primary"
+          v-close-popup
+          @click="cancel"
+        />
+        <q-btn
+          flat
+          label="Download"
+          color="primary"
+          :disable="!selectedFile"
+          @click="confirm"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch } from "vue";
 
 // Define interface for files
 interface DownloadFile {
@@ -102,42 +150,51 @@ interface AlternateSource {
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    default: false
+    default: false,
   },
   files: {
     type: Array as () => DownloadFile[],
-    default: () => []
+    default: () => [],
   },
   modName: {
     type: String,
-    default: 'Unknown Mod'
+    default: "Unknown Mod",
   },
   alternateFileSources: {
     type: Array as () => AlternateSource[],
-    default: () => []
-  }
+    default: () => [],
+  },
 });
 
-const emit = defineEmits(['update:modelValue', 'select', 'cancel']);
+const emit = defineEmits(["update:modelValue", "select", "cancel"]);
 
 const isOpen = ref(props.modelValue);
 const selectedFile = ref<DownloadFile | null>(null);
 
 // Set the default selected file to the first file with the most downloads
-watch(() => props.files, (newFiles) => {
-  if (newFiles && newFiles.length > 0) {
-    // Sort by download count and set the most downloaded as default
-    const sortedFiles = [...newFiles].sort((a, b) => b._nDownloadCount - a._nDownloadCount);
-    selectedFile.value = sortedFiles[0];
-  }
-}, { immediate: true });
+watch(
+  () => props.files,
+  (newFiles) => {
+    if (newFiles && newFiles.length > 0) {
+      // Sort by download count and set the most downloaded as default
+      const sortedFiles = [...newFiles].sort(
+        (a, b) => b._nDownloadCount - a._nDownloadCount
+      );
+      selectedFile.value = sortedFiles[0];
+    }
+  },
+  { immediate: true }
+);
 
-watch(() => props.modelValue, (val) => {
-  isOpen.value = val;
-});
+watch(
+  () => props.modelValue,
+  (val) => {
+    isOpen.value = val;
+  }
+);
 
 watch(isOpen, (val) => {
-  emit('update:modelValue', val);
+  emit("update:modelValue", val);
 });
 
 const selectFile = (file: DownloadFile) => {
@@ -146,24 +203,24 @@ const selectFile = (file: DownloadFile) => {
 
 const confirm = () => {
   if (selectedFile.value) {
-    emit('select', selectedFile.value);
+    emit("select", selectedFile.value);
     isOpen.value = false;
   }
 };
 
 const cancel = () => {
-  emit('cancel');
+  emit("cancel");
   isOpen.value = false;
 };
 
 const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes';
-  
+  if (bytes === 0) return "0 Bytes";
+
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
 const formatDate = (timestamp: number): string => {
@@ -185,12 +242,12 @@ const formatDate = (timestamp: number): string => {
 
 .selected-file-inactive {
   color: var(--theme-text) !important;
-  border-radius: .5rem;
+  border-radius: 0.5rem;
 }
 .selected-file {
   background-color: var(--q-primary) !important;
   color: white !important;
-  border-radius: .5rem;
+  border-radius: 0.5rem;
 }
 
 .file-size {

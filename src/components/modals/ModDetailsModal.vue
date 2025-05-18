@@ -8,7 +8,11 @@
     class="mod-details-modal"
   >
     <q-card class="mod-details-card">
-          <q-linear-progress indeterminate color="primary" v-if="loading"></q-linear-progress>
+      <q-linear-progress
+        indeterminate
+        color="primary"
+        v-if="loading"
+      ></q-linear-progress>
       <q-card-section class="row items-center q-pb-none">
         <div
           class="text-h6 phantom-font-difficulty header-text"
@@ -101,14 +105,16 @@
                     <template v-slot:header>
                       <div class="flex column">
                         <div class="flex row">
-                        <div class="text-subtitle1">
-                          {{ update._sName }}
+                          <div class="text-subtitle1">
+                            {{ update._sName }}
+                          </div>
+                          <div
+                            class="q-ml-xs flex row items-cente custom-badge-small"
+                          >
+                            <q-icon name="add" size="xs" />
+                            {{ formatDate(update._tsDateAdded) }}
+                          </div>
                         </div>
-                      <div class="q-ml-xs flex row items-cente custom-badge-small">
-                                                <q-icon name="add" size="xs"/>
-                    {{ formatDate(update._tsDateAdded) }}
-
-                      </div></div>
                         <div class="">
                           <div
                             class="phantom-font"
@@ -131,10 +137,7 @@
                                 }"
                                 >{{ category }}
                                 <span
-                                  style="
-                                    color: lightgray;
-                                    margin-left: 0.25rem;
-                                  "
+                                  style="color: lightgray; margin-left: 0.25rem"
                                   v-if="count > 1"
                                   >{{ count }}</span
                                 ></q-badge
@@ -233,18 +236,20 @@
                             >{{ label }}</q-badge
                           ></span
                         >
-                        <div class="flex row items-center custom-badge-small q-ml-xs">
+                        <div
+                          class="flex row items-center custom-badge-small q-ml-xs"
+                        >
                           <q-icon
                             v-if="comment._iPinLevel > 0"
                             name="push_pin"
                             size="xs"
                             class="q-ml-xs BlueColor"
                           />
-                          <q-icon name="add" size="xs"/>
+                          <q-icon name="add" size="xs" />
                           <span>
                             {{ formatDate(comment._tsDateAdded) }}
-                        </span>
-                      </div>
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div class="q-mt-sm">
@@ -449,7 +454,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, defineEmits, defineProps, computed } from "vue";
+import {
+  ref,
+  watch,
+  onMounted,
+  onUnmounted,
+  defineEmits,
+  defineProps,
+  computed,
+} from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
@@ -546,7 +559,8 @@ async function fetchModInfo() {
     }
     if (!commentsResult) {
       throw new Error("Failed to fetch mod comments");
-    }    modInfo.value = infoResult;
+    }
+    modInfo.value = infoResult;
     modUpdates.value = updatesResult;
     modComments.value = commentsResult;
   } catch (err: any) {
@@ -952,8 +966,7 @@ function downloadMod() {
 <!-- Styles for v-html content (not scoped) -->
 <style>
 .mod-info-text,
-.update-textm
-.comment-text {
+.update-textm .comment-text {
   line-height: 1.2;
   text-wrap: break-chars;
   max-width: 100%;

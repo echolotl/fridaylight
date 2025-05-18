@@ -2,12 +2,13 @@
   <div class="layout-container">
     <!-- The Sidebar ended up becoming the wrapper around basically everything -->
     <!-- Actual Sidebar -->
-    <div 
-      class="sidebar" 
+    <div
+      class="sidebar"
       :class="{ 'compact-mode': isCompactMode }"
       :style="{ width: isCompactMode ? '64px' : `${sidebarWidth}px` }"
     >
-      <!-- Mod list -->      <ModList
+      <!-- Mod list -->
+      <ModList
         :mods="mods"
         :folders="folders"
         :selectedModId="selectedMod?.id"
@@ -34,7 +35,8 @@
       />
 
       <!-- GameBanana button -->
-      <div class="gamebanana-button-container phantom-font-difficulty">        <q-btn
+      <div class="gamebanana-button-container phantom-font-difficulty">
+        <q-btn
           :class="{
             'gamebanana-button': true,
             'active-gamebanana': activePage === 'gamebanana',
@@ -128,19 +130,29 @@
       </div>
     </div>
     <div class="main-content-area">
-      <!-- Show ModDetails when a mod is selected and GameBanana is not shown -->      <Transition name="fade" mode="out-in">        <div
+      <!-- Show ModDetails when a mod is selected and GameBanana is not shown -->
+      <Transition name="fade" mode="out-in">
+        <div
           :key="
             activePage === 'mods'
               ? selectedMod
                 ? selectedMod.id
                 : 'no-mod'
               : activePage === 'gamebanana'
-                ? 'gamebanana-browser'
-                : 'home-page'
+              ? 'gamebanana-browser'
+              : 'home-page'
           "
           class="main-content"
         >
-        <!-- Can show ModDetails, HomePage, or GameBananaBrowser -->          <component            :is="activePage === 'mods' ? ModDetails : activePage === 'gamebanana' ? GameBananaBrowser : HomePage"
+          <!-- Can show ModDetails, HomePage, or GameBananaBrowser -->
+          <component
+            :is="
+              activePage === 'mods'
+                ? ModDetails
+                : activePage === 'gamebanana'
+                ? GameBananaBrowser
+                : HomePage
+            "
             :mod="selectedMod"
             :error="launchError || ''"
             @update:mod="handleSaveMod"
@@ -257,7 +269,7 @@ const folders = ref<Folder[]>([]);
 const selectedMod = ref<ModInfo | null>(null);
 const launchError = ref<string | null>(null);
 const showSettingsModal = ref(false);
-const activePage = ref('home'); // Default to showing home page
+const activePage = ref("home"); // Default to showing home page
 const showAppSettingsModal = ref(false);
 
 // Add compact mode state
@@ -270,19 +282,21 @@ onMounted(async () => {
 
   emit("resize", sidebarWidth.value);
   try {
-    // Initialize dbService 
+    // Initialize dbService
     await dbService.initialize();
-    // Assign the service instance to the window object if needed elsewhere 
-    window.db = { service: dbService };    await loadModsFromDatabase();    await loadFoldersFromDatabase(); // Load folders after mods
+    // Assign the service instance to the window object if needed elsewhere
+    window.db = { service: dbService };
+    await loadModsFromDatabase();
+    await loadFoldersFromDatabase(); // Load folders after mods
 
     // Load and apply app settings
     await loadAppSettings();
 
-    activePage.value = 'home'; // Show home page by default
+    activePage.value = "home"; // Show home page by default
 
     // Add event listener for refreshing the mods list
     window.addEventListener("refresh-mods", handleRefreshMods);
-    
+
     // Add event listener for compact mode changes
     window.addEventListener("compact-mode-changed", (event: Event) => {
       const customEvent = event as CustomEvent;
@@ -314,7 +328,7 @@ const loadModsFromDatabase = async () => {
         selectMod(processedMods[0]);
       }
     } else {
-      // If no mods in database, load from memory 
+      // If no mods in database, load from memory
       await loadModsFromMemory();
     }
   } catch (error) {
@@ -508,12 +522,12 @@ const selectModsParentFolder = async () => {
 
     // Show loading notification
     const loadingNotif = $q.notify({
-      type: 'ongoing',
-      message: 'Scanning for mods...',
-      caption: 'This may take a while for large folders',
-      position: 'bottom-right',
+      type: "ongoing",
+      message: "Scanning for mods...",
+      caption: "This may take a while for large folders",
+      position: "bottom-right",
       timeout: 0,
-      spinner: true
+      spinner: true,
     });
 
     // Call the Rust command to select a folder containing multiple mods
@@ -579,7 +593,7 @@ const selectMod = (mod: ModInfo) => {
   selectedMod.value = mod;
   console.log("selectedMod.value after setting:", selectedMod.value);
   launchError.value = null;
-  activePage.value = 'mods'; // Switch to mod details view when selecting a mod
+  activePage.value = "mods"; // Switch to mod details view when selecting a mod
 };
 
 const setActivePage = (page: string) => {
@@ -590,13 +604,13 @@ const setActivePage = (page: string) => {
 const syncModsWithBackend = async () => {
   try {
     console.log("Syncing mods with backend...");
-    
+
     // Add the required group field to each mod
-    const modsWithGroup = mods.value.map(mod => ({
+    const modsWithGroup = mods.value.map((mod) => ({
       ...mod,
-      group: mod.folder_id || "none"
+      group: mod.folder_id || "none",
     }));
-    
+
     await invoke("sync_mods_from_database", { modsData: modsWithGroup });
     console.log("Successfully synced mods with backend");
   } catch (error) {
@@ -680,20 +694,20 @@ const handleSelectModFolder = async (callback?: (newPath: string) => void) => {
       directory: true,
       title: "Select Mod Folder",
     });
-    
+
     if (result) {
       // Update the mod's path with the new folder path
       console.log("Selected mod folder:", result);
       const updatedMod = { ...selectedMod.value, path: result };
-      
+
       // If a callback was provided, call it with the new path
-      if (callback && typeof callback === 'function') {
+      if (callback && typeof callback === "function") {
         callback(result);
       }
-      
+
       // Save the updated mod
       await handleSaveMod(updatedMod);
-      
+
       // Show success notification
       $q.notify({
         type: "positive",
@@ -715,7 +729,9 @@ const handleSelectModFolder = async (callback?: (newPath: string) => void) => {
 };
 
 // Function to handle selecting (updating/changing) an executable for the mod
-const handleSelectExecutable = async (callback?: (newExecutablePath: string) => void) => {
+const handleSelectExecutable = async (
+  callback?: (newExecutablePath: string) => void
+) => {
   if (!selectedMod.value) return;
   try {
     const result = await open({
@@ -726,20 +742,20 @@ const handleSelectExecutable = async (callback?: (newExecutablePath: string) => 
       ],
       defaultPath: selectedMod.value.path, // Start in the mod's directory
     });
-    
+
     if (result) {
       // Update the mod's executable_path with the new executable path
       console.log("Selected mod executable:", result);
-      const updatedMod = { ...selectedMod.value, executable_path: result};
-      
+      const updatedMod = { ...selectedMod.value, executable_path: result };
+
       // If a callback was provided, call it with the new path
-      if (callback && typeof callback === 'function') {
+      if (callback && typeof callback === "function") {
         callback(result);
       }
-      
+
       // Save the updated mod
       await handleSaveMod(updatedMod);
-      
+
       // Show success notification
       $q.notify({
         type: "positive",
@@ -766,38 +782,39 @@ const launchMod = async (modId: string) => {
     // Now invoke the backend to launch the mod
     await invoke("launch_mod", { id: modId });
 
-        // Find the mod in our local array by ID
-        const mod = mods.value.find(m => m.id === modId);
-    
+    // Find the mod in our local array by ID
+    const mod = mods.value.find((m) => m.id === modId);
+
     if (mod) {
       // Update the last_played timestamp before launching
       const updatedMod = {
         ...mod,
-        last_played: Math.floor(Date.now() / 1000) // Current Unix timestamp in seconds
+        last_played: Math.floor(Date.now() / 1000), // Current Unix timestamp in seconds
       };
-      
+
       // Save to database to persist the last_played value
       await dbService.saveMod(updatedMod);
-      
+
       // Update the local state
-      const index = mods.value.findIndex(m => m.id === modId);
+      const index = mods.value.findIndex((m) => m.id === modId);
       if (index !== -1) {
         mods.value[index] = updatedMod;
       }
-      
+
       // If this is the currently selected mod, update that reference too
       if (selectedMod.value?.id === modId) {
         selectedMod.value = updatedMod;
       }
-      
-      console.log(`Updated last_played timestamp for mod ${updatedMod.name} to ${updatedMod.last_played}`);
+
+      console.log(
+        `Updated last_played timestamp for mod ${updatedMod.name} to ${updatedMod.last_played}`
+      );
     }
   } catch (error) {
     console.error("Failed to launch mod:", error);
     launchError.value = "Failed to launch mod";
   }
 };
-
 
 // Function that opens the setting modal
 const openSettingsModal = () => {
@@ -831,11 +848,11 @@ const superDeleteMod = async (modId: string) => {
   try {
     // Show a loading notification
     const loadingNotif = $q.notify({
-      type: 'ongoing',
-      message: 'Super deleting mod...',
-      position: 'bottom-right',
+      type: "ongoing",
+      message: "Super deleting mod...",
+      position: "bottom-right",
       timeout: 0,
-      spinner: true
+      spinner: true,
     });
 
     // Call the Rust backend to perform super delete
@@ -869,7 +886,7 @@ const superDeleteMod = async (modId: string) => {
     window.dispatchEvent(refreshEvent);
   } catch (error) {
     console.error("Failed to super delete mod:", error);
-    
+
     // Show error notification
     $q.notify({
       type: "negative",
@@ -1032,7 +1049,7 @@ const saveAppSettings = async (settings: any) => {
   console.log("App settings saved:", settings);
 
   // Apply the accent color immediately - ensure it's a string
-  let colorValue = settings.accentColor || '#DB2955';
+  let colorValue = settings.accentColor || "#DB2955";
 
   // Handle if accentColor is stored as a JSON string (from previous version)
   if (
@@ -1044,26 +1061,32 @@ const saveAppSettings = async (settings: any) => {
       // Validate JSON format before parsing
       if (/^[\s]*\{.*\}[\s]*$/.test(colorValue)) {
         const parsedColor = JSON.parse(colorValue);
-        if (parsedColor && parsedColor.value && typeof parsedColor.value === 'string') {
+        if (
+          parsedColor &&
+          parsedColor.value &&
+          typeof parsedColor.value === "string"
+        ) {
           colorValue = parsedColor.value;
-          
+
           // Also fix it in the database by saving it back as a string
           await storeService.saveSetting("accentColor", colorValue);
           console.log("Fixed accent color format in database:", colorValue);
         } else {
           // If parsed but invalid structure, use default
-          colorValue = '#DB2955';
-          console.log("Parsed color doesn't have a valid value property, using default");
+          colorValue = "#DB2955";
+          console.log(
+            "Parsed color doesn't have a valid value property, using default"
+          );
         }
       } else {
         // Not valid JSON object format
-        colorValue = '#DB2955';
+        colorValue = "#DB2955";
         console.log("Invalid JSON format for color value, using default");
       }
     } catch (e) {
       console.error("Failed to parse accent color JSON:", e);
       // Save the default color to fix the database
-      colorValue = '#DB2955';
+      colorValue = "#DB2955";
       await storeService.saveSetting("accentColor", colorValue);
       console.log("Saved default accent color to fix invalid data");
     }
@@ -1075,7 +1098,7 @@ const saveAppSettings = async (settings: any) => {
 
   // Ensure colorValue is always a valid CSS color string
   if (typeof colorValue !== "string" || !colorValue.startsWith("#")) {
-    colorValue = '#DB2955'; // Fallback to default if invalid
+    colorValue = "#DB2955"; // Fallback to default if invalid
   }
 
   document.documentElement.style.setProperty("--q-primary", colorValue);
@@ -1105,7 +1128,7 @@ const loadAppSettings = async () => {
     console.log("Applied compact mode setting:", isCompactMode.value);
 
     // Apply the accent color to CSS custom properties
-    let colorValue = settings.accentColor || '#DB2955';
+    let colorValue = settings.accentColor || "#DB2955";
 
     // Handle if accentColor is stored as a JSON string (from previous version)
     if (
@@ -1117,26 +1140,32 @@ const loadAppSettings = async () => {
         // Validate JSON format before parsing
         if (/^[\s]*\{.*\}[\s]*$/.test(colorValue)) {
           const parsedColor = JSON.parse(colorValue);
-          if (parsedColor && parsedColor.value && typeof parsedColor.value === 'string') {
+          if (
+            parsedColor &&
+            parsedColor.value &&
+            typeof parsedColor.value === "string"
+          ) {
             colorValue = parsedColor.value;
-            
+
             // Also fix it in the database by saving it back as a string
             await storeService.saveSetting("accentColor", colorValue);
             console.log("Fixed accent color format in database:", colorValue);
           } else {
             // If parsed but invalid structure, use default
-            colorValue = '#DB2955';
-            console.log("Parsed color doesn't have a valid value property, using default");
+            colorValue = "#DB2955";
+            console.log(
+              "Parsed color doesn't have a valid value property, using default"
+            );
           }
         } else {
           // Not valid JSON object format
-          colorValue = '#DB2955';
+          colorValue = "#DB2955";
           console.log("Invalid JSON format for color value, using default");
         }
       } catch (e) {
         console.error("Failed to parse accent color JSON:", e);
         // Save the default color to fix the database
-        colorValue = '#DB2955';
+        colorValue = "#DB2955";
         await storeService.saveSetting("accentColor", colorValue);
         console.log("Saved default accent color to fix invalid data");
       }
@@ -1158,7 +1187,7 @@ const loadAppSettings = async () => {
 
     // Ensure colorValue is always a valid CSS color string
     if (typeof colorValue !== "string" || !colorValue.startsWith("#")) {
-      colorValue = '#DB2955'; // Fallback to default if invalid
+      colorValue = "#DB2955"; // Fallback to default if invalid
     }
 
     document.documentElement.style.setProperty("--q-primary", colorValue);
@@ -1216,13 +1245,20 @@ const handleModsReorder = async (newOrder: DisplayItem[]) => {
 };
 
 // Function to handle reordering mods within a folder
-const handleFolderModsReorder = async (data: { folderId: string, updatedMods: Mod[] }) => {
-  console.log(`Handling folder mods reorder for folder: ${data.folderId}, mods count: ${data.updatedMods.length}`);
-  
+const handleFolderModsReorder = async (data: {
+  folderId: string;
+  updatedMods: Mod[];
+}) => {
+  console.log(
+    `Handling folder mods reorder for folder: ${data.folderId}, mods count: ${data.updatedMods.length}`
+  );
+
   try {
     await dbService.updateDisplayOrderInFolder(data.folderId, data.updatedMods);
-    console.log(`Successfully updated display order for ${data.updatedMods.length} mods in folder`);    
-    
+    console.log(
+      `Successfully updated display order for ${data.updatedMods.length} mods in folder`
+    );
+
     // Update the local mods array with the new display_order_in_folder values
     data.updatedMods.forEach((updatedMod, index) => {
       const modIndex = mods.value.findIndex((m) => m.id === updatedMod.id);
@@ -1230,7 +1266,7 @@ const handleFolderModsReorder = async (data: { folderId: string, updatedMods: Mo
         mods.value[modIndex].display_order_in_folder = index;
       }
     });
-    
+
     // Force reactivity update
     mods.value = [...mods.value];
   } catch (error) {
@@ -1342,7 +1378,7 @@ onUnmounted(() => {
 .gamebanana-button {
   width: 100%;
   transition: background-color 0.2s ease;
-  border-radius: .5rem;
+  border-radius: 0.5rem;
 }
 
 .main-content-area {

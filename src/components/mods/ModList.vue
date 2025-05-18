@@ -2,7 +2,12 @@
   <div>
     <q-scroll-area style="height: 100%">
       <q-list padding class="phantom-font" style="color: var(--theme-text)">
-        <q-item-label header class="flex justify-between items-center" style="color: var(--theme-text-secondary)" :class="{'compact-mode': compactMode}" >
+        <q-item-label
+          header
+          class="flex justify-between items-center"
+          style="color: var(--theme-text-secondary)"
+          :class="{ 'compact-mode': compactMode }"
+        >
           <div v-if="!compactMode">Mods</div>
           <div class="flex items-center">
             <div class="flex sticky">
@@ -15,7 +20,11 @@
                 class="q-mr-xs"
                 style="color: var(--theme-text-secondary)"
               >
-                <q-tooltip anchor="bottom middle" :offset="[0, 10]" class="phantom-font">
+                <q-tooltip
+                  anchor="bottom middle"
+                  :offset="[0, 10]"
+                  class="phantom-font"
+                >
                   Settings
                 </q-tooltip>
               </q-btn>
@@ -28,7 +37,11 @@
                 class="q-mr-xs"
                 style="color: var(--theme-text-secondary)"
               >
-                <q-tooltip anchor="bottom middle" :offset="[0, 10]" class="phantom-font">
+                <q-tooltip
+                  anchor="bottom middle"
+                  :offset="[0, 10]"
+                  class="phantom-font"
+                >
                   Add Mod
                 </q-tooltip>
               </q-btn>
@@ -42,8 +55,11 @@
                 tooltip="Import Folder of Mods"
                 style="color: var(--theme-text-secondary)"
               >
-            
-                <q-tooltip anchor="bottom middle" :offset="[0, 10]" class="phantom-font">
+                <q-tooltip
+                  anchor="bottom middle"
+                  :offset="[0, 10]"
+                  class="phantom-font"
+                >
                   Bulk Add Mods
                 </q-tooltip>
               </q-btn>
@@ -58,46 +74,55 @@
                 style="color: var(--theme-text-secondary)"
                 v-if="sortBy === 'default' && !searchQuery.trim()"
               >
-            
-                <q-tooltip anchor="bottom middle" :offset="[0, 10]" class="phantom-font">
+                <q-tooltip
+                  anchor="bottom middle"
+                  :offset="[0, 10]"
+                  class="phantom-font"
+                >
                   Create Folder
                 </q-tooltip>
               </q-btn>
             </div>
           </div>
-          <q-input 
-              v-if="!compactMode" 
-              v-model="searchQuery" 
-              dense 
-              placeholder="Search mods" 
-              class="search-input full-width"
-              rounded
-            >
-              <template v-slot:prepend>
-                <q-icon name="search" color="var(--theme-text-secondary)" />
-              </template>
-            </q-input>
+          <q-input
+            v-if="!compactMode"
+            v-model="searchQuery"
+            dense
+            placeholder="Search mods"
+            class="search-input full-width"
+            rounded
+          >
+            <template v-slot:prepend>
+              <q-icon name="search" color="var(--theme-text-secondary)" />
+            </template>
+          </q-input>
         </q-item-label>
 
         <!-- Home button -->
-        <q-item 
-          clickable 
+        <q-item
+          clickable
           v-ripple
           dense
-          @click="$emit('go-home')" 
+          @click="$emit('go-home')"
           class="home-button q-my-sm"
           :active="activePage === 'home'"
           active-class="active-home"
         >
           <q-item-section avatar>
-            <q-icon name="home" style="margin-left: 4px;" />
+            <q-icon name="home" style="margin-left: 4px" />
           </q-item-section>
           <q-item-section>Home</q-item-section>
         </q-item>
-        
+
         <!-- Downloading mods section -->
         <template v-if="Object.keys(downloadingMods).length > 0">
-          <q-item-label header style="color: var(--theme-text-secondary)" v-if="!compactMode"> Downloading </q-item-label>
+          <q-item-label
+            header
+            style="color: var(--theme-text-secondary)"
+            v-if="!compactMode"
+          >
+            Downloading
+          </q-item-label>
           <q-separator spaced v-else />
 
           <DownloadListItem
@@ -115,7 +140,7 @@
           <q-item-label header style="color: var(--theme-text-secondary)">
             Search Results
           </q-item-label>
-          
+
           <!-- Display search results -->
           <div v-if="filteredMods.length > 0">
             <ModListItem
@@ -132,7 +157,7 @@
               @open-mod-folder="$emit('open-mod-folder', mod)"
             />
           </div>
-          
+
           <!-- No results message -->
           <q-item v-else>
             <q-item-section>
@@ -145,17 +170,17 @@
 
         <!-- Installed mods list - show only when not searching -->
         <template v-else>
-          <q-item-label 
-            header 
-            style="color: var(--theme-text-secondary)" 
+          <q-item-label
+            header
+            style="color: var(--theme-text-secondary)"
             v-if="!compactMode"
             class="cursor-pointer"
             @click="showSortMenu"
-          > 
+          >
             {{ sortHeaderText }} <q-icon name="arrow_drop_down" />
           </q-item-label>
           <q-separator spaced v-else />
-          
+
           <!-- Show a regular list (non-draggable) when sorting is applied -->
           <template v-if="sortBy !== 'default'">
             <ModListItem
@@ -172,7 +197,7 @@
               @open-mod-folder="$emit('open-mod-folder', item.data as Mod)"
             />
           </template>
-          
+
           <!-- Use draggable when no sorting is applied -->
           <draggable
             v-else
@@ -209,7 +234,9 @@
 
                 <!-- Show mod if it's not in any folder and is a mod type -->
                 <ModListItem
-                  v-else-if="item.type === 'mod' && !isModInFolder(item.data.id)"
+                  v-else-if="
+                    item.type === 'mod' && !isModInFolder(item.data.id)
+                  "
                   :mod="item.data"
                   :is-active="selectedModId === item.data.id"
                   :compact-mode="compactMode"
@@ -249,7 +276,8 @@
       <div class="text-h6">{{ modToDelete?.name }}</div>
       <div class="text-caption">{{ modToDelete?.path }}</div>
       <p class="text-body2 q-mt-sm">
-        Are you sure you want to remove this mod from Fridaylight? The mod files will remain on your system.
+        Are you sure you want to remove this mod from Fridaylight? The mod files
+        will remain on your system.
       </p>
     </MessageDialog>
 
@@ -266,8 +294,8 @@
     >
       <div class="text-h6">{{ folderToDelete?.name }}</div>
       <p class="text-body2 q-mt-sm">
-        This will only delete the folder. The mods inside will not be
-        deleted but will return to the main mod list.
+        This will only delete the folder. The mods inside will not be deleted
+        but will return to the main mod list.
       </p>
     </MessageDialog>
 
@@ -285,7 +313,8 @@
       <div class="text-h6">{{ modToSuperDelete?.name }}</div>
       <div class="text-caption">{{ modToSuperDelete?.path }}</div>
       <p class="text-body2 q-mt-sm">
-        This will PERMANENTLY DELETE the mod folder and all its contents from your computer. This action cannot be undone!
+        This will PERMANENTLY DELETE the mod folder and all its contents from
+        your computer. This action cannot be undone!
       </p>
     </MessageDialog>
 
@@ -294,7 +323,7 @@
       v-model="showCreateFolderDialog"
       @create-folder="handleCreateFolder"
     />
-    
+
     <!-- Edit Folder Modal -->
     <EditFolderModal
       v-model="showEditFolderDialog"
@@ -344,7 +373,7 @@ const props = defineProps({
 const modsList = ref<Mod[]>([]);
 const foldersList = ref<Folder[]>([]);
 const displayItems = ref<DisplayItem[]>([]);
-const searchQuery = ref('');
+const searchQuery = ref("");
 
 // Create folder dialog state
 const showCreateFolderDialog = ref(false);
@@ -372,46 +401,46 @@ const showSortMenu = (event: MouseEvent) => {
   // Prevent the default click behavior
   event.preventDefault();
   event.stopPropagation();
-  
+
   // Create options for the context menu
   const sortOptions = [
     {
-      icon: 'sort',
-      label: 'Default Order',
-      action: () => setSortOption('default')
+      icon: "sort",
+      label: "Default Order",
+      action: () => setSortOption("default"),
     },
     {
-      icon: 'sort_by_alpha',
-      label: 'Sort by Name',
-      action: () => setSortOption('name')
+      icon: "sort_by_alpha",
+      label: "Sort by Name",
+      action: () => setSortOption("name"),
     },
     {
-      icon: 'date_range',
-      label: 'Sort by Date Added',
-      action: () => setSortOption('date_added')
+      icon: "date_range",
+      label: "Sort by Date Added",
+      action: () => setSortOption("date_added"),
     },
     {
-      icon: 'play_circle',
-      label: 'Sort by Last Played',
-      action: () => setSortOption('last_played')
+      icon: "play_circle",
+      label: "Sort by Last Played",
+      action: () => setSortOption("last_played"),
     },
     { separator: true },
     {
-      icon: sortDirection.value === 'asc' ? 'arrow_upward' : 'arrow_downward',
-      label: sortDirection.value === 'asc' ? 'Ascending' : 'Descending',
-      action: () => toggleSortDirection()
-    }
+      icon: sortDirection.value === "asc" ? "arrow_upward" : "arrow_downward",
+      label: sortDirection.value === "asc" ? "Ascending" : "Descending",
+      action: () => toggleSortDirection(),
+    },
   ];
-  
+
   // Create and dispatch the context menu event
-  const customEvent = new CustomEvent('show-context-menu', {
+  const customEvent = new CustomEvent("show-context-menu", {
     detail: {
       position: { x: event.clientX, y: event.clientY },
-      options: sortOptions
+      options: sortOptions,
     },
-    bubbles: true
+    bubbles: true,
   });
-  
+
   if (event.target) {
     event.target.dispatchEvent(customEvent);
   } else {
@@ -423,14 +452,14 @@ const showSortMenu = (event: MouseEvent) => {
 const setSortOption = (option: string) => {
   sortBy.value = option;
   // Reset to default order when selecting default
-  if (option === 'default') {
+  if (option === "default") {
     updateDisplayItems();
   }
 };
 
 // Toggle sort direction between ascending and descending
 const toggleSortDirection = () => {
-  sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+  sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
 };
 
 const sortedDisplayItems = computed(() => {
@@ -439,16 +468,16 @@ const sortedDisplayItems = computed(() => {
   }
 
   // Filter out only mods (we don't sort folders)
-  const onlyMods = displayItems.value.filter(item => item.type === "mod");
-  
+  const onlyMods = displayItems.value.filter((item) => item.type === "mod");
+
   // Sort the mods based on the selected criteria
   const sortedMods = [...onlyMods].sort((a, b) => {
     let comparison = 0;
-    
+
     if (sortBy.value === "name") {
       // Sort by name (alphabetically)
       comparison = a.data.name.localeCompare(b.data.name);
-    }    else if (sortBy.value === "date_added") {
+    } else if (sortBy.value === "date_added") {
       // Sort by date_added (if available, otherwise by ID which is usually chronological)
       // Type casting to ensure TypeScript knows we're only dealing with mod data
       const modA = a.data as Mod;
@@ -457,8 +486,7 @@ const sortedDisplayItems = computed(() => {
       const dateB = modB.date_added ? modB.date_added : 0;
       // Default sort should be newest first (descending), so we use B - A
       comparison = dateB - dateA;
-    }
-    else if (sortBy.value === "last_played") {
+    } else if (sortBy.value === "last_played") {
       // Sort by last_played timestamp (if available)
       const modA = a.data as Mod;
       const modB = b.data as Mod;
@@ -467,16 +495,16 @@ const sortedDisplayItems = computed(() => {
       // Default sort should be most recently played first (descending), so we use B - A
       comparison = lastPlayedB - lastPlayedA;
     }
-      // For date_added and last_played, we've already set the default comparison to be newest/most recent first
+    // For date_added and last_played, we've already set the default comparison to be newest/most recent first
     // So we invert the sort direction logic for those fields
     if (sortBy.value === "date_added" || sortBy.value === "last_played") {
-      return sortDirection.value === 'desc' ? comparison : -comparison;
+      return sortDirection.value === "desc" ? comparison : -comparison;
     } else {
       // For other fields like name, use the normal sort direction
-      return sortDirection.value === 'asc' ? comparison : -comparison;
+      return sortDirection.value === "asc" ? comparison : -comparison;
     }
   });
-  
+
   return sortedMods;
 });
 
@@ -490,11 +518,12 @@ const filteredMods = computed(() => {
   if (!searchQuery.value.trim()) {
     return getAllMods();
   }
-  
+
   const query = searchQuery.value.toLowerCase().trim();
-  return getAllMods().filter(mod => 
-    mod.name.toLowerCase().includes(query) || 
-    (mod.description && mod.description.toLowerCase().includes(query))
+  return getAllMods().filter(
+    (mod) =>
+      mod.name.toLowerCase().includes(query) ||
+      (mod.description && mod.description.toLowerCase().includes(query))
   );
 });
 
@@ -510,19 +539,23 @@ watch(
           display_order: mod.display_order,
         }))
       );
-      
+
       // Ensure each mod has a valid display_order
-      const modsWithValidOrder = newMods.map(mod => {
+      const modsWithValidOrder = newMods.map((mod) => {
         // If display_order is undefined, null, or the problematic value 9999
-        if (mod.display_order === undefined || mod.display_order === null || mod.display_order === 9999) {
+        if (
+          mod.display_order === undefined ||
+          mod.display_order === null ||
+          mod.display_order === 9999
+        ) {
           // Create a new mod with display_order set to a valid number
           // Use the index in the array as a fallback
-          const index = newMods.findIndex(m => m.id === mod.id);
+          const index = newMods.findIndex((m) => m.id === mod.id);
           return { ...mod, display_order: index >= 0 ? index : 0 };
         }
         return mod;
       });
-      
+
       modsList.value = [...modsWithValidOrder];
     }
   },
@@ -541,15 +574,19 @@ watch(
           display_order: folder.display_order,
         }))
       );
-      
+
       // Ensure each folder has a valid display_order
       const foldersWithValidOrder = newFolders.map((folder, index) => {
-        if (folder.display_order === undefined || folder.display_order === null || folder.display_order === 9999) {
+        if (
+          folder.display_order === undefined ||
+          folder.display_order === null ||
+          folder.display_order === 9999
+        ) {
           return { ...folder, display_order: index };
         }
         return folder;
       });
-      
+
       foldersList.value = [...foldersWithValidOrder];
     }
   },
@@ -614,12 +651,12 @@ const emit = defineEmits([
   "reorder-items",
   "update-folder",
   "update-mod",
-  "reorder-folder-mods", 
-  "open-mod-settings", 
-  "launch-mod", 
-  "super-delete-mod", 
+  "reorder-folder-mods",
+  "open-mod-settings",
+  "launch-mod",
+  "super-delete-mod",
   "open-mod-folder",
-  "go-home"
+  "go-home",
 ]);
 
 const showDeleteDialog = ref(false);
@@ -647,13 +684,15 @@ const confirmDeleteFolder = (folder: Folder) => {
 const deleteMod = () => {
   if (modToDelete.value) {
     // Immediately remove the mod from our local arrays to prevent UI ghosting
-    modsList.value = modsList.value.filter((mod) => mod.id !== modToDelete.value?.id);
-    
+    modsList.value = modsList.value.filter(
+      (mod) => mod.id !== modToDelete.value?.id
+    );
+
     // Update displayItems to remove this mod
     displayItems.value = displayItems.value.filter(
       (item) => !(item.type === "mod" && item.data.id === modToDelete.value?.id)
     );
-    
+
     // Then emit to parent to handle database deletion
     emit("delete-mod", modToDelete.value.id);
     modToDelete.value = null;
@@ -664,18 +703,18 @@ const superDeleteMod = () => {
   if (modToSuperDelete.value) {
     // Get the ID before deleting the reference
     const modId = modToSuperDelete.value.id;
-    
+
     // We'll start by removing the mod from our local arrays to update the UI
     modsList.value = modsList.value.filter((mod) => mod.id !== modId);
-    
+
     // Update displayItems to remove this mod
     displayItems.value = displayItems.value.filter(
       (item) => !(item.type === "mod" && item.data.id === modId)
     );
-    
+
     // Then emit to parent to handle the super delete (physical file deletion)
     emit("super-delete-mod", modId);
-    
+
     // Clean up the reference
     modToSuperDelete.value = null;
   }
@@ -705,13 +744,16 @@ const handleCreateFolder = (folderData: { name: string; color: string }) => {
 const deleteFolder = () => {
   if (folderToDelete.value) {
     // Immediately remove the folder from our local arrays to prevent UI ghosting
-    foldersList.value = foldersList.value.filter((folder) => folder.id !== folderToDelete.value?.id);
-    
+    foldersList.value = foldersList.value.filter(
+      (folder) => folder.id !== folderToDelete.value?.id
+    );
+
     // Update displayItems to remove this folder
     displayItems.value = displayItems.value.filter(
-      (item) => !(item.type === "folder" && item.data.id === folderToDelete.value?.id)
+      (item) =>
+        !(item.type === "folder" && item.data.id === folderToDelete.value?.id)
     );
-    
+
     // Then emit to parent to handle database deletion
     emit("delete-folder", folderToDelete.value.id);
     folderToDelete.value = null;
@@ -812,7 +854,7 @@ const handleFolderModsReorder = (event: {
   // Emit event to update the folder and all mods in a batch operation
   emit("reorder-folder-mods", {
     folderId: event.folderId,
-    updatedMods: event.updatedMods
+    updatedMods: event.updatedMods,
   });
 
   // Update display items
@@ -888,26 +930,32 @@ const handleFolderModsUpdate = (event: {
 };
 
 // Handle saving an edited folder
-const handleSaveFolder = (folderData: { id: string; name: string; color: string }) => {
+const handleSaveFolder = (folderData: {
+  id: string;
+  name: string;
+  color: string;
+}) => {
   // Find the folder index
-  const folderIndex = foldersList.value.findIndex(folder => folder.id === folderData.id);
+  const folderIndex = foldersList.value.findIndex(
+    (folder) => folder.id === folderData.id
+  );
   if (folderIndex === -1) return;
-  
+
   // Create an updated folder object while preserving all existing properties
   const updatedFolder = {
     ...foldersList.value[folderIndex],
     name: folderData.name,
-    color: folderData.color
+    color: folderData.color,
   };
-  
+
   // Update our local folders list
   const newFoldersList = [...foldersList.value];
   newFoldersList[folderIndex] = updatedFolder;
   foldersList.value = newFoldersList;
-  
+
   // Emit the updated folder to the parent component
   emit("update-folder", updatedFolder);
-  
+
   // Update display items to reflect the changes
   updateDisplayItems();
 };
@@ -915,7 +963,7 @@ const handleSaveFolder = (folderData: { id: string; name: string; color: string 
 // Handle context menu actions
 const openModSettings = (mod: Mod) => {
   // This will forward the mod to the parent component which should handle opening the settings modal
-  emit('open-mod-settings', mod);
+  emit("open-mod-settings", mod);
 };
 
 // Handle edit folder action from context menu
@@ -1032,7 +1080,6 @@ const editFolder = (folder: Folder) => {
 
 .search-input :deep(.q-field__native) {
   color: var(--theme-text);
-  
 }
 .search-input :deep(.q-field__marginal) {
   color: var(--theme-text-secondary);

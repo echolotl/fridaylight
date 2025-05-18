@@ -3,7 +3,7 @@
     <!-- Loading overlay shown during initialization -->
     <div class="loading-overlay" v-if="isInitializing">
       <div class="loading-container">
-        <img class="logo"/>
+        <img class="logo" />
         <q-linear-progress
           :value="initProgress"
           size="md"
@@ -11,47 +11,48 @@
           class="q-mt-md"
           color="primary"
         />
-        <div class="text-caption q-mt-sm phantom-font">{{ initStatusText }}</div>
+        <div class="text-caption q-mt-sm phantom-font">
+          {{ initStatusText }}
+        </div>
       </div>
     </div>
     <div v-if="!isInitializing">
-    
-    <Sidebar v-model="sidebarOpen" @resize="handleSidebarResize" />
-    <!-- Engine selection for modpacks from deep links -->
-    <EngineSelectionDialog
-      v-model="showEngineSelectDialog"
-      :compatible-engines="compatibleEngines"
-      :engine-type="currentModpackType"
-      :mod-name="currentModName"
-      @select="onEngineSelected"
-      @cancel="cancelDownload"
-    />
-    
-    <!-- Missing mod path dialog -->
-    <MessageDialog
-      v-model="showModPathMissingDialog"
-      title="Missing Mod"
-      message="The following mod folder no longer exists:"
-      icon="warning"
-      icon-color="negative"
-      confirm-label="Remove From List"
-      confirm-color="negative"
-      @confirm="removeMissingMod"
-    >
-      <div class="text-caption">{{ missingModPath }}</div>
-      <p class="text-body2 q-mt-sm">
-        Would you like to remove this mod from your library?
-      </p>
-    </MessageDialog>
-    
-    <!-- Global Context Menu -->
-    <ContextMenu
-      :visible="showContextMenu"
-      :position="contextMenuPosition"
-      :options="contextMenuOptions"
-      @close="closeContextMenu"
-    />
-  </div>
+      <Sidebar v-model="sidebarOpen" @resize="handleSidebarResize" />
+      <!-- Engine selection for modpacks from deep links -->
+      <EngineSelectionDialog
+        v-model="showEngineSelectDialog"
+        :compatible-engines="compatibleEngines"
+        :engine-type="currentModpackType"
+        :mod-name="currentModName"
+        @select="onEngineSelected"
+        @cancel="cancelDownload"
+      />
+
+      <!-- Missing mod path dialog -->
+      <MessageDialog
+        v-model="showModPathMissingDialog"
+        title="Missing Mod"
+        message="The following mod folder no longer exists:"
+        icon="warning"
+        icon-color="negative"
+        confirm-label="Remove From List"
+        confirm-color="negative"
+        @confirm="removeMissingMod"
+      >
+        <div class="text-caption">{{ missingModPath }}</div>
+        <p class="text-body2 q-mt-sm">
+          Would you like to remove this mod from your library?
+        </p>
+      </MessageDialog>
+
+      <!-- Global Context Menu -->
+      <ContextMenu
+        :visible="showContextMenu"
+        :position="contextMenuPosition"
+        :options="contextMenuOptions"
+        @close="closeContextMenu"
+      />
+    </div>
   </q-layout>
 </template>
 
@@ -70,7 +71,10 @@ import MessageDialog from "./components/modals/MessageDialog.vue";
 import ContextMenu from "./components/common/ContextMenu.vue";
 import { DatabaseService } from "@services/dbService";
 import { StoreService, DEFAULT_SETTINGS } from "@services/storeService";
-import { gamebananaService, setupGameBananaEventListeners } from "@services/gamebananaService";
+import {
+  gamebananaService,
+  setupGameBananaEventListeners,
+} from "@services/gamebananaService";
 import { AppSettings } from "./types";
 
 // Define window.db
@@ -80,7 +84,7 @@ declare global {
   }
 }
 
-// Initialize Quasar 
+// Initialize Quasar
 const $q = useQuasar();
 
 // Ensure Notify is properly registered
@@ -124,15 +128,15 @@ const onEngineSelected = async (engine: any) => {
 
     // Use the gamebananaService to handle modpack download with selected engine
     const result = await gamebananaService.downloadDeepLinkModpackWithEngine(
-      currentDownloadUrl.value, 
-      currentModName.value, 
-      currentModId.value, 
+      currentDownloadUrl.value,
+      currentModName.value,
+      currentModId.value,
       engine
     );
 
     // Close the dialog
     showEngineSelectDialog.value = false;
-    
+
     // Show an error if there was one
     if (!result.success) {
       $q.notify({
@@ -166,18 +170,18 @@ const missingModPath = ref("");
 // Function to remove a mod when it's missing
 const removeMissingMod = async () => {
   if (!missingModPath.value) return;
-  
+
   console.log("Removing missing mod with path:", missingModPath.value);
-  
+
   try {
     // Find mod ID based on path
     const dbService = DatabaseService.getInstance();
     const mod = await dbService.getModByPath(missingModPath.value);
-    
+
     if (mod) {
       // Delete the mod from the database
       await dbService.deleteMod(mod.id);
-      
+
       // Show success notification
       $q.notify({
         type: "positive",
@@ -185,7 +189,7 @@ const removeMissingMod = async () => {
         position: "bottom-right",
         timeout: 3000,
       });
-      
+
       // Refresh the mods list by dispatching an event
       const refreshEvent = new CustomEvent("refresh-mods");
       window.dispatchEvent(refreshEvent);
@@ -198,7 +202,7 @@ const removeMissingMod = async () => {
       type: "negative",
       message: "Failed to remove mod",
       caption: String(error),
-      position: "bottom-right", 
+      position: "bottom-right",
       timeout: 3000,
     });
   } finally {
@@ -225,12 +229,12 @@ onMounted(() => {
   document.addEventListener("contextmenu", (event) => {
     event.preventDefault();
   });
-  
+
   // Listen for custom context menu events
   document.addEventListener("show-context-menu", ((event: CustomEvent) => {
     // Get position and options from the event
     const { position, options } = event.detail;
-    
+
     // Update context menu state
     contextMenuPosition.value = position;
     contextMenuOptions.value = options;
@@ -243,8 +247,11 @@ onUnmounted(() => {
   document.removeEventListener("contextmenu", (event) => {
     event.preventDefault();
   });
-  
-  document.removeEventListener("show-context-menu", (() => {}) as EventListener);
+
+  document.removeEventListener(
+    "show-context-menu",
+    (() => {}) as EventListener
+  );
 });
 
 // Initialize application settings
@@ -410,7 +417,7 @@ const applyTheme = async (themeValue: string | boolean) => {
       // Remove Mica effect for non-standard themes
       try {
         await invoke("remove_mica_theme", {
-          window: "main", 
+          window: "main",
         });
         console.log("Removed Mica effect for theme:", activeThemeValue);
       } catch (error) {
@@ -482,7 +489,7 @@ const getThemePreference = async (): Promise<string> => {
     return "dark"; // Default to dark theme
   } catch (error) {
     console.error("Error fetching theme preference:", error);
-    return "dark"; // Default to dark theme 
+    return "dark"; // Default to dark theme
   }
 };
 
@@ -500,10 +507,13 @@ const processDeepLinkModDownload = async (
     });
 
     // Use the gamebananaService to handle the deep link download
-    const result = await gamebananaService.downloadModFromDeepLink(downloadUrl, modId);
-    
+    const result = await gamebananaService.downloadModFromDeepLink(
+      downloadUrl,
+      modId
+    );
+
     // Type guard to check if we need to show the engine selection dialog
-    if ('showEngineSelectDialog' in result && result.showEngineSelectDialog) {
+    if ("showEngineSelectDialog" in result && result.showEngineSelectDialog) {
       // Show the engine selection dialog with the data from the result
       compatibleEngines.value = result.compatibleEngines;
       currentModpackType.value = result.modpackType;
@@ -511,7 +521,7 @@ const processDeepLinkModDownload = async (
       currentDownloadUrl.value = result.downloadUrl;
       currentModId.value = result.modId;
       showEngineSelectDialog.value = true;
-    } else if ('success' in result) {
+    } else if ("success" in result) {
       // Handle regular operation result
       if (!result.success && result.error) {
         $q.notify({
@@ -544,11 +554,11 @@ onMounted(async () => {
   try {
     // Set up download event listeners
     cleanupEventListeners = setupGameBananaEventListeners();
-    
+
     // Update progress bar - Step 1: Initialize deep link handler
     initStatusText.value = "Setting up deep link handler...";
     initProgress.value = 0.1;
-    
+
     // Set up deep link handler
     onOpenUrl(async (url) => {
       console.log("Deep link received:", url[0]);
@@ -598,7 +608,7 @@ onMounted(async () => {
     // Update progress bar - Step 2: Initialize database
     initStatusText.value = "Initializing database...";
     initProgress.value = 0.2;
-    
+
     // Initialize the database service
     const dbService = DatabaseService.getInstance();
     await dbService.initialize();
@@ -620,7 +630,7 @@ onMounted(async () => {
     // Update progress bar - Step 3: Load mods
     initStatusText.value = "Loading mods...";
     initProgress.value = 0.4;
-    
+
     // Load mods from the database
     const mods = await dbService.getAllMods();
     console.log("Loaded mods from database:", mods);
@@ -634,7 +644,7 @@ onMounted(async () => {
     // Update progress bar - Step 4: Apply theme
     initStatusText.value = "Applying theme...";
     initProgress.value = 0.6;
-    
+
     // Apply initial theme based on system or user preference
     const useSystemTheme = await getUseSystemThemeSetting();
     if (useSystemTheme) {
@@ -653,7 +663,7 @@ onMounted(async () => {
     // Update progress bar - Step 5: Load settings
     initStatusText.value = "Loading settings...";
     initProgress.value = 0.8;
-    
+
     // Load app settings
     await loadAppSettings();
 
@@ -671,15 +681,14 @@ onMounted(async () => {
     // Update progress bar - Step 6: Check for updates
     initStatusText.value = "Checking for updates...";
     initProgress.value = 0.9;
-    
+
     // Check for updates
     try {
       const updateResult = await check();
       if (updateResult !== null) {
-
         // Update progress bar - Updates available
         initStatusText.value = "Installing update...";
-        
+
         // Install the update if there is one
         await updateResult.downloadAndInstall((event) => {
           switch (event.event) {
@@ -692,7 +701,7 @@ onMounted(async () => {
               let percent = contentLength
                 ? Math.round((downloaded / contentLength) * 100)
                 : 0;
-              initProgress.value = 0.9 + (percent / 1000);
+              initProgress.value = 0.9 + percent / 1000;
               break;
             case "Finished":
               initProgress.value = 1.0;
@@ -711,34 +720,34 @@ onMounted(async () => {
     // Update progress bar - Step 7: Complete
     initStatusText.value = "Ready!";
     initProgress.value = 1.0;
-    
+
     // Hide the loading overlay after a small delay to ensure transitions are smooth
     setTimeout(() => {
       isInitializing.value = false;
     }, 500);
-    
+
     console.log("App initialized and database tables updated");
   } catch (error) {
     console.error("Failed to initialize database:", error);
-    
+
     // Update progress bar with error state
     initStatusText.value = "Error during initialization: " + String(error);
     initProgress.value = 1.0;
-    
+
     // Hide the loading overlay after a delay
     setTimeout(() => {
       isInitializing.value = false;
     }, 2000);
-onUnmounted(() => {
-  // Clean up the event listener for system theme changes
-  const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
-  mediaQuery.removeEventListener("change", handleSystemThemeChange);
-  
-  // Clean up download event listeners
-  if (typeof cleanupEventListeners === "function") {
-    cleanupEventListeners();
-  }
-});
+    onUnmounted(() => {
+      // Clean up the event listener for system theme changes
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+      mediaQuery.removeEventListener("change", handleSystemThemeChange);
+
+      // Clean up download event listeners
+      if (typeof cleanupEventListeners === "function") {
+        cleanupEventListeners();
+      }
+    });
   }
 });
 </script>
@@ -788,7 +797,6 @@ body {
   background-color: var(--theme-text);
   image-rendering: optimizeQuality;
 }
-
 
 loading-container h2 {
   margin-top: 0;

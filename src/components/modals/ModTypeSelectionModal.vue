@@ -7,19 +7,21 @@
   >
     <q-card class="mod-type-selection-modal phantom-font">
       <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6 phantom-font-difficulty">Select Type for "{{ currentModName }}"</div>
+        <div class="text-h6 phantom-font-difficulty">
+          Select Type for "{{ currentModName }}"
+        </div>
         <q-space />
         <q-btn icon="close" flat round dense v-close-popup @click="cancel" />
       </q-card-section>
 
       <q-card-section>
         <p>What type of mod are you downloading?</p>
-        
+
         <div class="mod-types-grid">
           <!-- Standalone Executable Option -->
-          <q-card 
-            class="mod-type-card" 
-            :class="{ 'selected': selectedType === 'executable' }"
+          <q-card
+            class="mod-type-card"
+            :class="{ selected: selectedType === 'executable' }"
             @click="selectedType = 'executable'"
           >
             <q-card-section class="text-center">
@@ -32,119 +34,175 @@
           </q-card>
 
           <!-- Psych Engine Modpack Option -->
-          <q-card 
-            class="mod-type-card" 
-            :class="{ 
-              'selected': selectedType === 'psych',
-              'disabled-card': !engineAvailability.psychCount
+          <q-card
+            class="mod-type-card"
+            :class="{
+              selected: selectedType === 'psych',
+              'disabled-card': !engineAvailability.psychCount,
             }"
-            @click="engineAvailability.psychCount ? selectedType = 'psych' : null"
+            @click="
+              engineAvailability.psychCount ? (selectedType = 'psych') : null
+            "
           >
             <q-card-section class="text-center">
-              <img src="/images/engine_icons/Psych.webp" alt="Psych Engine" class="engine-icon" />
+              <img
+                src="/images/engine_icons/Psych.webp"
+                alt="Psych Engine"
+                class="engine-icon"
+              />
               <div class="mod-type-name phantom-font-display">Psych Engine</div>
               <div class="mod-type-description">
-                {{ engineAvailability.psychCount ? 
-                   `A modpack for the Psych Engine` : 
-                   'No Psych Engine installations found' }}
+                {{
+                  engineAvailability.psychCount
+                    ? `A modpack for the Psych Engine`
+                    : "No Psych Engine installations found"
+                }}
               </div>
             </q-card-section>
           </q-card>
 
           <!-- V-Slice Modpack Option -->
-          <q-card 
-            class="mod-type-card" 
-            :class="{ 
-              'selected': selectedType === 'vanilla',
-              'disabled-card': !engineAvailability.vanillaCount
+          <q-card
+            class="mod-type-card"
+            :class="{
+              selected: selectedType === 'vanilla',
+              'disabled-card': !engineAvailability.vanillaCount,
             }"
-            @click="engineAvailability.vanillaCount ? selectedType = 'vanilla' : null"
+            @click="
+              engineAvailability.vanillaCount
+                ? (selectedType = 'vanilla')
+                : null
+            "
           >
             <q-card-section class="text-center">
-              <img src="/images/engine_icons/Vanilla.webp" alt="V-Slice" class="engine-icon" />
+              <img
+                src="/images/engine_icons/Vanilla.webp"
+                alt="V-Slice"
+                class="engine-icon"
+              />
               <div class="mod-type-name phantom-font-display">V-Slice</div>
               <div class="mod-type-description">
-                {{ engineAvailability.vanillaCount ? 
-                   `A modpack for V-Slice` : 
-                   'No V-Slice installations found' }}
+                {{
+                  engineAvailability.vanillaCount
+                    ? `A modpack for V-Slice`
+                    : "No V-Slice installations found"
+                }}
               </div>
             </q-card-section>
           </q-card>
 
           <!-- FPS Plus Modpack Option -->
-          <q-card 
-            class="mod-type-card" 
-            :class="{ 
-              'selected': selectedType === 'fps-plus',
-              'disabled-card': !engineAvailability.fpsPlusCount
+          <q-card
+            class="mod-type-card"
+            :class="{
+              selected: selectedType === 'fps-plus',
+              'disabled-card': !engineAvailability.fpsPlusCount,
             }"
-            @click="engineAvailability.fpsPlusCount ? selectedType = 'fps-plus' : null"
+            @click="
+              engineAvailability.fpsPlusCount
+                ? (selectedType = 'fps-plus')
+                : null
+            "
           >
             <q-card-section class="text-center">
-              <img src="/images/engine_icons/Fps-plus.webp" alt="FPS Plus" class="engine-icon" />
+              <img
+                src="/images/engine_icons/Fps-plus.webp"
+                alt="FPS Plus"
+                class="engine-icon"
+              />
               <div class="mod-type-name phantom-font-display">FPS Plus</div>
               <div class="mod-type-description">
-                {{ engineAvailability.fpsPlusCount ? 
-                   `A modpack for FPS Plus` : 
-                   'No FPS Plus installations found' }}
+                {{
+                  engineAvailability.fpsPlusCount
+                    ? `A modpack for FPS Plus`
+                    : "No FPS Plus installations found"
+                }}
               </div>
             </q-card-section>
           </q-card>
 
           <!-- Codename Engine Modpack Option -->
-          <q-card 
-            class="mod-type-card" 
-            :class="{ 
-              'selected': selectedType === 'codename',
-              'disabled-card': !engineAvailability.codenameCount
+          <q-card
+            class="mod-type-card"
+            :class="{
+              selected: selectedType === 'codename',
+              'disabled-card': !engineAvailability.codenameCount,
             }"
-            @click="engineAvailability.codenameCount ? selectedType = 'codename' : null"
+            @click="
+              engineAvailability.codenameCount
+                ? (selectedType = 'codename')
+                : null
+            "
           >
             <q-card-section class="text-center">
-              <img src="/images/engine_icons/Codename.webp" alt="Codename Engine" class="engine-icon" />
+              <img
+                src="/images/engine_icons/Codename.webp"
+                alt="Codename Engine"
+                class="engine-icon"
+              />
               <div class="mod-type-name phantom-font-display">Codename</div>
               <div class="mod-type-description">
-                {{ engineAvailability.codenameCount ? 
-                   `A modpack for the Codename Engine` : 
-                   'No Codename Engine installations found' }}
+                {{
+                  engineAvailability.codenameCount
+                    ? `A modpack for the Codename Engine`
+                    : "No Codename Engine installations found"
+                }}
               </div>
             </q-card-section>
           </q-card>
         </div>
 
         <!-- Engine list selection (shown when a modpack type is selected) -->
-        <div v-if="selectedType !== 'executable' && compatibleEngines.length > 0" class="q-mt-lg">
-          <p>Select which {{ formatEngineType(selectedType) }} installation to install this modpack to:</p>
-          
+        <div
+          v-if="selectedType !== 'executable' && compatibleEngines.length > 0"
+          class="q-mt-lg"
+        >
+          <p>
+            Select which {{ formatEngineType(selectedType) }} installation to
+            install this modpack to:
+          </p>
+
           <q-list bordered separator class="rounded-borders">
-            <q-item 
-              v-for="engine in compatibleEngines" 
+            <q-item
+              v-for="engine in compatibleEngines"
               :key="engine.id"
-              clickable 
+              clickable
               v-ripple
-              :active="selectedEngine?.id === engine.id" 
+              :active="selectedEngine?.id === engine.id"
               @click="selectedEngine = engine"
               active-class="selected-engine"
               class="engine-item"
             >
               <q-item-section avatar>
                 <q-avatar>
-                  <img :src="engine.icon_data || `/images/engine_icons/${engine.engine?.engine_type || engine.engine_type}.webp`" 
-                       onerror="this.src='/images/engine_icons/Psych.webp'">
+                  <img
+                    :src="
+                      engine.icon_data ||
+                      `/images/engine_icons/${
+                        engine.engine?.engine_type || engine.engine_type
+                      }.webp`
+                    "
+                    onerror="this.src='/images/engine_icons/Psych.webp'"
+                  />
                 </q-avatar>
               </q-item-section>
-              
+
               <q-item-section>
                 <q-item-label>{{ engine.name }}</q-item-label>
-                <q-item-label caption class="engine-path-caption">{{ engine.path }}</q-item-label>
+                <q-item-label caption class="engine-path-caption">{{
+                  engine.path
+                }}</q-item-label>
               </q-item-section>
             </q-item>
           </q-list>
-            <!-- Installation path preview -->
+          <!-- Installation path preview -->
           <div class="text-caption q-mt-sm" v-if="selectedEngine">
-                        <!-- Codename Engine Addon Option -->
+            <!-- Codename Engine Addon Option -->
             <div v-if="isCodename" class="q-pt-none q-mb-md">
-              <q-toggle v-model="isAddon" label="Install as Addon (will run on all mods)" />
+              <q-toggle
+                v-model="isAddon"
+                label="Install as Addon (will run on all mods)"
+              />
             </div>
             <p>The modpack will be installed to:</p>
             <code>{{ getInstallPath() }}</code>
@@ -154,23 +212,29 @@
 
       <q-card-actions align="right">
         <q-btn flat label="Back" color="primary" @click="back" />
-        <q-btn flat label="Download" color="primary" @click="onSubmit" :disable="!isFormValid" />
+        <q-btn
+          flat
+          label="Download"
+          color="primary"
+          @click="onSubmit"
+          :disable="!isFormValid"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, reactive } from 'vue';
-import { invoke } from '@tauri-apps/api/core';
-import { sep } from '@tauri-apps/api/path';
+import { ref, computed, watch, onMounted, reactive } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import { sep } from "@tauri-apps/api/path";
 
 // Engine availability tracking
 const engineAvailability = reactive({
   psychCount: 0,
   vanillaCount: 0,
   fpsPlusCount: 0,
-  codenameCount: 0
+  codenameCount: 0,
 });
 
 interface EngineMod {
@@ -190,21 +254,21 @@ interface EngineMod {
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    default: false
+    default: false,
   },
   modData: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
-const emit = defineEmits(['update:modelValue', 'submit', 'back', 'cancel']);
+const emit = defineEmits(["update:modelValue", "submit", "back", "cancel"]);
 
 // Dialog state
 const isOpen = ref(props.modelValue);
 
 // Selection state
-const selectedType = ref('executable');
+const selectedType = ref("executable");
 const selectedEngine = ref<EngineMod | null>(null);
 const compatibleEngines = ref<EngineMod[]>([]);
 const allEngines = ref<EngineMod[]>([]);
@@ -212,45 +276,48 @@ const isAddon = ref(false);
 
 // Computed property to check if selected type is Codename Engine
 const isCodename = computed(() => {
-  return selectedType.value === 'codename';
+  return selectedType.value === "codename";
 });
 
 // Computed property to check if form is valid
 const isFormValid = computed(() => {
-  if (selectedType.value === 'executable') {
+  if (selectedType.value === "executable") {
     return true;
   }
   return !!selectedEngine.value;
 });
 
 // Watch for changes in props
-watch(() => props.modelValue, (val) => {
-  isOpen.value = val;
-  
-  // When dialog opens, load all engines to check availability and reset state
-  if (val) {
-    loadAllEngines();
-    isAddon.value = false;
+watch(
+  () => props.modelValue,
+  (val) => {
+    isOpen.value = val;
+
+    // When dialog opens, load all engines to check availability and reset state
+    if (val) {
+      loadAllEngines();
+      isAddon.value = false;
+    }
   }
-});
+);
 
 // Watch for changes in isOpen
 watch(isOpen, (val) => {
-  emit('update:modelValue', val);
+  emit("update:modelValue", val);
 });
 
 // Watch for changes in selectedType
 watch(selectedType, async (newType) => {
-  if (newType !== 'executable') {
+  if (newType !== "executable") {
     await loadCompatibleEngines(newType);
   } else {
     // Clear selection when switching to executable type
     selectedEngine.value = null;
     compatibleEngines.value = [];
   }
-  
+
   // Reset addon flag when changing type
-  if (newType !== 'codename') {
+  if (newType !== "codename") {
     isAddon.value = false;
   }
 });
@@ -268,33 +335,33 @@ const loadAllEngines = async () => {
     engineAvailability.vanillaCount = 0;
     engineAvailability.fpsPlusCount = 0;
     engineAvailability.codenameCount = 0;
-    
+
     // Fetch all mods
     if (window.db && window.db.service) {
       allEngines.value = await window.db.service.getAllMods();
     } else {
       allEngines.value = await invoke<EngineMod[]>("get_mods");
     }
-    
+
     // Count engines of each type
-    allEngines.value.forEach(mod => {
+    allEngines.value.forEach((mod) => {
       const engineType = getEngineType(mod).toLowerCase();
       switch (engineType) {
-        case 'psych':
+        case "psych":
           engineAvailability.psychCount++;
           break;
-        case 'vanilla':
+        case "vanilla":
           engineAvailability.vanillaCount++;
           break;
-        case 'fps-plus':
+        case "fps-plus":
           engineAvailability.fpsPlusCount++;
           break;
-        case 'codename':
+        case "codename":
           engineAvailability.codenameCount++;
           break;
       }
     });
-    
+
     console.log("Engine availability:", engineAvailability);
   } catch (error) {
     console.error("Failed to load all engines:", error);
@@ -308,9 +375,9 @@ const getEngineType = (mod: EngineMod): string => {
   if (mod.engine && mod.engine.engine_type) {
     return mod.engine.engine_type;
   }
-  
+
   // If no engine type found, return unknown
-  return 'unknown';
+  return "unknown";
 };
 
 // Load compatible engines based on the selected type
@@ -318,7 +385,7 @@ const loadCompatibleEngines = async (engineType: string) => {
   try {
     // Filter allEngines if we've already loaded them
     if (allEngines.value.length > 0) {
-      compatibleEngines.value = allEngines.value.filter(mod => {
+      compatibleEngines.value = allEngines.value.filter((mod) => {
         const modEngineType = getEngineType(mod).toLowerCase();
         return modEngineType === engineType.toLowerCase();
       });
@@ -332,7 +399,7 @@ const loadCompatibleEngines = async (engineType: string) => {
       }
 
       // Filter mods by engine type
-      compatibleEngines.value = mods.filter(mod => {
+      compatibleEngines.value = mods.filter((mod) => {
         const modEngineType = getEngineType(mod).toLowerCase();
         return modEngineType === engineType.toLowerCase();
       });
@@ -353,14 +420,19 @@ const loadCompatibleEngines = async (engineType: string) => {
 
 // Format engine type for display
 const formatEngineType = (engineType: string | null): string => {
-  if (!engineType) return 'Unknown';
-  
-  switch(engineType.toLowerCase()) {
-    case 'psych': return 'Psych Engine';
-    case 'vanilla': return 'V-Slice';
-    case 'fps-plus': return 'FPS Plus';
-    case 'codename': return 'Codename Engine';
-    default: return engineType.charAt(0).toUpperCase() + engineType.slice(1);
+  if (!engineType) return "Unknown";
+
+  switch (engineType.toLowerCase()) {
+    case "psych":
+      return "Psych Engine";
+    case "vanilla":
+      return "V-Slice";
+    case "fps-plus":
+      return "FPS Plus";
+    case "codename":
+      return "Codename Engine";
+    default:
+      return engineType.charAt(0).toUpperCase() + engineType.slice(1);
   }
 };
 
@@ -368,64 +440,68 @@ const formatEngineType = (engineType: string | null): string => {
 const getModsFolderPath = (engineMod: EngineMod): string => {
   // Get base directory first in all cases
   const basePath = engineMod.path;
-  const executablePath = engineMod.executable_path || '';
-  
-  if (!basePath) return 'Unknown path';
-  
+  const executablePath = engineMod.executable_path || "";
+
+  if (!basePath) return "Unknown path";
+
   // Get parent directory of executable if it exists
   let baseDir = basePath;
   if (executablePath) {
     // Extract the directory from the executable path
-    const lastSlashIndex = executablePath.lastIndexOf('/');
+    const lastSlashIndex = executablePath.lastIndexOf("/");
     if (lastSlashIndex > 0) {
       baseDir = executablePath.substring(0, lastSlashIndex);
     } else {
-      const lastBackslashIndex = executablePath.lastIndexOf('\\');
+      const lastBackslashIndex = executablePath.lastIndexOf("\\");
       if (lastBackslashIndex > 0) {
         baseDir = executablePath.substring(0, lastBackslashIndex);
       }
     }
   }
-  
+
   // Then check if the engine has a specified custom mods folder path
-  if (engineMod.engine && engineMod.engine.mods_folder && engineMod.engine.mods_folder_path) {
+  if (
+    engineMod.engine &&
+    engineMod.engine.mods_folder &&
+    engineMod.engine.mods_folder_path
+  ) {
     // Combine the base directory with the custom mods folder path
     return `${baseDir}${sep()}${engineMod.engine.mods_folder_path}`;
   }
-  
+
   // If no custom path specified, use default mods folder
   return `${baseDir}${sep()}mods`;
 };
 
 // Get the installation path based on engine type and addon setting
 const getInstallPath = (): string => {
-  if (!selectedEngine.value) return 'Unknown path';
-  
+  if (!selectedEngine.value) return "Unknown path";
+
   // If it's a Codename Engine addon, use addons folder instead of mods
   if (isCodename.value && isAddon.value) {
     const basePath = selectedEngine.value.path;
-    const executablePath = selectedEngine.value.executable_path || '';
-    
-    if (!basePath) return 'Unknown path';
-    
+    const executablePath = selectedEngine.value.executable_path || "";
+
+    if (!basePath) return "Unknown path";
+
     // Get parent directory of executable if it exists
     let baseDir = basePath;
     if (executablePath) {
       // Extract the directory from the executable path
-      const lastSlashIndex = executablePath.lastIndexOf('/');
+      const lastSlashIndex = executablePath.lastIndexOf("/");
       if (lastSlashIndex > 0) {
         baseDir = executablePath.substring(0, lastSlashIndex);
       } else {
-        const lastBackslashIndex = executablePath.lastIndexOf('\\');
+        const lastBackslashIndex = executablePath.lastIndexOf("\\");
         if (lastBackslashIndex > 0) {
           baseDir = executablePath.substring(0, lastBackslashIndex);
         }
       }
     }
-    
+
     return `${baseDir}${sep()}addons`;
   }
-  
+
   // Otherwise use the regular mods folder path
   return getModsFolderPath(selectedEngine.value);
 };
@@ -433,22 +509,22 @@ const getInstallPath = (): string => {
 // Form submission
 const onSubmit = () => {
   if (isFormValid.value) {
-    emit('submit', {
+    emit("submit", {
       modType: selectedType.value,
       engineMod: selectedEngine.value,
-      isAddon: isCodename.value ? isAddon.value : false
+      isAddon: isCodename.value ? isAddon.value : false,
     });
   }
 };
 
 // Go back to the previous modal
 const back = () => {
-  emit('back');
+  emit("back");
 };
 
 // Cancel form
 const cancel = () => {
-  emit('cancel');
+  emit("cancel");
 };
 
 // Type declaration for window.db
@@ -459,14 +535,17 @@ declare global {
 }
 
 // Watch for modData changes to populate with mod information
-watch(() => props.modData, (newModData) => {
-  if (newModData && Object.keys(newModData).length > 0) {
-    console.log("Received mod data in ModTypeSelectionModal:", newModData);
-    currentModName.value = newModData.name || 'Unknown Mod';
+watch(
+  () => props.modData,
+  (newModData) => {
+    if (newModData && Object.keys(newModData).length > 0) {
+      console.log("Received mod data in ModTypeSelectionModal:", newModData);
+      currentModName.value = newModData.name || "Unknown Mod";
+    }
   }
-});
+);
 
-const currentModName = ref<string>('Unknown Mod');
+const currentModName = ref<string>("Unknown Mod");
 </script>
 
 <style scoped>
@@ -502,7 +581,7 @@ const currentModName = ref<string>('Unknown Mod');
 
 .mod-type-card.selected {
   border-color: var(--q-primary);
-    background-color: var(--solid);
+  background-color: var(--solid);
 }
 
 .disabled-card {
@@ -539,7 +618,7 @@ const currentModName = ref<string>('Unknown Mod');
 }
 
 .engine-path-caption {
-  color: var(--theme-text-secondary) ;
+  color: var(--theme-text-secondary);
 }
 
 .selected-engine .q-item__label {
@@ -564,7 +643,7 @@ code {
 }
 
 /* Field styling */
-:deep(.q-field__native), 
+:deep(.q-field__native),
 :deep(.q-field__input) {
   color: var(--theme-text) !important;
 }

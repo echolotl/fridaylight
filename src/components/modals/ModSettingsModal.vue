@@ -59,7 +59,7 @@
               class="q-mb-md"
               placeholder="e.g. 1.0.0"
             />
-            
+
             <div class="danger-zone q-mt-lg">
               <q-separator class="q-my-md" />
               <div class="text-subtitle1 q-mb-md">Danger Zone</div>
@@ -71,10 +71,14 @@
                 @click="showRemoveDialog = true"
                 outline
               />
-              <div class="text-caption q-mt-sm" style="color: var(--theme-text-secondary)">
-                This will remove the mod from Fridaylight but keep the files on your system.
+              <div
+                class="text-caption q-mt-sm"
+                style="color: var(--theme-text-secondary)"
+              >
+                This will remove the mod from Fridaylight but keep the files on
+                your system.
               </div>
-              
+
               <q-btn
                 color="negative"
                 icon="delete_forever"
@@ -83,9 +87,14 @@
                 @click="showSuperDeleteDialog = true"
                 outline
               />
-              <div class="text-caption q-mt-sm" style="color: var(--theme-text-secondary)">
-                This will <span class="text-negative text-bold">permanently delete</span> the mod folder and all its contents from your computer.
-                This action cannot be undone!
+              <div
+                class="text-caption q-mt-sm"
+                style="color: var(--theme-text-secondary)"
+              >
+                This will
+                <span class="text-negative text-bold">permanently delete</span>
+                the mod folder and all its contents from your computer. This
+                action cannot be undone!
               </div>
             </div>
           </q-card-section>
@@ -237,10 +246,7 @@
             <div class="icon-upload q-mb-md">
               <div class="text-subtitle2 q-mb-sm">Mod Icon</div>
               <div class="icon-preview" v-if="iconPreview || form.icon_data">
-                <img
-                  :src="iconPreview || form.icon_data"
-                  alt="Mod Icon"
-                />
+                <img :src="iconPreview || form.icon_data" alt="Mod Icon" />
               </div>
               <div class="icon-placeholder" v-else>
                 <q-icon name="image" size="48px" />
@@ -269,7 +275,6 @@
                 @click="removeIcon"
               />
             </div>
-
 
             <div class="banner-upload q-mb-md">
               <div class="text-subtitle2 q-mb-sm">Banner Image</div>
@@ -346,7 +351,7 @@
                 class="q-mt-sm"
                 @click="removeLogo"
               />
-              
+
               <q-select
                 v-if="logoPreview || form.logo_data"
                 v-model="form.logo_position"
@@ -359,7 +364,6 @@
                 hint="Position of the logo in the banner"
               />
             </div>
-            
           </q-card-section>
         </q-scroll-area>
       </div>
@@ -387,12 +391,13 @@
     confirm-color="negative"
     @confirm="removeMod"
   >
-  <div class="text-h6">{{ form.name }}</div>
-  <div class="text-caption">{{ form.path }}</div>
-  <p class="text-body2 q-mt-sm">
-        Are you sure you want to remove this mod from Fridaylight? The mod files will remain on your system.
-      </p>
-</MessageDialog>
+    <div class="text-h6">{{ form.name }}</div>
+    <div class="text-caption">{{ form.path }}</div>
+    <p class="text-body2 q-mt-sm">
+      Are you sure you want to remove this mod from Fridaylight? The mod files
+      will remain on your system.
+    </p>
+  </MessageDialog>
 
   <!-- Super Delete Mod Confirmation Dialog -->
   <MessageDialog
@@ -407,8 +412,9 @@
     <div class="text-h6">{{ form.name }}</div>
     <div class="text-caption">{{ form.path }}</div>
     <p class="text-body2 q-mt-sm">
-        This will PERMANENTLY DELETE the mod folder and all its contents from your computer. This action cannot be undone!
-      </p>
+      This will PERMANENTLY DELETE the mod folder and all its contents from your
+      computer. This action cannot be undone!
+    </p>
   </MessageDialog>
 </template>
 
@@ -436,7 +442,7 @@ const emit = defineEmits([
   "change-folder",
   "select-executable",
   "delete-mod",
-  "super-delete-mod"
+  "super-delete-mod",
 ]);
 
 const form = ref<Mod>({
@@ -537,7 +543,7 @@ watch(
       logoPreview.value = form.value.logo_data || null;
       engineIconPreview.value = form.value.engine?.engine_icon || null;
       iconPreview.value = form.value.icon_data || null;
-      
+
       bannerFile.value = null; // Clear file input ref
       logoFile.value = null; // Clear file input ref
       engineIconFile.value = null; // Clear file input ref
@@ -764,7 +770,7 @@ const handleSelectExecutableClick = () => {
   });
 };
 
-const handleOpenFileLocationClick = async ( path: string ) => {
+const handleOpenFileLocationClick = async (path: string) => {
   await revealItemInDir(path);
 };
 </script>
@@ -855,7 +861,6 @@ const handleOpenFileLocationClick = async ( path: string ) => {
   object-fit: contain;
   border-radius: 4px;
 }
-
 
 .icon-placeholder {
   display: flex;

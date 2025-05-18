@@ -1,6 +1,9 @@
 <template>
   <div class="engine-download">
-    <h6 class="phantom-font-difficulty q-mb-md"> Engine Downloads <hr/></h6>
+    <h6 class="phantom-font-difficulty q-mb-md">
+      Engine Downloads
+      <hr />
+    </h6>
     <div class="engine-download-buttons text-center">
       <q-btn
         flat
@@ -8,23 +11,35 @@
         @click="$emit('download-engine', 'psych')"
         class="engine-btn"
       >
-      <img src="/images/engine_icons/Psych.webp" alt="Psych Engine" class="engine-icon" />
-    </q-btn>
+        <img
+          src="/images/engine_icons/Psych.webp"
+          alt="Psych Engine"
+          class="engine-icon"
+        />
+      </q-btn>
       <q-btn
         flat
         label="V-Slice"
         @click="$emit('download-engine', 'vanilla')"
         class="engine-btn"
       >
-      <img src="/images/engine_icons/Vanilla.webp" alt="V-Slice" class="engine-icon" />
-    </q-btn>
+        <img
+          src="/images/engine_icons/Vanilla.webp"
+          alt="V-Slice"
+          class="engine-icon"
+        />
+      </q-btn>
       <q-btn
         flat
         label="FPS Plus (7.1.0)"
         @click="$emit('download-engine', 'fps-plus')"
         class="engine-btn"
       >
-        <img src="/images/engine_icons/Fps-plus.webp" alt="FPS Plus" class="engine-icon" />
+        <img
+          src="/images/engine_icons/Fps-plus.webp"
+          alt="FPS Plus"
+          class="engine-icon"
+        />
       </q-btn>
       <q-btn
         flat
@@ -32,9 +47,12 @@
         @click="$emit('download-engine', 'codename')"
         class="engine-btn"
       >
-        <img src="/images/engine_icons/Codename.webp" alt="Codename Engine" class="engine-icon" />
-    
-    </q-btn>
+        <img
+          src="/images/engine_icons/Codename.webp"
+          alt="Codename Engine"
+          class="engine-icon"
+        />
+      </q-btn>
     </div>
     <q-expansion-item class="more-engines" dense>
       <template v-slot:header>
@@ -43,16 +61,25 @@
         </div>
       </template>
       <div class="more-engines-content">
-        None yet, but you can help suggest what engines to include on the <span @click="openUrl('https://github.com/echolotl/fridaylight')" style="cursor: pointer; text-decoration: underline; color: var(--q-primary)">Github</span>!
+        None yet, but you can help suggest what engines to include on the
+        <span
+          @click="openUrl('https://github.com/echolotl/fridaylight')"
+          style="
+            cursor: pointer;
+            text-decoration: underline;
+            color: var(--q-primary);
+          "
+          >Github</span
+        >!
       </div>
     </q-expansion-item>
   </div>
 </template>
 
 <script setup lang="ts">
-import { openUrl } from '@tauri-apps/plugin-opener';
+import { openUrl } from "@tauri-apps/plugin-opener";
 
-defineEmits(['download-engine']);
+defineEmits(["download-engine"]);
 </script>
 
 <style scoped>

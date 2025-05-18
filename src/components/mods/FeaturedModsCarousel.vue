@@ -81,7 +81,8 @@
                     {{ shortenDescription(mod.description) }}
                   </div>
 
-                  <div class="featured-stats-container">                    <q-btn
+                  <div class="featured-stats-container">
+                    <q-btn
                       color="primary"
                       label="Download"
                       class="featured-btn q-mt-sm"

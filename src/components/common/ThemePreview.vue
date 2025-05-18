@@ -6,32 +6,67 @@
       </div>
       <div class="window-content">
         <div class="sidebar" :class="compactMode ? 'compact' : ''">
-          <div class="sidebar-item active" :class="compactMode ? 'compact' : ''">
-            <div class="sidebar-icon" :style="{ backgroundColor: accentColor }"></div>
+          <div
+            class="sidebar-item active"
+            :class="compactMode ? 'compact' : ''"
+          >
+            <div
+              class="sidebar-icon"
+              :style="{ backgroundColor: accentColor }"
+            ></div>
           </div>
           <div class="sidebar-item" :class="compactMode ? 'compact' : ''">
-            <div class="sidebar-icon" :style="{ backgroundColor: accentColor }"></div>
+            <div
+              class="sidebar-icon"
+              :style="{ backgroundColor: accentColor }"
+            ></div>
           </div>
-          <div class="sidebar-item folder" :class="compactMode ? 'compact' : ''">
-            <div class="sidebar-icon" :style="{ backgroundColor: accentColor }"></div>
+          <div
+            class="sidebar-item folder"
+            :class="compactMode ? 'compact' : ''"
+          >
+            <div
+              class="sidebar-icon"
+              :style="{ backgroundColor: accentColor }"
+            ></div>
           </div>
-          <div class="folder-contents" :style="{ borderLeftColor: accentColor, borderTopColor: accentColor }" :class="compactMode ? 'compact' : ''">
-            <div class="sidebar-item active" :class="compactMode ? 'compact' : ''">
-              <div class="sidebar-icon" :style="{ backgroundColor: accentColor }"></div>
+          <div
+            class="folder-contents"
+            :style="{
+              borderLeftColor: accentColor,
+              borderTopColor: accentColor,
+            }"
+            :class="compactMode ? 'compact' : ''"
+          >
+            <div
+              class="sidebar-item active"
+              :class="compactMode ? 'compact' : ''"
+            >
+              <div
+                class="sidebar-icon"
+                :style="{ backgroundColor: accentColor }"
+              ></div>
             </div>
             <div class="sidebar-item" :class="compactMode ? 'compact' : ''">
-              <div class="sidebar-icon" :style="{ backgroundColor: accentColor }"></div>
+              <div
+                class="sidebar-icon"
+                :style="{ backgroundColor: accentColor }"
+              ></div>
             </div>
           </div>
         </div>
         <div class="main-content" :class="compactMode ? 'compact' : ''">
           <div class="main-banner-container">
-          <div class="main-banner" :style="{ backgroundColor: accentColor }">
+            <div
+              class="main-banner"
+              :style="{ backgroundColor: accentColor }"
+            ></div>
+            <div class="main-banner-title">Theme Preview</div>
           </div>
-          <div class="main-banner-title">Theme Preview</div>
-        </div>
-        <div class="play-button" :style="{ backgroundColor: accentColor }">
-        </div>
+          <div
+            class="play-button"
+            :style="{ backgroundColor: accentColor }"
+          ></div>
         </div>
       </div>
     </div>
@@ -42,17 +77,30 @@
 defineProps({
   themeName: {
     type: String,
-    default: 'dark',
-    validator: (value: string) => ['light', 'dark', 'yourself', 'hotline', 'corruption', 'shaggy', 'qt', 'garcello', 'pump', 'doe', 'boo'].includes(value)
+    default: "dark",
+    validator: (value: string) =>
+      [
+        "light",
+        "dark",
+        "yourself",
+        "hotline",
+        "corruption",
+        "shaggy",
+        "qt",
+        "garcello",
+        "pump",
+        "doe",
+        "boo",
+      ].includes(value),
   },
   accentColor: {
     type: String,
-    default: '#DB2955'
+    default: "#DB2955",
   },
   compactMode: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 </script>
 
@@ -139,7 +187,7 @@ defineProps({
 
 /* Doe Theme */
 .theme-preview-doe {
-  background: linear-gradient(to top, #FFFFFF 20%, #9cedfc 50%, #7ba2f5);
+  background: linear-gradient(to top, #ffffff 20%, #9cedfc 50%, #7ba2f5);
   color: #2c1d07;
   border: 2px solid rgba(44, 29, 7, 0.25);
 }
@@ -188,12 +236,12 @@ defineProps({
 }
 
 .sidebar-item.folder {
-    height: 10px;
+  height: 10px;
 }
 
 .sidebar-item.folder .sidebar-icon {
-    width: 10px;
-    height: 5px;
+  width: 10px;
+  height: 5px;
 }
 
 .theme-preview-light .sidebar-item.active {
@@ -331,35 +379,35 @@ defineProps({
   background-color: var(--red);
 }
 .main-banner-container {
-    position: relative;
-    width: 100%;
-    height: 40%;
-    overflow: hidden;
+  position: relative;
+  width: 100%;
+  height: 40%;
+  overflow: hidden;
 }
 .main-banner {
-    width: 100%;
-    height: 100%;
-    border-radius: 3px 3px 0 0;
-    mask-image: linear-gradient(to bottom, black, transparent);
+  width: 100%;
+  height: 100%;
+  border-radius: 3px 3px 0 0;
+  mask-image: linear-gradient(to bottom, black, transparent);
 }
 .main-banner-title {
-    position: absolute;
-    font-size: .75rem;
-    text-align: left;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
-    padding: 4px;
-    bottom: 0;
+  position: absolute;
+  font-size: 0.75rem;
+  text-align: left;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+  padding: 4px;
+  bottom: 0;
 }
 
 .folder-contents {
-    margin-left: 9px;
-    border-left: 2px dashed var(--theme-border);
+  margin-left: 9px;
+  border-left: 2px dashed var(--theme-border);
 }
 
 .folder-contents.compact {
-    margin-left: 0;
-    border-left: 2px solid var(--theme-border);
-    border-top: 2px solid var(--theme-border);
+  margin-left: 0;
+  border-left: 2px solid var(--theme-border);
+  border-top: 2px solid var(--theme-border);
 }
 
 .play-button {

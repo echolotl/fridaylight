@@ -33,7 +33,11 @@
             icon="colorize"
             class="color-button custom-color-btn"
             :class="{ 'color-selected': isCustomColor }"
-            :style="isCustomColor ? { backgroundColor: customColor } : { backgroundColor: 'transparent'}"
+            :style="
+              isCustomColor
+                ? { backgroundColor: customColor }
+                : { backgroundColor: 'transparent' }
+            "
             @click="openColorPicker"
           />
           <input
@@ -78,7 +82,7 @@ const props = defineProps({
   folder: {
     type: Object as () => Folder | null,
     default: null,
-  }
+  },
 });
 
 const emit = defineEmits(["update:modelValue", "save-folder"]);
@@ -121,9 +125,11 @@ watch(
         folderName.value = folder.name;
         selectedColor.value = folder.color;
         customColor.value = folder.color;
-        
+
         // Check if it's a preset color or custom
-        isCustomColor.value = !folderColors.some(color => color.value === folder.color);
+        isCustomColor.value = !folderColors.some(
+          (color) => color.value === folder.color
+        );
 
         // Focus the input
         if (nameInput.value) {

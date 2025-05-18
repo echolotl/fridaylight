@@ -94,7 +94,7 @@ const showContextMenu = (event: MouseEvent) => {
       icon: "open_in_new",
       label: "Open GameBanana Page",
       action: () => openUrl(props.mod.profileUrl),
-    }
+    },
   ];
 
   // Create and dispatch custom event to show context menu
