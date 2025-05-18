@@ -62,7 +62,7 @@
         flat
       />
       <q-btn
-        color="secondary"
+        color="var(--theme-text)"
         icon="settings"
         class="settings-btn"
         @click.stop="$emit('configure', mod)"

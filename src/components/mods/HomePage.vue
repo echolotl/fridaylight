@@ -1,5 +1,10 @@
 <template>
     <q-scroll-area class="home-page phantom-font">
+        <div class="header">
+            <div class="fridaylight-logo">
+
+            </div>
+        </div>
         <div class="best-of-today">
             <div class="bot-header">
             <h6 class="phantom-font-difficulty bot-title"><div class="logo-container">
@@ -58,7 +63,7 @@
         </div>
         </div>
         <div class="main-content">        <div class="hop-back-in">
-            <h6 class="phantom-font-difficulty">Hop Back In!<hr/></h6>
+            <h6 class="phantom-font-difficulty">Recently Played<hr/></h6>
             <div class="mod-card-container">
                 <div v-if="isLoadingInstalled" class="loading-state">
                     <q-spinner color="primary" size="2rem" />
@@ -305,6 +310,15 @@ onMounted(() => {
     color: var(--theme-text-secondary);
     padding-bottom: 2rem;
     margin: 0;
+}
+.fridaylight-logo {
+  width: 260px;
+  height: 64px;
+  mask: url("/images/fridaylight.svg") no-repeat;
+  -webkit-mask: url("/images/fridaylight.svg") no-repeat center;
+  background-color: var(--theme-text);
+  image-rendering: optimizeQuality;
+  margin-bottom: 1rem;
 }
 
 </style>

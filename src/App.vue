@@ -3,7 +3,7 @@
     <!-- Loading overlay shown during initialization -->
     <div class="loading-overlay" v-if="isInitializing">
       <div class="loading-container">
-        <img src="/images/fridaylight.png" class="logo"/>
+        <img class="logo"/>
         <q-linear-progress
           :value="initProgress"
           size="md"
@@ -782,7 +782,11 @@ body {
 }
 .logo {
   width: 350px;
-  height: auto;
+  height: 10vh;
+  mask: url("/images/fridaylight.svg") no-repeat center;
+  -webkit-mask: url("/images/fridaylight.svg") no-repeat center;
+  background-color: var(--theme-text);
+  image-rendering: optimizeQuality;
 }
 
 
