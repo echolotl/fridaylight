@@ -1,12 +1,12 @@
 name: Enhancement
 description: Suggest an enhancement or new feature for Fridaylight.
-title: "Enhancement:  "
+title: "Enhancement: "
 labels: enhancement
 body:
   - type: dropdown
     id: type
     attributes:
-      label: Type of enhancement
+      label: Type of enhancement:
       description: Select the type of enhancement you are suggesting.
       options:
         - label: Feature
@@ -19,7 +19,7 @@ body:
         ### Explain your idea for an enhancement or new feature! Concepts are welcome, but please be as specific as possible.
   - type: textarea
     attributes:
-      label: Describe your enhancement.
+      label: Describe your enhancement:
       placeholder: e.g. Add a new feature to improve user experience
     validations:
       required: true
