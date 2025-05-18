@@ -103,7 +103,7 @@ import ModBanner from "@mods/ModBanner.vue";
 import EngineModsList from "@mods/EngineModsList.vue";
 import TerminalOutput from "@common/TerminalOutput.vue";
 import ContributorInfobox from "@common/ContributorInfobox.vue";
-import { Mod} from "@main-types";
+import { Mod } from "@main-types";
 import { useQuasar } from "quasar";
 import { StoreService } from "@services/storeService";
 

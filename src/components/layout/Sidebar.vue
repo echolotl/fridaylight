@@ -7,11 +7,12 @@
       :class="{ 'compact-mode': isCompactMode }"
       :style="{ width: isCompactMode ? '64px' : `${sidebarWidth}px` }"
     >
-      <ModList
+      <!-- Mod list -->      <ModList
         :mods="mods"
         :folders="folders"
         :selectedModId="selectedMod?.id"
         :compact-mode="isCompactMode"
+        :active-page="activePage"
         @select-mod="selectMod"
         @add-mod="selectModFolder"
         @add-mods-folder="selectModsParentFolder"
@@ -28,18 +29,18 @@
         @launch-mod="launchMod"
         @super-delete-mod="superDeleteMod"
         @open-mod-folder="openModFolder"
+        @go-home="setActivePage('home')"
         class="modlist"
       />
 
       <!-- GameBanana button -->
-      <div class="gamebanana-button-container phantom-font-difficulty">
-        <q-btn
+      <div class="gamebanana-button-container phantom-font-difficulty">        <q-btn
           :class="{
             'gamebanana-button': true,
-            'active-gamebanana': showGameBanana,
+            'active-gamebanana': activePage === 'gamebanana',
           }"
           color="primary"
-          @click="toggleGameBanana"
+          @click="setActivePage('gamebanana')"
           flat
         >
           <div class="gb-logo-container">
@@ -127,31 +128,27 @@
       </div>
     </div>
     <div class="main-content-area">
-      <!-- Show ModDetails when a mod is selected and GameBanana is not shown -->
-      <Transition name="fade" mode="out-in">
-        <div
+      <!-- Show ModDetails when a mod is selected and GameBanana is not shown -->      <Transition name="fade" mode="out-in">        <div
           :key="
-            !showGameBanana
+            activePage === 'mods'
               ? selectedMod
                 ? selectedMod.id
                 : 'no-mod'
-              : 'gamebanana-browser'
+              : activePage === 'gamebanana'
+                ? 'gamebanana-browser'
+                : 'home-page'
           "
           class="main-content"
         >
-          <component
-            :is="!showGameBanana ? ModDetails : GameBananaBrowser"
-            v-bind="
-              !showGameBanana
-                ? {
-                    mod: selectedMod,
-                    error: launchError || '',
-                    'onUpdate:mod': handleSaveMod,
-                    'onLaunch-mod': launchMod,
-                    'onOpen-settings': openSettingsModal,
-                  }
-                : {}
-            "
+        <!-- Can show ModDetails, HomePage, or GameBananaBrowser -->          <component            :is="activePage === 'mods' ? ModDetails : activePage === 'gamebanana' ? GameBananaBrowser : HomePage"
+            :mod="selectedMod"
+            :error="launchError || ''"
+            @update:mod="handleSaveMod"
+            @launch-mod="launchMod"
+            @open-settings="openSettingsModal"
+            @select-mod="selectMod"
+            @open-mod-settings="openModSettings"
+            @gamebanana-browser="openGamebananaBrowser"
           />
         </div>
       </Transition>
@@ -180,6 +177,7 @@ import ModDetails from "@mods/ModDetails.vue";
 import ModSettingsModal from "@modals/ModSettingsModal.vue";
 import AppSettingsModal from "@modals/AppSettingsModal.vue";
 import GameBananaBrowser from "@mods/GameBananaBrowser.vue";
+import HomePage from "@mods/HomePage.vue";
 import { Mod, Folder, DisplayItem } from "@main-types";
 import { useQuasar } from "quasar";
 import { StoreService } from "../../services/storeService";
@@ -259,7 +257,7 @@ const folders = ref<Folder[]>([]);
 const selectedMod = ref<ModInfo | null>(null);
 const launchError = ref<string | null>(null);
 const showSettingsModal = ref(false);
-const showGameBanana = ref(false);
+const activePage = ref('home'); // Default to showing home page
 const showAppSettingsModal = ref(false);
 
 // Add compact mode state
@@ -275,15 +273,12 @@ onMounted(async () => {
     // Initialize dbService 
     await dbService.initialize();
     // Assign the service instance to the window object if needed elsewhere 
-    window.db = { service: dbService };
-
-    await loadModsFromDatabase();
-    await loadFoldersFromDatabase(); // Load folders after mods
+    window.db = { service: dbService };    await loadModsFromDatabase();    await loadFoldersFromDatabase(); // Load folders after mods
 
     // Load and apply app settings
     await loadAppSettings();
 
-    showGameBanana.value = false; // Hide GameBanana by default
+    activePage.value = 'home'; // Show home page by default
 
     // Add event listener for refreshing the mods list
     window.addEventListener("refresh-mods", handleRefreshMods);
@@ -584,11 +579,11 @@ const selectMod = (mod: ModInfo) => {
   selectedMod.value = mod;
   console.log("selectedMod.value after setting:", selectedMod.value);
   launchError.value = null;
-  showGameBanana.value = false; // Switch to mod details view when selecting a mod
+  activePage.value = 'mods'; // Switch to mod details view when selecting a mod
 };
 
-const toggleGameBanana = () => {
-  showGameBanana.value = true;
+const setActivePage = (page: string) => {
+  activePage.value = page;
 };
 
 // Function to sync mods with backend
@@ -1253,6 +1248,10 @@ const openModSettings = (mod: ModInfo) => {
 const openModFolder = async (mod: ModInfo) => {
   // Open the mod folder in the file explorer
   await revealItemInDir(mod.path + sep());
+};
+
+const openGamebananaBrowser = () => {
+  setActivePage("gamebanana");
 };
 
 // Clean up event listeners

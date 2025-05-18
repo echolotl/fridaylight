@@ -125,6 +125,7 @@ const showContextMenu = (event: MouseEvent) => {
   flex-direction: column;
   transition: transform 0.2s, box-shadow 0.2s;
   border-bottom: 2px solid var(--theme-border);
+  min-width: 300px;
 }
 
 .mod-card:hover {

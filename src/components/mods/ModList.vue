@@ -79,6 +79,22 @@
             </q-input>
         </q-item-label>
 
+        <!-- Home button -->
+        <q-item 
+          clickable 
+          v-ripple
+          dense
+          @click="$emit('go-home')" 
+          class="home-button q-my-sm"
+          :active="activePage === 'home'"
+          active-class="active-home"
+        >
+          <q-item-section avatar>
+            <q-icon name="home" style="margin-left: 4px;" />
+          </q-item-section>
+          <q-item-section>Home</q-item-section>
+        </q-item>
+        
         <!-- Downloading mods section -->
         <template v-if="Object.keys(downloadingMods).length > 0">
           <q-item-label header style="color: var(--theme-text-secondary)" v-if="!compactMode"> Downloading </q-item-label>
@@ -317,6 +333,10 @@ const props = defineProps({
   compactMode: {
     type: Boolean,
     default: false,
+  },
+  activePage: {
+    type: String,
+    default: "mods",
   },
 });
 
@@ -598,7 +618,8 @@ const emit = defineEmits([
   "open-mod-settings", 
   "launch-mod", 
   "super-delete-mod", 
-  "open-mod-folder", 
+  "open-mod-folder",
+  "go-home"
 ]);
 
 const showDeleteDialog = ref(false);
@@ -1016,5 +1037,17 @@ const editFolder = (folder: Folder) => {
 .search-input :deep(.q-field__marginal) {
   color: var(--theme-text-secondary);
   padding: 0 8px;
+}
+
+.home-button {
+  margin: 16px 0;
+  border-radius: 0 1rem 1rem 0;
+  transition: all 0.2s ease;
+  background-color: none;
+}
+
+.active-home {
+  background-color: var(--theme-surface);
+  border-radius: 0 1rem 1rem 0;
 }
 </style>

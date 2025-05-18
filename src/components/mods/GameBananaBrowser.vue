@@ -37,9 +37,8 @@
     <!-- Home View with Featured and Latest Mods -->
     <q-scroll-area v-else class="scroll-container">
       <div class="main-browser">
-        <div class="section-header phantom-font-difficulty">
-          <div class="text-subtitle1">Featured Mods</div>
-        </div>
+        <div class="featured-header">
+        <h6 class="phantom-font-difficulty q-mb-xs">Featured Mods</h6>
         <div class="mods-section">
           <FeaturedModsCarousel
             :mods="featuredMods"
@@ -48,14 +47,11 @@
             @showDetails="openModDetails"
           />
         </div>
-        <hr />
+      </div>
 
         <!-- Latest Mods Section -->
         <div class="mods-section">
-          <div class="section-header phantom-font-difficulty">
-            <div class="text-subtitle1">Latest Mods</div>
-          </div>
-
+          <h6 class="phantom-font-difficulty q-mb-md">Latest Mods<hr/></h6>
           <!-- Tab navigation -->
           <q-tabs
             v-model="selectedModType"
@@ -1543,6 +1539,16 @@ const continueFolderExistsDownload = async () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  width: 100%
+}
+
+.featured-header {
+  background: linear-gradient(to bottom, var(--theme-card), transparent);
+    padding: 16px;
+  border-radius: .5rem;
+    h6 {
+      margin: 0;
+    }
 }
 
 .text-subtitle1 {

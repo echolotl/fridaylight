@@ -222,8 +222,7 @@ const shortenDescription = (description: string): string => {
   height: 100%;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  border: 2px solid var(--theme-border);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .featured-thumbnail {

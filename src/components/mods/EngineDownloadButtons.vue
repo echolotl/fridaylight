@@ -1,8 +1,6 @@
 <template>
   <div class="engine-download">
-    <div class="text-h5 phantom-font-difficulty engine-text">
-      Engine Downloads
-    </div>
+    <h6 class="phantom-font-difficulty q-mb-md"> Engine Downloads <hr/></h6>
     <div class="engine-download-buttons text-center">
       <q-btn
         flat
@@ -38,10 +36,22 @@
     
     </q-btn>
     </div>
+    <q-expansion-item class="more-engines" dense>
+      <template v-slot:header>
+        <div class="engine-text">
+          <span>More Engines</span>
+        </div>
+      </template>
+      <div class="more-engines-content">
+        None yet, but you can help suggest what engines to include on the <span @click="openUrl('https://github.com/echolotl/fridaylight')" style="cursor: pointer; text-decoration: underline; color: var(--q-primary)">Github</span>!
+      </div>
+    </q-expansion-item>
   </div>
 </template>
 
 <script setup lang="ts">
+import { openUrl } from '@tauri-apps/plugin-opener';
+
 defineEmits(['download-engine']);
 </script>
 
@@ -74,5 +84,23 @@ defineEmits(['download-engine']);
   width: 32px;
   height: 32px;
   margin-left: 8px;
+}
+
+.engine-text {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-transform: uppercase;
+  margin-bottom: 0;
+}
+.more-engines {
+  border-radius: 1rem;
+}
+.more-engines-content {
+  color: var(--theme-text-secondary);
+  padding: 1rem;
+  text-align: center;
 }
 </style>
