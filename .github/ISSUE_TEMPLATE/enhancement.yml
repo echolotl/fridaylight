@@ -9,9 +9,9 @@ body:
       label: Type of enhancement
       description: Select the type of enhancement you are suggesting.
       options:
-        - label: Feature
-        - label: Improvement
-        - label: Documentation
+        - Feature
+        - Improvement
+        - Documentation
   - type: markdown
     attributes:
       value: |
