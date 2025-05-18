@@ -166,7 +166,6 @@
       </div>
     </div>
   </q-scroll-area>
-
   <!-- Mod Details Modal -->
   <ModDetailsModal
     :modId="selectedModId"
@@ -174,18 +173,87 @@
     @update:isOpen="isModDetailsModalOpen = $event"
     @download="downloadMod"
   />
+
+  <!-- Download File Selector Dialog -->
+  <DownloadFileSelector
+    v-model="showFileSelector"
+    :files="downloadFiles"
+    :mod-name="currentDownloadMod?.name || ''"
+    :alternate-file-sources="alternateFileSources"
+    @select="onFileSelected"
+    @cancel="cancelDownload"
+  />
+
+  <!-- Engine Selection Dialog for Modpacks -->
+  <EngineSelectionDialog
+    v-model="showEngineSelectDialog"
+    :compatible-engines="currentModpackInfo?.compatibleEngines || []"
+    :engine-type="currentModpackInfo?.type || undefined"
+    :mod-name="currentModpackInfo?.mod?.name || ''"
+    @select="onEngineSelected"
+    @cancel="cancelDownload"
+  />
+
+  <!-- Custom URL Download Modal -->
+  <CustomUrlDownloadModal
+    v-model="showCustomUrlModal"
+    @submit="onCustomUrlSubmit"
+    @cancel="showCustomUrlModal = false"
+  />
+
+  <!-- Mod Type Selection Modal -->
+  <ModTypeSelectionModal
+    v-model="showModTypeModal"
+    :modData="customModData"
+    @submit="onModTypeSubmit"
+    @back="
+      showModTypeModal = false;
+      if (customModData?.isCustomUrl) {
+        showCustomUrlModal = true;
+      }
+    "
+    @cancel="handleModTypeCancel"
+  />
+
+  <!-- Folder Exists Confirmation Dialog -->
+  <MessageDialog
+    v-model="showFolderExistsDialog"
+    title="Folder Already Exists"
+    icon="warning"
+    icon-color="warning"
+    confirm-label="Download Anyway"
+    confirm-color="primary"
+    @confirm="continueFolderExistsDownload"
+    @cancel="cancelDownload"
+  >
+    <div class="text-h6">{{ folderExistsModName }}</div>
+    <p class="text-body1 q-mt-sm">
+      The mod folder already exists in your mods directory.
+    </p>
+    <p class="text-body2 q-mt-sm">
+      This mod has already been downloaded with Fridaylight. Downloading again
+      will download it into a separate instance. Would you like to continue?
+    </p>
+  </MessageDialog>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { GameBananaMod, Mod } from "../../types";
-import { gamebananaService } from "@services/gamebananaService";
+import { gamebananaService, type ModpackInfo } from "@services/gamebananaService";
 import { DatabaseService } from "@services/dbService";
 
 import ModCard from "../common/ModCard.vue";
 import InstalledModCard from "../common/InstalledModCard.vue";
 import ModDetailsModal from "@modals/ModDetailsModal.vue";
+import DownloadFileSelector from "@modals/DownloadFileSelector.vue";
+import EngineSelectionDialog from "@modals/EngineSelectionDialog.vue";
+import CustomUrlDownloadModal from "@modals/CustomUrlDownloadModal.vue";
+import ModTypeSelectionModal from "@modals/ModTypeSelectionModal.vue";
+import MessageDialog from "@modals/MessageDialog.vue";
+import { useQuasar, Notify } from "quasar";
+import { StoreService } from "../../services/storeService";
 
 // Featured mods state
 const featuredMods = ref<GameBananaMod[]>([]);
@@ -217,6 +285,30 @@ const recentlyPlayedMods = ref<Mod[]>([]);
 // For mod details modal
 const selectedModId = ref<number>(0);
 const isModDetailsModalOpen = ref<boolean>(false);
+
+// For file selection dialog
+const showFileSelector = ref(false);
+const downloadFiles = ref<any[]>([]);
+const alternateFileSources = ref<any[]>([]);
+const currentDownloadMod = ref<GameBananaMod | null>(null);
+let pendingDownloadNotification: any = null;
+
+// For modpack handling
+const showEngineSelectDialog = ref(false);
+const currentModpackInfo = ref<ModpackInfo | null>(null);
+
+// For custom URL download
+const showCustomUrlModal = ref(false);
+const showModTypeModal = ref(false);
+const customModData = ref<any>(null);
+
+// For folder existence confirmation
+const showFolderExistsDialog = ref(false);
+const folderExistsModName = ref("");
+const folderExistsDownloadContinueFunction = ref<(() => Promise<any>) | null>(null);
+
+// Ensure Notify is properly registered
+Notify.create = Notify.create || (() => {});
 
 const emit = defineEmits([
   "select-mod",
@@ -381,10 +473,52 @@ const fetchInstalledMods = async (): Promise<void> => {
 // Download handling
 const downloadMod = async (mod: GameBananaMod) => {
   try {
-    await gamebananaService.downloadMod(mod);
-    // The gamebananaService handles the UI for download progress
+    currentDownloadMod.value = mod;
+
+    const result = await gamebananaService.downloadMod(mod);
+
+    // Handle different scenarios based on the result
+    if ("showFileSelector" in result) {
+      // If we need to show file selector
+      downloadFiles.value = result.files;
+      alternateFileSources.value = result.alternateFileSources || [];
+      showFileSelector.value = true;
+      return;
+    }
+
+    if ("showEngineSelectDialog" in result) {
+      // If we need to show engine selection dialog
+      currentModpackInfo.value = result.modpackInfo;
+      showEngineSelectDialog.value = true;
+      return;
+    }
+
+    if ("showModTypeModal" in result) {
+      // If we need to show mod type selection
+      customModData.value = result.customModData;
+      showModTypeModal.value = true;
+      return;
+    }
+
+    if ("showFolderExistsDialog" in result) {
+      // If the mod folder already exists, show confirmation dialog
+      folderExistsModName.value = result.modName;
+      folderExistsDownloadContinueFunction.value = result.continueDownload;
+      showFolderExistsDialog.value = true;
+      return;
+    }
   } catch (error) {
-    console.error("Failed to download mod:", error);
+    // Show error notification
+    const $q = useQuasar();
+    $q.notify({
+      type: "negative",
+      message: `Failed to prepare download for "${mod.name}"`,
+      caption: String(error),
+      position: "bottom-right",
+      timeout: 5000,
+    });
+
+    console.error("Failed to prepare mod download:", error);
   }
 };
 
@@ -418,11 +552,398 @@ onMounted(() => {
   // Load featured mods on component mount
   fetchFeaturedMods();
   // Load installed mods
-  fetchInstalledMods().then(() => {
+    fetchInstalledMods().then(() => {
     // Update recently played mods after installed mods are loaded
     recentlyPlayedMods.value = getRecentlyPlayedMods(5);
   });
 });
+
+// Function called when an engine is selected from the dialog
+const onEngineSelected = async (engine: any) => {
+  if (!currentModpackInfo.value) return;
+
+  try {
+    // Hide the dialog immediately to provide feedback to the user
+    showEngineSelectDialog.value = false;    // Use the centralized gamebananaService to handle modpack download
+    const result = await gamebananaService.downloadModpackForEngine(
+      currentModpackInfo.value,
+      engine
+    );
+
+    if ('success' in result && !result.success) {
+      const $q = useQuasar();
+      $q.notify({
+        type: "negative",
+        message: `Failed to install modpack`,
+        caption: String('error' in result ? result.error : 'Unknown error'),
+        position: "bottom-right",
+        timeout: 5000,
+      });
+    }
+  } catch (error) {
+    const $q = useQuasar();
+    $q.notify({
+      type: "negative",
+      message: `Failed to install modpack`,
+      caption: String(error),
+      position: "bottom-right",
+      timeout: 5000,
+    });
+  } finally {
+    // Reset state
+    currentModpackInfo.value = null;
+  }
+};
+
+// Function called when a file is selected from the dialog
+const onFileSelected = async (selectedFile: any) => {
+  if (!currentDownloadMod.value) return;
+
+  try {
+    // Hide the dialog immediately to provide feedback to the user
+    showFileSelector.value = false;    // If selected file contains an executable, download it as normal mod
+    if (selectedFile._bContainsExe) {
+      const result = await gamebananaService.downloadModFile(currentDownloadMod.value, selectedFile);
+
+      if ('success' in result && !result.success) {
+        const $q = useQuasar();
+        $q.notify({
+          type: "negative",
+          message: `Failed to download "${currentDownloadMod.value.name}"`,
+          caption: String('error' in result ? result.error : 'Unknown error'),
+          position: "bottom-right",
+          timeout: 5000,
+        });
+      }
+
+      // Trigger the refresh event to update the mod list
+      const refreshEvent = new CustomEvent("refresh-mods");
+      window.dispatchEvent(refreshEvent);
+
+      // Reset current download mod
+      currentDownloadMod.value = null;
+      return;
+    }
+
+    // If file doesn't contain an executable, check if this is a modpack
+    const isModpack = gamebananaService.determineIfModpack(currentDownloadMod.value);
+    const modpackType = gamebananaService.determineModpackType(currentDownloadMod.value);
+
+    if (isModpack) {
+      // Handle modpack download logic for selected file
+      const engineMods = await gamebananaService.getCompatibleEngineMods(modpackType);
+
+      if (engineMods.length === 0) {
+        // No compatible engine found, show error
+        const $q = useQuasar();
+        $q.notify({
+          type: "negative",
+          message: `Cannot download ${modpackType} modpack`,
+          caption: `You don't have ${gamebananaService.formatEngineType(
+            modpackType
+          )} installed. Please install it.`,
+          position: "bottom-right",
+          timeout: 5000,
+        });
+
+        currentDownloadMod.value = null;
+        return;
+      }
+
+      // Show engine selection dialog
+      currentModpackInfo.value = {
+        mod: { ...currentDownloadMod.value, downloadUrl: selectedFile._sDownloadUrl }, // Override with selected URL
+        type: modpackType,
+        compatibleEngines: engineMods,
+      };
+      showEngineSelectDialog.value = true;
+    } else {      // If not a modpack, download normally
+      const result = await gamebananaService.downloadModFile(currentDownloadMod.value, selectedFile);
+
+      if ('success' in result && !result.success) {
+        const $q = useQuasar();
+        $q.notify({
+          type: "negative",
+          message: `Failed to download "${currentDownloadMod.value.name}"`,
+          caption: String('error' in result ? result.error : 'Unknown error'),
+          position: "bottom-right",
+          timeout: 5000,
+        });
+      }
+    }
+
+    // Reset current download mod
+    currentDownloadMod.value = null;
+  } catch (error) {
+    const $q = useQuasar();
+    $q.notify({
+      type: "negative",
+      message: `Failed to download mod`,
+      caption: String(error),
+      position: "bottom-right",
+      timeout: 5000,
+    });
+
+    console.error("Failed to download mod file:", error);
+    currentDownloadMod.value = null;
+  }
+};
+
+// Function to cancel the download
+const cancelDownload = () => {
+  // Reset UI state
+  showFileSelector.value = false;
+  showEngineSelectDialog.value = false;
+  showModTypeModal.value = false;
+  showFolderExistsDialog.value = false;
+
+  // Show cancellation notification
+  if (currentDownloadMod.value) {
+    const $q = useQuasar();
+    $q.notify({
+      type: "info",
+      message: `Download canceled for "${currentDownloadMod.value.name}"`,
+      position: "bottom-right",
+      timeout: 3000,
+    });
+  }
+
+  // Reset state variables
+  currentDownloadMod.value = null;
+  currentModpackInfo.value = null;
+  customModData.value = null;
+  folderExistsDownloadContinueFunction.value = null;
+};
+
+// Function for custom URL download
+const onCustomUrlSubmit = (formData: any) => {
+  console.log("Custom URL form submitted:", formData);
+  // Add isCustomUrl flag to identify the source of this mod data
+  customModData.value = {
+    ...formData,
+    isCustomUrl: true,
+  };
+  showCustomUrlModal.value = false;
+  showModTypeModal.value = true;
+};
+
+// Function for handling mod type selection
+const onModTypeSubmit = async (typeData: any) => {
+  console.log("Mod type selected:", typeData);
+  if (!customModData.value) return;
+
+  try {
+    // Show loading notification
+    const $q = useQuasar();
+    pendingDownloadNotification = $q.notify({
+      type: "ongoing",
+      message: `Preparing to download "${customModData.value.name}"...`,
+      position: "bottom-right",
+      timeout: 0,
+    });
+
+    // Determine install location based on mod type
+    let installLocation: string | null = null;
+
+    if (typeData.modType === "executable") {
+      // For standalone mods, use the standard install location
+      const storeService = StoreService.getInstance();
+      installLocation = await storeService.getSetting("installLocation");
+    } else {
+      // For modpacks, use the engine's mods folder
+      if (typeData.engineMod) {
+        installLocation = gamebananaService.getModsFolderPath(typeData.engineMod);
+      } else {
+        throw new Error(
+          `No ${gamebananaService.formatEngineType(typeData.modType)} installation found`
+        );
+      }
+    }
+
+    console.log(
+      `Downloading ${customModData.value.name} to ${
+        installLocation || "default location"
+      }`
+    );
+
+    // Reset the modal state
+    showModTypeModal.value = false;
+
+    // Generate a random modId for tracking the download
+    const modId = Math.floor(Math.random() * 1000000);
+
+    // Call backend to download using the custom mod command instead
+    const result = await invoke<string>("download_custom_mod_command", {
+      url: customModData.value.url,
+      name: customModData.value.name,
+      modId,
+      installLocation,
+      thumbnailUrl: customModData.value.bannerData,
+      description: customModData.value.description,
+      version: customModData.value.version,
+    });
+
+    // Process the result
+    let modInfo: any;
+    let modPath: string;
+
+    try {
+      // Try to parse as JSON
+      const parsed = JSON.parse(result);
+      modPath = parsed.path;
+      modInfo = parsed.mod_info;
+    } catch (e) {
+      // If parsing fails, assume it's just the path string
+      modPath = result;
+      // Get mod info directly from the backend
+      const allMods = await invoke<any[]>("get_mods");
+      modInfo = allMods.find((m) => m.path === modPath);
+    }
+
+    // If we still don't have mod info, create one with custom data
+    if (!modInfo) {
+      modInfo = {
+        id: crypto.randomUUID(),
+        name: customModData.value.name,
+        path: modPath,
+        executable_path: null,
+        icon_data: null,
+        banner_data: customModData.value.bannerData,
+        logo_data: customModData.value.logoData,
+        description: customModData.value.description,
+        version: customModData.value.version || null,
+        engine_type:
+          typeData.modType !== "executable" ? typeData.modType : null,
+        engine:
+          typeData.modType !== "executable"
+            ? {
+                engine_type: typeData.modType,
+                engine_name: gamebananaService.formatEngineType(typeData.modType),
+                mods_folder: true,
+                mods_folder_path: "mods",
+              }
+            : null,
+      };
+    } else {
+      // Update the mod info with custom data
+      modInfo.name = customModData.value.name;
+      modInfo.banner_data =
+        customModData.value.bannerData || modInfo.banner_data;
+      modInfo.logo_data = customModData.value.logoData || modInfo.logo_data;
+      modInfo.description =
+        customModData.value.description || modInfo.description;
+      modInfo.version = customModData.value.version || modInfo.version;
+
+      if (typeData.modType !== "executable") {
+        modInfo.engine_type = typeData.modType;
+        modInfo.engine = {
+          ...(modInfo.engine || {}),
+          engine_type: typeData.modType,
+          engine_name: gamebananaService.formatEngineType(typeData.modType),
+          mods_folder: true,
+          mods_folder_path: "mods",
+        };
+      }
+    }
+
+    // Save the mod to the database
+    if (modInfo) {
+      await gamebananaService.saveModToDatabase(modInfo);
+    }
+
+    // Dismiss loading notification
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification();
+      pendingDownloadNotification = null;
+    }
+
+    // Show success notification
+    $q.notify({
+      type: "positive",
+      message: `"${customModData.value.name}" downloaded and installed successfully!`,
+      caption: `Ready to play from the mods list`,
+      position: "bottom-right",
+      timeout: 5000,
+    });
+
+    // Reset the custom mod data
+    customModData.value = null;
+
+    // Trigger refresh event to update mod list
+    setTimeout(() => {
+      const refreshEvent = new CustomEvent("refresh-mods");
+      window.dispatchEvent(refreshEvent);
+    }, 500);
+  } catch (error) {
+    // Show error notification
+    const $q = useQuasar();
+    $q.notify({
+      type: "negative",
+      message: `Failed to download "${customModData.value?.name || "mod"}"`,
+      caption: String(error),
+      position: "bottom-right",
+      timeout: 5000,
+    });
+
+    console.error("Failed to download custom mod:", error);
+
+    // Reset the custom mod data
+    customModData.value = null;
+    
+    // Dismiss loading notification if any
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification();
+      pendingDownloadNotification = null;
+    }
+  }
+};
+
+// Handle cancel from mod type selection modal
+const handleModTypeCancel = () => {
+  // Check the source of the mod type modal - custom URL or regular download
+  if (customModData.value?.isCustomUrl) {
+    showCustomUrlModal.value = true;
+  }
+  
+  showModTypeModal.value = false;
+  customModData.value = null;
+};
+
+// Function to continue download when folder exists
+const continueFolderExistsDownload = async () => {
+  showFolderExistsDialog.value = false;
+
+  try {
+    if (folderExistsDownloadContinueFunction.value) {
+      const result = await folderExistsDownloadContinueFunction.value();
+      
+      if ('success' in result && !result.success) {
+        const $q = useQuasar();
+        $q.notify({
+          type: "negative",
+          message: `Failed to download mod`,
+          caption: String('error' in result ? result.error : 'Unknown error'),
+          position: "bottom-right",
+          timeout: 5000,
+        });
+      }
+      
+      folderExistsDownloadContinueFunction.value = null;
+    }
+  } catch (error) {
+    console.error("Failed to download mod:", error);
+    const $q = useQuasar();
+    $q.notify({
+      type: "negative",
+      message: `Failed to download mod`,
+      caption: String(error),
+      position: "bottom-right",
+      timeout: 5000,
+    });
+  } finally {
+    folderExistsDownloadContinueFunction.value = null;
+  }
+};
 </script>
 
 <style scoped>
