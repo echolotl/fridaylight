@@ -762,7 +762,9 @@ body {
   overflow: hidden;
   color: var(--theme-text);
 }
+</style>
 
+<style scoped>
 .transparent-bg {
   background: transparent !important;
 }
@@ -790,15 +792,15 @@ body {
   border: 2px solid var(--theme-border);
 }
 .logo {
-  width: 350px;
-  height: 10vh;
+  width: 100%;
+  height: 125px;
   mask: url("/images/fridaylight.svg") no-repeat center;
   -webkit-mask: url("/images/fridaylight.svg") no-repeat center;
   background-color: var(--theme-text);
   image-rendering: optimizeQuality;
 }
 
-loading-container h2 {
+.loading-container h2 {
   margin-top: 0;
   margin-bottom: 24px;
 }
