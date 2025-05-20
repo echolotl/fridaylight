@@ -39,9 +39,6 @@ pub fn set_mod_not_running(mod_id: &str) {
     }
 }
 
-//
-// FUNCTIONALITY FROM MODENABLER.RS
-//
 
 /// Toggle the enabled state of a mod based on engine type
 pub fn toggle_mod_enabled_state(
@@ -509,28 +506,12 @@ fn find_psych_engine_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, St
                         });
                         
                         // Extract restart info if available
-                        let restart_info = json_content.as_ref().and_then(|json| {
-                            if let Some(restart) = json.get("restart").and_then(|v| v.as_bool()) {
-                                if restart {
-                                    Some("Requires restart".to_string())
-                                } else {
-                                    Some("No restart required".to_string())
-                                }
-                            } else {
-                                None
-                            }
-                        });
+                        let restart_required = json_content.as_ref()
+                            .and_then(|json| json.get("restart").and_then(|v| v.as_bool()));
                         
-                        // Combine description with restart info if available
-                        let full_description = match (description, restart_info) {
-                            (Some(desc), Some(restart)) => Some(format!("{}\n{}", desc, restart)),
-                            (Some(desc), None) => Some(desc),
-                            (None, Some(restart)) => Some(restart),
-                            (None, None) => None,
-                        };
-                          metadata_files.push(ModMetadataFile {
+                        metadata_files.push(ModMetadataFile {
                             name,
-                            description: full_description,
+                            description,
                             folder_path: path.to_string_lossy().to_string(),
                             config_file_path: if json_content.is_some() { 
                                 Some(json_path.to_string_lossy().to_string()) 
@@ -548,6 +529,11 @@ fn find_psych_engine_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, St
                                 None 
                             },
                             enabled: None, // Will be set by the command handler
+                            version: None,
+                            homepage: None,
+                            contributors: None,
+                            license: None,
+                            restart_required,
                         });
                     }
                 }
@@ -616,13 +602,6 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                             .and_then(|json| json.get("mod_version").and_then(|v| v.as_str()))
                             .map(|v| v.to_string());
                             
-                        // Format name with version if available
-                        let name = if let Some(v) = &version {
-                            format!("{} (v{})", title, v)
-                        } else {
-                            title.to_string()
-                        };
-                        
                         // Extract description
                         let base_description = json_content.as_ref()
                             .and_then(|json| json.get("description").and_then(|v| v.as_str()))
@@ -637,10 +616,9 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                         let license = json_content.as_ref()
                             .and_then(|json| json.get("license").and_then(|v| v.as_str()))
                             .map(|s| s.to_string());
-                        
-                        // Format contributor information
+                          // Extract contributor information
                         let mut contributors_info = Vec::new();
-                        
+
                         if let Some(contributors) = json_content.as_ref()
                             .and_then(|json| json.get("contributors").and_then(|v| v.as_array())) {
                             for contributor in contributors {
@@ -648,40 +626,26 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                                     let role = contributor.get("role")
                                         .and_then(|v| v.as_str())
                                         .unwrap_or("Contributor");
-                                        
-                                    contributors_info.push(format!("{}: {}", role, name));
+                                    // Construct ContributorMetadata struct
+                                    contributors_info.push(crate::models::ContributorMetadata {
+                                        name: name.to_string(),
+                                        role: role.to_string(),
+                                        email: contributor.get("email").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                        url: contributor.get("website").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                    });
                                 }
                             }
                         }
-                        
-                        // Build a comprehensive description
-                        let mut description_parts = Vec::new();
-                        
-                        if let Some(desc) = base_description {
-                            description_parts.push(desc);
-                        }
-                        
-                        if let Some(site) = homepage {
-                            description_parts.push(format!("Website: {}", site));
-                        }
-                        
-                        if !contributors_info.is_empty() {
-                            description_parts.push(format!("Credits: {}", contributors_info.join(", ")));
-                        }
-                        
-                        if let Some(lic) = license {
-                            description_parts.push(format!("License: {}", lic));
-                        }
-                        
-                        // Join all parts into a single description
-                        let full_description = if !description_parts.is_empty() {
-                            Some(description_parts.join("\n"))
+
+                        let collected_contributors = if !contributors_info.is_empty() {
+                            Some(contributors_info)
                         } else {
                             None
                         };
-                          metadata_files.push(ModMetadataFile {
-                            name,
-                            description: full_description,
+
+                        metadata_files.push(ModMetadataFile {
+                            name: title,
+                            description: base_description,
                             folder_path: path.to_string_lossy().to_string(),
                             config_file_path: if json_content.is_some() { 
                                 Some(json_path.to_string_lossy().to_string()) 
@@ -699,6 +663,11 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                                 None 
                             },
                             enabled: None, // Will be set by the command handler
+                            version,
+                            homepage,
+                            contributors: collected_contributors,
+                            license,
+                            restart_required: None, // Polymod doesn't have restart info
                         });
                     }
                 }
@@ -768,13 +737,6 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                         let version = json_content.as_ref()
                             .and_then(|json| json.get("mod_version").and_then(|v| v.as_str()))
                             .map(|v| v.to_string());
-                            
-                        // Format name with version if available
-                        let name = if let Some(v) = &version {
-                            format!("{} (v{})", title, v)
-                        } else {
-                            title.to_string()
-                        };
                         
                         // Extract description
                         let base_description = json_content.as_ref()
@@ -790,10 +752,9 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                         let license = json_content.as_ref()
                             .and_then(|json| json.get("license").and_then(|v| v.as_str()))
                             .map(|s| s.to_string());
-                        
-                        // Format contributor information
+                          // Extract contributor information
                         let mut contributors_info = Vec::new();
-                        
+
                         if let Some(contributors) = json_content.as_ref()
                             .and_then(|json| json.get("contributors").and_then(|v| v.as_array())) {
                             for contributor in contributors {
@@ -801,40 +762,26 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                                     let role = contributor.get("role")
                                         .and_then(|v| v.as_str())
                                         .unwrap_or("Contributor");
-                                        
-                                    contributors_info.push(format!("{}: {}", role, name));
+                                    // Construct ContributorMetadata struct
+                                    contributors_info.push(crate::models::ContributorMetadata {
+                                        name: name.to_string(),
+                                        role: role.to_string(),
+                                        email: contributor.get("email").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                        url: contributor.get("website").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                    });
                                 }
                             }
                         }
-                        
-                        // Build a comprehensive description
-                        let mut description_parts = Vec::new();
-                        
-                        if let Some(desc) = base_description {
-                            description_parts.push(desc);
-                        }
-                        
-                        if let Some(site) = homepage {
-                            description_parts.push(format!("Website: {}", site));
-                        }
-                        
-                        if !contributors_info.is_empty() {
-                            description_parts.push(format!("Credits: {}", contributors_info.join(", ")));
-                        }
-                        
-                        if let Some(lic) = license {
-                            description_parts.push(format!("License: {}", lic));
-                        }
-                        
-                        // Join all parts into a single description
-                        let full_description = if !description_parts.is_empty() {
-                            Some(description_parts.join("\n"))
+
+                        let collected_contributors = if !contributors_info.is_empty() {
+                            Some(contributors_info)
                         } else {
                             None
                         };
-                          metadata_files.push(ModMetadataFile {
-                            name,
-                            description: full_description,
+                        
+                        metadata_files.push(ModMetadataFile {
+                            name: title,
+                            description: base_description,
                             folder_path: path.to_string_lossy().to_string(),
                             config_file_path: if json_content.is_some() { 
                                 Some(json_path.to_string_lossy().to_string()) 
@@ -852,6 +799,11 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                                 None 
                             },
                             enabled: None, // Will be set by the command handler
+                            version,
+                            homepage,
+                            contributors: collected_contributors,
+                            license,
+                            restart_required: None, // Polymod doesn't have restart info
                         });
                     }
                 }
@@ -905,6 +857,11 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
                                                 icon_file_path: None, // Codename doesn't have a standard icon file
                                                 icon_data: None,
                                                 enabled: None, // Will be set by the command handler
+                                                version: None,
+                                                homepage: None,
+                                                contributors: None,
+                                                license: None,
+                                                restart_required: None,
                                             });
                                         } else {
                                             warn!("credits.xml found but no menu element in {}", path.display());
@@ -923,6 +880,11 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
                                                 icon_file_path: None,
                                                 icon_data: None,
                                                 enabled: None, // Will be set by the command handler
+                                                version: None,
+                                                homepage: None,
+                                                contributors: None,
+                                                license: None,
+                                                restart_required: None,
                                             });
                                         }
                                     },
@@ -943,6 +905,11 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
                                             icon_file_path: None,
                                             icon_data: None,
                                             enabled: None, // Will be set by the command handler
+                                            version: None,
+                                            homepage: None,
+                                            contributors: None,
+                                            license: None,
+                                            restart_required: None,
                                         });
                                     }
                                 }
@@ -963,6 +930,11 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
                                     icon_file_path: None,
                                     icon_data: None,
                                     enabled: None, // Will be set by the command handler
+                                    version: None,
+                                    homepage: None,
+                                    contributors: None,
+                                    license: None,
+                                    restart_required: None,
                                 });
                             }
                         }
@@ -984,6 +956,11 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
                             icon_file_path: None,
                             icon_data: None,
                             enabled: None, // Will be set by the command handler
+                            version: None,
+                            homepage: None,
+                            contributors: None,
+                            license: None,
+                            restart_required: None,
                         });
                     }
                 }

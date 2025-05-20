@@ -101,7 +101,6 @@ export interface DbSettings {
  */
 
 export interface GameBananaMod {
-  // Existing fields
   id: number;
   name: string;
   owner: string;
@@ -111,8 +110,6 @@ export interface GameBananaMod {
   views: number;
   downloads: number;
   likes: number;
-
-  // New fields from GameBanana API
   modelName: string;
   profileUrl: string;
   imageUrl: string;
@@ -191,6 +188,7 @@ export interface AppSettings {
   showTerminalOutput: boolean; // Whether to show terminal output from running mods
   compactMode: boolean; // Whether to display the sidebar in compact mode with only icons
 }
+
 interface ColorOption {
   label: string;
   value: string;

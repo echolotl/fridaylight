@@ -168,6 +168,20 @@ pub struct ModMetadataFile {
     pub icon_file_path: Option<String>,
     pub icon_data: Option<String>, // Base64 encoded icon data
     pub enabled: Option<bool>,     // Whether the mod is enabled
+    pub version: Option<String>,   // Version of the mod
+    pub homepage: Option<String>,  // Homepage/website URL
+    pub contributors: Option<Vec<ContributorMetadata>>, 
+    pub license: Option<String>,   // License information
+    pub restart_required: Option<bool>, // Whether a restart is required
+}
+
+// Contributor structure for mod metadata
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ContributorMetadata {
+    pub name: String,
+    pub role: String,
+    pub email: Option<String>,
+    pub url: Option<String>,
 }
 
 // Response structure for mod disable/enable operations

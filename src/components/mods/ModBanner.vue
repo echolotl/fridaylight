@@ -236,7 +236,8 @@ const formatEngineType = (engineType: string) => {
   position: absolute;
   left: 0px;
   bottom: 0px;
-  transform: translateY(-50%);
+  transform: translate(0, -25%);
+  align-items: center;
 }
 
 .logo-left-middle:hover {
@@ -258,7 +259,7 @@ const formatEngineType = (engineType: string) => {
 
 .mod-logo {
   max-width: 35vw;
-  max-height: 150px;
+  max-height: 200px;
   cursor: pointer;
   transition: transform 0.2s ease, filter 0.2s ease;
   transform-origin: center;

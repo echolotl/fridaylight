@@ -1,5 +1,5 @@
 <template>
-  <q-dialog v-model="showDialog" persistent>
+  <q-dialog v-model="showDialog" :persistent="persistent">
     <q-card
       class="phantom-font"
       style="
@@ -14,7 +14,7 @@
         <h6 class="dialog-title phantom-font-difficulty">{{ title }}</h6>
       </q-card-section>
 
-      <q-card-section>
+      <q-card-section class="q-pt-none">
         <div v-if="heading" class="text-h6">{{ heading }}</div>
         <div v-if="subHeading" class="text-caption">{{ subHeading }}</div>
         <p v-if="message" class="text-body2 q-mt-sm">{{ message }}</p>
@@ -29,6 +29,7 @@
           color="primary"
           v-close-popup
           @click="onCancel"
+          v-if="!singleOption"
         />
         <q-btn
           flat
@@ -86,6 +87,15 @@ const props = defineProps({
     type: String,
     default: "primary",
   },
+  persistent: {
+    type: Boolean,
+    default: true,
+  },
+  singleOption: {
+    type: Boolean,
+    default: false,
+  }
+
 });
 
 const emit = defineEmits(["update:modelValue", "confirm", "cancel"]);
@@ -105,8 +115,13 @@ const onCancel = () => {
 };
 </script>
 
-<style>
+<style scoped>
 .dialog-title {
   margin: 0 0.5rem;
+}
+.scrollarea {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
 }
 </style>

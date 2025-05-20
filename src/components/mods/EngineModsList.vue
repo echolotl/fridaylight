@@ -1,7 +1,7 @@
 <template>
   <div class="mods-title" v-if="mods.length >= 0">
     <div class="header">
-      <h5 class="phantom-font-difficulty">Installed Mods</h5>
+      <h6 class="phantom-font-difficulty">Installed Mods</h6>
       <div class="scan-actions">
         <q-btn
           round
@@ -18,6 +18,7 @@
           label="Open Mods Folder"
           flat
           @click="openModsFolder"
+          class="button"
         />
       </div>
     </div>
@@ -41,7 +42,12 @@
     </div>
 
     <div v-else class="mods-list">
-      <div v-for="mod in mods" :key="mod.folder_path" class="mod-item">
+      <div
+        v-for="mod in mods"
+        :key="mod.folder_path"
+        class="mod-item"
+        @click="showModDetails(mod)"
+      >
         <div class="mod-icon">
           <q-img
             v-if="mod.icon_data"
@@ -61,11 +67,16 @@
           </div>
         </div>
         <div class="mod-info">
-          <div class="mod-name">{{ mod.name }}</div>
+          <div class="mod-name">
+            {{ mod.name }}
+            <div v-if="mod.version" class="text-caption">
+              v{{ mod.version }}
+            </div>
+          </div>
           <div
             v-if="mod.description"
             class="mod-description"
-            v-html="formatDescription(mod.description)"
+            v-html="mod.description"
           ></div>
         </div>
         <div class="mod-actions">
@@ -78,6 +89,7 @@
             @update:model-value="(val) => toggleModEnabled(mod, val)"
             color="primary"
             size="md"
+            @click.stop
           />
         </div>
       </div>
@@ -91,13 +103,93 @@
       >
     </div>
   </div>
+
+  <!-- Mod Details Dialog -->
+  <MessageDialog
+    v-model="showModDetailsDialog"
+    title="Mod Details"
+    icon="extension"
+    iconColor="primary"
+    confirmLabel="Close"
+    :cancelLabel="''"
+    v-if="selectedMod"
+    :persistent="false"
+    :single-option="true"
+  >
+    <div class="mod-details">
+      <div class="mod-header">
+        <div class="mod-icon-large" v-if="selectedMod.icon_data">
+          <q-img
+            :src="selectedMod.icon_data"
+            spinner-color="primary"
+            style="height: 64px; width: 64px"
+          />
+        </div>
+        <div class="mod-title">
+          <h5 class="q-my-none">{{ selectedMod.name }}</h5>
+          <div v-if="selectedMod.version" class="text-caption">
+            Version: {{ selectedMod.version }}
+          </div>
+        </div>
+      </div>
+
+      <q-separator class="q-my-md" />
+
+      <div v-if="selectedMod.description" class="q-mb-md">
+        <div class="text-subtitle2">Description</div>
+        <div v-html="selectedMod.description"></div>
+      </div>
+
+      <div v-if="selectedMod.homepage" class="q-mb-md">
+        <div class="text-subtitle2">Homepage</div>
+        <a @click="openUrl(selectedMod.homepage)">{{ selectedMod.homepage }}</a>
+      </div>
+
+      <div
+        v-if="selectedMod.contributors && selectedMod.contributors.length > 0"
+        class="q-mb-md"
+      >
+        <div class="text-subtitle2">Contributors</div>
+        <ul>
+          <li
+            v-for="(contributor, index) in selectedMod.contributors"
+            :key="index"
+          >
+            <div class="text-caption">
+              {{ contributor.name }} - {{ contributor.role }}
+              <span v-if="contributor.email"> ({{ contributor.email }})</span>
+              <span v-if="contributor.url">
+                (<a @click="openUrl(contributor.url)">{{
+                  contributor.url
+                }}</a>)
+              </span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div v-if="selectedMod.license" class="q-mb-md">
+        <div class="text-subtitle2">License</div>
+        <div>{{ selectedMod.license }}</div>
+      </div>
+
+      <div v-if="selectedMod.credits" class="q-mb-md">
+        <div class="text-subtitle2">Credits</div>
+        <div v-html="selectedMod.credits"></div>
+      </div>
+
+      <div class="text-subtitle2">Folder Path</div>
+      <div class="text-caption q-mb-md">{{ selectedMod.folder_path }}</div>
+    </div>
+  </MessageDialog>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
 import { getEngineModsFolderPath } from "@utils/index";
+import MessageDialog from "@components/modals/MessageDialog.vue";
 
 interface ModMetadataFile {
   name: string;
@@ -107,6 +199,18 @@ interface ModMetadataFile {
   icon_file_path?: string;
   icon_data?: string;
   enabled: boolean;
+  version?: string;
+  homepage?: string;
+  contributors?: ContributorMetadata[];
+  license?: string;
+  credits?: string;
+}
+
+interface ContributorMetadata {
+  name: string;
+  role: string;
+  email?: string;
+  url?: string;
 }
 
 interface EngineModsResponse {
@@ -139,6 +243,10 @@ const loading = ref(false);
 const error = ref("");
 const hasScanned = ref(false);
 const toggleLoading = ref<Record<string, boolean>>({}); // Track loading state for each toggle
+
+// Dialog state for mod details
+const showModDetailsDialog = ref(false);
+const selectedMod = ref<ModMetadataFile | null>(null);
 
 const isUnsupportedEngine = computed(() => {
   return ["pre-vslice", "kade", "other", "unknown"].includes(props.engineType);
@@ -182,25 +290,10 @@ const handleImageError = () => {
   console.warn("Failed to load mod icon");
 };
 
-// Format description text with line breaks
-const formatDescription = (description: string) => {
-  if (!description) return "";
-
-  // Replace newlines with HTML line breaks
-  return (
-    description
-      .replace(/\n/g, "<br>")
-      // Make URLs clickable
-      .replace(
-        /(https?:\/\/[^\s]+)/g,
-        '<a href="$1" target="_blank" rel="noopener">$1</a>'
-      )
-      // Highlight specific keywords like "License:", "Credits:", etc.
-      .replace(
-        /(License|Website|Credits|By|Author|Developer|Contributor):/g,
-        "<strong>$1:</strong>"
-      )
-  );
+// Show detailed information about a mod
+const showModDetails = (mod: ModMetadataFile) => {
+  selectedMod.value = mod;
+  showModDetailsDialog.value = true;
 };
 
 // Toggle a mod's enabled state
@@ -286,6 +379,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.button {
+  border-radius: 1rem;
+}
 .engine-mods-container {
   margin-top: 0.25rem;
   background: var(--theme-surface);
@@ -299,7 +395,7 @@ onMounted(() => {
   justify-content: space-between;
 }
 
-h5 {
+h6 {
   margin: 0;
   margin-top: 2rem;
   color: var(--theme-text);
@@ -327,6 +423,7 @@ h5 {
   border-radius: 6px;
   transition: background-color 0.2s;
   border: 1px solid var(--theme-border);
+  cursor: pointer;
 }
 
 .mod-item:hover {
@@ -345,7 +442,8 @@ h5 {
 .fallback-icon {
   width: 48px;
   height: 48px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border);
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -397,5 +495,39 @@ h5 {
   gap: 0.5rem;
   margin-left: auto;
   margin-top: 1.5rem;
+}
+
+/* Mod Details Dialog Styles */
+.mod-details {
+  max-width: 500px;
+}
+
+.mod-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.mod-icon-large {
+  margin-right: 16px;
+}
+
+.mod-title {
+  flex: 1;
+}
+
+.text-subtitle2 {
+  font-weight: 500;
+  color: var(--theme-text);
+  margin-bottom: 4px;
+}
+
+.text-caption {
+  font-size: 14px;
+  color: var(--theme-text-secondary);
+}
+
+a {
+  cursor: pointer;
 }
 </style>
