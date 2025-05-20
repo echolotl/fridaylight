@@ -547,7 +547,7 @@ fn find_psych_engine_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, St
     Ok(metadata_files)
 }
 
-/// Find Polymod mods (Vanilla) (looks for _polymod_meta.json and _polymod_icon.png)
+/// Find Polymod mods (Vanilla) (looks for _polymod_meta.json/_polymod_meta_disabled.json and _polymod_icon.png)
 fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String> {
     debug!("Searching for Polymod mods in {}", mods_folder.display());
     let mut metadata_files = Vec::new();
@@ -560,10 +560,13 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                 if path.is_dir() {
                     debug!("Checking mod folder: {}", path.display());
                     
-                    // Look for _polymod_meta.json
+                    // Look for _polymod_meta.json or _polymod_meta_disabled.json
                     let json_path = path.join("_polymod_meta.json");
+                    let disabled_json_path = path.join("_polymod_meta_disabled.json");
                     let mut json_content = None;
+                    let mut is_disabled = false;
                     
+                    // First check for _polymod_meta.json (enabled mods)
                     if json_path.exists() && json_path.is_file() {
                         match fs::read_to_string(&json_path) {
                             Ok(content) => {
@@ -579,6 +582,26 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                             },
                             Err(e) => {
                                 warn!("Failed to read _polymod_meta.json in {}: {}", path.display(), e);
+                            }
+                        }
+                    }
+                    // Then check for _polymod_meta_disabled.json (disabled mods)
+                    else if disabled_json_path.exists() && disabled_json_path.is_file() {
+                        match fs::read_to_string(&disabled_json_path) {
+                            Ok(content) => {
+                                match serde_json::from_str::<serde_json::Value>(&content) {
+                                    Ok(json) => {
+                                        json_content = Some(json);
+                                        is_disabled = true;
+                                        debug!("Found _polymod_meta_disabled.json in {}", path.display());
+                                    },
+                                    Err(e) => {
+                                        warn!("Failed to parse _polymod_meta_disabled.json in {}: {}", path.display(), e);
+                                    }
+                                }
+                            },
+                            Err(e) => {
+                                warn!("Failed to read _polymod_meta_disabled.json in {}: {}", path.display(), e);
                             }
                         }
                     }
@@ -641,14 +664,21 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                             Some(contributors_info)
                         } else {
                             None
+                        };                        // Determine the config file path based on whether it's the normal or disabled version
+                        let config_path = if is_disabled {
+                            disabled_json_path.to_string_lossy().to_string()
+                        } else if json_content.is_some() {
+                            json_path.to_string_lossy().to_string()
+                        } else {
+                            String::new()
                         };
 
                         metadata_files.push(ModMetadataFile {
                             name: title,
                             description: base_description,
                             folder_path: path.to_string_lossy().to_string(),
-                            config_file_path: if json_content.is_some() { 
-                                Some(json_path.to_string_lossy().to_string()) 
+                            config_file_path: if !config_path.is_empty() { 
+                                Some(config_path) 
                             } else { 
                                 None 
                             },
@@ -662,7 +692,7 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                             } else { 
                                 None 
                             },
-                            enabled: None, // Will be set by the command handler
+                            enabled: Some(!is_disabled), // Set the enabled state based on which file we found
                             version,
                             homepage,
                             contributors: collected_contributors,
@@ -681,7 +711,7 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
     Ok(metadata_files)
 }
 
-/// Find FPS Plus mods (looks for meta.json and icon.png)
+/// Find FPS Plus mods (looks for meta.json/meta_disabled.json and icon.png)
 /// This is similar to the Polymod function but with different file names
 
 fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String> {
@@ -696,10 +726,13 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                 if path.is_dir() {
                     debug!("Checking mod folder: {}", path.display());
                     
-                    // Look for meta.json
+                    // Look for meta.json or meta_disabled.json
                     let json_path = path.join("meta.json");
+                    let disabled_json_path = path.join("meta_disabled.json");
                     let mut json_content = None;
+                    let mut is_disabled = false;
                     
+                    // First check for meta.json (enabled mods)
                     if json_path.exists() && json_path.is_file() {
                         match fs::read_to_string(&json_path) {
                             Ok(content) => {
@@ -717,9 +750,28 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                                 warn!("Failed to read meta.json in {}: {}", path.display(), e);
                             }
                         }
+                    } 
+                    // Then check for meta_disabled.json (disabled mods)
+                    else if disabled_json_path.exists() && disabled_json_path.is_file() {
+                        match fs::read_to_string(&disabled_json_path) {
+                            Ok(content) => {
+                                match serde_json::from_str::<serde_json::Value>(&content) {
+                                    Ok(json) => {
+                                        json_content = Some(json);
+                                        is_disabled = true;
+                                        debug!("Found meta_disabled.json in {}", path.display());
+                                    },
+                                    Err(e) => {
+                                        warn!("Failed to parse meta_disabled.json in {}: {}", path.display(), e);
+                                    }
+                                }
+                            },
+                            Err(e) => {
+                                warn!("Failed to read meta_disabled.json in {}: {}", path.display(), e);
+                            }
+                        }
                     }
-                    
-                    // Look for icon.png
+                      // Look for icon.png
                     let icon_path = path.join("icon.png");
                     let icon_exists = icon_path.exists() && icon_path.is_file();
                     
@@ -779,12 +831,21 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                             None
                         };
                         
+                        // Determine the config file path based on whether it's the normal or disabled version
+                        let config_path = if is_disabled {
+                            disabled_json_path.to_string_lossy().to_string()
+                        } else if json_content.is_some() {
+                            json_path.to_string_lossy().to_string()
+                        } else {
+                            String::new()
+                        };
+                        
                         metadata_files.push(ModMetadataFile {
                             name: title,
                             description: base_description,
                             folder_path: path.to_string_lossy().to_string(),
-                            config_file_path: if json_content.is_some() { 
-                                Some(json_path.to_string_lossy().to_string()) 
+                            config_file_path: if !config_path.is_empty() { 
+                                Some(config_path) 
                             } else { 
                                 None 
                             },
@@ -798,7 +859,7 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                             } else { 
                                 None 
                             },
-                            enabled: None, // Will be set by the command handler
+                            enabled: Some(!is_disabled), // Set the enabled state based on which file we found
                             version,
                             homepage,
                             contributors: collected_contributors,
