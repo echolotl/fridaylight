@@ -1326,7 +1326,11 @@ onUnmounted(() => {
   padding: 16px;
   box-sizing: border-box;
   overflow: auto;
-  background: var(--theme-surface);
+  background-image: url("/images/menuTransparent.png");
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: overlay;
+  background-color: var(--theme-surface);
   border-radius: 1rem 1rem 0 0;
   margin: 8px;
 }
