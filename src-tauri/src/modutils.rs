@@ -1126,7 +1126,10 @@ fn get_mod_version(mod_path: &str) -> Result<String, String> {
     
     // First try _polymod_meta.json (Vanilla)
     let polymod_path = path.join("_polymod_meta.json");
-    if polymod_path.exists() && polymod_path.is_file() {
+    let disabled_polymod_path = path.join("_polymod_meta_disabled.json");
+    if disabled_polymod_path.exists() && disabled_polymod_path.is_file() {
+        return Err(format!("Mod is disabled: {}", disabled_polymod_path.display()));
+    } else if polymod_path.exists() && polymod_path.is_file() {
         match fs::read_to_string(&polymod_path) {
             Ok(content) => {
                 match serde_json::from_str::<serde_json::Value>(&content) {
