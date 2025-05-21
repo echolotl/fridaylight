@@ -64,6 +64,35 @@ export interface DeepLinkEngineSelectionResult {
 
 export type DownloadModResult = FileSelectionResult | EngineSelectionResult | ModTypeSelectionResult | OperationResult | FolderExistsResult;
 
+class GbConsole {
+
+  private static style = "color: #ff7; font-weight: bold;";
+  private static errorStyle = "color: #f00; font-weight: bold;";
+  private static warnStyle = "color: #ff0; font-weight: bold;";
+  private static infoStyle = "color: #0ff;";
+  private static debugStyle = "color: #ffd; font-weight: bold;";
+
+  static log(message: string, ...args: any[]) {
+    console.log(`%c[GameBanana] ${message}`, this.style, ...args);
+  }
+
+  static error(message: string, ...args: any[]) {
+    console.error(`%c[GameBanana] ${message}`, this.errorStyle, ...args);
+  }
+
+  static warn(message: string, ...args: any[]) {
+    console.warn(`%c[GameBanana] ${message}`, this.warnStyle, ...args);
+  }
+
+  static info(message: string, ...args: any[]) {
+    console.info(`%c[GameBanana] ${message}`, this.infoStyle, ...args);
+  }
+
+  static debug(message: string, ...args: any[]) {
+    console.debug(`%c[GameBanana] ${message}`, this.debugStyle, ...args);
+  }
+
+}
 export class GameBananaService {
   private static instance: GameBananaService;
   private pendingDownloadNotification: any = null;
@@ -88,7 +117,7 @@ export class GameBananaService {
       const storeService = StoreService.getInstance();
       return await storeService.getSetting("installLocation");
     } catch (error) {
-      console.warn("Could not get install location from settings:", error);
+      GbConsole.warn("Could not get install location from settings:", error);
       return null;
     }
   }
@@ -103,7 +132,7 @@ export class GameBananaService {
       try {
         installLocation = await this.getInstallLocation();
       } catch (error) {
-        console.warn("Could not get install location from settings:", error);
+        GbConsole.warn("Could not get install location from settings:", error);
       }
       
       // Call the backend command to check if the folder exists
@@ -112,7 +141,7 @@ export class GameBananaService {
         installLocation
       });
     } catch (error) {
-      console.error("Error checking if mod folder exists:", error);
+      GbConsole.error("Error checking if mod folder exists:", error);
       return false; // Assume it doesn't exist in case of error
     }
   }
@@ -233,7 +262,7 @@ export class GameBananaService {
         }
       );
     } catch (error) {
-      console.error("Failed to get compatible engine mods:", error);
+      GbConsole.error("Failed to get compatible engine mods:", error);
       return [];
     }
   }
@@ -245,11 +274,11 @@ export class GameBananaService {
     try {
       // Check if DatabaseService is initialized
       if (!window.db || !window.db.service) {
-        console.warn("Database service not initialized yet, cannot save mod");
+        GbConsole.warn("Database service not initialized yet, cannot save mod");
         return false;
       }
 
-      console.log("Saving mod to database using DatabaseService:", mod);
+      GbConsole.log("Saving mod to database using DatabaseService:", mod);
 
       // Make sure the mod has an engine field required by the type
       if (!mod.engine) {
@@ -265,10 +294,10 @@ export class GameBananaService {
       // Use the DatabaseService to save the mod
       await window.db.service.saveMod(mod);
 
-      console.log("Mod saved successfully to database:", mod.name);
+      GbConsole.log("Mod saved successfully to database:", mod.name);
       return true;
     } catch (error) {
-      console.error("Failed to save mod to database:", error);
+      GbConsole.error("Failed to save mod to database:", error);
       return false;
     }
   }
@@ -313,7 +342,7 @@ export class GameBananaService {
 
       if (isModpack && modpackType && !hasExecutable) {
         // Handle modpack download logic
-        console.log("Modpack detected:", modpackType);
+        GbConsole.log("Modpack detected:", modpackType);
         const engineMods = await this.getCompatibleEngineMods(modpackType);
 
         if (engineMods.length === 0) {
@@ -377,7 +406,7 @@ export class GameBananaService {
       });
 
       this.dismissNotification();
-      console.error("Failed to prepare mod download:", error);
+      GbConsole.error("Failed to prepare mod download:", error);
       
       return {
         success: false,
@@ -417,7 +446,7 @@ export class GameBananaService {
         timeout: 5000,
       });
 
-      console.error("Failed to download mod:", error);
+      GbConsole.error("Failed to download mod:", error);
       return { success: false, error: String(error) };
     }
   }
@@ -440,7 +469,7 @@ export class GameBananaService {
       try {
         installLocation = await this.getInstallLocation();
       } catch (error) {
-        console.warn("Could not get install location from settings:", error);
+        GbConsole.warn("Could not get install location from settings:", error);
       }
 
       // If this is a retry (folder exists case), append a timestamp to make the folder unique
@@ -448,7 +477,7 @@ export class GameBananaService {
       if (isRetry) {
 
         modName = `${modName} (${mod.id.toString(16).slice(0, 4)})`;
-        console.log(`Folder already exists, using unique name: ${modName}`);
+        GbConsole.log(`Folder already exists, using unique name: ${modName}`);
       }
 
       // Create a unique download entry and initialize tracking
@@ -474,7 +503,7 @@ export class GameBananaService {
         timeout: 5000,
       });
 
-      console.error("Failed to download mod:", error);
+      GbConsole.error("Failed to download mod:", error);
       return { success: false, error: String(error) };
     }
   }
@@ -543,7 +572,7 @@ export class GameBananaService {
         timeout: 5000,
       });
 
-      console.error("Failed to process download result:", error);
+      GbConsole.error("Failed to process download result:", error);
       return { success: false, error: String(error) };
     }
   }
@@ -563,7 +592,7 @@ export class GameBananaService {
 
       // Check if the selected file contains an executable
       if (selectedFile._bContainsExe) {
-        console.log("Selected file contains an executable, treating as standard mod");
+        GbConsole.log("Selected file contains an executable, treating as standard mod");
         
         // Update notification to downloading
         this.updateNotification(`Downloading "${mod.name}"...`);
@@ -573,11 +602,11 @@ export class GameBananaService {
         try {
           installLocation = await this.getInstallLocation();
         } catch (error) {
-          console.warn("Could not get install location from settings:", error);
+          GbConsole.warn("Could not get install location from settings:", error);
         }
 
-        console.log("Using selected file URL:", selectedFile._sDownloadUrl);
-        console.log("Using installation location:", installLocation);
+        GbConsole.log("Using selected file URL:", selectedFile._sDownloadUrl);
+        GbConsole.log("Using installation location:", installLocation);
 
         // Ensure no duplicate download entries exist
         this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnail_url);
@@ -641,11 +670,11 @@ export class GameBananaService {
       try {
         installLocation = await this.getInstallLocation();
       } catch (error) {
-        console.warn("Could not get install location from settings:", error);
+        GbConsole.warn("Could not get install location from settings:", error);
       }
 
-      console.log("Using selected file URL:", selectedFile._sDownloadUrl);
-      console.log("Using installation location:", installLocation);
+      GbConsole.log("Using selected file URL:", selectedFile._sDownloadUrl);
+      GbConsole.log("Using installation location:", installLocation);
 
       // Ensure no duplicate download entries exist
       this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnail_url);
@@ -672,7 +701,7 @@ export class GameBananaService {
       });
 
       this.dismissNotification();
-      console.error("Failed to download mod:", error);
+      GbConsole.error("Failed to download mod:", error);
       
       return { success: false, error: String(error) };
     }
@@ -709,7 +738,7 @@ export class GameBananaService {
       // This happens when the user first selected a file, then selected an engine
       let downloadUrl = mod.download_url;
       
-      console.log(`Starting download for "${mod.name}" modpack to ${modsFolderPath}`);
+      GbConsole.log(`Starting download for "${mod.name}" modpack to ${modsFolderPath}`);
 
       // Fix URL if needed
       if (downloadUrl.startsWith("//")) {
@@ -730,7 +759,7 @@ export class GameBananaService {
         installLocation: modsFolderPath,
       });
 
-      console.log("Download result:", result);
+      GbConsole.log("Download result:", result);
 
       // Dismiss the loading notification
       this.dismissNotification();
@@ -763,7 +792,7 @@ export class GameBananaService {
       });
 
       this.dismissNotification();
-      console.error("Failed to install modpack:", error);
+      GbConsole.error("Failed to install modpack:", error);
       
       return { success: false, error: String(error) };
     }
@@ -803,7 +832,7 @@ export class GameBananaService {
         timeout: 5000,
       });
 
-      console.error(`Failed to download ${engineType} engine:`, error);
+      GbConsole.error(`Failed to download ${engineType} engine:`, error);
       return { success: false, error: String(error) };
     }
   }
@@ -828,7 +857,7 @@ export class GameBananaService {
           installLocation = await window.db.service.getSetting("installLocation");
         }
       } catch (error) {
-        console.warn("Could not get install location from settings:", error);
+        GbConsole.warn("Could not get install location from settings:", error);
       }
 
       // If this is a retry (folder exists case), append a timestamp to make the folder unique
@@ -836,10 +865,10 @@ export class GameBananaService {
       if (isRetry) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         engineName = `${engineName}_${timestamp}`;
-        console.log(`Folder already exists, using unique name: ${engineName}`);
+        GbConsole.log(`Folder already exists, using unique name: ${engineName}`);
       }
 
-      console.log(
+      GbConsole.log(
         `Downloading ${engineType} engine to ${
           installLocation || "default location"
         } with name ${engineName}`
@@ -901,7 +930,7 @@ export class GameBananaService {
 
       // Dismiss any pending notification
       this.dismissNotification();
-      console.error(`Failed to download ${engineType} engine:`, error);
+      GbConsole.error(`Failed to download ${engineType} engine:`, error);
       
       return { success: false, error: String(error) };
     }
@@ -933,7 +962,7 @@ export class GameBananaService {
       const isModpack = this.determineDeepLinkModpackStatus(modInfo);
       const modpackType = this.determineDeepLinkModpackType(modInfo);
 
-      console.log("Mod analysis:", { isModpack, modpackType });
+      GbConsole.log("Mod analysis:", { isModpack, modpackType });
 
       // Update notification
       this.updateNotification(`Preparing to download "${modName}"...`);
@@ -981,7 +1010,7 @@ export class GameBananaService {
         const storeService = StoreService.getInstance();
         installLocation = await storeService.getSetting("installLocation");
       } catch (error) {
-        console.warn("Could not get install location from settings:", error);
+        GbConsole.warn("Could not get install location from settings:", error);
       }
 
       // Fix the URL
@@ -992,12 +1021,12 @@ export class GameBananaService {
         fixedUrl = "https://" + fixedUrl;
       }
 
-      console.log(`Starting download for "${modName}" from URL: ${fixedUrl}`);
+      GbConsole.log(`Starting download for "${modName}" from URL: ${fixedUrl}`);
       
       // IMPORTANT: Remove any existing download tracking for this mod ID to avoid duplicates
       const existingDownloadId = modIdToDownloadIdMap.get(modId);
       if (existingDownloadId) {
-        console.log(`Found existing download tracking ID ${existingDownloadId} for mod ID ${modId}, cleaning up`);
+        GbConsole.log(`Found existing download tracking ID ${existingDownloadId} for mod ID ${modId}, cleaning up`);
         // Delete the existing download entry
         delete downloadingMods[existingDownloadId];
         modIdToDownloadIdMap.delete(modId);
@@ -1007,7 +1036,7 @@ export class GameBananaService {
       const downloadId = downloadState.createDownload(modId, modName, `https://gamebanana.com/mods/embeddables/${modId}`);
       modIdToDownloadIdMap.set(modId, downloadId);
       
-      console.log(`Created download tracking with ID ${downloadId} for modId ${modId}`);
+      GbConsole.log(`Created download tracking with ID ${downloadId} for modId ${modId}`);
 
       // Update the download status manually to ensure it shows up
       downloadState.updateDownloadProgress({
@@ -1065,13 +1094,13 @@ export class GameBananaService {
             await window.db.service.saveMod(modInfoResult);
           }
         } catch (error) {
-          console.error("Failed to save mod to database:", error);
+          GbConsole.error("Failed to save mod to database:", error);
         }
       }
 
       // Update download status to complete
       if (downloadId) {
-        console.log(`Manually completing download tracking for mod ${modId}`);
+        GbConsole.log(`Manually completing download tracking for mod ${modId}`);
         downloadState.updateDownloadProgress({
           id: downloadId,
           bytesDownloaded: 100,
@@ -1118,7 +1147,7 @@ export class GameBananaService {
         timeout: 5000,
       });
 
-      console.error("Failed to download mod from deep link:", error);
+      GbConsole.error("Failed to download mod from deep link:", error);
       return { success: false, error: String(error) };
     }
   }
@@ -1150,7 +1179,7 @@ export class GameBananaService {
         throw new Error("Could not determine mods folder path");
       }
 
-      console.log(
+      GbConsole.log(
         `Starting download for "${modName}" modpack to ${modsFolderPath}`
       );
 
@@ -1174,7 +1203,7 @@ export class GameBananaService {
         installLocation: modsFolderPath,
       });
 
-      console.log("Download result:", result);
+      GbConsole.log("Download result:", result);
 
       // Dismiss notification
       this.dismissNotification();
@@ -1190,7 +1219,7 @@ export class GameBananaService {
 
       // Manual cleanup of download tracking entry
       if (downloadId) {
-        console.log(`Manually completing download tracking for modpack ${modId}`);
+        GbConsole.log(`Manually completing download tracking for modpack ${modId}`);
         downloadState.completeDownload(downloadId);
         modIdToDownloadIdMap.delete(modId);
       }
@@ -1212,7 +1241,7 @@ export class GameBananaService {
         timeout: 5000,
       });
 
-      console.error("Failed to download modpack:", error);
+      GbConsole.error("Failed to download modpack:", error);
       return { success: false, error: String(error) };
     }
   }
@@ -1296,7 +1325,7 @@ export class GameBananaService {
         // Call the notification function to dismiss it
         this.pendingDownloadNotification();
       } catch (e) {
-        console.warn("Error dismissing notification:", e);
+        GbConsole.warn("Error dismissing notification:", e);
       }
       // Always clear the reference regardless of whether the dismiss operation succeeded
       this.pendingDownloadNotification = null;
@@ -1308,7 +1337,7 @@ export class GameBananaService {
         // Call the notification function to dismiss it
         this.pendingDownloadNotification();
       } catch (e) {
-        console.warn("Error dismissing notification:", e);
+        GbConsole.warn("Error dismissing notification:", e);
       }
       // Always clear the reference
       this.pendingDownloadNotification = null;
@@ -1328,12 +1357,12 @@ export class GameBananaService {
    * Returns the download ID to use for tracking
    */
   private ensureUniqueDownload(modId: number, modName: string, thumbnailUrl?: string): string {
-    console.log(`Ensuring unique download for mod ID ${modId}`);
+    GbConsole.log(`Ensuring unique download for mod ID ${modId}`);
     
     // Clean up any existing download tracking for this mod ID
     const existingDownloadId = modIdToDownloadIdMap.get(modId);
     if (existingDownloadId) {
-      console.log(`Found existing download tracking ID ${existingDownloadId} for mod ID ${modId}, cleaning up`);
+      GbConsole.log(`Found existing download tracking ID ${existingDownloadId} for mod ID ${modId}, cleaning up`);
       // Delete the existing download entry
       delete downloadingMods[existingDownloadId];
       modIdToDownloadIdMap.delete(modId);
@@ -1343,7 +1372,7 @@ export class GameBananaService {
     const downloadId = downloadState.createDownload(modId, modName, thumbnailUrl || `https://gamebanana.com/mods/embeddables/${modId}`);
     modIdToDownloadIdMap.set(modId, downloadId);
     
-    console.log(`Created download tracking with ID ${downloadId} for modId ${modId}`);
+    GbConsole.log(`Created download tracking with ID ${downloadId} for modId ${modId}`);
     
     // Initialize download state
     downloadState.updateDownloadProgress({
@@ -1371,7 +1400,7 @@ export function setupGameBananaEventListeners(): () => void {
   import("@tauri-apps/api/event").then(({ listen }) => {
     // Set up event listeners for downloads
     listen("download-started", (event: any) => {
-      console.log("Download started:", event.payload);
+      GbConsole.log("Download started:", event.payload);
       
       // Extract mod ID, supporting both modId and mod_id formats
       const modId = event.payload.modId ?? event.payload.mod_id ?? Math.floor(Math.random() * 1000000);
@@ -1402,21 +1431,21 @@ export function setupGameBananaEventListeners(): () => void {
     });
 
     listen("download-progress", (event: any) => {
-      console.log("Download progress:", event.payload);
+      GbConsole.log("Download progress:", event.payload);
       
       // Extract mod ID, supporting both modId and mod_id formats
       const modId = event.payload.modId ?? event.payload.mod_id;
       
       // Skip events without mod IDs or necessary data
       if (modId === undefined) {
-        console.warn("Received download progress event with undefined modId and mod_id:", event.payload);
+        GbConsole.warn("Received download progress event with undefined modId and mod_id:", event.payload);
         return;
       }
       
       // Get the download ID from our mapping
       const downloadId = modIdToDownloadIdMap.get(modId);
       if (!downloadId) {
-        console.warn(`No download ID found for mod ID ${modId}, creating new entry on the fly`);
+        GbConsole.warn(`No download ID found for mod ID ${modId}, creating new entry on the fly`);
         // Create a new download entry on the fly if one doesn't exist
         const newDownloadId = downloadState.createDownload(
           modId,
@@ -1452,21 +1481,21 @@ export function setupGameBananaEventListeners(): () => void {
     });
 
     listen("download-finished", (event: any) => {
-      console.log("Download finished:", event.payload);
+      GbConsole.log("Download finished:", event.payload);
       
       // Extract mod ID, supporting both modId and mod_id formats
       const modId = event.payload.modId ?? event.payload.mod_id;
       
       // Handle undefined mod ID
       if (modId === undefined) {
-        console.warn("Received download finished event with undefined modId and mod_id:", event.payload);
+        GbConsole.warn("Received download finished event with undefined modId and mod_id:", event.payload);
         return;
       }
       
       // Get the download ID from our mapping
       const downloadId = modIdToDownloadIdMap.get(modId);
       if (!downloadId) {
-        console.warn(`No download ID found for mod ID ${modId}, creating new entry for completion`);
+        GbConsole.warn(`No download ID found for mod ID ${modId}, creating new entry for completion`);
         // Create a new download entry on the fly if one doesn't exist
         const newDownloadId = downloadState.createDownload(
           modId,
@@ -1519,20 +1548,20 @@ export function setupGameBananaEventListeners(): () => void {
     });
 
     listen("download-error", (event: any) => {
-      console.log("Download error:", event.payload);
+      GbConsole.log("Download error:", event.payload);
       
       const modId = event.payload.modId ?? event.payload.mod_id;
       
       // Handle undefined mod ID
       if (modId === undefined) {
-        console.warn("Received download error event with undefined modId and mod_id:", event.payload);
+        GbConsole.warn("Received download error event with undefined modId and mod_id:", event.payload);
         return;
       }
       
       // Get the download ID from our mapping
       const downloadId = modIdToDownloadIdMap.get(modId);
       if (!downloadId) {
-        console.warn(`No download ID found for mod ID ${modId}, creating new entry for error state`);
+        GbConsole.warn(`No download ID found for mod ID ${modId}, creating new entry for error state`);
         // Create a new download entry on the fly if one doesn't exist
         const newDownloadId = downloadState.createDownload(
           modId,

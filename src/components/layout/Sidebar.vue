@@ -321,7 +321,7 @@ const loadModsFromDatabase = async () => {
 
       // Sync mods from database to backend in-memory state
       console.log("Syncing mods from database to backend state on app start");
-      await syncModsWithBackend();
+      await dbService.syncModsWithBackend();
 
       // If there's at least one mod, select the first one
       if (processedMods.length > 0 && !selectedMod.value) {
@@ -397,7 +397,7 @@ const loadModsFromMemory = async () => {
         console.log("Successfully fixed display_order values");
 
         // Sync with backend so it's aware of our changes
-        await syncModsWithBackend();
+        await dbService.syncModsWithBackend();
       } catch (error) {
         console.error("Failed to fix mod display_order values:", error);
       }
@@ -598,24 +598,6 @@ const selectMod = (mod: ModInfo) => {
 
 const setActivePage = (page: string) => {
   activePage.value = page;
-};
-
-// Function to sync mods with backend
-const syncModsWithBackend = async () => {
-  try {
-    console.log("Syncing mods with backend...");
-
-    // Add the required group field to each mod
-    const modsWithGroup = mods.value.map((mod) => ({
-      ...mod,
-      group: mod.folder_id || "none",
-    }));
-
-    await invoke("sync_mods_from_database", { modsData: modsWithGroup });
-    console.log("Successfully synced mods with backend");
-  } catch (error) {
-    console.error("Failed to sync mods with backend:", error);
-  }
 };
 
 // Function to handle saving changes to an existing mod (

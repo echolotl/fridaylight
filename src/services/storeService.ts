@@ -13,6 +13,30 @@ export const DEFAULT_SETTINGS: AppSettings = {
   compactMode: false,
 };
 
+class sConsole {
+  private static style = "color: #7f7; font-weight: bold;";
+  private static errorStyle = "color: #f00; font-weight: bold;";
+  private static warnStyle = "color: #ff0; font-weight: bold;";
+  private static infoStyle = "color: #0ff;";
+  private static debugStyle = "color: #dfd; font-weight: bold;";
+
+  static log(message: string, ...args: any[]) {
+    console.log(`%c[StoreService] ${message}`, this.style, ...args);
+  }
+  static debug(message: string, ...args: any[]) {
+    console.debug(`%c[StoreService] ${message}`, this.debugStyle, ...args);
+  }
+  static error(message: string, ...args: any[]) {
+    console.error(`%c[StoreService] ${message}`, this.errorStyle, ...args);
+  }
+  static warn(message: string, ...args: any[]) {
+    console.warn(`%c[StoreService] ${message}`, this.warnStyle, ...args);
+  }
+  static info(message: string, ...args: any[]) {
+    console.info(`%c[StoreService] ${message}`, this.infoStyle, ...args);
+  }
+}
+
 /**
  * StoreService class for managing application settings,
  * this is for everything else that doesn't need a database
@@ -49,9 +73,9 @@ export class StoreService {
     try {
       this.store = await load(this.storePath, { autoSave: true });
       this.initialized = true;
-      console.log('Settings store initialized successfully');
+      sConsole.log('Settings store initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize settings store:', error);
+      sConsole.error('Failed to initialize settings store:', error);
       throw error;
     }
   }
@@ -67,7 +91,7 @@ export class StoreService {
     }
     
     if (!this.store) {
-      console.error('Store not initialized');
+      sConsole.error('Store not initialized');
       return DEFAULT_SETTINGS[key];
     }
     
@@ -76,7 +100,7 @@ export class StoreService {
       const value = await this.store.get<any>(key);
       return value !== null && value !== undefined ? value as AppSettings[K] : DEFAULT_SETTINGS[key];
     } catch (error) {
-      console.error(`Failed to get setting ${key}:`, error);
+      sConsole.error(`Failed to get setting ${key}:`, error);
       return DEFAULT_SETTINGS[key];
     }
   }
@@ -91,7 +115,7 @@ export class StoreService {
     }
     
     if (!this.store) {
-      console.error('Store not initialized');
+      sConsole.error('Store not initialized');
       return { ...DEFAULT_SETTINGS };
     }
     
@@ -108,7 +132,7 @@ export class StoreService {
       
       return settings;
     } catch (error) {
-      console.error('Failed to get all settings:', error);
+      sConsole.error('Failed to get all settings:', error);
       return { ...DEFAULT_SETTINGS };
     }
   }
@@ -124,7 +148,7 @@ export class StoreService {
     }
     
     if (!this.store) {
-      console.error('Store not initialized');
+      sConsole.error('Store not initialized');
       throw new Error('Store not initialized');
     }
     
@@ -132,7 +156,7 @@ export class StoreService {
       // Using type assertion to handle complex types
       await this.store.set(key as string, value as any);
     } catch (error) {
-      console.error(`Failed to save setting ${key}:`, error);
+      sConsole.error(`Failed to save setting ${key}:`, error);
       throw error;
     }
   }
@@ -147,7 +171,7 @@ export class StoreService {
     }
     
     if (!this.store) {
-      console.error('Store not initialized');
+      sConsole.error('Store not initialized');
       throw new Error('Store not initialized');
     }
     
@@ -157,7 +181,7 @@ export class StoreService {
         await this.store.set(key, value as any);
       }
     } catch (error) {
-      console.error('Failed to save settings:', error);
+      sConsole.error('Failed to save settings:', error);
       throw error;
     }
   }
@@ -171,15 +195,15 @@ export class StoreService {
     }
     
     if (!this.store) {
-      console.error('Store not initialized');
+      sConsole.error('Store not initialized');
       throw new Error('Store not initialized');
     }
     
     try {
       await this.store.clear();
-      console.log('Settings cleared successfully');
+      sConsole.log('Settings cleared successfully');
     } catch (error) {
-      console.error('Failed to clear settings:', error);
+      sConsole.error('Failed to clear settings:', error);
       throw error;
     }
   }
