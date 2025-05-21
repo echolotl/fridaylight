@@ -1739,7 +1739,7 @@ fn read_binary_from_archive(archive_path: &Path, file_path: &str) -> Option<Vec<
 fn is_archive(path: &Path) -> bool {
     if let Some(ext) = path.extension() {
         let ext_str = ext.to_string_lossy().to_lowercase();
-        return ext_str == "zip" || ext_str == "fnf";  // Add other supported formats if needed
+        return ext_str == "zip";
     }
     false
 }
