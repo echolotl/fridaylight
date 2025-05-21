@@ -184,7 +184,7 @@
                       class="text-subtitle1 phantom-font text-right"
                       style="color: var(--theme-text-secondary)"
                     >
-                      {{ modComments._aRecords.length }} comments total
+                      {{ modComments._aMetadata._nRecordCount }} comments total
                     </div>
                   </div>
                   <hr />
