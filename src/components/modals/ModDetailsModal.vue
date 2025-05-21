@@ -1084,6 +1084,18 @@ function downloadMod() {
   border: 2px solid var(--theme-border);
 }
 
+.mod-info-text pre,
+.update-text pre,
+.comment-text pre {
+  background-color: var(--theme-card);
+  border: 1px solid var(--theme-border);
+  padding: .5rem;
+  border-radius: 0.2rem;
+  font-family: monospace;
+  width: fit-content;
+
+}
+
 .BlueColor {
   color: var(--blue);
 }

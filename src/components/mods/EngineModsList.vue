@@ -48,6 +48,7 @@
         class="mod-item"
         @click="showModDetails(mod)"
       >
+      <div class="mod-item-content">
         <div class="mod-icon">
           <q-img
             v-if="mod.icon_data"
@@ -92,6 +93,22 @@
             @click.stop
           />
         </div>
+      </div>      
+      <div v-if="mod.dependencies && Object.keys(mod.dependencies).length > 0">
+        <div class="dependency-error-container q-mb-md" v-if="hasDependencyErrors(mod)" >
+          <div v-for="(version, modName) in mod.dependencies" :key="modName">
+            <div v-if="dependencyStates[modName]?.error" class="dependency-error-item">
+            <div class="dependency-info">
+              <span class="dependency-name" style="color: var(--red);">{{ modName }}</span>
+              <span class="dependency-version" style="color: var(--red);">({{ version }})</span>
+            </div>
+            <div class="text-caption text-negative">
+              {{ dependencyStates[modName]?.error }}
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
   </div>
@@ -171,11 +188,28 @@
       <div v-if="selectedMod.license" class="q-mb-md">
         <div class="text-subtitle2">License</div>
         <div>{{ selectedMod.license }}</div>
-      </div>
-
-      <div v-if="selectedMod.credits" class="q-mb-md">
+      </div>      <div v-if="selectedMod.credits" class="q-mb-md">
         <div class="text-subtitle2">Credits</div>
         <div v-html="selectedMod.credits"></div>
+      </div>
+
+      <div v-if="selectedMod.dependencies && Object.keys(selectedMod.dependencies).length > 0" class="q-mb-md">
+        <div class="text-subtitle2">Dependencies</div>
+        <ul>
+          <li v-for="(version, modName) in selectedMod.dependencies" :key="modName" class="dependency-item">
+            <div class="dependency-info">
+              <span class="dependency-name">{{ modName }}</span>
+              <span class="dependency-version">({{ version }})</span>
+              <q-spinner v-if="dependencyStates[modName]?.checking" color="primary" size="1em" />
+              <q-icon v-else-if="dependencyStates[modName]?.installed" name="check_circle" color="positive" size="1.2em" />
+              <q-icon v-else-if="dependencyStates[modName]?.installed === false" name="error" color="negative" size="1.2em" />
+              <q-icon v-else name="help" color="warning" size="1.2em" />
+            </div>
+            <div v-if="dependencyStates[modName]?.error" class="text-caption text-negative">
+              {{ dependencyStates[modName]?.error }}
+            </div>
+          </li>
+        </ul>
       </div>
 
       <div class="text-subtitle2">Folder Path</div>
@@ -204,6 +238,11 @@ interface ModMetadataFile {
   contributors?: ContributorMetadata[];
   license?: string;
   credits?: string;
+  dependencies?: DependencyMetadata[];
+}
+
+interface DependencyMetadata {
+  [modName: string]: string; // Key: mod name, Value: version
 }
 
 interface ContributorMetadata {
@@ -248,9 +287,32 @@ const toggleLoading = ref<Record<string, boolean>>({}); // Track loading state f
 const showModDetailsDialog = ref(false);
 const selectedMod = ref<ModMetadataFile | null>(null);
 
+// State for dependency checking
+interface DependencyState {
+  checking: boolean;
+  installed?: boolean;
+  error?: string;
+}
+
+const dependencyStates = ref<Record<string, DependencyState>>({});
+
 const isUnsupportedEngine = computed(() => {
   return ["pre-vslice", "kade", "other", "unknown"].includes(props.engineType);
 });
+
+// Check if a mod has any dependency errors
+const hasDependencyErrors = (mod: ModMetadataFile): boolean => {
+  if (!mod.dependencies) return false;
+  
+  // Check if any dependencies have been marked as not installed
+  for (const dependencyName of Object.keys(mod.dependencies)) {
+    if (dependencyStates.value[dependencyName]?.installed === false) {
+      return true;
+    }
+  }
+  
+  return false;
+};
 
 const scanForMods = async () => {
   if (!props.executablePath || !props.engineType) {
@@ -267,16 +329,22 @@ const scanForMods = async () => {
   loading.value = true;
   error.value = "";
   mods.value = [];
+  // Reset dependency states when refreshing
+  dependencyStates.value = {};
 
   try {
     const response = await invoke<EngineModsResponse>("find_engine_mod_files", {
       executablePath: props.executablePath,
       engineType: props.engineType,
-      modsFolder: props.customModsFolder,
-    });
+      modsFolder: props.customModsFolder,    });
 
     mods.value = response.mods;
     hasScanned.value = true;
+    
+    // Check dependencies for all mods after they are loaded
+    if (mods.value.length > 0) {
+      checkAllModsDependencies();
+    }
   } catch (e: any) {
     console.error("Failed to scan for mods:", e);
     error.value = e.toString();
@@ -294,6 +362,103 @@ const handleImageError = () => {
 const showModDetails = (mod: ModMetadataFile) => {
   selectedMod.value = mod;
   showModDetailsDialog.value = true;
+  
+  // Check dependencies if they exist and they haven't been checked yet
+  if (mod.dependencies && Object.keys(mod.dependencies).length > 0) {
+    checkDependencies(mod);
+  }
+};
+
+// Check if a mod's dependencies are installed
+const checkDependencies = async (mod: ModMetadataFile) => {
+  if (!mod.dependencies) return;
+  
+  const modFolder = getEngineModsFolderPath(
+    props.executablePath,
+    props.customModsFolder
+  );
+  
+  if (!modFolder) {
+    console.error("Could not determine mods folder path");
+    return;
+  }
+
+  // Check each dependency
+  for (const [dependencyName, requiredVersion] of Object.entries(mod.dependencies)) {
+    // Skip if already checking or if status is already known
+    if (dependencyStates.value[dependencyName]?.checking) {
+      continue;
+    }
+    
+    // Set initial checking state if not already set
+    if (!dependencyStates.value[dependencyName]) {
+      dependencyStates.value[dependencyName] = { checking: true };
+    }
+    
+    try {
+      await invoke("check_mod_dependency", {
+        modsFolderPath: modFolder,
+        dependencyName: dependencyName,
+        requiredVersion: requiredVersion
+      });
+      
+      // If no error is thrown, the dependency is installed correctly
+      dependencyStates.value[dependencyName] = { 
+        checking: false, 
+        installed: true 
+      };
+    } catch (e: any) {
+      console.error(`Dependency check failed for ${dependencyName}:`, e);
+      dependencyStates.value[dependencyName] = { 
+        checking: false, 
+        installed: false,
+        error: e.toString()
+      };
+    }  }
+};
+
+// Check dependencies for all mods
+const checkAllModsDependencies = async () => {
+  const modFolder = getEngineModsFolderPath(
+    props.executablePath,
+    props.customModsFolder
+  );
+  
+  if (!modFolder) {
+    console.error("Could not determine mods folder path");
+    return;
+  }
+
+  // Process each mod with dependencies
+  for (const mod of mods.value) {
+    if (mod.dependencies && Object.keys(mod.dependencies).length > 0) {
+      for (const [dependencyName, requiredVersion] of Object.entries(mod.dependencies)) {
+        if (!dependencyStates.value[dependencyName]) {
+          dependencyStates.value[dependencyName] = { checking: true };
+          
+          try {
+            await invoke("check_mod_dependency", {
+              modsFolderPath: modFolder,
+              dependencyName: dependencyName,
+              requiredVersion: requiredVersion
+            });
+            
+            dependencyStates.value[dependencyName] = { 
+              checking: false, 
+              installed: true 
+            };
+          } catch (e: any) {
+            console.error(`Dependency check failed for ${dependencyName}:`, e);
+            dependencyStates.value[dependencyName] = { 
+              checking: false, 
+              installed: false,
+              error: e.toString()
+            };
+          }
+        }
+      }
+    }
+  }
 };
 
 // Toggle a mod's enabled state
@@ -415,7 +580,7 @@ h6 {
   margin-bottom: 16px;
 }
 
-.mod-item {
+.mod-item-content {
   display: flex;
   align-items: center;
   padding: 10px;
@@ -426,7 +591,7 @@ h6 {
   cursor: pointer;
 }
 
-.mod-item:hover {
+.mod-item-content:hover {
   background: var(--theme-border);
 }
 
@@ -490,6 +655,15 @@ h6 {
   color: #ff5252;
 }
 
+.dependency-error-container {
+  margin: 0 1rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--red);
+  border-top: none;
+  border-radius: 0 0 1rem 1rem;
+  background: var(--theme-background);
+}
+
 .scan-actions {
   display: inline-flex;
   gap: 0.5rem;
@@ -529,5 +703,24 @@ h6 {
 
 a {
   cursor: pointer;
+}
+
+.dependency-item {
+  margin-bottom: 8px;
+}
+
+.dependency-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dependency-name {
+  font-weight: 500;
+}
+
+.dependency-version {
+  color: var(--theme-text-secondary);
+  font-size: 0.9em;
 }
 </style>

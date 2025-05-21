@@ -173,6 +173,7 @@ pub struct ModMetadataFile {
     pub contributors: Option<Vec<ContributorMetadata>>, 
     pub license: Option<String>,   // License information
     pub restart_required: Option<bool>, // Whether a restart is required
+    pub dependencies: Option<HashMap<String, String>>, // Dependencies of the mod with version requirements
 }
 
 // Contributor structure for mod metadata

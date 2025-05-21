@@ -2,6 +2,7 @@ use crate::models::{ModDisableResult, ModMetadataFile, ModsState, GLOBAL_MODS_ST
 use log::{debug, error, info, warn};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::collections::HashMap;
 use tauri::Manager;
 use serde_json;
 use roxmltree;
@@ -534,6 +535,7 @@ fn find_psych_engine_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, St
                             contributors: None,
                             license: None,
                             restart_required,
+                            dependencies: None,
                         });
                     }
                 }
@@ -639,7 +641,22 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                         let license = json_content.as_ref()
                             .and_then(|json| json.get("license").and_then(|v| v.as_str()))
                             .map(|s| s.to_string());
-                          // Extract contributor information
+                        
+                        // Extract dependencies information
+                        let dependencies = json_content.as_ref()
+                            .and_then(|json| json.get("dependencies").and_then(|v| v.as_object()))
+                            .map(|deps_obj| {
+                                let mut deps_map = HashMap::new();
+                                for (key, value) in deps_obj {
+                                    if let Some(version_req) = value.as_str() {
+                                        deps_map.insert(key.clone(), version_req.to_string());
+                                    }
+                                }
+                                deps_map
+                            })
+                            .filter(|m| !m.is_empty());
+                        
+                        // Extract contributor information
                         let mut contributors_info = Vec::new();
 
                         if let Some(contributors) = json_content.as_ref()
@@ -697,6 +714,7 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                             homepage,
                             contributors: collected_contributors,
                             license,
+                            dependencies,
                             restart_required: None, // Polymod doesn't have restart info
                         });
                     }
@@ -799,12 +817,26 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                         let homepage = json_content.as_ref()
                             .and_then(|json| json.get("homepage").and_then(|v| v.as_str()))
                             .map(|s| s.to_string());
-                        
-                        // Get license if available
+                          // Get license if available
                         let license = json_content.as_ref()
                             .and_then(|json| json.get("license").and_then(|v| v.as_str()))
                             .map(|s| s.to_string());
-                          // Extract contributor information
+                        
+                        // Extract dependencies information
+                        let dependencies = json_content.as_ref()
+                            .and_then(|json| json.get("dependencies").and_then(|v| v.as_object()))
+                            .map(|deps_obj| {
+                                let mut deps_map = HashMap::new();
+                                for (key, value) in deps_obj {
+                                    if let Some(version_req) = value.as_str() {
+                                        deps_map.insert(key.clone(), version_req.to_string());
+                                    }
+                                }
+                                deps_map
+                            })
+                            .filter(|m| !m.is_empty());
+                          
+                        // Extract contributor information
                         let mut contributors_info = Vec::new();
 
                         if let Some(contributors) = json_content.as_ref()
@@ -865,6 +897,7 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                             contributors: collected_contributors,
                             license,
                             restart_required: None, // Polymod doesn't have restart info
+                            dependencies,
                         });
                     }
                 }
@@ -923,6 +956,7 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
                                                 contributors: None,
                                                 license: None,
                                                 restart_required: None,
+                                                dependencies: None,
                                             });
                                         } else {
                                             warn!("credits.xml found but no menu element in {}", path.display());
@@ -946,6 +980,7 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
                                                 contributors: None,
                                                 license: None,
                                                 restart_required: None,
+                                                dependencies: None,
                                             });
                                         }
                                     },
@@ -971,6 +1006,7 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
                                             contributors: None,
                                             license: None,
                                             restart_required: None,
+                                            dependencies: None,
                                         });
                                     }
                                 }
@@ -996,6 +1032,7 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
                                     contributors: None,
                                     license: None,
                                     restart_required: None,
+                                    dependencies: None,
                                 });
                             }
                         }
@@ -1022,6 +1059,7 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
                             contributors: None,
                             license: None,
                             restart_required: None,
+                            dependencies: None,
                         });
                     }
                 }
@@ -1035,6 +1073,43 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
     Ok(metadata_files)
 }
 
+pub fn find_mod_dependency(mods_folder_path: &str, dependency_name: &str, required_version: &str) -> Result<String, String> {
+    let path = Path::new(mods_folder_path);
+
+    // Check for if the dependency is in the mods folder (case-insensitive)
+    if path.exists() && path.is_dir() {
+        for entry in fs::read_dir(path).map_err(|e| format!("Failed to read directory {}: {}", path.display(), e))? {
+            let entry = entry.map_err(|e| format!("Failed to read entry in directory {}: {}", path.display(), e))?;
+            let entry_name = entry.file_name().to_string_lossy().to_lowercase();
+            
+            if entry_name == dependency_name.to_lowercase() {
+                let entry_path = entry.path();
+                let entry_path_str = entry_path.to_string_lossy().to_string();
+                
+                // If no specific version is required, return immediately
+                if required_version.is_empty() || required_version == "*" {
+                    return Ok(entry_path_str);
+                }
+                
+                // Get the dependency's version from its metadata
+                let dependency_version = get_mod_version(&entry_path_str)?;
+                
+                // Validate that the version meets the requirements
+                if is_version_compatible(&dependency_version, required_version) {
+                    return Ok(entry_path_str);
+                } else {
+                    return Err(format!(
+                        "Dependency {} found but version {} does not satisfy requirement {}", 
+                        dependency_name, dependency_version, required_version
+                    ));
+                }
+            }
+        }
+    }
+
+    Err(format!("Dependency {} not found in {}", dependency_name, mods_folder_path))
+}
+
 /// Extract the executable's directory path
 pub fn get_executable_directory(executable_path: &str) -> Result<PathBuf, String> {
     let path = Path::new(executable_path);
@@ -1043,6 +1118,162 @@ pub fn get_executable_directory(executable_path: &str) -> Result<PathBuf, String
         Some(dir) => Ok(dir.to_path_buf()),
         None => Err(format!("Cannot determine parent directory for {}", executable_path)),
     }
+}
+
+/// Extract a mod's version from its metadata files
+fn get_mod_version(mod_path: &str) -> Result<String, String> {
+    let path = Path::new(mod_path);
+    
+    // First try _polymod_meta.json (Vanilla)
+    let polymod_path = path.join("_polymod_meta.json");
+    if polymod_path.exists() && polymod_path.is_file() {
+        match fs::read_to_string(&polymod_path) {
+            Ok(content) => {
+                match serde_json::from_str::<serde_json::Value>(&content) {
+                    Ok(json) => {
+                        return json.get("mod_version")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string())
+                            .ok_or_else(|| "No version found in _polymod_meta.json".to_string());
+                    },
+                    Err(e) => return Err(format!("Failed to parse _polymod_meta.json: {}", e)),
+                }
+            },
+            Err(e) => return Err(format!("Failed to read _polymod_meta.json: {}", e)),
+        }
+    }
+    
+    // Then try meta.json (FPS Plus)
+    let fpsplus_path = path.join("meta.json");
+    if fpsplus_path.exists() && fpsplus_path.is_file() {
+        match fs::read_to_string(&fpsplus_path) {
+            Ok(content) => {
+                match serde_json::from_str::<serde_json::Value>(&content) {
+                    Ok(json) => {
+                        return json.get("mod_version")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string())
+                            .ok_or_else(|| "No version found in meta.json".to_string());
+                    },
+                    Err(e) => return Err(format!("Failed to parse meta.json: {}", e)),
+                }
+            },
+            Err(e) => return Err(format!("Failed to read meta.json: {}", e)),
+        }
+    }
+
+    // If no version found, return an error
+    Err("No version found in mod metadata".to_string())
+}
+
+/// Check if the dependency version is compatible with the required version (Polymod)
+fn is_version_compatible(actual_version: &str, required_version: &str) -> bool {
+    // * or empty string - any version is allowed
+    if required_version.is_empty() || required_version == "*" {
+        return true;
+    }
+    
+    // Parse the actual version
+    let actual_parts: Vec<&str> = actual_version.split('.').collect();
+    if actual_parts.is_empty() {
+        // Invalid version format
+        return false;
+    }
+    
+    // Handle the 1.0.* format (any patch version)
+    if required_version.ends_with(".*") {
+        let req_base = required_version.trim_end_matches(".*");
+        let req_parts: Vec<&str> = req_base.split('.').collect();
+        
+        if req_parts.len() == 2 {
+            // This is the 1.0.* format (any patch version)
+            return actual_parts.len() >= 2 && 
+                  actual_parts[0] == req_parts[0] && 
+                  actual_parts[1] == req_parts[1];
+        } else if req_parts.len() == 1 {
+            // This is the 1.* format (any minor version)
+            return actual_parts.len() >= 1 && 
+                  actual_parts[0] == req_parts[0];
+        }
+        
+        return false;
+    }
+    
+    // Handle comparison operators
+    if required_version.starts_with(">") {
+        let version = if required_version.starts_with(">=") {
+            &required_version[2..]
+        } else {
+            &required_version[1..]
+        };
+        
+        let req_parts: Vec<&str> = version.split('.').collect();
+        if req_parts.is_empty() {
+            return false;
+        }
+        
+        // Compare versions numerically
+        let cmp = compare_versions(actual_parts.as_slice(), req_parts.as_slice());
+        
+        return if required_version.starts_with(">=") {
+            cmp >= 0
+        } else {
+            cmp > 0
+        };
+    }
+    
+    if required_version.starts_with("<") {
+        let version = if required_version.starts_with("<=") {
+            &required_version[2..]
+        } else {
+            &required_version[1..]
+        };
+        
+        let req_parts: Vec<&str> = version.split('.').collect();
+        if req_parts.is_empty() {
+            return false;
+        }
+        
+        // Compare versions numerically
+        let cmp = compare_versions(actual_parts.as_slice(), req_parts.as_slice());
+        
+        return if required_version.starts_with("<=") {
+            cmp <= 0
+        } else {
+            cmp < 0
+        };
+    }
+    
+    // Exact match
+    actual_version == required_version
+}
+
+/// Compare two version arrays numerically
+/// Returns -1 if a < b, 0 if a == b, 1 if a > b
+fn compare_versions(a: &[&str], b: &[&str]) -> i32 {
+    let max_len = a.len().max(b.len());
+    
+    for i in 0..max_len {
+        let a_val = if i < a.len() { 
+            a[i].parse::<i32>().unwrap_or(0) 
+        } else { 
+            0 
+        };
+        
+        let b_val = if i < b.len() { 
+            b[i].parse::<i32>().unwrap_or(0) 
+        } else { 
+            0 
+        };
+        
+        if a_val < b_val {
+            return -1;
+        } else if a_val > b_val {
+            return 1;
+        }
+    }
+    
+    0 // Versions are equal
 }
 
 /// Fetch an image and encode it as base64

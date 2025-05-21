@@ -839,6 +839,14 @@ pub async fn super_delete_mod(id: String, mods_state: State<'_, ModsState>) -> R
     }
 }
 
+// Command to check for mod dependency
+#[tauri::command]
+pub fn check_mod_dependency(mods_folder_path: &str, dependency_name: &str, required_version: &str) -> Result<(), String> {
+    info!("Checking mod dependency for mod at: {}", mods_folder_path);
+    crate::modutils::find_mod_dependency(mods_folder_path, dependency_name, required_version)?;
+    Ok(())
+}
+
 async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     if let Some(update) = app.updater()?.check().await? {
       let mut downloaded = 0;
@@ -938,6 +946,7 @@ pub fn run() {
             check_mod_folder_exists,
             get_mod_posts_command,
             get_mod_updates_command,
+            check_mod_dependency,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
