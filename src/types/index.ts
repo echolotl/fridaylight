@@ -96,8 +96,9 @@ export interface DbSettings {
 }
 
 /**
- * GameBanana API response for mod details
- * This interface is used to represent the data structure of a mod fetched from GameBanana API.
+ * GameBanana API response of mod details.
+ * Specifically, this is used when communicating with the backend
+ * when downloading mods from GameBanana.
  */
 
 export interface GameBananaMod {
@@ -105,50 +106,39 @@ export interface GameBananaMod {
   name: string;
   owner: string;
   description: string;
-  thumbnailUrl: string;
-  downloadUrl: string;
+  thumbnail_url: string;
+  download_url: string;
   views: number;
   downloads: number;
   likes: number;
-  modelName: string;
-  profileUrl: string;
-  imageUrl: string;
-  initialVisibility: string;
+  model_name: string;
+  profile_url: string;
+  image_url: string;
+  initial_visibility: string;
   period: string;
-
-  // Submitter details
-  submitterId: number;
-  submitterName: string;
-  submitterIsOnline: boolean;
-  submitterHasRipe: boolean;
-  submitterProfileUrl: string;
-  submitterAvatarUrl: string;
-  submitterMoreByUrl: string;
-  submitterUPic?: string;
-
-  // Post count
-  postCount: number;
-
-  // Category details
-  categoryName: string;
-  categoryProfileUrl: string;
-  categoryIconUrl: string;
-
-  // Additional fields from normal mod data
-  singularTitle: string;
-  iconClasses: string;
-  dateAdded: number;
-  dateModified: number;
-  dateUpdated: number;
-  hasFiles: boolean;
+  submitter_id: number;
+  submitter_name: string;
+  submitter_profile_url: string;
+  submitter_avatar_url: string;
+  submitter_u_pic?: string;
+  post_count: number;
+  category_name: string;
+  category_profile_url: string;
+  category_icon_url: string;
+  singular_title: string;
+  icon_classes: string;
+  date_added: number;
+  date_modified: number;
+  date_updated: number;
+  has_files: boolean;
   tags: string[];
-  previewImages: GameBananaModImage[]; 
+  preview_images: GameBananaModImage[];
   version: string;
-  isObsolete: boolean;
-  hasContentRatings: boolean;
-  viewCount: number;
-  isOwnedByAccessor: boolean;
-  wasFeatured: boolean;
+  is_obsolete: boolean;
+  has_content_ratings: boolean;
+  view_count: number;
+  is_owned_by_accessor: boolean;
+  was_featured: boolean;
 }
 
 /**
@@ -157,9 +147,9 @@ export interface GameBananaMod {
  */
 
 export interface GameBananaModImage {
-  imageType: string;
-  baseUrl: string;
-  fileName: string;
+  image_type: string;
+  base_url: string;
+  file_name: string;
   file100: string;
   file220?: string;
   file530?: string;

@@ -102,7 +102,7 @@
             :key="mod.id"
             :mod="mod"
             @download="downloadMod(mod)"
-            @showDetails="openModDetails(mod.id)"
+            @showDetails="openModDetails(mod.id, mod.model_name)"
           />
         </div>
       </div>
@@ -169,6 +169,7 @@
   <!-- Mod Details Modal -->
   <ModDetailsModal
     :modId="selectedModId"
+    :modelType="currentModelType"
     :isOpen="isModDetailsModalOpen"
     @update:isOpen="isModDetailsModalOpen = $event"
     @download="downloadMod"
@@ -284,6 +285,7 @@ const recentlyPlayedMods = ref<Mod[]>([]);
 
 // For mod details modal
 const selectedModId = ref<number>(0);
+const currentModelType = ref<string>("");
 const isModDetailsModalOpen = ref<boolean>(false);
 
 // For file selection dialog
@@ -523,8 +525,9 @@ const downloadMod = async (mod: GameBananaMod) => {
 };
 
 // Function to open mod details modal
-const openModDetails = (modId: number) => {
+const openModDetails = (modId: number, modelType: string) => {
   selectedModId.value = modId;
+  currentModelType.value = modelType;
   isModDetailsModalOpen.value = true;
 };
 
@@ -652,7 +655,7 @@ const onFileSelected = async (selectedFile: any) => {
 
       // Show engine selection dialog
       currentModpackInfo.value = {
-        mod: { ...currentDownloadMod.value, downloadUrl: selectedFile._sDownloadUrl }, // Override with selected URL
+        mod: { ...currentDownloadMod.value, download_url: selectedFile._sDownloadUrl }, // Override with selected URL
         type: modpackType,
         compatibleEngines: engineMods,
       };

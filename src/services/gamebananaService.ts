@@ -59,6 +59,7 @@ export interface DeepLinkEngineSelectionResult {
   modName: string;
   downloadUrl: string;
   modId: number;
+  modelType: string;
 }
 
 export type DownloadModResult = FileSelectionResult | EngineSelectionResult | ModTypeSelectionResult | OperationResult | FolderExistsResult;
@@ -126,8 +127,8 @@ export class GameBananaService {
     }
 
     // Check mod category if available
-    if (mod.categoryName) {
-      const lowerCaseCategoryName = mod.categoryName.toLowerCase();
+    if (mod.category_name) {
+      const lowerCaseCategoryName = mod.category_name.toLowerCase();
       if (lowerCaseCategoryName.includes("executables")) return false;
       if (lowerCaseCategoryName.includes("psych")) return true;
       if (lowerCaseCategoryName.includes("v-slice")) return true;
@@ -147,8 +148,8 @@ export class GameBananaService {
     if (selectedModType === "codenameModpacks") return "codename";
 
     // Check mod category if available
-    if (mod.categoryName) {
-      const lowerCaseCategoryName = mod.categoryName.toLowerCase();
+    if (mod.category_name) {
+      const lowerCaseCategoryName = mod.category_name.toLowerCase();
       if (lowerCaseCategoryName.includes("psych")) return "psych";
       if (lowerCaseCategoryName.includes("v-slice")) return "vanilla";
       if (lowerCaseCategoryName.includes("codename")) return "codename";
@@ -288,6 +289,7 @@ export class GameBananaService {
       // First check if this mod has multiple download options
       const downloadInfo = await invoke<any>("get_mod_download_files_command", {
         modId: mod.id,
+        modelType: mod.model_name || "Mod",
       });
 
       // Check if there are multiple files
@@ -353,9 +355,9 @@ export class GameBananaService {
             showModTypeModal: true,
             customModData: {
               name: mod.name,
-              url: mod.downloadUrl,
+              url: mod.download_url,
               modId: mod.id,
-              bannerData: mod.thumbnailUrl,
+              bannerData: mod.thumbnail_url,
               description: mod.description,
               version: mod.version
             }
@@ -450,13 +452,14 @@ export class GameBananaService {
       }
 
       // Create a unique download entry and initialize tracking
-      this.ensureUniqueDownload(mod.id, modName, mod.thumbnailUrl);
+      this.ensureUniqueDownload(mod.id, modName, mod.thumbnail_url);
 
       // Pass mod ID along with URL, name, and install location
       const result = await invoke<string>("download_gamebanana_mod_command", {
-        url: mod.downloadUrl,
+        url: mod.download_url,
         name: modName,
         modId: mod.id,
+        modelType: mod.model_name || "Mod",
         installLocation,
       });
       
@@ -504,7 +507,7 @@ export class GameBananaService {
             path: modPath,
             executable_path: null,
             icon_data: null,
-            banner_data: mod.thumbnailUrl,
+            banner_data: mod.thumbnail_url,
             version: mod.version || null,
             engine_type: null,
           };
@@ -577,13 +580,14 @@ export class GameBananaService {
         console.log("Using installation location:", installLocation);
 
         // Ensure no duplicate download entries exist
-        this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnailUrl);
+        this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnail_url);
 
         // Call backend to download using the specific file URL
         const result = await invoke<string>("download_gamebanana_mod_command", {
           url: selectedFile._sDownloadUrl,
           name: mod.name,
           modId: mod.id,
+          modelType: mod.model_name || "Mod",
           installLocation,
         });
         
@@ -621,7 +625,7 @@ export class GameBananaService {
           return {
             showEngineSelectDialog: true,
             modpackInfo: {
-              mod: { ...mod, downloadUrl: selectedFile._sDownloadUrl }, // Override with selected URL
+              mod: { ...mod, download_url: selectedFile._sDownloadUrl }, // Override with selected URL
               type: modpackType,
               compatibleEngines: engineMods,
             }
@@ -644,13 +648,14 @@ export class GameBananaService {
       console.log("Using installation location:", installLocation);
 
       // Ensure no duplicate download entries exist
-      this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnailUrl);
+      this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnail_url);
 
       // Call backend to download using the specific file URL
       const result = await invoke<string>("download_gamebanana_mod_command", {
         url: selectedFile._sDownloadUrl,
         name: mod.name,
         modId: mod.id,
+        modelType: mod.model_name || "Mod",
         installLocation,
       });
       
@@ -702,7 +707,7 @@ export class GameBananaService {
       
       // Check if we already have a specific download URL from the file selector
       // This happens when the user first selected a file, then selected an engine
-      let downloadUrl = mod.downloadUrl;
+      let downloadUrl = mod.download_url;
       
       console.log(`Starting download for "${mod.name}" modpack to ${modsFolderPath}`);
 
@@ -714,13 +719,14 @@ export class GameBananaService {
       }
 
       // Ensure no duplicate download entries exist
-      const downloadId = this.ensureUniqueDownload(modId, mod.name, mod.thumbnailUrl);
+      const downloadId = this.ensureUniqueDownload(modId, mod.name, mod.thumbnail_url);
 
       // Use the default download URL for direct download
       const result = await invoke<string>("download_gamebanana_mod_command", {
         url: downloadUrl,
         name: mod.name,
         modId: mod.id,
+        modelType: mod.model_name || "Mod",
         installLocation: modsFolderPath,
       });
 
@@ -904,7 +910,7 @@ export class GameBananaService {
   /**
    * Download a mod from a deep link
    */
-  public async downloadModFromDeepLink(downloadUrl: string, modId: number): Promise<OperationResult | DeepLinkEngineSelectionResult> {
+  public async downloadModFromDeepLink(downloadUrl: string, modId: number, modelType: string): Promise<OperationResult | DeepLinkEngineSelectionResult> {
     try {
       // Show notification that download is being prepared
       this.pendingDownloadNotification = Notify.create({
@@ -915,7 +921,7 @@ export class GameBananaService {
       });
 
       // Get the mod info from GameBanana API to get the name and other details
-      const modInfo = await invoke<any>("get_mod_info_command", { modId });
+      const modInfo = await invoke<any>("get_mod_info_command", { modId: modId, modelType: modelType || "Mod" });
 
       if (!modInfo || !modInfo._sName) {
         throw new Error("Failed to fetch mod information from GameBanana");
@@ -962,7 +968,8 @@ export class GameBananaService {
             modpackType,
             modName,
             downloadUrl,
-            modId
+            modId,
+            modelType
           };
         }
       }
@@ -1018,6 +1025,7 @@ export class GameBananaService {
         url: fixedUrl,
         name: modName,
         modId,
+        modelType: modelType || "Mod",
         installLocation,
       });
 
@@ -1121,7 +1129,8 @@ export class GameBananaService {
   public async downloadDeepLinkModpackWithEngine(
     downloadUrl: string, 
     modName: string, 
-    modId: number, 
+    modId: number,
+    modelType: string, 
     engine: any
   ): Promise<OperationResult> {
     try {
@@ -1161,6 +1170,7 @@ export class GameBananaService {
         url: fixedUrl,
         name: modName,
         modId: modId,
+        modelType: modelType || "Mod",
         installLocation: modsFolderPath,
       });
 

@@ -16,7 +16,7 @@
         :key="mod.id"
         :mod="mod"
         @download="$emit('download', mod)"
-        @showDetails="$emit('showDetails', mod.id)"
+        @showDetails="$emit('showDetails', mod.id, mod.model_name)"
       />
     </div>
 

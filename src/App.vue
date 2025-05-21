@@ -104,6 +104,7 @@ const currentModpackType = ref<string | null>(null);
 const currentModName = ref<string>("Unknown Mod");
 const currentDownloadUrl = ref<string>("");
 const currentModId = ref<number | null>(null);
+const currentModelType = ref<string>("");
 const handleSidebarResize = (width: number) => {
   sidebarWidth.value = width;
 };
@@ -131,6 +132,7 @@ const onEngineSelected = async (engine: any) => {
       currentDownloadUrl.value,
       currentModName.value,
       currentModId.value,
+      currentModelType.value,
       engine
     );
 
@@ -497,19 +499,22 @@ const getThemePreference = async (): Promise<string> => {
 const processDeepLinkModDownload = async (
   downloadUrl: string,
   modId: number,
-  archiveExt: string
+  archiveExt: string,
+  modelType: string
 ) => {
   try {
     console.log("Processing mod download from deep link:", {
       downloadUrl,
       modId,
       archiveExt,
+      modelType
     });
 
     // Use the gamebananaService to handle the deep link download
     const result = await gamebananaService.downloadModFromDeepLink(
       downloadUrl,
-      modId
+      modId,
+      modelType
     );
 
     // Type guard to check if we need to show the engine selection dialog
@@ -520,6 +525,7 @@ const processDeepLinkModDownload = async (
       currentModName.value = result.modName;
       currentDownloadUrl.value = result.downloadUrl;
       currentModId.value = result.modId;
+      currentModelType.value = result.modelType;
       showEngineSelectDialog.value = true;
     } else if ("success" in result) {
       // Handle regular operation result
@@ -587,15 +593,12 @@ onMounted(async () => {
               archiveExt,
             });
 
-            // Ensure this is a mod type we support (this should always be 'Mod')
-            if (modType === "Mod" && !isNaN(modId)) {
-              // Process the download - fetch the mod info first
-              processDeepLinkModDownload(downloadUrl, modId, archiveExt);
-            } else {
-              console.error(
-                "Unsupported mod type or invalid mod ID in deep link"
-              );
-            }
+            processDeepLinkModDownload(
+              downloadUrl,
+              modId,
+              archiveExt,
+              modType
+            );
           } else {
             console.error("Invalid deep link format, missing required parts");
           }

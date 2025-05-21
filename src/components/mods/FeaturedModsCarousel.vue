@@ -29,36 +29,36 @@
           >
             <div
               class="featured-mod-card"
-              @click="$emit('showDetails', mod.id)"
+              @click="$emit('showDetails', mod.id, mod.model_name)"
               @contextmenu.prevent="showContextMenu($event, mod)"
             >
-              <q-img :src="mod.imageUrl" class="featured-thumbnail" :img-style="{ filter: mod.initialVisibility == 'warn' ? 'blur(20px)' : 'none' }">
+              <q-img :src="mod.image_url" class="featured-thumbnail" :img-style="{ filter: mod.initial_visibility == 'warn' ? 'blur(20px)' : 'none' }">
                 <div class="absolute-full featured-overlay"></div>
 
                 <div class="absolute-top-right q-pa-sm row items-center">
                   <div class="category-icon-container">
                     <img
                       :src="
-                        mod.categoryIconUrl ||
+                        mod.category_icon_url ||
                         'https://gamebanana.com/static/img/defaults/icon.png'
                       "
                       class="category-icon"
                     />
                     <q-tooltip class="phantom-font">
-                      {{ mod.categoryName }}
+                      {{ mod.category_name }}
                     </q-tooltip>
                   </div>
                   <div class="author-container">
                     <q-avatar size="40px" square>
                       <img
                         :src="
-                          mod.submitterAvatarUrl ||
+                          mod.submitter_avatar_url ||
                           'https://gamebanana.com/static/img/defaults/avatar.gif'
                         "
                       />
                     </q-avatar>
-                    <span class="author-upic" v-if="mod.submitterUPic"
-                      ><img :src="mod.submitterUPic"
+                    <span class="author-upic" v-if="mod.submitter_u_pic"
+                      ><img :src="mod.submitter_u_pic"
                     /></span>
                     <span class="author-name" v-else>{{ mod.owner }}</span>
                   </div>
@@ -91,7 +91,7 @@
                     <div class="featured-stats">
                       <span>
                         <q-icon name="message" size="sm" />
-                        {{ formatNumber(mod.postCount) }}
+                        {{ formatNumber(mod.post_count) }}
                       </span>
                       <span>
                         <q-icon name="thumb_up" size="sm" />
@@ -114,7 +114,7 @@ import { ref } from "vue";
 import type { GameBananaMod } from "../../types";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
-defineProps({
+const props = defineProps({
   mods: {
     type: Array as () => GameBananaMod[],
     default: () => [],
@@ -128,6 +128,8 @@ defineProps({
 const emit = defineEmits(["download", "showDetails"]);
 
 const currentSlide = ref(0);
+
+console.log("Mods in carousel:", props.mods);
 
 // Context menu handler
 const showContextMenu = (event: MouseEvent, mod: GameBananaMod) => {
@@ -149,7 +151,7 @@ const showContextMenu = (event: MouseEvent, mod: GameBananaMod) => {
     {
       icon: "open_in_new",
       label: "Open GameBanana Page",
-      action: () => openUrl(mod.profileUrl),
+      action: () => openUrl(mod.profile_url),
     },
   ];
 

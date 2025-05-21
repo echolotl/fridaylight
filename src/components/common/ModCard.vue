@@ -2,22 +2,22 @@
   <div class="mod-card">
     <div
       class="mod-card-content"
-      @click="$emit('showDetails', mod.id)"
+      @click="$emit('showDetails', mod.id, mod.model_name)"
       @contextmenu.prevent="showContextMenu"
     >
-      <q-img :src="previewImageUrl" class="mod-thumbnail" :img-style="{ filter: mod.initialVisibility == 'warn' ? 'blur(5px)' : 'none' }">
-        <img :src="mod.categoryIconUrl" class="mod-category-icon" />
+      <q-img :src="previewImageUrl" class="mod-thumbnail" :img-style="{ filter: mod.initial_visibility == 'warn' ? 'blur(5px)' : 'none' }">
+        <img :src="mod.category_icon_url" class="mod-category-icon" />
         <img
-          :src="mod.submitterAvatarUrl"
+          :src="mod.submitter_avatar_url"
           class="author-avatar"
-          v-if="mod.submitterAvatarUrl"
+          v-if="mod.submitter_avatar_url"
         />
       </q-img>
       <div class="mod-info">
         <div class="mod-title">{{ mod.name }}</div>
         <div class="mod-author-container">
-          <div class="author-upic" v-if="mod.submitterUPic">
-            <span>by</span><img :src="mod.submitterUPic" alt="User Picture" />
+          <div class="author-upic" v-if="mod.submitter_u_pic">
+            <span>by</span><img :src="mod.submitter_u_pic" alt="User Picture" />
           </div>
           <div class="mod-author" v-else>by {{ mod.owner }}</div>
         </div>
@@ -27,9 +27,9 @@
             <q-icon name="thumb_up" size="xs" />
             {{ formatNumber(mod.likes) }}
           </span>
-          <span v-if="mod.postCount !== undefined">
+          <span v-if="mod.post_count !== undefined">
             <q-icon name="messages" size="xs" />
-            {{ formatNumber(mod.postCount) }}
+            {{ formatNumber(mod.post_count) }}
           </span>
         </div>
       </div>
@@ -39,6 +39,7 @@
       label="Download"
       class="download-btn"
       @click.stop="$emit('download', mod)"
+      v-if="mod.has_files"
     />
   </div>
 </template>
@@ -58,10 +59,11 @@ const props = defineProps({
 const emit = defineEmits(["download", "showDetails"]);
 
 const previewImageUrl = computed(() => {
-  return props.mod.previewImages && props.mod.previewImages.length > 0
-    ? props.mod.previewImages[0].baseUrl
-    : props.mod.thumbnailUrl;
+  console.log(props.mod);
+  return props.mod.image_url ||props.mod.thumbnail_url;
 });
+
+console.log(props.mod);
 
 // Helper function to format numbers (e.g., 1000 -> 1K)
 const formatNumber = (num: number): string => {
@@ -93,7 +95,7 @@ const showContextMenu = (event: MouseEvent) => {
     {
       icon: "open_in_new",
       label: "Open GameBanana Page",
-      action: () => openUrl(props.mod.profileUrl),
+      action: () => openUrl(props.mod.profile_url),
     },
   ];
 

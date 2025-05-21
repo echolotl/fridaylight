@@ -15,9 +15,13 @@ pub async fn download_gamebanana_mod(
     name: String,
     mod_id: i64,
     install_location: Option<String>,
+    model_type: Option<String>,
     app: tauri::AppHandle
 ) -> Result<String, String> {
     info!("Starting download process for mod: {} (ID: {})", name, mod_id);
+    
+    // Default to "Mod" if not specified
+    let model_type = model_type.unwrap_or_else(|| "Mod".to_string());
     
     // First, fetch the download page information to get the actual download URL
     info!("Fetching download page information from GameBanana API");
@@ -39,9 +43,8 @@ pub async fn download_gamebanana_mod(
         percentage: 5,
         step: "Fetching download information".to_string(),
     }).unwrap_or_else(|e| error!("Failed to emit download-progress event: {}", e));
-    
-    // Fetch mod information for preview images
-    let mod_info_response = match get_mod_info(mod_id).await {
+      // Fetch mod information for preview images
+    let mod_info_response = match get_mod_info(mod_id, &model_type).await {
         Ok(info) => Some(info),
         Err(e) => {
             warn!("Failed to fetch mod info: {}", e);
@@ -51,7 +54,7 @@ pub async fn download_gamebanana_mod(
     
     // Extract banner URL and fetch banner image
     let banner_url = mod_info_response.as_ref()
-        .and_then(|info| extract_banner_url(info, mod_id));
+        .and_then(|info| extract_banner_url(info, mod_id, &model_type));
     
     debug!("Banner URL: {:?}", banner_url);
     
@@ -75,9 +78,8 @@ pub async fn download_gamebanana_mod(
     let actual_download_url = if url.contains("gamebanana.com/dl/") || !url.contains("gamebanana.com/mods") {
         info!("Using provided URL: {}", url);
         url
-    } else {
-        info!("Getting default download URL for mod ID: {}", mod_id);
-        match get_download_url(mod_id).await {
+    } else {        info!("Getting default download URL for mod ID: {}", mod_id);
+        match get_download_url(mod_id, &model_type).await {
             Ok(url) => url,
             Err(e) => {
                 error!("Failed to get download URL: {}", e);

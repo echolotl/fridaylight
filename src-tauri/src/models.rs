@@ -24,67 +24,53 @@ impl fmt::Display for MetadataError {
     }
 }
 
-// GameBanana API Structures
+// Define a structure for GameBanana mods (used for ModCard)
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GameBananaMod {
-    // Existing fields
     pub id: i64,
     pub name: String,
     pub owner: String,
     pub description: String,
-    pub thumbnailUrl: String,
-    pub downloadUrl: String,
+    pub thumbnail_url: String,
+    pub download_url: String,
     pub views: i64,
     pub downloads: i64,
     pub likes: i64,
-    
-    // New fields from GameBanana API
-    pub modelName: String,
-    pub profileUrl: String,
-    pub imageUrl: String,
-    pub initialVisibility: String,
+    pub model_name: String,
+    pub profile_url: String,
+    pub image_url: String,
+    pub initial_visibility: String,
     pub period: String,
-    
-    // Submitter details
-    pub submitterId: i64,
-    pub submitterName: String,
-    pub submitterIsOnline: bool,
-    pub submitterHasRipe: bool,
-    pub submitterProfileUrl: String,
-    pub submitterAvatarUrl: String,
-    pub submitterMoreByUrl: String,
-    pub submitterUPic: Option<String>,
-    
-    // Post count
-    pub postCount: i64,
-    
-    // Category details
-    pub categoryName: String,
-    pub categoryProfileUrl: String,
-    pub categoryIconUrl: String,
-    
-    // Additional fields from normal mod data
-    pub singularTitle: String,
-    pub iconClasses: String,
-    pub dateAdded: i64,
-    pub dateModified: i64,
-    pub dateUpdated: i64,
-    pub hasFiles: bool,
+    pub submitter_id: i64,
+    pub submitter_name: String,
+    pub submitter_profile_url: String,
+    pub submitter_avatar_url: String,
+    pub submitter_upic: Option<String>,
+    pub post_count: i64,
+    pub category_name: String,
+    pub category_profile_url: String,
+    pub category_icon_url: String,
+    pub singular_title: String,
+    pub icon_classes: String,
+    pub date_added: i64,
+    pub date_modified: i64,
+    pub date_updated: i64,
+    pub has_files: bool,
     pub tags: Vec<String>,
-    pub previewImages: Vec<GameBananaModImage>,
+    pub preview_images: Vec<GameBananaModImage>,
     pub version: String,
-    pub isObsolete: bool,
-    pub hasContentRatings: bool,
-    pub viewCount: i64,
-    pub isOwnedByAccessor: bool,
-    pub wasFeatured: bool,
+    pub is_obsolete: bool,
+    pub has_content_ratings: bool,
+    pub view_count: i64,
+    pub is_owned_by_accessor: bool,
+    pub was_featured: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GameBananaModImage {
-    pub imageType: String,
-    pub baseUrl: String,
-    pub fileName: String,
+    pub image_type: String,
+    pub base_url: String,
+    pub file_name: String,
     pub file100: String,
     pub file220: Option<String>,
     pub file530: Option<String>,
@@ -99,7 +85,7 @@ pub struct GameBananaModImage {
     pub width800: Option<i64>,
 }
 
-// Define a structure to hold mod information
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Engine {
     pub engine_type: Option<String>,

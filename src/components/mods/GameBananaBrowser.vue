@@ -207,6 +207,7 @@
     <!-- Mod Details Modal -->
     <ModDetailsModal
       :modId="selectedModId"
+      :modelType="currentModelType"
       :isOpen="isModDetailsModalOpen"
       @update:isOpen="isModDetailsModalOpen = $event"
       @download="downloadMod"
@@ -223,7 +224,6 @@ import {
   setupGameBananaEventListeners,
 } from "@services/gamebananaService";
 import type { ModpackInfo } from "@services/gamebananaService";
-import { GameBananaMod } from "../../types";
 
 // Import local components
 import SearchBar from "@components/common/SearchBar.vue";
@@ -258,17 +258,17 @@ let eventListenerCleanup: (() => void) | undefined;
 const searchQuery = ref("");
 const isLoadingSearch = ref(false);
 const hasSearched = ref(false);
-const searchResults = ref<GameBananaMod[]>([]);
+const searchResults = ref<any[]>([]);
 
 // Featured mods state
-const featuredMods = ref<GameBananaMod[]>([]);
+const featuredMods = ref<any[]>([]);
 const isLoadingFeatured = ref(false);
 
 // Latest mods and modpacks state
-const latestMods = ref<GameBananaMod[]>([]);
-const psychModpacks = ref<GameBananaMod[]>([]);
-const vsliceModpacks = ref<GameBananaMod[]>([]);
-const codenameModpacks = ref<GameBananaMod[]>([]);
+const latestMods = ref<any[]>([]);
+const psychModpacks = ref<any[]>([]);
+const vsliceModpacks = ref<any[]>([]);
+const codenameModpacks = ref<any[]>([]);
 const isLoadingLatest = ref(false);
 const isLoadingPsychModpacks = ref(false);
 const isLoadingVsliceModpacks = ref(false);
@@ -287,7 +287,7 @@ const selectedModType = ref("executables"); // For tabs
 const showFileSelector = ref(false);
 const downloadFiles = ref<any[]>([]);
 const alternateFileSources = ref<any[]>([]);
-const currentDownloadMod = ref<GameBananaMod | null>(null);
+const currentDownloadMod = ref<any | null>(null);
 let pendingDownloadNotification: any = null;
 
 // For modpack handling
@@ -306,6 +306,7 @@ const folderExistsModName = ref("");
 
 // For mod details modal
 const selectedModId = ref<number>(0);
+const currentModelType = ref<string>("");
 const isModDetailsModalOpen = ref<boolean>(false);
 
 // Variables for handling folder existence check
@@ -322,7 +323,7 @@ watch(selectedModType, async (newType) => {
       await fetchPsychModpacks();
     } else {
       // If data is already loaded, just update the totalPages
-      const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+      const response = await invoke<{ mods: any[]; total: number }>(
         "fetch_gamebanana_mods_command",
         {
           query: "_psychmodpack",
@@ -336,7 +337,7 @@ watch(selectedModType, async (newType) => {
       await fetchVsliceModpacks();
     } else {
       // If data is already loaded, just update the totalPages
-      const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+      const response = await invoke<{ mods: any[]; total: number }>(
         "fetch_gamebanana_mods_command",
         {
           query: "_vslicemodpack",
@@ -350,7 +351,7 @@ watch(selectedModType, async (newType) => {
       await fetchCodenameModpacks();
     } else {
       // If data is already loaded, just update the totalPages
-      const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+      const response = await invoke<{ mods: any[]; total: number }>(
         "fetch_gamebanana_mods_command",
         {
           query: "_codenamemodpack",
@@ -364,7 +365,7 @@ watch(selectedModType, async (newType) => {
       await fetchLatestMods();
     } else {
       // If data is already loaded, just update the totalPages
-      const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+      const response = await invoke<{ mods: any[]; total: number }>(
         "fetch_gamebanana_mods_command",
         {
           query: "latest",
@@ -405,7 +406,7 @@ onBeforeUnmount(() => {
 const fetchFeaturedMods = async () => {
   isLoadingFeatured.value = true;
   try {
-    const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+    const response = await invoke<{ mods: any[]; total: number }>(
       "fetch_gamebanana_mods_command",
       {
         query: "featured",
@@ -424,7 +425,7 @@ const fetchFeaturedMods = async () => {
 const fetchLatestMods = async () => {
   isLoadingLatest.value = true;
   try {
-    const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+    const response = await invoke<{ mods: any[]; total: number }>(
       "fetch_gamebanana_mods_command",
       {
         query: "latest",
@@ -444,7 +445,7 @@ const fetchLatestMods = async () => {
 const fetchPsychModpacks = async () => {
   isLoadingPsychModpacks.value = true;
   try {
-    const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+    const response = await invoke<{ mods: any[]; total: number }>(
       "fetch_gamebanana_mods_command",
       {
         query: "_psychmodpack",
@@ -466,7 +467,7 @@ const fetchPsychModpacks = async () => {
 const fetchVsliceModpacks = async () => {
   isLoadingVsliceModpacks.value = true;
   try {
-    const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+    const response = await invoke<{ mods: any[]; total: number }>(
       "fetch_gamebanana_mods_command",
       {
         query: "_vslicemodpack",
@@ -488,7 +489,7 @@ const fetchVsliceModpacks = async () => {
 const fetchCodenameModpacks = async () => {
   isLoadingCodenameModpacks.value = true;
   try {
-    const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+    const response = await invoke<{ mods: any[]; total: number }>(
       "fetch_gamebanana_mods_command",
       {
         query: "_codenamemodpack",
@@ -519,7 +520,7 @@ const searchMods = async () => {
   currentPage.value = 1;
 
   try {
-    const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+    const response = await invoke<{ mods: any[]; total: number }>(
       "fetch_gamebanana_mods_command",
       {
         query: searchQuery.value,
@@ -544,9 +545,13 @@ const clearSearch = () => {
 };
 
 // Function to open mod details modal
-const openModDetails = (modId: number) => {
-  selectedModId.value = modId;
+const openModDetails = (modId: number, modelType: string) => {
+  console.log("Opening mod details for ID:", modId);
+  selectedModId.value = modId ? modId : 0;
+  currentModelType.value = modelType;
+  console.log("Selected mod ID:", selectedModId.value, "Model Type:", modelType);
   isModDetailsModalOpen.value = true;
+  console.log("Mod details modal opened");
 };
 
 // Pagination handling
@@ -556,7 +561,7 @@ const changePage = async (page: number) => {
   if (activeView.value === "search") {
     isLoadingSearch.value = true;
     try {
-      const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+      const response = await invoke<{ mods: any[]; total: number }>(
         "fetch_gamebanana_mods_command",
         {
           query: searchQuery.value,
@@ -577,7 +582,7 @@ const changePage = async (page: number) => {
     if (selectedModType.value === "executables") {
       isLoadingLatest.value = true;
       try {
-        const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+        const response = await invoke<{ mods: any[]; total: number }>(
           "fetch_gamebanana_mods_command",
           {
             query: "latest",
@@ -596,7 +601,7 @@ const changePage = async (page: number) => {
     } else if (selectedModType.value === "psychModpacks") {
       isLoadingPsychModpacks.value = true;
       try {
-        const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+        const response = await invoke<{ mods: any[]; total: number }>(
           "fetch_gamebanana_mods_command",
           {
             query: "_psychmodpack",
@@ -615,7 +620,7 @@ const changePage = async (page: number) => {
     } else if (selectedModType.value === "vsliceModpacks") {
       isLoadingVsliceModpacks.value = true;
       try {
-        const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+        const response = await invoke<{ mods: any[]; total: number }>(
           "fetch_gamebanana_mods_command",
           {
             query: "_vslicemodpack",
@@ -634,7 +639,7 @@ const changePage = async (page: number) => {
     } else if (selectedModType.value === "codenameModpacks") {
       isLoadingCodenameModpacks.value = true;
       try {
-        const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
+        const response = await invoke<{ mods: any[]; total: number }>(
           "fetch_gamebanana_mods_command",
           {
             query: "_codenamemodpack",
@@ -655,7 +660,7 @@ const changePage = async (page: number) => {
 };
 
 // Download handling
-const downloadMod = async (mod: GameBananaMod) => {
+const downloadMod = async (mod: any) => {
   try {
     currentDownloadMod.value = mod;
 
@@ -796,6 +801,7 @@ const onFileSelected = async (selectedFile: any) => {
         url: selectedFile._sDownloadUrl,
         name: mod.name,
         modId: mod.id,
+        modelType: mod._sModelName,
         installLocation,
       });
 
@@ -934,6 +940,7 @@ const onFileSelected = async (selectedFile: any) => {
       url: selectedFile._sDownloadUrl,
       name: mod.name,
       modId: mod.id,
+      modelType: mod._sModelName,
       installLocation,
     });
     // Process the result
@@ -1074,7 +1081,7 @@ const saveModToDatabase = async (mod: any) => {
 };
 
 // Determine if a mod is a modpack based on the current tab or mod properties
-const determineIfModpack = (mod: GameBananaMod): boolean => {
+const determineIfModpack = (mod: any): boolean => {
   // Check mod category if available
   if (mod.categoryName) {
     const lowerCaseCategoryName = mod.categoryName.toLowerCase();
@@ -1088,7 +1095,7 @@ const determineIfModpack = (mod: GameBananaMod): boolean => {
 };
 
 // Determine modpack type (psych, vslice, codename, or null if not a modpack)
-const determineModpackType = (mod: GameBananaMod): string | null => {
+const determineModpackType = (mod: any): string | null => {
   if (mod.categoryName) {
     const lowerCaseCategoryName = mod.categoryName.toLowerCase();
     if (lowerCaseCategoryName.includes("psych")) return "psych";

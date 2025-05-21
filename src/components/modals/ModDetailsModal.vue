@@ -471,6 +471,10 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  modelType: {
+    type: String,
+    default: "Mod",
+  },
   isOpen: {
     type: Boolean,
     default: false,
@@ -533,20 +537,20 @@ async function fetchModInfo() {
   loading.value = true;
   error.value = "";
 
-  try {
-    const infoResult = await invoke<any>("get_mod_info_command", {
+  try {    const infoResult = await invoke<any>("get_mod_info_command", {
       modId: props.modId,
+      modelType: props.modelType || "Mod",
     });
 
     const updatesResult = await invoke<any>("get_mod_updates_command", {
       modId: props.modId,
       page: 1,
+      modelType: props.modelType || "Mod",
     });
-    console.log("Updates result:", updatesResult);
-
-    const commentsResult = await invoke<any>("get_mod_posts_command", {
+    console.log("Updates result:", updatesResult);    const commentsResult = await invoke<any>("get_mod_posts_command", {
       modId: props.modId,
       page: 1,
+      modelType: props.modelType || "Mod",
     });
 
     console.log("Comments result:", commentsResult);
@@ -668,52 +672,39 @@ function transformToGameBananaMod(rawModInfo: any): any {
     name: rawModInfo._sName || "",
     owner: rawModInfo._aSubmitter?._sName || "",
     description: rawModInfo._sDescription || "",
-    thumbnailUrl: rawModInfo._sIconUrl || "",
-    downloadUrl: "", // This will be set correctly by the GameBananaBrowser
+    thumbnail_url: rawModInfo._sIconUrl || "",
+    download_url: "", // This will be set correctly by the GameBananaBrowser
     views: rawModInfo._nViewCount || 0,
     downloads: rawModInfo._nDownloadCount || 0,
     likes: rawModInfo._nLikeCount || 0,
-
-    // Additional fields
-    modelName: rawModInfo._sModelName || "",
-    profileUrl: rawModInfo._sProfileUrl || "",
-    imageUrl: rawModInfo._sImageUrl || "",
-    initialVisibility: rawModInfo._sInitialVisibility || "",
+    model_name: rawModInfo._sModelName || "",
+    profile_url: rawModInfo._sProfileUrl || "",
+    image_url: rawModInfo._sImageUrl || "",
+    initial_visibility: rawModInfo._sInitialVisibility || "",
     period: rawModInfo._sPeriod || "",
-
-    // Submitter details
-    submitterId: rawModInfo._aSubmitter?._idRow || 0,
-    submitterName: rawModInfo._aSubmitter?._sName || "",
-    submitterIsOnline: rawModInfo._aSubmitter?._bIsOnline || false,
-    submitterHasRipe: rawModInfo._aSubmitter?._bHasRipe || false,
-    submitterProfileUrl: rawModInfo._aSubmitter?._sProfileUrl || "",
-    submitterAvatarUrl: rawModInfo._aSubmitter?._sAvatarUrl || "",
-    submitterMoreByUrl: rawModInfo._aSubmitter?._sMoreByUrl || "",
-    submitterUPic: rawModInfo._aSubmitter?._sUPic || "",
-
-    // Post count
-    postCount: rawModInfo._nPostCount || 0,
-
-    // Category details
-    categoryName: rawModInfo._aCategory?._sName || "",
-    categoryProfileUrl: rawModInfo._aCategory?._sProfileUrl || "",
-    categoryIconUrl: rawModInfo._aCategory?._sIconUrl || "",
-
-    // Additional fields
-    singularTitle: rawModInfo._sSingularTitle || "",
-    iconClasses: rawModInfo._sIconClasses || "",
-    dateAdded: rawModInfo._tsDateAdded || 0,
-    dateModified: rawModInfo._tsDateModified || 0,
-    dateUpdated: rawModInfo._tsDateUpdated || 0,
-    hasFiles: true,
+    submitter_id: rawModInfo._aSubmitter?._idRow || 0,
+    submitter_name: rawModInfo._aSubmitter?._sName || "",
+    submitter_profile_url: rawModInfo._aSubmitter?._sProfileUrl || "",
+    submitter_avatar_url: rawModInfo._aSubmitter?._sAvatarUrl || "",
+    submitter_u_pic: rawModInfo._aSubmitter?._sUPic || "",
+    post_count: rawModInfo._nPostCount || 0,
+    category_name: rawModInfo._aCategory?._sName || "",
+    category_profile_url: rawModInfo._aCategory?._sProfileUrl || "",
+    category_icon_url: rawModInfo._aCategory?._sIconUrl || "",
+    singular_title: rawModInfo._sSingularTitle || "",
+    icon_classes: rawModInfo._sIconClasses || "",
+    date_added: rawModInfo._tsDateAdded || 0,
+    date_modified: rawModInfo._tsDateModified || 0,
+    date_updated: rawModInfo._tsDateUpdated || 0,
+    has_files: true,
     tags: rawModInfo._aTags || [],
-    previewImages: previewImages,
+    preview_images: previewImages,
     version: rawModInfo._sVersion || "",
-    isObsolete: rawModInfo._bIsObsolete || false,
-    hasContentRatings: rawModInfo._bHasContentRatings || false,
-    viewCount: rawModInfo._nViewCount || 0,
-    isOwnedByAccessor: rawModInfo._bIsOwnedByAccessor || false,
-    wasFeatured: rawModInfo._bWasFeatured || false,
+    is_obsolete: rawModInfo._bIsObsolete || false,
+    has_content_ratings: rawModInfo._bHasContentRatings || false,
+    view_count: rawModInfo._nViewCount || 0,
+    is_owned_by_accessor: rawModInfo._bIsOwnedByAccessor || false,
+    was_featured: rawModInfo._bWasFeatured || false,
   };
 }
 

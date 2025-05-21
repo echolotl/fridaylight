@@ -115,26 +115,9 @@ pub async fn fetch_gamebanana_mods(query: String, page: i64) -> Result<GameBanan
     let mut mods = Vec::new();
     
     for record in &mods_data {
-        let id = record.get("_idRow").and_then(|v| v.as_i64()).unwrap_or(0);
-        let name = record.get("_sName").and_then(|v| v.as_str()).unwrap_or("Unknown").to_string();
-        
-        // Extract owner info
-        let owner = match record.get("_aSubmitter") {
-            Some(submitter) => submitter.get("_sName").and_then(|v| v.as_str()).unwrap_or("Unknown"),
-            None => "Unknown",
-        }.to_string();
-        
-        // Extract statistics
-        let views = record.get("_nViews").and_then(|v| v.as_i64()).unwrap_or(0);
-        let downloads = record.get("_nDownloadCount").and_then(|v| v.as_i64()).unwrap_or(0);
-        // We'll use the likes value directly in the struct creation
-        
-        // Try both methods of getting thumbnails
-        let thumbnail_url = if let Some(url) = record.get("_sThumbnailUrl").and_then(|v| v.as_str()) {
-            // New format has _sThumbnailUrl directly
-            Some(url.to_string())
-        } else {
-            // Old format had nested _aPreviewMedia._aImages
+            let name = record.get("_sName").and_then(|v| v.as_str()).unwrap_or("Unknown");
+    let id = record.get("_idRow").and_then(|v| v.as_i64()).unwrap_or(0);
+        let thumbnail_url = {
             match record.get("_aPreviewMedia") {
                 Some(media) => {
                     match media.get("_aImages") {
@@ -174,22 +157,19 @@ pub async fn fetch_gamebanana_mods(query: String, page: i64) -> Result<GameBanan
                 None => Some("".to_string()),
             }
         };
-        
-        // Extract download info
         let download_url = format!("https://gamebanana.com/mods/download/{}", id);
-        
-        // Extract description
-        let description = record.get("_sDescription").and_then(|v| v.as_str()).unwrap_or("").to_string();
         
         debug!("Processed mod: {} (ID: {})", name, id);
         
         mods.push(GameBananaMod {
-            // Existing fields
             id,
-            name,
-            owner: owner.clone(),
-            description,
-            thumbnailUrl: if let Some(url) = thumbnail_url {
+            name: name.to_string(),
+            owner: match record.get("_aSubmitter") {
+            Some(submitter) => submitter.get("_sName").and_then(|v| v.as_str()).unwrap_or("Unknown"),
+            None => "Unknown",
+        }.to_string(),
+            description: record.get("_sDescription").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            thumbnail_url: if let Some(url) = thumbnail_url {
                 if url.is_empty() { 
                     "https://gamebanana.com/img/default/game.png".to_string() 
                 } else { 
@@ -198,82 +178,64 @@ pub async fn fetch_gamebanana_mods(query: String, page: i64) -> Result<GameBanan
             } else {
                 "https://gamebanana.com/img/default/game.png".to_string()
             },
-            downloadUrl: download_url,
-            views,
-            downloads,
+            download_url: download_url,
+            views: record.get("_nViews").and_then(|v| v.as_i64()).unwrap_or(0),
+            downloads: record.get("_nDownloadCount").and_then(|v| v.as_i64()).unwrap_or(0),
             likes: record.get("_nLikeCount").and_then(|v| v.as_i64()).unwrap_or(0),
-            
-            // New fields
-            modelName: record.get("_sModelName").and_then(|v| v.as_str()).unwrap_or("Mod").to_string(),
-            profileUrl: record.get("_sProfileUrl").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            imageUrl: record.get("_sImageUrl").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            initialVisibility: record.get("_sInitialVisibility").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            model_name: record.get("_sModelName").and_then(|v| v.as_str()).unwrap_or("Mod").to_string(),
+            profile_url: record.get("_sProfileUrl").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            image_url: record.get("_sImageUrl").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            initial_visibility: record.get("_sInitialVisibility").and_then(|v| v.as_str()).unwrap_or("").to_string(),
             period: record.get("_sPeriod").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            
-            // Submitter details
-            submitterId: match record.get("_aSubmitter") {
+            submitter_id: match record.get("_aSubmitter") {
                 Some(submitter) => submitter.get("_idRow").and_then(|v| v.as_i64()).unwrap_or(0),
                 None => 0,
             },
-            submitterName: owner, // Reuse the owner we already extracted
-            submitterIsOnline: match record.get("_aSubmitter") {
-                Some(submitter) => submitter.get("_bIsOnline").and_then(|v| v.as_bool()).unwrap_or(false),
-                None => false,
+            submitter_name: match record.get("_aSubmitter") {
+                Some(submitter) => submitter.get("_sName").and_then(|v| v.as_str()).unwrap_or("Unknown").to_string(),
+                None => "Unknown".to_string(),
             },
-            submitterHasRipe: match record.get("_aSubmitter") {
-                Some(submitter) => submitter.get("_bHasRipe").and_then(|v| v.as_bool()).unwrap_or(false),
-                None => false,
-            },
-            submitterProfileUrl: match record.get("_aSubmitter") {
+            submitter_profile_url: match record.get("_aSubmitter") {
                 Some(submitter) => submitter.get("_sProfileUrl").and_then(|v| v.as_str()).unwrap_or("").to_string(),
                 None => "".to_string(),
             },
-            submitterAvatarUrl: match record.get("_aSubmitter") {
+            submitter_avatar_url: match record.get("_aSubmitter") {
                 Some(submitter) => submitter.get("_sAvatarUrl").and_then(|v| v.as_str()).unwrap_or("").to_string(),
                 None => "".to_string(),
             },
-            submitterMoreByUrl: match record.get("_aSubmitter") {
-                Some(submitter) => submitter.get("_sMoreByUrl").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                None => "".to_string(),
-            },
-            submitterUPic: match record.get("_aSubmitter") {
+            submitter_upic: match record.get("_aSubmitter") {
                 Some(submitter) => submitter.get("_sUpicUrl").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 None => None,
             },
-            // Post count
-            postCount: record.get("_nPostCount").and_then(|v| v.as_i64()).unwrap_or(0),
-            
-            // Category details
-            categoryName: match record.get("_aRootCategory") {
+            post_count: record.get("_nPostCount").and_then(|v| v.as_i64()).unwrap_or(0),
+            category_name: match record.get("_aRootCategory") {
                 Some(category) => category.get("_sName").and_then(|v| v.as_str()).unwrap_or("").to_string(),
                 None => "".to_string(),
             },
-            categoryProfileUrl: match record.get("_aRootCategory") {
+            category_profile_url: match record.get("_aRootCategory") {
                 Some(category) => category.get("_sProfileUrl").and_then(|v| v.as_str()).unwrap_or("").to_string(),
                 None => "".to_string(),
             },
-            categoryIconUrl: match record.get("_aRootCategory") {
+            category_icon_url: match record.get("_aRootCategory") {
                 Some(category) => category.get("_sIconUrl").and_then(|v| v.as_str()).unwrap_or("").to_string(),
                 None => "".to_string(),
             },
-            
-            // Additional fields from normal mod data
-            singularTitle: record.get("_sSingularTitle").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            iconClasses: record.get("_sIconClasses").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            dateAdded: record.get("_nDateAdded").and_then(|v| v.as_i64()).unwrap_or(0),
-            dateModified: record.get("_nDateModified").and_then(|v| v.as_i64()).unwrap_or(0),
-            dateUpdated: record.get("_nDateUpdated").and_then(|v| v.as_i64()).unwrap_or(0),
-            hasFiles: record.get("_bHasFiles").and_then(|v| v.as_bool()).unwrap_or(false),
+            singular_title: record.get("_sSingularTitle").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            icon_classes: record.get("_sIconClasses").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            date_added: record.get("_nDateAdded").and_then(|v| v.as_i64()).unwrap_or(0),
+            date_modified: record.get("_nDateModified").and_then(|v| v.as_i64()).unwrap_or(0),
+            date_updated: record.get("_nDateUpdated").and_then(|v| v.as_i64()).unwrap_or(0),
+            has_files: record.get("_bHasFiles").and_then(|v| v.as_bool()).unwrap_or(false),
             tags: record.get("_aTags")
-                .and_then(|v| v.as_array()) // Option<&Vec<Value>>
+                .and_then(|v| v.as_array()) 
                 .map(|tags_array| {
                     tags_array.iter()
-                        .filter_map(|tag_value| tag_value.as_str()) // Iterator<&str>
-                        .map(|s| s.to_string()) // Iterator<String>
-                        .collect::<Vec<String>>() // Vec<String>
-                }) // Option<Vec<String>>
-                .unwrap_or_else(Vec::new), // Vec<String>
-            previewImages: record.get("_aPreviewImages").and_then(|v| v.as_array()).map(|images| {
+                        .filter_map(|tag_value| tag_value.as_str()) 
+                        .map(|s| s.to_string()) 
+                        .collect::<Vec<String>>() 
+                }) 
+                .unwrap_or_else(Vec::new), 
+            preview_images: record.get("_aPreviewImages").and_then(|v| v.as_array()).map(|images| {
                 images.iter().filter_map(|image| {
                     let image_type = image.get("_sType").and_then(|v| v.as_str()).unwrap_or("").to_string();
                     let base_url = image.get("_sBaseUrl").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -292,9 +254,9 @@ pub async fn fetch_gamebanana_mods(query: String, page: i64) -> Result<GameBanan
                     let width800 = image.get("_nWidth800").and_then(|v| v.as_i64());
                     
                     Some(GameBananaModImage {
-                        imageType: image_type,
-                        baseUrl: base_url,
-                        fileName: file_name,
+                        image_type: image_type,
+                        base_url: base_url,
+                        file_name: file_name,
                         file100,
                         file220,
                         file530,
@@ -311,11 +273,11 @@ pub async fn fetch_gamebanana_mods(query: String, page: i64) -> Result<GameBanan
                 }).collect()
             }).unwrap_or_else(Vec::new),
             version: record.get("_sVersion").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-            isObsolete: record.get("_bIsObsolete").and_then(|v| v.as_bool()).unwrap_or(false),
-            hasContentRatings: record.get("_bHasContentRatings").and_then(|v| v.as_bool()).unwrap_or(false),
-            viewCount: record.get("_nViewCount").and_then(|v| v.as_i64()).unwrap_or(0),
-            isOwnedByAccessor: record.get("_bIsOwnedByAccessor").and_then(|v| v.as_bool()).unwrap_or(false),
-            wasFeatured: record.get("_bWasFeatured").and_then(|v| v.as_bool()).unwrap_or(false),
+            is_obsolete: record.get("_bIsObsolete").and_then(|v| v.as_bool()).unwrap_or(false),
+            has_content_ratings: record.get("_bHasContentRatings").and_then(|v| v.as_bool()).unwrap_or(false),
+            view_count: record.get("_nViewCount").and_then(|v| v.as_i64()).unwrap_or(0),
+            is_owned_by_accessor: record.get("_bIsOwnedByAccessor").and_then(|v| v.as_bool()).unwrap_or(false),
+            was_featured: record.get("_bWasFeatured").and_then(|v| v.as_bool()).unwrap_or(false),
         });
     }
     
@@ -328,8 +290,8 @@ pub async fn fetch_gamebanana_mods(query: String, page: i64) -> Result<GameBanan
 }
 
 // Function to get mod information from GameBanana
-pub async fn get_mod_info(mod_id: i64) -> Result<serde_json::Value, String> {
-    let mod_info_url = format!("https://gamebanana.com/apiv11/Mod/{}/ProfilePage", mod_id);
+pub async fn get_mod_info(mod_id: i64, model_type: &str) -> Result<serde_json::Value, String> {
+    let mod_info_url = format!("https://gamebanana.com/apiv11/{}/{}/ProfilePage", model_type, mod_id);
     debug!("Fetching mod info from: {}", mod_info_url);
     
     let client = reqwest::Client::new();
@@ -356,8 +318,8 @@ pub async fn get_mod_info(mod_id: i64) -> Result<serde_json::Value, String> {
 }
 
 // Function to get download information from GameBanana
-pub async fn get_download_url(mod_id: i64) -> Result<String, String> {
-    let download_page_url = format!("https://gamebanana.com/apiv11/Mod/{}/DownloadPage", mod_id);
+pub async fn get_download_url(mod_id: i64, model_type: &str) -> Result<String, String> {
+    let download_page_url = format!("https://gamebanana.com/apiv11/{}/{}/DownloadPage", model_type, mod_id);
     debug!("Download page API URL: {}", download_page_url);
     
     let client = reqwest::Client::new();
@@ -411,8 +373,8 @@ pub async fn get_download_url(mod_id: i64) -> Result<String, String> {
 }
 
 // Function to get all download files information for a mod
-pub async fn get_mod_download_files(mod_id: i64) -> Result<serde_json::Value, String> {
-    let download_page_url = format!("https://gamebanana.com/apiv11/Mod/{}/DownloadPage", mod_id);
+pub async fn get_mod_download_files(mod_id: i64, model_type: &str) -> Result<serde_json::Value, String> {
+    let download_page_url = format!("https://gamebanana.com/apiv11/{}/{}/DownloadPage", model_type, mod_id);
     debug!("Download page API URL: {}", download_page_url);
     
     let client = reqwest::Client::new();
@@ -445,8 +407,8 @@ pub async fn get_mod_download_files(mod_id: i64) -> Result<serde_json::Value, St
     }
 }
 // Function to get a mod's posts
-pub async fn get_mod_posts(mod_id: i64, page: i64) -> Result<serde_json::Value, String> {
-    let mod_posts_url = format!("https://gamebanana.com/apiv11/Mod/{}/Posts?_nPage={}&_nPerpage=15&_sSort=popular", mod_id, page);
+pub async fn get_mod_posts(mod_id: i64, page: i64, model_type: &str) -> Result<serde_json::Value, String> {
+    let mod_posts_url = format!("https://gamebanana.com/apiv11/{}/{}/Posts?_nPage={}&_nPerpage=15&_sSort=popular", model_type, mod_id, page);
     debug!("Fetching mod posts from: {}", mod_posts_url);
     
     let client = reqwest::Client::new();
@@ -474,8 +436,8 @@ pub async fn get_mod_posts(mod_id: i64, page: i64) -> Result<serde_json::Value, 
 
 
 // Function to get a mod's updates
-pub async fn get_mod_updates(mod_id: i64, page: i64) -> Result<serde_json::Value, String> {
-    let mod_updates_url = format!("https://gamebanana.com/apiv11/Mod/{}/Updates?_nPage={}&_nPerpage=5", mod_id, page);
+pub async fn get_mod_updates(mod_id: i64, page: i64, model_type: &str) -> Result<serde_json::Value, String> {
+    let mod_updates_url = format!("https://gamebanana.com/apiv11/{}/{}/Updates?_nPage={}&_nPerpage=5", model_type, mod_id, page);
     debug!("Fetching mod updates from: {}", mod_updates_url);
     
     let client = reqwest::Client::new();
@@ -501,7 +463,7 @@ pub async fn get_mod_updates(mod_id: i64, page: i64) -> Result<serde_json::Value
     }
 }
 // Function to extract the first banner image URL from mod info
-pub fn extract_banner_url(mod_info: &serde_json::Value, mod_id: i64) -> Option<String> {
+pub fn extract_banner_url(mod_info: &serde_json::Value, mod_id: i64, model_type: &str) -> Option<String> {
     mod_info
         .get("_aPreviewMedia")
         .and_then(|media| media.get("_aImages"))
@@ -531,8 +493,8 @@ pub fn extract_banner_url(mod_info: &serde_json::Value, mod_id: i64) -> Option<S
             }
         })
         .or_else(|| {
-            // Fallback to the embeddable thumbnail
-            Some(format!("https://gamebanana.com/mods/embeddables/{}", mod_id))
+            // Fallback to the embeddable thumbnail - use the model type in lowercase
+            Some(format!("https://gamebanana.com/{}/embeddables/{}", model_type.to_lowercase(), mod_id))
         })
 }
 

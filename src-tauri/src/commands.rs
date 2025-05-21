@@ -454,19 +454,25 @@ pub async fn fetch_gamebanana_mods_command(query: String, page: i64) -> Result<G
 }
 
 #[tauri::command]
-pub async fn get_mod_info_command(mod_id: i64) -> Result<serde_json::Value, String> {
-    get_mod_info(mod_id).await
+pub async fn get_mod_info_command(mod_id: i64, model_type: Option<String>) -> Result<serde_json::Value, String> {
+    // Default to "Mod" if not specified
+    let model_type = model_type.unwrap_or_else(|| "Mod".to_string());
+    get_mod_info(mod_id, &model_type).await
 }
 
 // Command to get mod posts
 #[tauri::command]
-pub async fn get_mod_posts_command(mod_id: i64, page: i64) -> Result<serde_json::Value, String> {
-    crate::gamebanana::get_mod_posts(mod_id, page).await
+pub async fn get_mod_posts_command(mod_id: i64, page: i64, model_type: Option<String>) -> Result<serde_json::Value, String> {
+    // Default to "Mod" if not specified
+    let model_type = model_type.unwrap_or_else(|| "Mod".to_string());
+    crate::gamebanana::get_mod_posts(mod_id, page, &model_type).await
 }
 
 #[tauri::command]
-pub async fn get_mod_updates_command(mod_id: i64, page: i64) -> Result<serde_json::Value, String> {
-    crate::gamebanana::get_mod_updates(mod_id, page).await
+pub async fn get_mod_updates_command(mod_id: i64, page: i64, model_type: Option<String>) -> Result<serde_json::Value, String> {
+    // Default to "Mod" if not specified
+    let model_type = model_type.unwrap_or_else(|| "Mod".to_string());
+    crate::gamebanana::get_mod_updates(mod_id, page, &model_type).await
 }
 
 // Command to download a mod from GameBanana
@@ -476,9 +482,10 @@ pub async fn download_gamebanana_mod_command(
     name: String,
     mod_id: i64,
     install_location: Option<String>,
+    model_type: Option<String>,
     app: tauri::AppHandle
 ) -> Result<String, String> {
-    download_gamebanana_mod(url, name, mod_id, install_location, app).await
+    download_gamebanana_mod(url, name, mod_id, install_location, model_type, app).await
 }
 
 #[tauri::command]
@@ -712,8 +719,10 @@ pub fn is_windows_11() -> bool {
 
 // Command to get download file options
 #[tauri::command]
-pub async fn get_mod_download_files_command(mod_id: i64) -> Result<serde_json::Value, String> {
-    get_mod_download_files(mod_id).await
+pub async fn get_mod_download_files_command(mod_id: i64, model_type: Option<String>) -> Result<serde_json::Value, String> {
+    // Default to "Mod" if not specified
+    let model_type = model_type.unwrap_or_else(|| "Mod".to_string());
+    get_mod_download_files(mod_id, &model_type).await
 }
 
 // Command to get a mod's metadata JSON
