@@ -1,11 +1,14 @@
 use crate::models::{ModDisableResult, ModMetadataFile, ModsState, GLOBAL_MODS_STATE};
 use log::{debug, error, info, warn};
 use std::fs;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use tauri::Manager;
 use serde_json;
 use roxmltree;
+use zip::ZipArchive;
+use std::fs::File;
 
 // Function to update a mod's running state from any thread
 pub fn set_mod_not_running(mod_id: &str) {
@@ -538,6 +541,63 @@ fn find_psych_engine_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, St
                             dependencies: None,
                         });
                     }
+                } else if is_archive(&path) {
+                    debug!("Checking archive: {}", path.display());
+                    
+                    // Try to find pack.json in the archive
+                    let json_content = read_json_from_archive(&path, "pack.json");
+                    let icon_exists = file_exists_in_archive(&path, "pack.png");
+                    
+                    if json_content.is_some() || icon_exists {
+                        // Get the archive name without extension to use as mod folder name
+                        let archive_name = path.file_stem()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_else(|| "Unknown Archive".to_string());
+                            
+                        // Get mod name from pack.json if available, otherwise use archive name
+                        let name = json_content.as_ref()
+                            .and_then(|json| json.get("name").and_then(|v| v.as_str()))
+                            .map(|s| s.to_string())
+                            .unwrap_or_else(|| archive_name.clone());
+                        
+                        // Extract description from pack.json if available
+                        let description = json_content.as_ref().and_then(|json| {
+                            json.get("description").and_then(|v| v.as_str()).map(|s| s.to_string())
+                        });
+                        
+                        // Extract restart info if available
+                        let restart_required = json_content.as_ref()
+                            .and_then(|json| json.get("restart").and_then(|v| v.as_bool()));                            // Icon from archive needs special handling - we don't extract it
+                            let icon_data = if icon_exists {
+                                read_binary_from_archive(&path, "pack.png").and_then(|_| {
+                                    Some("data:image/png;base64,".to_string())
+                                })
+                            } else {
+                                None
+                            };
+                        
+                        metadata_files.push(ModMetadataFile {
+                            name,
+                            description,
+                            folder_path: path.to_string_lossy().to_string(), // Use archive path as folder path
+                            config_file_path: Some(path.to_string_lossy().to_string()), // Use archive path as config file path too
+                            icon_file_path: if icon_exists { 
+                                Some(format!("{}:pack.png", path.to_string_lossy().to_string())) 
+                            } else { 
+                                None 
+                            },
+                            icon_data,
+                            enabled: None, // Will be set by the command handler
+                            version: None,
+                            homepage: None,
+                            contributors: None,
+                            license: None,
+                            restart_required,
+                            dependencies: None,
+                        });
+                        
+                        debug!("Found Psych Engine mod in archive: {}", path.display());
+                    }
                 }
             }
         },
@@ -626,7 +686,7 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                         let version = json_content.as_ref()
                             .and_then(|json| json.get("mod_version").and_then(|v| v.as_str()))
                             .map(|v| v.to_string());
-                            
+                        
                         // Extract description
                         let base_description = json_content.as_ref()
                             .and_then(|json| json.get("description").and_then(|v| v.as_str()))
@@ -666,7 +726,6 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                                     let role = contributor.get("role")
                                         .and_then(|v| v.as_str())
                                         .unwrap_or("Contributor");
-                                    // Construct ContributorMetadata struct
                                     contributors_info.push(crate::models::ContributorMetadata {
                                         name: name.to_string(),
                                         role: role.to_string(),
@@ -718,6 +777,114 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                             restart_required: None, // Polymod doesn't have restart info
                         });
                     }
+                } else if is_archive(&path) {
+                    debug!("Checking archive for Polymod mod: {}", path.display());
+                    
+                    // Try to find _polymod_meta.json in the archive
+                    let json_content = read_json_from_archive(&path, "_polymod_meta.json");
+                    // Check for icons
+                    let icon_exists = file_exists_in_archive(&path, "_polymod_icon.png");
+                    
+                    if json_content.is_some() || icon_exists {
+                        // Get the archive name without extension to use as mod folder name
+                        let archive_name = path.file_stem()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_else(|| "Unknown Archive".to_string());
+                            
+                        // Get mod name from metadata if available, otherwise use archive name
+                        let title = json_content.as_ref()
+                            .and_then(|json| json.get("title").and_then(|v| v.as_str()))
+                            .map(|s| s.to_string())
+                            .unwrap_or_else(|| archive_name.clone());
+                        
+                        // Extract other metadata if available
+                        let version = json_content.as_ref()
+                            .and_then(|json| json.get("mod_version").and_then(|v| v.as_str()))
+                            .map(|v| v.to_string());
+                            
+                        let base_description = json_content.as_ref()
+                            .and_then(|json| json.get("description").and_then(|v| v.as_str()))
+                            .map(|s| s.to_string());
+                        
+                        let homepage = json_content.as_ref()
+                            .and_then(|json| json.get("homepage").and_then(|v| v.as_str()))
+                            .map(|s| s.to_string());
+                        
+                        let license = json_content.as_ref()
+                            .and_then(|json| json.get("license").and_then(|v| v.as_str()))
+                            .map(|s| s.to_string());
+                        
+                        // Dependencies
+                        let dependencies = json_content.as_ref()
+                            .and_then(|json| json.get("dependencies").and_then(|v| v.as_object()))
+                            .map(|deps_obj| {
+                                let mut deps_map = HashMap::new();
+                                for (key, value) in deps_obj {
+                                    if let Some(version_req) = value.as_str() {
+                                        deps_map.insert(key.clone(), version_req.to_string());
+                                    }
+                                }
+                                deps_map
+                            })
+                            .filter(|m| !m.is_empty());
+                        
+                        // Extract contributor information
+                        let mut contributors_info = Vec::new();
+                        if let Some(contributors) = json_content.as_ref()
+                            .and_then(|json| json.get("contributors").and_then(|v| v.as_array())) {
+                            for contributor in contributors {
+                                if let Some(name) = contributor.get("name").and_then(|v| v.as_str()) {
+                                    let role = contributor.get("role")
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("Contributor");
+                                    contributors_info.push(crate::models::ContributorMetadata {
+                                        name: name.to_string(),
+                                        role: role.to_string(),
+                                        email: contributor.get("email").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                        url: contributor.get("website").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                    });
+                                }
+                            }
+                        }
+                        
+                        let collected_contributors = if !contributors_info.is_empty() {
+                            Some(contributors_info)
+                        } else {
+                            None
+                        };
+                        
+                        // Icon from archive
+                        let icon_data = if icon_exists {
+                            read_binary_from_archive(&path, "_polymod_icon.png").and_then(|_| {
+                                // Just placeholder handling for icon data in archives
+                                Some("data:image/png;base64,".to_string())
+                            })
+                        } else {
+                            None
+                        };
+                        
+                        metadata_files.push(ModMetadataFile {
+                            name: title,
+                            description: base_description,
+                            folder_path: path.to_string_lossy().to_string(), // Use archive path as folder path
+                            config_file_path: Some(path.to_string_lossy().to_string()), // Use archive path as config file path
+                            icon_file_path: if icon_exists { 
+                                Some(format!("{}:_polymod_icon.png", path.to_string_lossy().to_string())) 
+                            } else { 
+                                None 
+                            },
+                            icon_data,
+                            enabled: Some(true), // Default to enabled for archives
+                            version,
+                            homepage,
+                            contributors: collected_contributors,
+                            license,
+                            dependencies,
+                            restart_required: None,
+                        });
+                        
+                        debug!("Found Polymod mod in archive: {}", path.display());
+                    }
                 }
             }
         },
@@ -733,7 +900,7 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
 /// This is similar to the Polymod function but with different file names
 
 fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String> {
-    debug!("Searching for Polymod mods in {}", mods_folder.display());
+    debug!("Searching for FPS Plus mods in {}", mods_folder.display());
     let mut metadata_files = Vec::new();
     
     match fs::read_dir(mods_folder) {
@@ -789,19 +956,21 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                             }
                         }
                     }
-                      // Look for icon.png
+                    
+                    // Look for icon.png
                     let icon_path = path.join("icon.png");
                     let icon_exists = icon_path.exists() && icon_path.is_file();
                     
                     if json_content.is_some() || icon_exists {
                         let title = json_content.as_ref()
-                            .and_then(|json| json.get("title").and_then(|v| v.as_str()).map(|s| s.to_string())) // Convert Option<&str> to Option<String>
+                            .and_then(|json| json.get("title").and_then(|v| v.as_str()).map(|s| s.to_string()))
                             .unwrap_or_else(|| { 
-                                path.file_name().map_or_else(
-                                    || "Unknown Mod".to_string(), 
-                                    |n| n.to_string_lossy().to_string() 
-                                )
-                            }); // title is now String
+                                path.file_name()
+                                    .map_or_else(
+                                        || "Unknown Mod".to_string(), 
+                                        |n| n.to_string_lossy().to_string() 
+                                    )
+                            });
                         
                         // Get version information
                         let version = json_content.as_ref()
@@ -900,6 +1069,114 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                             dependencies,
                         });
                     }
+                } else if is_archive(&path) {
+                    debug!("Checking archive for FPS Plus mod: {}", path.display());
+                    
+                    // Try to find meta.json in the archive
+                    let json_content = read_json_from_archive(&path, "meta.json");
+                    // Check for icons
+                    let icon_exists = file_exists_in_archive(&path, "icon.png");
+                    
+                    if json_content.is_some() || icon_exists {
+                        // Get the archive name without extension to use as mod folder name
+                        let archive_name = path.file_stem()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_else(|| "Unknown Archive".to_string());
+                            
+                        // Get mod name from metadata if available, otherwise use archive name
+                        let title = json_content.as_ref()
+                            .and_then(|json| json.get("title").and_then(|v| v.as_str()))
+                            .map(|s| s.to_string())
+                            .unwrap_or_else(|| archive_name.clone());
+                        
+                        // Extract other metadata if available
+                        let version = json_content.as_ref()
+                            .and_then(|json| json.get("mod_version").and_then(|v| v.as_str()))
+                            .map(|v| v.to_string());
+                            
+                        let base_description = json_content.as_ref()
+                            .and_then(|json| json.get("description").and_then(|v| v.as_str()))
+                            .map(|s| s.to_string());
+                        
+                        let homepage = json_content.as_ref()
+                            .and_then(|json| json.get("homepage").and_then(|v| v.as_str()))
+                            .map(|s| s.to_string());
+                        
+                        let license = json_content.as_ref()
+                            .and_then(|json| json.get("license").and_then(|v| v.as_str()))
+                            .map(|s| s.to_string());
+                        
+                        // Dependencies
+                        let dependencies = json_content.as_ref()
+                            .and_then(|json| json.get("dependencies").and_then(|v| v.as_object()))
+                            .map(|deps_obj| {
+                                let mut deps_map = HashMap::new();
+                                for (key, value) in deps_obj {
+                                    if let Some(version_req) = value.as_str() {
+                                        deps_map.insert(key.clone(), version_req.to_string());
+                                    }
+                                }
+                                deps_map
+                            })
+                            .filter(|m| !m.is_empty());
+                        
+                        // Extract contributor information
+                        let mut contributors_info = Vec::new();
+                        if let Some(contributors) = json_content.as_ref()
+                            .and_then(|json| json.get("contributors").and_then(|v| v.as_array())) {
+                            for contributor in contributors {
+                                if let Some(name) = contributor.get("name").and_then(|v| v.as_str()) {
+                                    let role = contributor.get("role")
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("Contributor");
+                                    contributors_info.push(crate::models::ContributorMetadata {
+                                        name: name.to_string(),
+                                        role: role.to_string(),
+                                        email: contributor.get("email").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                        url: contributor.get("website").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                    });
+                                }
+                            }
+                        }
+                        
+                        let collected_contributors = if !contributors_info.is_empty() {
+                            Some(contributors_info)
+                        } else {
+                            None
+                        };
+                        
+                        // Icon from archive
+                        let icon_data = if icon_exists {
+                            read_binary_from_archive(&path, "icon.png").and_then(|_| {
+                                // Just placeholder handling for icon data in archives
+                                Some("data:image/png;base64,".to_string())
+                            })
+                        } else {
+                            None
+                        };
+                        
+                        metadata_files.push(ModMetadataFile {
+                            name: title,
+                            description: base_description,
+                            folder_path: path.to_string_lossy().to_string(), // Use archive path as folder path
+                            config_file_path: Some(path.to_string_lossy().to_string()), // Use archive path as config file path
+                            icon_file_path: if icon_exists { 
+                                Some(format!("{}:icon.png", path.to_string_lossy().to_string())) 
+                            } else { 
+                                None 
+                            },
+                            icon_data,
+                            enabled: Some(true), // Default to enabled for archives
+                            version,
+                            homepage,
+                            contributors: collected_contributors,
+                            license,
+                            dependencies,
+                            restart_required: None,
+                        });
+                        
+                        debug!("Found FPS Plus mod in archive: {}", path.display());
+                    }
                 }
             }
         },
@@ -929,138 +1206,177 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
                     let credits_path = path.join("data").join("config").join("credits.xml");
                     
                     if credits_path.exists() && credits_path.is_file() {
+                        // Read the credits file to get mod information
                         match fs::read_to_string(&credits_path) {
-                            Ok(xml_content) => {
-                                // Parse XML to extract name and description
-                                match roxmltree::Document::parse(&xml_content) {
+                            Ok(content) => {
+                                // Parse the XML
+                                match roxmltree::Document::parse(&content) {
                                     Ok(doc) => {
-                                        // Look for menu element with name and desc attributes
-                                        if let Some(menu_elem) = doc.root_element().children().find(|n| n.has_tag_name("menu")) {
-                                            let name = menu_elem.attribute("name")
-                                                .unwrap_or("Unknown Mod").to_string();
-                                            
-                                            let description = menu_elem.attribute("desc")
-                                                .map(|s| s.to_string());
-                                            
-                                            debug!("Found credits.xml in {} with name: {}", path.display(), name);
-                                              metadata_files.push(ModMetadataFile {
-                                                name,
-                                                description,
-                                                folder_path: path.to_string_lossy().to_string(),
-                                                config_file_path: Some(credits_path.to_string_lossy().to_string()),
-                                                icon_file_path: None, // Codename doesn't have a standard icon file
-                                                icon_data: None,
-                                                enabled: None, // Will be set by the command handler
-                                                version: None,
-                                                homepage: None,
-                                                contributors: None,
-                                                license: None,
-                                                restart_required: None,
-                                                dependencies: None,
-                                            });
-                                        } else {
-                                            warn!("credits.xml found but no menu element in {}", path.display());
-                                            
-                                            // Still add the mod but with the folder name
-                                            let name = path.file_name().map_or_else(
-                                                || "Unknown Mod".to_string(), 
-                                                |n| n.to_string_lossy().to_string()
-                                            );
-                                            
-                                            metadata_files.push(ModMetadataFile {
-                                                name,
-                                                description: None,
-                                                folder_path: path.to_string_lossy().to_string(),
-                                                config_file_path: Some(credits_path.to_string_lossy().to_string()),
-                                                icon_file_path: None,
-                                                icon_data: None,
-                                                enabled: None, // Will be set by the command handler
-                                                version: None,
-                                                homepage: None,
-                                                contributors: None,
-                                                license: None,
-                                                restart_required: None,
-                                                dependencies: None,
-                                            });
-                                        }
-                                    },
-                                    Err(e) => {
-                                        warn!("Failed to parse credits.xml in {}: {}", path.display(), e);
+                                        // Get the root element
+                                        let root = doc.root_element();
                                         
-                                        // Still add the mod but with the folder name and no description
-                                        let name = path.file_name().map_or_else(
-                                            || "Unknown Mod".to_string(), 
-                                            |n| n.to_string_lossy().to_string()
-                                        );
+                                        // Find the mod name in the credits
+                                        let mod_name = root.children()
+                                            .find(|n| n.tag_name().name() == "name" || n.tag_name().name() == "modname")
+                                            .and_then(|n| n.text())
+                                            .map(|s| s.to_string())
+                                            .unwrap_or_else(|| {
+                                                path.file_name()
+                                                    .map(|n| n.to_string_lossy().to_string())
+                                                    .unwrap_or_else(|| "Unknown Mod".to_string())
+                                            });
+                                        
+                                        // Get description if available
+                                        let mod_description = root.children()
+                                            .find(|n| n.tag_name().name() == "description")
+                                            .and_then(|n| n.text())
+                                            .map(|s| s.to_string());
+                                          // Look for icon.png in different potential locations
+                                        let mut icon_path_option = None;
+                                        
+                                        // Common icon locations in Codename Engine mods
+                                        let potential_icon_paths = [
+                                            path.join("icon.png"),
+                                            path.join("data").join("icon.png"),
+                                            path.join("assets").join("icon.png"),
+                                            path.join("assets").join("images").join("icon.png"),
+                                        ];
+                                        
+                                        for icon_path in &potential_icon_paths {
+                                            if icon_path.exists() && icon_path.is_file() {
+                                                icon_path_option = Some(icon_path.clone());
+                                                break;
+                                            }
+                                        }
+                                          let mod_name_str = mod_name.clone();
+                                        
+                                        // Handle icon data preparation before moving values into ModMetadataFile
+                                        let icon_data = if let Some(ref p) = icon_path_option {
+                                            Some(get_mod_icon_data(&p.to_string_lossy().to_string())?)
+                                        } else {
+                                            None
+                                        };
+                                        
+                                        // Create icon file path before moving icon_path_option
+                                        let icon_file_path = icon_path_option.map(|p| p.to_string_lossy().to_string());
                                         
                                         metadata_files.push(ModMetadataFile {
-                                            name,
-                                            description: None,
+                                            name: mod_name,
+                                            description: mod_description,
                                             folder_path: path.to_string_lossy().to_string(),
                                             config_file_path: Some(credits_path.to_string_lossy().to_string()),
-                                            icon_file_path: None,
-                                            icon_data: None,
-                                            enabled: None, // Will be set by the command handler
-                                            version: None,
+                                            icon_file_path,
+                                            icon_data,
+                                            enabled: Some(true), // Codename Engine mods are always enabled
+                                            version: None, // Version not directly available in credits.xml
                                             homepage: None,
-                                            contributors: None,
+                                            contributors: None, // Could extract from credits.xml but would need more complex parsing
                                             license: None,
-                                            restart_required: None,
                                             dependencies: None,
+                                            restart_required: None,
                                         });
+                                        
+                                        debug!("Found Codename Engine mod: {}", mod_name_str);
+                                    },
+                                    Err(e) => {
+                                        warn!("Failed to parse credits.xml in {}: {}", credits_path.display(), e);
                                     }
                                 }
                             },
                             Err(e) => {
-                                warn!("Failed to read credits.xml in {}: {}", path.display(), e);
-                                // Still add the mod with folder name even if we can't read the credits.xml
-                                let name = path.file_name().map_or_else(
-                                    || "Unknown Mod".to_string(), 
-                                    |n| n.to_string_lossy().to_string()
-                                );
+                                warn!("Failed to read credits.xml in {}: {}", credits_path.display(), e);
+                            }
+                        }
+                    }
+                } else if is_archive(&path) {
+                    debug!("Checking archive for Codename Engine mod: {}", path.display());
+                    
+                    // Try to find data/config/credits.xml in the archive
+                    let credits_content = read_text_from_archive(&path, "data/config/credits.xml");
+                    
+                    if let Some(content) = credits_content {
+                        // Parse the XML
+                        match roxmltree::Document::parse(&content) {
+                            Ok(doc) => {
+                                // Get the root element
+                                let root = doc.root_element();
+                                
+                                // Find the mod name in the credits
+                                let mod_name = root.children()
+                                    .find(|n| n.tag_name().name() == "name" || n.tag_name().name() == "modname")
+                                    .and_then(|n| n.text())
+                                    .map(|s| s.to_string())
+                                    .unwrap_or_else(|| {
+                                        path.file_stem()
+                                            .map(|n| n.to_string_lossy().to_string())
+                                            .unwrap_or_else(|| "Unknown Mod".to_string())
+                                    });
+                                
+                                // Get description if available
+                                let mod_description = root.children()
+                                    .find(|n| n.tag_name().name() == "description")
+                                    .and_then(|n| n.text())
+                                    .map(|s| s.to_string());
+                                
+                                // Check for icons in common locations
+                                let mut icon_exists = false;
+                                let mut icon_path_str = String::new();
+                                
+                                // Common icon locations in Codename Engine mods
+                                let potential_icon_paths = [
+                                    "icon.png",
+                                    "data/icon.png",
+                                    "assets/icon.png",
+                                    "assets/images/icon.png",
+                                ];
+                                
+                                for icon_path in &potential_icon_paths {
+                                    if file_exists_in_archive(&path, icon_path) {
+                                        icon_exists = true;
+                                        icon_path_str = icon_path.to_string();
+                                        break;
+                                    }
+                                }
+                                  let mod_name_str = mod_name.clone();
+                                
+                                // Prepare icon data before moving values
+                                let icon_file_path = if icon_exists {
+                                    Some(format!("{}:{}", path.to_string_lossy().to_string(), icon_path_str))
+                                } else {
+                                    None
+                                };
+                                
+                                let icon_data = if icon_exists {
+                                    read_binary_from_archive(&path, &icon_path_str).and_then(|_| {
+                                        // Just placeholder handling for icon data in archives
+                                        Some("data:image/png;base64,".to_string())
+                                    })
+                                } else {
+                                    None
+                                };
                                 
                                 metadata_files.push(ModMetadataFile {
-                                    name,
-                                    description: Some("No metadata found.".to_string()),
+                                    name: mod_name,
+                                    description: mod_description,
                                     folder_path: path.to_string_lossy().to_string(),
-                                    config_file_path: Some(credits_path.to_string_lossy().to_string()),
-                                    icon_file_path: None,
-                                    icon_data: None,
-                                    enabled: None, // Will be set by the command handler
+                                    config_file_path: Some(path.to_string_lossy().to_string()), // Use archive path as config path
+                                    icon_file_path,
+                                    icon_data,
+                                    enabled: Some(true), // Codename Engine mods are always enabled
                                     version: None,
                                     homepage: None,
                                     contributors: None,
                                     license: None,
-                                    restart_required: None,
                                     dependencies: None,
+                                    restart_required: None,
                                 });
+                                
+                                debug!("Found Codename Engine mod in archive: {}", mod_name_str);
+                            },
+                            Err(e) => {
+                                warn!("Failed to parse credits.xml in archive {}: {}", path.display(), e);
                             }
                         }
-                    } 
-                    else {
-                        // No credits.xml found, but still add the mod with folder name
-                        let name = path.file_name().map_or_else(
-                            || "Unknown Mod".to_string(), 
-                            |n| n.to_string_lossy().to_string()
-                        );
-                        
-                        debug!("No credits.xml found in {}, using folder name: {}", path.display(), name);
-                        
-                        metadata_files.push(ModMetadataFile {
-                            name,
-                            description: Some("No metadata found.".to_string()),
-                            folder_path: path.to_string_lossy().to_string(),
-                            config_file_path: None,
-                            icon_file_path: None,
-                            icon_data: None,
-                            enabled: None, // Will be set by the command handler
-                            version: None,
-                            homepage: None,
-                            contributors: None,
-                            license: None,
-                            restart_required: None,
-                            dependencies: None,
-                        });
                     }
                 }
             }
@@ -1277,6 +1593,155 @@ fn compare_versions(a: &[&str], b: &[&str]) -> i32 {
     }
     
     0 // Versions are equal
+}
+
+/// Helper function to read JSON files from ZIP archives
+fn read_json_from_archive(archive_path: &Path, file_path: &str) -> Option<serde_json::Value> {
+    let file = match File::open(archive_path) {
+        Ok(file) => file,
+        Err(e) => {
+            warn!("Failed to open archive {}: {}", archive_path.display(), e);
+            return None;
+        }
+    };
+    
+    let mut archive = match ZipArchive::new(file) {
+        Ok(archive) => archive,
+        Err(e) => {
+            warn!("Failed to read archive {}: {}", archive_path.display(), e);
+            return None;
+        }
+    };
+    
+    // Try to find the file inside the archive
+    let result = match archive.by_name(file_path) {
+        Ok(mut file) => {
+            let mut contents = String::new();
+            if let Err(e) = file.read_to_string(&mut contents) {
+                warn!("Failed to read {} from archive {}: {}", file_path, archive_path.display(), e);
+                return None;
+            }
+            
+            match serde_json::from_str::<serde_json::Value>(&contents) {
+                Ok(json) => Some(json),
+                Err(e) => {
+                    warn!("Failed to parse {} from archive {}: {}", file_path, archive_path.display(), e);
+                    None
+                }
+            }
+        },
+        Err(e) => {
+            debug!("File {} not found in archive {}: {}", file_path, archive_path.display(), e);
+            None
+        }
+    };
+    
+    result
+}
+
+/// Helper function to read text files from ZIP archives
+fn read_text_from_archive(archive_path: &Path, file_path: &str) -> Option<String> {
+    let file = match File::open(archive_path) {
+        Ok(file) => file,
+        Err(e) => {
+            warn!("Failed to open archive {}: {}", archive_path.display(), e);
+            return None;
+        }
+    };
+    
+    let mut archive = match ZipArchive::new(file) {
+        Ok(archive) => archive,
+        Err(e) => {
+            warn!("Failed to read archive {}: {}", archive_path.display(), e);
+            return None;
+        }
+    };
+    
+    // Try to find the file inside the archive
+    let result = match archive.by_name(file_path) {
+        Ok(mut file) => {
+            let mut contents = String::new();
+            if let Err(e) = file.read_to_string(&mut contents) {
+                warn!("Failed to read {} from archive {}: {}", file_path, archive_path.display(), e);
+                return None;
+            }
+            Some(contents)
+        },
+        Err(e) => {
+            debug!("File {} not found in archive {}: {}", file_path, archive_path.display(), e);
+            None
+        }
+    };
+    
+    result
+}
+
+/// Helper function to check if a file exists in a ZIP archive
+fn file_exists_in_archive(archive_path: &Path, file_path: &str) -> bool {
+    let file = match File::open(archive_path) {
+        Ok(file) => file,
+        Err(e) => {
+            debug!("Failed to open archive {}: {}", archive_path.display(), e);
+            return false;
+        }
+    };
+    
+    let mut archive = match ZipArchive::new(file) {
+        Ok(archive) => archive,
+        Err(e) => {
+            debug!("Failed to read archive {}: {}", archive_path.display(), e);
+            return false;
+        }
+    };
+    
+    let result = archive.by_name(file_path).is_ok();
+    result
+}
+
+/// Helper function to read binary data from file in ZIP archive
+fn read_binary_from_archive(archive_path: &Path, file_path: &str) -> Option<Vec<u8>> {
+    let file = match File::open(archive_path) {
+        Ok(file) => file,
+        Err(e) => {
+            warn!("Failed to open archive {}: {}", archive_path.display(), e);
+            return None;
+        }
+    };
+    
+    let mut archive = match ZipArchive::new(file) {
+        Ok(archive) => archive,
+        Err(e) => {
+            warn!("Failed to read archive {}: {}", archive_path.display(), e);
+            return None;
+        }
+    };
+    
+    // Try to find the file inside the archive
+    let result = match archive.by_name(file_path) {
+        Ok(mut file) => {
+            let mut contents = Vec::new();
+            if let Err(e) = file.read_to_end(&mut contents) {
+                warn!("Failed to read binary {} from archive {}: {}", file_path, archive_path.display(), e);
+                return None;
+            }
+            Some(contents)
+        },
+        Err(e) => {
+            debug!("File {} not found in archive {}: {}", file_path, archive_path.display(), e);
+            None
+        }
+    };
+    
+    result
+}
+
+/// Check if path is a supported archive format
+fn is_archive(path: &Path) -> bool {
+    if let Some(ext) = path.extension() {
+        let ext_str = ext.to_string_lossy().to_lowercase();
+        return ext_str == "zip" || ext_str == "fnf";  // Add other supported formats if needed
+    }
+    false
 }
 
 /// Fetch an image and encode it as base64
