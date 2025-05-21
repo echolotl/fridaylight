@@ -89,6 +89,11 @@
                       @click.stop="$emit('download', mod)"
                     />
                     <div class="featured-stats">
+                      <span v-if="mod.initial_visibility == 'warn'">
+                        <q-icon name="warning" size="sm" color="yellow" />
+                        Has sensitive content!
+                        
+                      </span>
                       <span>
                         <q-icon name="message" size="sm" />
                         {{ formatNumber(mod.post_count) }}

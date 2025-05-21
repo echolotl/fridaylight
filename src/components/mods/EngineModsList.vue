@@ -99,7 +99,7 @@
           <div v-for="(version, modName) in mod.dependencies" :key="modName">
             <div v-if="dependencyStates[modName]?.error" class="dependency-error-item">
             <div class="dependency-info">
-              <span class="dependency-name" style="color: var(--red);">{{ modName }}</span>
+              <span class="dependency-name" style="color: var(--red);">Requires <u>{{ modName }}</u>!</span>
               <span class="dependency-version" style="color: var(--red);">({{ version }})</span>
             </div>
             <div class="text-caption text-negative">
@@ -125,13 +125,11 @@
   <MessageDialog
     v-model="showModDetailsDialog"
     title="Mod Details"
-    icon="extension"
-    iconColor="primary"
     confirmLabel="Close"
-    :cancelLabel="''"
     v-if="selectedMod"
     :persistent="false"
-    :single-option="true"
+    single-option
+    disable-icon
   >
     <div class="mod-details">
       <div class="mod-header">

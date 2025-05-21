@@ -10,7 +10,7 @@
       "
     >
       <q-card-section class="row items-center">
-        <q-icon :name="icon" :color="iconColor" text-color="white" size="md" />
+        <q-icon :name="icon" :color="iconColor" text-color="white" size="md" v-if="!disableIcon" class="q-mr-sm" />
         <h6 class="dialog-title phantom-font-difficulty">{{ title }}</h6>
       </q-card-section>
 
@@ -71,6 +71,10 @@ const props = defineProps({
     type: String,
     default: "help",
   },
+  disableIcon: {
+    type: Boolean,
+    default: false,
+  },
   iconColor: {
     type: String,
     default: "primary",
@@ -117,7 +121,7 @@ const onCancel = () => {
 
 <style scoped>
 .dialog-title {
-  margin: 0 0.5rem;
+  margin: 0;
 }
 .scrollarea {
   width: 100%;

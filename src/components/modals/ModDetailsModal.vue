@@ -340,7 +340,24 @@
                   @click="downloadMod"
                   size="lg"
                   class="action-button"
+                  :disabled="!modInfo._aFiles"
                 />
+                <div v-if="modInfo._aFiles[0]._bContainsExe" class="q-mt-sm">
+                  <q-badge v-if="modInfo._aFiles[0]._sClamAvResult === 'clean'" label="CLAMAV" class="q-mr-xs">
+                    <q-icon name="check" size="xs" class="q-ml-xs" />
+                  </q-badge>
+                  <q-badge v-else label="CLAMAV" color="negative">
+                    <q-icon name="warning" size="xs" class="q-ml-xs" />
+                  </q-badge>
+
+                  <q-badge v-if="modInfo._aFiles[0]._sAvastAvResult === 'clean'" label="AVAST" >
+                    <q-icon name="check" size="xs" class="q-ml-xs" />
+                  </q-badge>
+                  <q-badge v-else label="AVAST" color="negative">
+                    <q-icon name="warning" size="xs" class="q-ml-xs" />
+                  </q-badge>
+                </div>
+
                 <q-btn
                   icon="launch"
                   label="View on GameBanana"

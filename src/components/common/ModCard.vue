@@ -23,6 +23,10 @@
         </div>
 
         <div class="mod-stats">
+          <span v-if="mod.initial_visibility === 'warn'">
+            <q-icon name="warning" size="xs" color="yellow" />
+            Has sensitive content!
+          </span>
           <span>
             <q-icon name="thumb_up" size="xs" />
             {{ formatNumber(mod.likes) }}

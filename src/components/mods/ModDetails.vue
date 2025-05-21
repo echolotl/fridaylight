@@ -63,7 +63,7 @@
 
         <div class="description" v-if="mod.description">
           <h6 class="phantom-font-difficulty">Description<hr /></h6>
-          <p>{{ mod.description }}</p>
+          <p v-html="mod.description"></p>
         </div>
 
         <!-- Show engine-specific mods list if mod has engine type and executable path -->
