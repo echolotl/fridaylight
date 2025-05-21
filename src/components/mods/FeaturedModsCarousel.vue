@@ -32,7 +32,7 @@
               @click="$emit('showDetails', mod.id)"
               @contextmenu.prevent="showContextMenu($event, mod)"
             >
-              <q-img :src="mod.imageUrl" class="featured-thumbnail">
+              <q-img :src="mod.imageUrl" class="featured-thumbnail" :img-style="{ filter: mod.initialVisibility == 'warn' ? 'blur(20px)' : 'none' }">
                 <div class="absolute-full featured-overlay"></div>
 
                 <div class="absolute-top-right q-pa-sm row items-center">

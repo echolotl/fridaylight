@@ -5,7 +5,7 @@
       @click="$emit('showDetails', mod.id)"
       @contextmenu.prevent="showContextMenu"
     >
-      <q-img :src="previewImageUrl" class="mod-thumbnail">
+      <q-img :src="previewImageUrl" class="mod-thumbnail" :img-style="{ filter: mod.initialVisibility == 'warn' ? 'blur(5px)' : 'none' }">
         <img :src="mod.categoryIconUrl" class="mod-category-icon" />
         <img
           :src="mod.submitterAvatarUrl"
