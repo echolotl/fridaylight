@@ -1312,6 +1312,136 @@ fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String
             return Err(format!("Failed to read directory {}: {}", mods_folder.display(), e));
         }
     }
+    // Also look in the addons folder
+    // Remove the last part of the path
+    let addons_folder = mods_folder.parent().unwrap().join("addons");
+    debug!("Searching for codename engine mods in {}", addons_folder.display());
+    if addons_folder.exists() {
+    match fs::read_dir(&addons_folder) {
+        Ok(entries) => {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let path = entry.path();
+
+                if path.is_dir() {
+                    // Codename engine mods don't have names or descriptions
+
+                    // Name is just the folder name
+                    let name = path.file_name()
+                        .map_or_else(|| "Unknown Mod".to_string(), |n| n.to_string_lossy().to_string());
+
+                    // Check for data/config/credits.xml
+                    let credits_path = path.join("data").join("config").join("credits.xml");
+                    if credits_path.exists() && credits_path.is_file() {
+                        debug!("Found credits.xml in {}", path.display());
+                        // Parse the XML file using roxmltree
+                        let xml_content = match fs::read_to_string(&credits_path) {
+                            Ok(content) => content,
+                            Err(e) => {
+                                warn!("Failed to read credits.xml in {}: {}", path.display(), e);
+                                continue;
+                            }
+                        };
+                        let _xml_doc = match roxmltree::Document::parse(&xml_content) {
+                            Ok(doc) => doc,
+                            Err(e) => {
+                                warn!("Failed to parse credits.xml in {}: {}", path.display(), e);
+                                continue;
+                            }
+                        };
+                        // TODO: Actually parse the XML content to extract contributors
+                        // Codename has a different credits structure, very unlike Polymod mods
+
+                        metadata_files.push(ModMetadataFile {
+                            name,
+                            description: None,
+                            folder_path: path.to_string_lossy().to_string(),
+                            config_file_path: None,
+                            icon_file_path: None,
+                            icon_data: None,
+                            enabled: Some(true), // Default to enabled for Codename mods
+                            version: None,
+                            homepage: None,
+                            contributors: None, 
+                            license: None,
+                            dependencies: None,
+                            restart_required: None, 
+                        });
+                    } else {
+                        debug!("No credits.xml found in {}", path.display());
+                        metadata_files.push(ModMetadataFile {
+                            name,
+                            description: None,
+                            folder_path: path.to_string_lossy().to_string(),
+                            config_file_path: None,
+                            icon_file_path: None,
+                            icon_data: None,
+                            enabled: Some(true), // Default to enabled for Codename mods
+                            version: None,
+                            homepage: None,
+                            contributors: None, 
+                            license: None,
+                            dependencies: None,
+                            restart_required: None, 
+                        });
+                    }
+                } else if is_archive(&path) {
+                    debug!("Checking archive for Codename mod: {}", path.display());
+                    
+                    // Try to find data/config/credits.xml in the archive
+                    let xml_content = read_text_from_archive(&path, "data/config/credits.xml");
+                    let has_credits = xml_content.is_some();
+                    
+                    // Get the archive name without extension to use as mod name
+                    let archive_name = path.file_stem()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| "Unknown Archive".to_string());
+
+                    // If we have credits.xml, treat as Codename mod
+                    if has_credits {
+                        debug!("Detected Codename Engine mod in archive: {}", path.display());
+                        
+                        let contributors_info = Vec::new();
+                        
+                        // If we have credits.xml, try to parse contributors
+                        if let Some(content) = xml_content {
+                            if let Ok(_doc) = roxmltree::Document::parse(&content) {
+                                // TODO: Parse contributors from XML
+                            }
+                        }
+                        
+                        let collected_contributors = if !contributors_info.is_empty() {
+                            Some(contributors_info)
+                        } else {
+                            None
+                        };
+                        
+                        metadata_files.push(ModMetadataFile {
+                            name: archive_name,
+                            description: None,
+                            folder_path: path.to_string_lossy().to_string(), // Use archive path as folder path
+                            config_file_path: Some(path.to_string_lossy().to_string()), // Use archive path as config file path
+                            icon_file_path: None,
+                            icon_data: None,
+                            enabled: Some(true), // Default to enabled for archives
+                            version: None,
+                            homepage: None,
+                            contributors: collected_contributors,
+                            license: None,
+                            dependencies: None,
+                            restart_required: None,
+                        });
+                    }
+                }
+                
+            }
+
+        }
+        Err(e) => {
+            return Err(format!("Failed to read directory {}: {}", addons_folder.display(), e));
+        }
+    }
+
+    }
     Ok(metadata_files)
 }
 
