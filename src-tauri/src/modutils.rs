@@ -375,10 +375,6 @@ fn check_fpsplus_polymod_mod_enabled(mod_folder_path: &str) -> Result<bool, Stri
     Err("No metadata file found for this mod".to_string())
 }
 
-//
-// FUNCTIONALITY FROM MODFILES.RS
-//
-
 /// Find and process mod metadata files based on engine type
 pub fn find_mod_metadata_files(executable_folder: &Path, engine_type: &str, custom_mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String> {
     let mods_folder: PathBuf; 
@@ -1191,201 +1187,131 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
 
 /// Find Codename Engine mods (looks for data/config/credits.xml)
 fn find_codename_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String> {
-    debug!("Searching for Codename Engine mods in {}", mods_folder.display());
+    debug!("Searching for codename engine mods in {}", mods_folder.display());
     let mut metadata_files = Vec::new();
-    
+
     match fs::read_dir(mods_folder) {
         Ok(entries) => {
             for entry in entries.filter_map(|e| e.ok()) {
                 let path = entry.path();
-                
+
                 if path.is_dir() {
-                    debug!("Checking mod folder: {}", path.display());
-                    
-                    // Look for data/config/credits.xml
+                    // Codename engine mods don't have names or descriptions
+
+                    // Name is just the folder name
+                    let name = path.file_name()
+                        .map_or_else(|| "Unknown Mod".to_string(), |n| n.to_string_lossy().to_string());
+
+                    // Check for data/config/credits.xml
                     let credits_path = path.join("data").join("config").join("credits.xml");
-                    
                     if credits_path.exists() && credits_path.is_file() {
-                        // Read the credits file to get mod information
-                        match fs::read_to_string(&credits_path) {
-                            Ok(content) => {
-                                // Parse the XML
-                                match roxmltree::Document::parse(&content) {
-                                    Ok(doc) => {
-                                        // Get the root element
-                                        let root = doc.root_element();
-                                        
-                                        // Find the mod name in the credits
-                                        let mod_name = root.children()
-                                            .find(|n| n.tag_name().name() == "name" || n.tag_name().name() == "modname")
-                                            .and_then(|n| n.text())
-                                            .map(|s| s.to_string())
-                                            .unwrap_or_else(|| {
-                                                path.file_name()
-                                                    .map(|n| n.to_string_lossy().to_string())
-                                                    .unwrap_or_else(|| "Unknown Mod".to_string())
-                                            });
-                                        
-                                        // Get description if available
-                                        let mod_description = root.children()
-                                            .find(|n| n.tag_name().name() == "description")
-                                            .and_then(|n| n.text())
-                                            .map(|s| s.to_string());
-                                          // Look for icon.png in different potential locations
-                                        let mut icon_path_option = None;
-                                        
-                                        // Common icon locations in Codename Engine mods
-                                        let potential_icon_paths = [
-                                            path.join("icon.png"),
-                                            path.join("data").join("icon.png"),
-                                            path.join("assets").join("icon.png"),
-                                            path.join("assets").join("images").join("icon.png"),
-                                        ];
-                                        
-                                        for icon_path in &potential_icon_paths {
-                                            if icon_path.exists() && icon_path.is_file() {
-                                                icon_path_option = Some(icon_path.clone());
-                                                break;
-                                            }
-                                        }
-                                          let mod_name_str = mod_name.clone();
-                                        
-                                        // Handle icon data preparation before moving values into ModMetadataFile
-                                        let icon_data = if let Some(ref p) = icon_path_option {
-                                            Some(get_mod_icon_data(&p.to_string_lossy().to_string())?)
-                                        } else {
-                                            None
-                                        };
-                                        
-                                        // Create icon file path before moving icon_path_option
-                                        let icon_file_path = icon_path_option.map(|p| p.to_string_lossy().to_string());
-                                        
-                                        metadata_files.push(ModMetadataFile {
-                                            name: mod_name,
-                                            description: mod_description,
-                                            folder_path: path.to_string_lossy().to_string(),
-                                            config_file_path: Some(credits_path.to_string_lossy().to_string()),
-                                            icon_file_path,
-                                            icon_data,
-                                            enabled: Some(true), // Codename Engine mods are always enabled
-                                            version: None, // Version not directly available in credits.xml
-                                            homepage: None,
-                                            contributors: None, // Could extract from credits.xml but would need more complex parsing
-                                            license: None,
-                                            dependencies: None,
-                                            restart_required: None,
-                                        });
-                                        
-                                        debug!("Found Codename Engine mod: {}", mod_name_str);
-                                    },
-                                    Err(e) => {
-                                        warn!("Failed to parse credits.xml in {}: {}", credits_path.display(), e);
-                                    }
-                                }
-                            },
+                        debug!("Found credits.xml in {}", path.display());
+                        // Parse the XML file using roxmltree
+                        let xml_content = match fs::read_to_string(&credits_path) {
+                            Ok(content) => content,
                             Err(e) => {
-                                warn!("Failed to read credits.xml in {}: {}", credits_path.display(), e);
+                                warn!("Failed to read credits.xml in {}: {}", path.display(), e);
+                                continue;
                             }
-                        }
+                        };
+                        let _xml_doc = match roxmltree::Document::parse(&xml_content) {
+                            Ok(doc) => doc,
+                            Err(e) => {
+                                warn!("Failed to parse credits.xml in {}: {}", path.display(), e);
+                                continue;
+                            }
+                        };
+                        // TODO: Actually parse the XML content to extract contributors
+                        // Codename has a different credits structure, very unlike Polymod mods
+
+                        metadata_files.push(ModMetadataFile {
+                            name,
+                            description: None,
+                            folder_path: path.to_string_lossy().to_string(),
+                            config_file_path: None,
+                            icon_file_path: None,
+                            icon_data: None,
+                            enabled: Some(true), // Default to enabled for Codename mods
+                            version: None,
+                            homepage: None,
+                            contributors: None, 
+                            license: None,
+                            dependencies: None,
+                            restart_required: None, 
+                        });
+                    } else {
+                        debug!("No credits.xml found in {}", path.display());
+                        metadata_files.push(ModMetadataFile {
+                            name,
+                            description: None,
+                            folder_path: path.to_string_lossy().to_string(),
+                            config_file_path: None,
+                            icon_file_path: None,
+                            icon_data: None,
+                            enabled: Some(true), // Default to enabled for Codename mods
+                            version: None,
+                            homepage: None,
+                            contributors: None, 
+                            license: None,
+                            dependencies: None,
+                            restart_required: None, 
+                        });
                     }
                 } else if is_archive(&path) {
-                    debug!("Checking archive for Codename Engine mod: {}", path.display());
+                    debug!("Checking archive for Codename mod: {}", path.display());
                     
                     // Try to find data/config/credits.xml in the archive
-                    let credits_content = read_text_from_archive(&path, "data/config/credits.xml");
+                    let xml_content = read_text_from_archive(&path, "data/config/credits.xml");
+                    let has_credits = xml_content.is_some();
                     
-                    if let Some(content) = credits_content {
-                        // Parse the XML
-                        match roxmltree::Document::parse(&content) {
-                            Ok(doc) => {
-                                // Get the root element
-                                let root = doc.root_element();
-                                
-                                // Find the mod name in the credits
-                                let mod_name = root.children()
-                                    .find(|n| n.tag_name().name() == "name" || n.tag_name().name() == "modname")
-                                    .and_then(|n| n.text())
-                                    .map(|s| s.to_string())
-                                    .unwrap_or_else(|| {
-                                        path.file_stem()
-                                            .map(|n| n.to_string_lossy().to_string())
-                                            .unwrap_or_else(|| "Unknown Mod".to_string())
-                                    });
-                                
-                                // Get description if available
-                                let mod_description = root.children()
-                                    .find(|n| n.tag_name().name() == "description")
-                                    .and_then(|n| n.text())
-                                    .map(|s| s.to_string());
-                                
-                                // Check for icons in common locations
-                                let mut icon_exists = false;
-                                let mut icon_path_str = String::new();
-                                
-                                // Common icon locations in Codename Engine mods
-                                let potential_icon_paths = [
-                                    "icon.png",
-                                    "data/icon.png",
-                                    "assets/icon.png",
-                                    "assets/images/icon.png",
-                                ];
-                                
-                                for icon_path in &potential_icon_paths {
-                                    if file_exists_in_archive(&path, icon_path) {
-                                        icon_exists = true;
-                                        icon_path_str = icon_path.to_string();
-                                        break;
-                                    }
-                                }
-                                  let mod_name_str = mod_name.clone();
-                                
-                                // Prepare icon data before moving values
-                                let icon_file_path = if icon_exists {
-                                    Some(format!("{}:{}", path.to_string_lossy().to_string(), icon_path_str))
-                                } else {
-                                    None
-                                };
-                                
-                                let icon_data = if icon_exists {
-                                    read_binary_from_archive(&path, &icon_path_str).and_then(|_| {
-                                        // Just placeholder handling for icon data in archives
-                                        Some("data:image/png;base64,".to_string())
-                                    })
-                                } else {
-                                    None
-                                };
-                                
-                                metadata_files.push(ModMetadataFile {
-                                    name: mod_name,
-                                    description: mod_description,
-                                    folder_path: path.to_string_lossy().to_string(),
-                                    config_file_path: Some(path.to_string_lossy().to_string()), // Use archive path as config path
-                                    icon_file_path,
-                                    icon_data,
-                                    enabled: Some(true), // Codename Engine mods are always enabled
-                                    version: None,
-                                    homepage: None,
-                                    contributors: None,
-                                    license: None,
-                                    dependencies: None,
-                                    restart_required: None,
-                                });
-                                
-                                debug!("Found Codename Engine mod in archive: {}", mod_name_str);
-                            },
-                            Err(e) => {
-                                warn!("Failed to parse credits.xml in archive {}: {}", path.display(), e);
+                    // Get the archive name without extension to use as mod name
+                    let archive_name = path.file_stem()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| "Unknown Archive".to_string());
+
+                    // If we have credits.xml, treat as Codename mod
+                    if has_credits {
+                        debug!("Detected Codename Engine mod in archive: {}", path.display());
+                        
+                        let contributors_info = Vec::new();
+                        
+                        // If we have credits.xml, try to parse contributors
+                        if let Some(content) = xml_content {
+                            if let Ok(_doc) = roxmltree::Document::parse(&content) {
+                                // TODO: Parse contributors from XML
                             }
                         }
+                        
+                        let collected_contributors = if !contributors_info.is_empty() {
+                            Some(contributors_info)
+                        } else {
+                            None
+                        };
+                        
+                        metadata_files.push(ModMetadataFile {
+                            name: archive_name,
+                            description: None,
+                            folder_path: path.to_string_lossy().to_string(), // Use archive path as folder path
+                            config_file_path: Some(path.to_string_lossy().to_string()), // Use archive path as config file path
+                            icon_file_path: None,
+                            icon_data: None,
+                            enabled: Some(true), // Default to enabled for archives
+                            version: None,
+                            homepage: None,
+                            contributors: collected_contributors,
+                            license: None,
+                            dependencies: None,
+                            restart_required: None,
+                        });
                     }
                 }
             }
-        },
+
+        }
         Err(e) => {
             return Err(format!("Failed to read directory {}: {}", mods_folder.display(), e));
         }
     }
-    
     Ok(metadata_files)
 }
 
