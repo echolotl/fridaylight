@@ -33,43 +33,44 @@
     <q-tooltip v-if="compactMode" class="phantom-font">
       {{ folder.name }}
     </q-tooltip>
-  </q-item>
-  <!-- Expanded folder content with indentation -->
-  <div
-    v-if="isExpanded"
-    class="folder-contents"
-    :class="{ 'compact-folder-contents': compactMode }"
-    :style="{ borderLeftColor: folder.color }"
-  >
-    <draggable
-      :group="{ name: 'mods', pull: true, put: true }"
-      :list="modsInFolder"
-      item-key="id"
-      @change="handleModsChange"
-      @end="handleDragEnd"
-      :animation="200"
-      ghost-class="sortable-ghost"
-      chosen-class="sortable-chosen"
-      drag-class="sortable-drag"
-      :force-fallback="true"
-      :fallback-on-body="true"
-      :delay="100"
+  </q-item>  <!-- Expanded folder content with indentation -->
+  <transition name="folder-expand" appear>
+    <div
+      v-if="isExpanded"
+      class="folder-contents"
+      :class="{ 'compact-folder-contents': compactMode }"
+      :style="{ borderLeftColor: folder.color }"
     >
-      <template #item="{ element }">
-        <div class="draggable-item cursor-move" :key="element.id">
-          <ModListItem
-            :mod="element.data"
-            :is-active="selectedModId === element.id"
-            :compact-mode="compactMode"
-            @select-mod="$emit('select-mod', element.data)"
-            @delete-mod="$emit('delete-mod', element)"
-            @open-mod-settings="$emit('open-mod-settings', $event)"
-            @launch-mod="$emit('launch-mod', $event)"
-          />
-        </div>
-      </template>
-    </draggable>
-  </div>
+      <draggable
+        :group="{ name: 'mods', pull: true, put: true }"
+        :list="modsInFolder"
+        item-key="id"
+        @change="handleModsChange"
+        @end="handleDragEnd"
+        :animation="200"
+        ghost-class="sortable-ghost"
+        chosen-class="sortable-chosen"
+        drag-class="sortable-drag"
+        :force-fallback="true"
+        :fallback-on-body="true"
+        :delay="100"
+      >
+        <template #item="{ element }">
+          <div class="draggable-item cursor-move" :key="element.id">
+            <ModListItem
+              :mod="element.data"
+              :is-active="selectedModId === element.id"
+              :compact-mode="compactMode"
+              @select-mod="$emit('select-mod', element.data)"
+              @delete-mod="$emit('delete-mod', element)"
+              @open-mod-settings="$emit('open-mod-settings', $event)"
+              @launch-mod="$emit('launch-mod', $event)"
+            />
+          </div>
+        </template>
+      </draggable>
+    </div>
+  </transition>
 </template>
 
 <script setup lang="ts">
@@ -331,5 +332,32 @@ const handleModsChange = (event: any) => {
 .compact-folder-contents {
   margin-left: 0px;
   border-left-style: solid;
+}
+
+/* Folder expand/collapse transitions */
+.folder-expand-enter-active,
+.folder-expand-leave-active {
+  transition: all 0.3s ease;
+  transform-origin: top;
+}
+
+.folder-expand-enter-from {
+  opacity: 0;
+  transform: scaleY(0);
+  max-height: 0;
+}
+
+.folder-expand-leave-to {
+  opacity: 0;
+  transform: scaleY(0);
+  max-height: 0;
+}
+
+.folder-expand-enter-to,
+.folder-expand-leave-from {
+  opacity: 1;
+  transform: scaleY(1);
+  max-height: 1000px; /* Adjust based on expected content height */
+  transform-origin: top;
 }
 </style>
