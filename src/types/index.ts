@@ -62,7 +62,40 @@ export interface Mod {
   contributors?: ContributorGroup[]; // List of contributors to the mod, organized by groups
   last_played?: number; // Unix timestamp when mod was last played
   date_added?: number; // Unix timestamp when mod was added
+  engine_mod?: ModMetadataFile; // Metadata for engine mod, if applicable
 }
+
+
+/**
+ * Represents a engine mod metadata file
+ */
+export interface ModMetadataFile {
+  name: string;
+  description?: string;
+  folder_path: string;
+  config_file_path?: string;
+  icon_file_path?: string;
+  icon_data?: string;
+  enabled: boolean;
+  version?: string;
+  homepage?: string;
+  contributors?: ContributorMetadata[];
+  license?: string;
+  credits?: string;
+  dependencies?: DependencyMetadata[];
+}
+
+interface DependencyMetadata {
+  [modName: string]: string; // Key: mod name, Value: version
+}
+
+interface ContributorMetadata {
+  name: string;
+  role: string;
+  email?: string;
+  url?: string;
+}
+
 
 /**
  * Represents a display item in lists (can be either a mod or folder)

@@ -161,6 +161,7 @@
             @select-mod="selectMod"
             @open-mod-settings="openModSettings"
             @gamebanana-browser="openGamebananaBrowser"
+            @engine-mod-to-list="addEngineModToList"
           />
         </div>
       </Transition>
@@ -190,7 +191,7 @@ import ModSettingsModal from "@modals/ModSettingsModal.vue";
 import AppSettingsModal from "@modals/AppSettingsModal.vue";
 import GameBananaBrowser from "@mods/GameBananaBrowser.vue";
 import HomePage from "@mods/HomePage.vue";
-import { Mod, Folder, DisplayItem } from "@main-types";
+import { Mod, Folder, DisplayItem, ModMetadataFile } from "@main-types";
 import { useQuasar } from "quasar";
 import { StoreService } from "../../services/storeService";
 import { DatabaseService } from "@services/dbService";
@@ -1271,6 +1272,24 @@ const openModFolder = async (mod: ModInfo) => {
 const openGamebananaBrowser = () => {
   setActivePage("gamebanana");
 };
+
+const addEngineModToList = async (engineMod: ModMetadataFile) => {
+  invoke<Mod>("convert_engine_mod_to_mod", { engineMod })
+    .then((modInfo) => {
+      // Check if the mod already exists in the list
+      const existingMod = mods.value.find((mod) => mod.id === modInfo.id);
+      if (!existingMod) {
+        mods.value.push(modInfo);
+        selectMod(modInfo);
+        saveModToDatabase(modInfo);
+      } else {
+        console.log("Mod already exists in the list:", existingMod.name);
+      }
+    })
+    .catch((error) => {
+      console.error("Failed to convert engine mod to ModInfo:", error);
+    });
+}
 
 // Clean up event listeners
 onUnmounted(() => {

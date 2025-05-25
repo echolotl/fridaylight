@@ -3,7 +3,7 @@ use crate::filesystem::create_mod_info;
 use crate::gamebanana::{fetch_gamebanana_mods, get_mod_download_files, get_mod_info};
 use crate::logger;
 use crate::modutils::{find_mod_metadata_files, get_executable_directory, toggle_mod_enabled_state, check_mod_enabled_state};
-use crate::models::{ModInfo, ModsState, GameBananaResponse, EngineModsResponse, ModDisableResult};
+use crate::models::{EngineModsResponse, GameBananaResponse, ModDisableResult, ModInfo, ModMetadataFile, ModsState};
 use log::{debug, error, info, warn};
 use tauri::window::{Effect, EffectsBuilder};
 use std::collections::HashMap;
@@ -856,6 +856,13 @@ pub fn check_mod_dependency(mods_folder_path: &str, dependency_name: &str, requi
     Ok(())
 }
 
+// Command to convert an engine mod to an actual mod
+#[tauri::command]
+pub async fn convert_engine_mod_to_mod(engine_mod: ModMetadataFile) -> ModInfo {
+    info!("Converting engine mod to mod at path: {}", engine_mod.folder_path);
+    crate::modutils::convert_to_mod_info(engine_mod).await
+}
+
 async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     if let Some(update) = app.updater()?.check().await? {
       let mut downloaded = 0;
@@ -956,6 +963,7 @@ pub fn run() {
             get_mod_posts_command,
             get_mod_updates_command,
             check_mod_dependency,
+            convert_engine_mod_to_mod,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

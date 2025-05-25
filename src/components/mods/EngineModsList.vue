@@ -92,6 +92,7 @@
             size="md"
             @click.stop
           />
+          <q-btn round dense color="primary" icon="playlist-add" flat @click="addToMainList(mod)" />
         </div>
       </div>      
       <div v-if="mod.dependencies && Object.keys(mod.dependencies).length > 0">
@@ -222,33 +223,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
 import { getEngineModsFolderPath } from "@utils/index";
 import MessageDialog from "@components/modals/MessageDialog.vue";
-
-interface ModMetadataFile {
-  name: string;
-  description?: string;
-  folder_path: string;
-  config_file_path?: string;
-  icon_file_path?: string;
-  icon_data?: string;
-  enabled: boolean;
-  version?: string;
-  homepage?: string;
-  contributors?: ContributorMetadata[];
-  license?: string;
-  credits?: string;
-  dependencies?: DependencyMetadata[];
-}
-
-interface DependencyMetadata {
-  [modName: string]: string; // Key: mod name, Value: version
-}
-
-interface ContributorMetadata {
-  name: string;
-  role: string;
-  email?: string;
-  url?: string;
-}
+import { ModMetadataFile } from "@main-types";
 
 interface EngineModsResponse {
   engine_type: string;
@@ -291,6 +266,12 @@ interface DependencyState {
   installed?: boolean;
   error?: string;
 }
+
+const emit = defineEmits(["addToMainList"]);
+
+const addToMainList = (mod: ModMetadataFile) => {
+  emit("addToMainList", mod);
+};
 
 const dependencyStates = ref<Record<string, DependencyState>>({});
 

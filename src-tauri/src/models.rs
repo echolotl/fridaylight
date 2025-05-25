@@ -95,6 +95,7 @@ pub struct Engine {
     pub mods_folder_path: Option<String>,
 }
 
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Contributor {
     pub name: String,
@@ -127,6 +128,7 @@ pub struct ModInfo {
     pub contributors: Option<Vec<ContributorGroup>>, // List of contributor groups
     pub last_played: Option<i64>,   // Unix timestamp when mod was last played
     pub date_added: Option<i64>,    // Unix timestamp when mod was added
+    pub engine_mod: Option<ModMetadataFile>, // Metadata for engine mods
 }
 
 impl ModInfo {

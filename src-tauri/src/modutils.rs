@@ -1,4 +1,5 @@
-use crate::models::{ModDisableResult, ModMetadataFile, ModsState, GLOBAL_MODS_STATE};
+use crate::models::{Engine, ModDisableResult, ModInfo, ModMetadataFile, ModsState, GLOBAL_MODS_STATE};
+use base64::engine;
 use log::{debug, error, info, warn};
 use std::fs;
 use std::io::Read;
@@ -1809,6 +1810,57 @@ pub fn get_mod_icon_data(file_path: &str) -> Result<String, String> {
         None => {
             warn!("Failed to read image file: {}", file_path);
             Err(format!("Failed to read image file: {}", file_path))
+        }
+    }
+}
+
+// Convert a ModMetadataFile to ModInfo
+pub async fn convert_to_mod_info(metadata: ModMetadataFile) -> ModInfo {
+    match crate::filesystem::create_mod_info(&metadata.folder_path) {
+        Ok(flight_mod_info) => {
+            ModInfo {
+                id: flight_mod_info.id,
+                name: flight_mod_info.name,
+                path: flight_mod_info.path,
+                metadata_version: flight_mod_info.metadata_version,
+                description: flight_mod_info.description,
+                executable_path: flight_mod_info.executable_path,
+                icon_data: flight_mod_info.icon_data,
+                banner_data: flight_mod_info.banner_data,
+                logo_data: flight_mod_info.logo_data,
+                logo_position: flight_mod_info.logo_position,
+                version: flight_mod_info.version,
+                engine: flight_mod_info.engine,
+                display_order: flight_mod_info.display_order,
+                process_id: flight_mod_info.process_id,
+                contributors: flight_mod_info.contributors,
+                last_played: flight_mod_info.last_played,
+                date_added: flight_mod_info.date_added,
+                engine_mod: Some(metadata)
+            }
+        },
+        Err(_) => {
+            // Create a default ModInfo with information from the metadata
+            ModInfo {
+                id: uuid::Uuid::new_v4().to_string(),
+                name: metadata.name.clone(),
+                path: metadata.folder_path.clone(),
+                metadata_version: None,
+                description: metadata.description.clone(),
+                executable_path: None,
+                icon_data: metadata.icon_data.clone(),
+                banner_data: None,
+                logo_data: None,
+                logo_position: None,
+                version: metadata.version.clone(),
+                engine: None,
+                display_order: None,
+                process_id: None,
+                contributors: None,
+                last_played: None,
+                date_added: None,
+                engine_mod: Some(metadata)
+            }
         }
     }
 }
