@@ -1,8 +1,6 @@
-use log::{info, error};
+use log::{ info, error };
 use tauri::Emitter;
 use crate::models::GLOBAL_APP_HANDLE;
-
-
 
 // Set the global app handle
 pub fn set_global_app_handle(handle: tauri::AppHandle) {
@@ -33,7 +31,7 @@ pub fn emit_event<T: serde::Serialize + Clone>(event: &str, payload: T) -> Resul
                 Ok(_) => {
                     info!("Event '{}' emitted successfully", event);
                     Ok(())
-                },
+                }
                 Err(e) => {
                     let err_msg = format!("Failed to emit event '{}': {}", event, e);
                     error!("{}", err_msg);

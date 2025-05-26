@@ -92,7 +92,7 @@
             size="md"
             @click.stop
           />
-          <q-btn round dense color="primary" icon="playlist-add" flat @click="addToMainList(mod)" />
+          <q-btn round dense color="primary" icon="playlist_add" flat @click="addToMainList(mod)" />
         </div>
       </div>      
       <div v-if="mod.dependencies && Object.keys(mod.dependencies).length > 0">

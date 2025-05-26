@@ -258,6 +258,13 @@ const handleModsChange = (event: any) => {
   margin-bottom: 2px;
 }
 
+.folder {
+  min-height: 12px;
+  padding: 2px 16px !important;
+  border-bottom-width: 0px;
+  border-bottom-style: solid;
+}
+
 .expanded-folder {
   background-color: var(--theme-surface-light);
   border-radius: 0 1rem 0 0 !important;
@@ -274,10 +281,8 @@ const handleModsChange = (event: any) => {
   opacity: 0;
   transition: opacity 0.2s ease;
 }
-.folder {
-  min-height: 12px;
-  padding: 2px 16px !important;
-}
+
+
 .q-item:hover .delete-btn,
 .q-item:hover .folder-action-btn {
   opacity: 1;

@@ -80,7 +80,7 @@
             :executablePath="mod.executable_path"
             :engineType="mod.engine.engine_type"
             :customModsFolder="mod.engine.mods_folder_path"
-            @add-to-main-list="emit('engine-mod-to-list', $event)"
+            @add-to-main-list="emit('engine-mod-to-list', $event, mod)"
           />
         </div>
       </div>

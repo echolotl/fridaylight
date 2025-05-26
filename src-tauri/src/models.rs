@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{ Deserialize, Serialize };
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::fmt;
@@ -11,15 +11,23 @@ pub const CURRENT_METADATA_VERSION: u32 = 1;
 #[derive(Debug, Clone)]
 pub enum MetadataError {
     MissingVersion,
-    VersionTooLow { provided: u32, minimum: u32 },
+    VersionTooLow {
+        provided: u32,
+        minimum: u32,
+    },
 }
 
 impl fmt::Display for MetadataError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             MetadataError::MissingVersion => write!(f, "Missing required metadata_version field"),
-            MetadataError::VersionTooLow { provided, minimum } => 
-                write!(f, "Metadata version {} is too old. Minimum supported version is {}", provided, minimum),
+            MetadataError::VersionTooLow { provided, minimum } =>
+                write!(
+                    f,
+                    "Metadata version {} is too old. Minimum supported version is {}",
+                    provided,
+                    minimum
+                ),
         }
     }
 }
@@ -85,7 +93,6 @@ pub struct GameBananaModImage {
     pub width800: Option<i64>,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Engine {
     pub engine_type: Option<String>,
@@ -95,11 +102,10 @@ pub struct Engine {
     pub mods_folder_path: Option<String>,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Contributor {
     pub name: String,
-    pub icon: Option<String>,  // Path to contributor icon or base64 data
+    pub icon: Option<String>, // Path to contributor icon or base64 data
     pub role: Option<String>, // Role description of the contributor
 }
 
@@ -122,12 +128,12 @@ pub struct ModInfo {
     pub logo_data: Option<String>, // Base64 encoded logo image data
     pub logo_position: Option<String>, // Position of logo in banner: left_bottom, left_middle, middle
     pub version: Option<String>,
-    pub engine: Option<Engine>,      // Extended engine information
+    pub engine: Option<Engine>, // Extended engine information
     pub display_order: Option<i64>,
-    pub process_id: Option<u32>,    // Track the running process ID
+    pub process_id: Option<u32>, // Track the running process ID
     pub contributors: Option<Vec<ContributorGroup>>, // List of contributor groups
-    pub last_played: Option<i64>,   // Unix timestamp when mod was last played
-    pub date_added: Option<i64>,    // Unix timestamp when mod was added
+    pub last_played: Option<i64>, // Unix timestamp when mod was last played
+    pub date_added: Option<i64>, // Unix timestamp when mod was added
     pub engine_mod: Option<ModMetadataFile>, // Metadata for engine mods
 }
 
@@ -155,13 +161,14 @@ pub struct ModMetadataFile {
     pub config_file_path: Option<String>,
     pub icon_file_path: Option<String>,
     pub icon_data: Option<String>, // Base64 encoded icon data
-    pub enabled: Option<bool>,     // Whether the mod is enabled
-    pub version: Option<String>,   // Version of the mod
-    pub homepage: Option<String>,  // Homepage/website URL
-    pub contributors: Option<Vec<ContributorMetadata>>, 
-    pub license: Option<String>,   // License information
+    pub enabled: Option<bool>, // Whether the mod is enabled
+    pub version: Option<String>, // Version of the mod
+    pub homepage: Option<String>, // Homepage/website URL
+    pub contributors: Option<Vec<ContributorMetadata>>,
+    pub license: Option<String>, // License information
     pub restart_required: Option<bool>, // Whether a restart is required
     pub dependencies: Option<HashMap<String, String>>, // Dependencies of the mod with version requirements
+    pub parent_mod_id: Option<String>, // ID of the parent mod this metadata belongs to
 }
 
 // Contributor structure for mod metadata

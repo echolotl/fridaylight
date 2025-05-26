@@ -130,7 +130,6 @@
       </div>
     </div>
     <div class="main-content-area">
-      <!-- Show ModDetails when a mod is selected and GameBanana is not shown -->
       <Transition name="fade" mode="out-in">
         <div
           :key="
@@ -768,11 +767,10 @@ const launchMod = async (modId: string) => {
     // Find the mod in our local array by ID
     const mod = mods.value.find((m) => m.id === modId);
 
-    if (mod) {
-      // Update the last_played timestamp before launching
+    if (mod) {      // Update the last_played timestamp before launching
       const updatedMod = {
         ...mod,
-        last_played: Math.floor(Date.now() / 1000), // Current Unix timestamp in seconds
+        last_played: Math.trunc(Date.now() / 1000), // Current Unix timestamp in seconds
       };
 
       // Save to database to persist the last_played value
@@ -1273,8 +1271,11 @@ const openGamebananaBrowser = () => {
   setActivePage("gamebanana");
 };
 
-const addEngineModToList = async (engineMod: ModMetadataFile) => {
-  invoke<Mod>("convert_engine_mod_to_mod", { engineMod })
+const addEngineModToList = async (engineMod: ModMetadataFile, originalMod: ModInfo) => {
+  // date_added and last_played don't really matter for this, and just cause issues
+  originalMod.last_played = 0;
+  originalMod.date_added = 0;
+  invoke<Mod>("convert_engine_mod_to_mod", { engineMod, originalMod })
     .then((modInfo) => {
       // Check if the mod already exists in the list
       const existingMod = mods.value.find((mod) => mod.id === modInfo.id);

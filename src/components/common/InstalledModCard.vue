@@ -131,10 +131,11 @@ const logoPositionClass = computed(() => {
 
 // Format date to relative time (e.g. "2 days ago")
 const formatDate = (timestamp: number): string => {
-  // Convert timestamp to milliseconds if it's in seconds format (has decimal point)
-  const normalizedTimestamp = timestamp.toString().includes(".")
-    ? Math.floor(timestamp * 1000)
-    : timestamp;
+  // Ensure timestamp is always treated as seconds and convert to milliseconds for Date operations
+  // If the timestamp appears to be in seconds (less than year 2100 in milliseconds), convert to milliseconds
+  const normalizedTimestamp = timestamp < 4102444800000 
+    ? Math.trunc(timestamp) * 1000
+    : Math.trunc(timestamp);
 
   const now = Date.now();
   const difference = now - normalizedTimestamp;
