@@ -2199,17 +2199,22 @@ pub fn disable_all_mods_except(
     engine_type: &str,
     exception_mod_path: &str
 ) -> Result<Vec<ModDisableResult>, String> {
+    // The executable_path is actually the mod path, so we need to get the parent directory for mods folder
+    // and the parent's parent for the actual executable directory
+    let mod_path = Path::new(executable_path);
+    let actual_mods_folder = mod_path.parent()
+        .ok_or_else(|| format!("Cannot determine mods folder from path: {}", executable_path))?;
+    let actual_executable_dir = actual_mods_folder.parent()
+        .ok_or_else(|| format!("Cannot determine executable directory from mods folder: {}", actual_mods_folder.display()))?;
+    
     info!(
-        "Disabling all mods except: {} (engine: {}, mods_folder: {})",
+        "Disabling all mods except: {} (engine: {}, mods_folder: {}, executable_dir: {}, exception: {})",
         exception_mod_path,
         engine_type,
-        mods_folder_path
+        actual_mods_folder.display(),
+        actual_executable_dir.display(),
+        exception_mod_path
     );
-
-    let mods_folder = Path::new(mods_folder_path);
-    if !mods_folder.exists() || !mods_folder.is_dir() {
-        return Err(format!("Mods folder not found: {}", mods_folder_path));
-    }
 
     // Normalize the exception path for comparison
     let exception_path = Path::new(exception_mod_path)
@@ -2218,9 +2223,9 @@ pub fn disable_all_mods_except(
 
     // Get all mod metadata files for this engine type
     let metadata_files = find_mod_metadata_files(
-        mods_folder.parent().unwrap_or(mods_folder),
+        actual_executable_dir,
         engine_type,
-        &Path::new("").to_path_buf()
+        Path::new(mods_folder_path),
     )?;
 
     let mut results = Vec::new();
@@ -2240,12 +2245,10 @@ pub fn disable_all_mods_except(
                 message: format!("Mod '{}' kept enabled (exception)", metadata.name),
             });
             continue;
-        }
-
-        // Disable this mod
+        }        // Disable this mod
         match
             toggle_mod_enabled_state(
-                executable_path,
+                &actual_executable_dir.to_string_lossy(),
                 &metadata.folder_path,
                 engine_type,
                 false // disable

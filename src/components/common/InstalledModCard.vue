@@ -62,7 +62,7 @@
         label="Play"
         class="play-btn"
         text-color="white"
-        @click.stop="$emit('play', mod.id)"
+        @click.stop="$emit('play', mod)"
         flat
       />
       <q-btn
@@ -205,13 +205,12 @@ const contributorCount = computed(() => {
 const showContextMenu = (event: MouseEvent) => {
   event.preventDefault();
   event.stopPropagation();
-
   // Create context menu options
   const contextMenuOptions = [
     {
       icon: "play_arrow",
       label: "Launch Mod",
-      action: () => emit("play", props.mod.id),
+      action: () => emit("play", props.mod),
     },
     {
       icon: "settings",

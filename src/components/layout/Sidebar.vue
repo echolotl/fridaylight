@@ -759,41 +759,43 @@ const handleSelectExecutable = async (
 };
 
 // Function that launches the selected mod
-const launchMod = async (modId: string) => {
+const launchMod = async (mod: ModInfo) => {
   try {
-    // Now invoke the backend to launch the mod
-    await invoke("launch_mod", { id: modId });
-
-    // Find the mod in our local array by ID
-    const mod = mods.value.find((m) => m.id === modId);
-
-    if (mod) {      // Update the last_played timestamp before launching
-      const updatedMod = {
-        ...mod,
-        last_played: Math.trunc(Date.now() / 1000), // Current Unix timestamp in seconds
-      };
-
-      // Save to database to persist the last_played value
-      await dbService.saveMod(updatedMod);
-
-      // Update the local state
-      const index = mods.value.findIndex((m) => m.id === modId);
-      if (index !== -1) {
-        mods.value[index] = updatedMod;
-      }
-
-      // If this is the currently selected mod, update that reference too
-      if (selectedMod.value?.id === modId) {
-        selectedMod.value = updatedMod;
-      }
-
-      console.log(
-        `Updated last_played timestamp for mod ${updatedMod.name} to ${updatedMod.last_played}`
-      );
+    if (mod.engine_mod) {
+      // If this is an engine mod, we need to handle it differently
+      console.log("Launching engine mod:", mod.name);
+      // Disable all mods except this one
+      await invoke("disable_all_mods_except", { executablePath: mod.path, modsFolderPath: mod.engine.mods_folder_path, engineType: mod.engine.engine_type, exceptionModPath: mod.engine_mod.folder_path });
     }
+    // Now invoke the backend to launch the mod
+    await invoke("launch_mod", { id: mod.id });
+
+    // Update the last_played timestamp before launching
+    const updatedMod = {
+      ...mod,
+      last_played: Math.trunc(Date.now() / 1000), // Current Unix timestamp in seconds
+    };
+
+    // Save to database to persist the last_played value
+    await dbService.saveMod(updatedMod);
+
+    // Update the local state
+    const index = mods.value.findIndex((m) => m.id === mod.id);
+    if (index !== -1) {
+      mods.value[index] = updatedMod;
+    }
+
+    // If this is the currently selected mod, update that reference too
+    if (selectedMod.value?.id === mod.id) {
+      selectedMod.value = updatedMod;
+    }
+
+    console.log(
+      `Updated last_played timestamp for mod ${updatedMod.name} to ${updatedMod.last_played}`
+    );
   } catch (error) {
     console.error("Failed to launch mod:", error);
-    launchError.value = "Failed to launch mod";
+    launchError.value = String(error);
   }
 };
 

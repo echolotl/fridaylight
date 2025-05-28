@@ -532,8 +532,8 @@ const openModDetails = (modId: number, modelType: string) => {
 };
 
 // Function to play an installed mod
-const playMod = (modId: string) => {
-  emit("launch-mod", modId);
+const playMod = (mod: Mod) => {
+  emit("launch-mod", mod);
 };
 
 // Function to configure an installed mod

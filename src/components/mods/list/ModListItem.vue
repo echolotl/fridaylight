@@ -66,10 +66,9 @@ const showContextMenu = (event: MouseEvent) => {
   const contextMenuOptions = [
     {
       icon: "play_arrow",
-      label: "Launch Mod",
-      action: () => {
-        // Directly emit the launch-mod event with the mod's ID
-        emit("launch-mod", props.mod.id);
+      label: "Launch Mod",      action: () => {
+        // Directly emit the launch-mod event with the entire mod object
+        emit("launch-mod", props.mod);
       },
     },
     {

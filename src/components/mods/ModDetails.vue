@@ -21,18 +21,10 @@
             >
               {{ isModRunning ? "STOP" : "PLAY" }}
             </q-btn>
-
-            <div v-if="!mod.executable_path" class="error-message">
-              No executable found in this mod folder
-            </div>
-
-            <div v-if="error" class="error-message">
-              {{ error }}
-            </div>
           </div>
 
           <q-btn
-            v-if="!mod.engine_mod" 
+            v-if="!mod.engine_mod"
             flat
             round
             color="var(--theme-text)"
@@ -40,6 +32,16 @@
             class="settings-button"
             @click="$emit('open-settings')"
           />
+        </div>
+
+        <div class="q-mb-md">
+          <div v-if="!mod.executable_path" class="error-message">
+            No executable found in this mod folder
+          </div>
+
+          <div v-if="error">
+            Uh oh! Looks like we've encountered an error:<br/><div class="error-message">{{ error }}</div>
+          </div>
         </div>
 
         <!-- Terminal Output Component -->
@@ -63,7 +65,10 @@
         </div>
 
         <div class="description" v-if="mod.description">
-          <h6 class="phantom-font-difficulty">Description<hr /></h6>
+          <h6 class="phantom-font-difficulty">
+            Description
+            <hr />
+          </h6>
           <p v-html="mod.description"></p>
         </div>
 
@@ -134,7 +139,7 @@ const emit = defineEmits([
   "launch-mod",
   "open-settings",
   "stop-mod",
-  "engine-mod-to-list"
+  "engine-mod-to-list",
 ]);
 let modTerminatedListener: (() => void) | null = null;
 
@@ -163,7 +168,7 @@ const handleModAction = async () => {
   } else {
     console.log(`Launching mod ${props.mod.id}`);
     // Launch the mod
-    emit("launch-mod", props.mod.id);
+    emit("launch-mod", props.mod);
 
     // Show terminal output based on user settings
     if (appSettings) {
@@ -439,9 +444,12 @@ onUnmounted(() => {
 }
 
 .error-message {
-  color: red;
+  color: var(--q-negative);
   font-size: 1rem;
   margin-top: 8px;
+  padding: 1rem;
+  background-color: var(--theme-surface);
+  border-radius: 0.5rem;
 }
 
 h6 {
