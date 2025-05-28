@@ -394,18 +394,10 @@ export class DatabaseService {
           );
           dbConsole.log("Added last_played column to mods table");
         }
-        if (!columns.includes("date_added")) {
-          await this.db.execute(
-            `ALTER TABLE mods ADD COLUMN date_added INTEGER`
-          );
-          dbConsole.log("Added date_added column to mods table");
-        }
 
-        if (!columns.includes("engine_mod_data")) {
-          await this.db.execute(
-            `ALTER TABLE mods ADD COLUMN engine_mod_data TEXT`
-          );
-          dbConsole.log("Added engine_mod_data column to mods table");
+        if (!columns.includes("date_added")) {
+          await this.db.execute(`ALTER TABLE mods ADD COLUMN date_added INTEGER`);
+          dbConsole.log("Added date_added column to mods table");
         }
       } else {
         // Table doesn't exist, create it with all columns
@@ -426,8 +418,7 @@ export class DatabaseService {
             folder_id TEXT,
             display_order_in_folder INTEGER DEFAULT 0,
             last_played INTEGER,
-            date_added INTEGER,
-            engine_mod_data TEXT
+            date_added INTEGER
           )
         `);
         dbConsole.log("Created mods table with all columns");
@@ -482,59 +473,41 @@ export class DatabaseService {
       throw new Error("Database not initialized");
     }
 
-    return withDatabaseLock(
-      async (db) => {
-        const mods = await db.select(
-          "SELECT * FROM mods ORDER BY display_order ASC"
-        );
-        return mods.map((mod: any) => {
-          // Parse engine data if it exists
-          let engine;
-          try {
-            engine = mod.engine_data
-              ? JSON.parse(mod.engine_data)
-              : {
-                  engine_type: "unknown",
-                  engine_name: "Unknown Engine",
-                  engine_icon: "",
-                  mods_folder: false,
-                  mods_folder_path: "",
-                };
-          } catch (e) {
-            dbConsole.error("Failed to parse engine data for mod:", mod.id, e);
-            engine = {
-              engine_type: "unknown",
-              engine_name: "Unknown Engine",
-              engine_icon: "",
-              mods_folder: false,
-              mods_folder_path: "",
-            };
-          } // Parse engine_mod data if it exists
-          let engine_mod;
-          try {
-            engine_mod = mod.engine_mod_data
-              ? JSON.parse(mod.engine_mod_data)
-              : undefined;
-          } catch (e) {
-            dbConsole.error(
-              "Failed to parse engine_mod data for mod:",
-              mod.id,
-              e
-            );
-            engine_mod = undefined;
-          }
-
-          // Contributors data is not stored in the database
-          return {
-            ...mod,
-            engine,
-            engine_mod,
+    return withDatabaseLock(async (db) => {
+      const mods = await db.select(
+        "SELECT * FROM mods ORDER BY display_order ASC"
+      );
+      return mods.map((mod: any) => {
+        // Parse engine data if it exists
+        let engine;
+        try {
+          engine = mod.engine_data
+            ? JSON.parse(mod.engine_data)
+            : {
+                engine_type: "unknown",
+                engine_name: "Unknown Engine",
+                engine_icon: "",
+                mods_folder: false,
+                mods_folder_path: "",
+              };
+        } catch (e) {
+          dbConsole.error("Failed to parse engine data for mod:", mod.id, e);
+          engine = {
+            engine_type: "unknown",
+            engine_name: "Unknown Engine",
+            engine_icon: "",
+            mods_folder: false,
+            mods_folder_path: "",
           };
-        });
-      },
-      false,
-      "getAllMods"
-    ).catch((error) => {
+        }
+
+        // Contributors data is no longer stored in database, component will load directly from metadata.json
+        return {
+          ...mod,
+          engine,
+        };
+      });
+    }, false, "getAllMods").catch((error) => {
       dbConsole.error("Failed to get mods:", error);
       throw error;
     });
@@ -676,20 +649,15 @@ export class DatabaseService {
             last_played: ${mod.last_played || "none"}
             date_added: ${mod.date_added}
           `);
+          
           dbConsole.log("_upsertMods - Executing SQL to save mod...");
-
-          // Serialize engine_mod data if it exists
-          const engineModData = mod.engine_mod
-            ? JSON.stringify(mod.engine_mod)
-            : null;
-
           await db.execute(
             `
             INSERT OR REPLACE INTO mods (
               id, name, path, executable_path, icon_data, banner_data, logo_data, logo_position,
               version, description, engine_data, display_order, folder_id,
-              display_order_in_folder, last_played, date_added, engine_mod_data
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              display_order_in_folder, last_played, date_added
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
             [
               mod.id,
@@ -710,7 +678,6 @@ export class DatabaseService {
                 : 0,
               mod.last_played || null,
               mod.date_added || null,
-              engineModData,
             ]
           );
           dbConsole.log(`_upsertMods - Successfully saved mod: ${mod.name}`);
@@ -1435,25 +1402,9 @@ export class DatabaseService {
             };
           }
 
-          // Parse engine_mod data if it exists
-          let engine_mod;
-          try {
-            engine_mod = mod.engine_mod_data
-              ? JSON.parse(mod.engine_mod_data)
-              : undefined;
-          } catch (e) {
-            dbConsole.error(
-              "Failed to parse engine_mod data for mod:",
-              mod.id,
-              e
-            );
-            engine_mod = undefined;
-          }
-
           return {
             ...mod,
             engine,
-            engine_mod,
             // Add the group field required by the backend
             group: mod.folder_id || "none",
             // Convert timestamp fields to integers to avoid Rust type errors
@@ -1472,74 +1423,46 @@ export class DatabaseService {
         );
 
         // Use a separate query to get mods without starting a new transaction
-        mods = await withDatabaseLock(
-          async (db) => {
-            const result = await db.select(
-              "SELECT * FROM mods ORDER BY display_order ASC"
-            );
-            return result.map((mod: any) => {
-              // Parse engine data if it exists
-              let engine;
-              try {
-                engine = mod.engine_data
-                  ? JSON.parse(mod.engine_data)
-                  : {
-                      engine_type: "unknown",
-                      engine_name: "Unknown Engine",
-                      engine_icon: "",
-                      mods_folder: false,
-                      mods_folder_path: "",
-                    };
-              } catch (e) {
-                dbConsole.error(
-                  "Failed to parse engine data for mod:",
-                  mod.id,
-                  e
-                );
-                engine = {
-                  engine_type: "unknown",
-                  engine_name: "Unknown Engine",
-                  engine_icon: "",
-                  mods_folder: false,
-                  mods_folder_path: "",
-                };
-              }
-
-              // Parse engine_mod data if it exists
-              let engine_mod;
-              try {
-                engine_mod = mod.engine_mod_data
-                  ? JSON.parse(mod.engine_mod_data)
-                  : undefined;
-              } catch (e) {
-                dbConsole.error(
-                  "Failed to parse engine_mod data for mod:",
-                  mod.id,
-                  e
-                );
-                engine_mod = undefined;
-              }
-
-              return {
-                ...mod,
-                engine,
-                engine_mod,
-                // Add the group field required by the backend
-                group: mod.folder_id || "none",
-                // Convert timestamp fields to integers to avoid Rust type errors
-                last_played: mod.last_played
-                  ? Math.floor(Number(mod.last_played))
-                  : null,
-                date_added: mod.date_added
-                  ? Math.floor(Number(mod.date_added))
-                  : null,
+        mods = await withDatabaseLock(async (db) => {
+          const result = await db.select(
+            "SELECT * FROM mods ORDER BY display_order ASC"
+          );
+          return result.map((mod: any) => {
+            // Parse engine data if it exists
+            let engine;
+            try {
+              engine = mod.engine_data
+                ? JSON.parse(mod.engine_data)
+                : {
+                    engine_type: "unknown",
+                    engine_name: "Unknown Engine",
+                    engine_icon: "",
+                    mods_folder: false,
+                    mods_folder_path: "",
+                  };
+            } catch (e) {
+              dbConsole.error("Failed to parse engine data for mod:", mod.id, e);
+              engine = {
+                engine_type: "unknown",
+                engine_name: "Unknown Engine",
+                engine_icon: "",
+                mods_folder: false,
+                mods_folder_path: "",
               };
-            });
-          },
-          false,
-          "syncModsWithBackend"
-        );
-      } // Add a small delay to ensure any active transaction has settled
+            }
+
+            return {
+              ...mod,
+              engine,
+              // Add the group field required by the backend
+              group: mod.folder_id || "none",
+              // Convert timestamp fields to integers to avoid Rust type errors
+              last_played: mod.last_played ? Math.floor(Number(mod.last_played)) : null,
+              date_added: mod.date_added ? Math.floor(Number(mod.date_added)) : null
+            };
+          });
+        }, false, "syncModsWithBackend");
+      }      // Add a small delay to ensure any active transaction has settled
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       // Ensure all mods have properly formatted timestamp values before sending to the backend
@@ -1670,63 +1593,43 @@ export class DatabaseService {
       throw new Error("Database not initialized");
     }
 
-    return withDatabaseLock(
-      async (db) => {
-        const results = await db.select("SELECT * FROM mods WHERE path = ?", [
-          path,
-        ]);
-
-        if (results.length === 0) {
-          return null;
-        }
-
-        const mod = results[0];
-
-        // Parse engine data if it exists
-        let engine;
-        try {
-          engine = mod.engine_data
-            ? JSON.parse(mod.engine_data)
-            : {
-                engine_type: "unknown",
-                engine_name: "Unknown Engine",
-                engine_icon: "",
-                mods_folder: false,
-                mods_folder_path: "",
-              };
-        } catch (e) {
-          dbConsole.error("Failed to parse engine data for mod:", mod.id, e);
-          engine = {
-            engine_type: "unknown",
-            engine_name: "Unknown Engine",
-            engine_icon: "",
-            mods_folder: false,
-            mods_folder_path: "",
-          };
-        } // Parse engine_mod data if it exists
-        let engine_mod;
-        try {
-          engine_mod = mod.engine_mod_data
-            ? JSON.parse(mod.engine_mod_data)
-            : undefined;
-        } catch (e) {
-          dbConsole.error(
-            "Failed to parse engine_mod data for mod:",
-            mod.id,
-            e
-          );
-          engine_mod = undefined;
-        }
-
-        return {
-          ...mod,
-          engine,
-          engine_mod,
+    return withDatabaseLock(async (db) => {
+      const results = await db.select("SELECT * FROM mods WHERE path = ?", [path]);
+      
+      if (results.length === 0) {
+        return null;
+      }
+      
+      const mod = results[0];
+      
+      // Parse engine data if it exists
+      let engine;
+      try {
+        engine = mod.engine_data
+          ? JSON.parse(mod.engine_data)
+          : {
+              engine_type: "unknown",
+              engine_name: "Unknown Engine",
+              engine_icon: "",
+              mods_folder: false,
+              mods_folder_path: "",
+            };
+      } catch (e) {
+        dbConsole.error("Failed to parse engine data for mod:", mod.id, e);
+        engine = {
+          engine_type: "unknown",
+          engine_name: "Unknown Engine",
+          engine_icon: "",
+          mods_folder: false,
+          mods_folder_path: "",
         };
-      },
-      false,
-      "getModByPath"
-    ).catch((error) => {
+      }
+
+      return {
+        ...mod,
+        engine,
+      };
+    }, false, "getModByPath").catch((error) => {
       dbConsole.error("Failed to get mod by path:", error);
       throw error;
     });

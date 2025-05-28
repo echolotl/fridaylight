@@ -732,7 +732,6 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
         contributors, // Add the parsed contributors
         last_played: None, // Initialize with None since the mod hasn't been played yet
         date_added: Some(current_time), // Set the current timestamp
-        engine_mod: None, // Initialize with None since this is not an engine mod
     };
 
     Ok(mod_info)

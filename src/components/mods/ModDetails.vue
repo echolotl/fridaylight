@@ -32,7 +32,6 @@
           </div>
 
           <q-btn
-            v-if="!mod.engine_mod" 
             flat
             round
             color="var(--theme-text)"
@@ -72,15 +71,13 @@
           v-if="
             mod.engine.engine_type &&
             mod.executable_path &&
-            mod.engine.mods_folder &&
-            !mod.engine_mod
+            mod.engine.mods_folder
           "
         >
           <EngineModsList
             :executablePath="mod.executable_path"
             :engineType="mod.engine.engine_type"
             :customModsFolder="mod.engine.mods_folder_path"
-            @add-to-main-list="emit('engine-mod-to-list', $event, mod)"
           />
         </div>
       </div>
@@ -134,7 +131,6 @@ const emit = defineEmits([
   "launch-mod",
   "open-settings",
   "stop-mod",
-  "engine-mod-to-list"
 ]);
 let modTerminatedListener: (() => void) | null = null;
 

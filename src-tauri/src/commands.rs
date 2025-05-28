@@ -1152,16 +1152,6 @@ pub fn check_mod_dependency(
     Ok(())
 }
 
-// Command to convert an engine mod to an actual mod
-#[tauri::command]
-pub async fn convert_engine_mod_to_mod(
-    engine_mod: ModMetadataFile,
-    original_mod: ModInfo
-) -> ModInfo {
-    info!("Converting engine mod to mod at path: {}", engine_mod.folder_path);
-    crate::modutils::convert_to_mod_info(engine_mod, original_mod).await
-}
-
 async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     if let Some(update) = app.updater()?.check().await? {
         let mut downloaded = 0;
@@ -1236,45 +1226,38 @@ pub fn run() {
                 })?
             )
         })
-        .invoke_handler(
-            tauri::generate_handler![
-                select_mod_folder,
-                select_settings_folder,
-                select_executable,
-                add_mod,
-                get_mods,
-                launch_mod,
-                fetch_gamebanana_mods_command,
-                get_mod_info_command,
-                download_gamebanana_mod_command,
-                download_custom_mod_command,
-                download_engine_command,
-                sync_mods_from_database,
-                select_mods_parent_folder,
-                change_mica_theme,
-                find_engine_mod_files,
-                get_file_as_base64,
-                toggle_mod_enabled,
-                toggle_all_mods_enabled,
-                disable_all_mods_except,
-                get_all_mod_paths,
-                get_all_mods_enabled_status,
-                is_windows_11,
-                get_mod_download_files_command,
-                get_mod_metadata,
-                remove_mica_theme,
-                is_mod_running,
-                stop_mod,
-                get_mod_logs,
-                clear_mod_logs,
-                super_delete_mod,
-                check_mod_folder_exists,
-                get_mod_posts_command,
-                get_mod_updates_command,
-                check_mod_dependency,
-                convert_engine_mod_to_mod
-            ]
-        )
+        .invoke_handler(tauri::generate_handler![
+            select_mod_folder,
+            select_settings_folder,
+            select_executable,
+            add_mod,
+            get_mods,
+            launch_mod,
+            fetch_gamebanana_mods_command,
+            get_mod_info_command,
+            download_gamebanana_mod_command,
+            download_custom_mod_command,
+            download_engine_command,
+            sync_mods_from_database,
+            select_mods_parent_folder,
+            change_mica_theme,
+            find_engine_mod_files,
+            get_file_as_base64,
+            toggle_mod_enabled,
+            is_windows_11,
+            get_mod_download_files_command,
+            get_mod_metadata,
+            remove_mica_theme,
+            is_mod_running,
+            stop_mod,
+            get_mod_logs,
+            clear_mod_logs,
+            super_delete_mod,
+            check_mod_folder_exists,
+            get_mod_posts_command,
+            get_mod_updates_command,
+            check_mod_dependency,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
