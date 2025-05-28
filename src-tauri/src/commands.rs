@@ -230,8 +230,9 @@ pub fn launch_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), St
     info!("Attempting to launch mod with ID: {}", id);
     let mut mods = mods_state.0.lock().unwrap();
     let mod_name: String;
+    
     // Get required info from the mod
-    let (executable_path, should_disable_other_mods, engine_mod_info) = match mods.get(&id) {
+    let executable_path = match mods.get(&id) {
         Some(mod_info) => {
             // Check if the mod is already running
             if let Some(pid) = mod_info.process_id {
@@ -241,32 +242,14 @@ pub fn launch_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), St
 
             mod_name = mod_info.name.clone();
 
-            let exe_path = if let Some(exe_path) = &mod_info.executable_path {
+            if let Some(exe_path) = &mod_info.executable_path {
                 exe_path.clone()
             } else {
                 let err_msg = format!("No executable found for mod: {}", mod_info.name);
                 warn!("{}", err_msg);
                 crate::terminaloutput::add_log(&id, &format!("[ERROR] {}", err_msg));
                 return Err(err_msg);
-            };
-
-            // Check if this mod has an engine_mod field and should disable other mods
-            let (should_disable, engine_mod_info) = if
-                let Some(ref engine_mod) = mod_info.engine_mod
-            {
-                (
-                    true,
-                    Some((
-                        mod_info.engine.as_ref().and_then(|e| e.engine_type.clone()),
-                        mod_info.engine.as_ref().and_then(|e| e.mods_folder_path.clone()),
-                        engine_mod.folder_path.clone(),
-                    )),
-                )
-            } else {
-                (false, None)
-            };
-
-            (exe_path, should_disable, engine_mod_info)
+            }
         }
         None => {
             let err_msg = format!("Mod not found with ID: {}", id);
@@ -289,72 +272,6 @@ pub fn launch_mod(id: String, mods_state: State<'_, ModsState>) -> Result<(), St
         })?;
 
     debug!("Using working directory: {}", working_dir.display());
-
-    // If this mod has an engine_mod field, disable all other engine mods before launching
-    if should_disable_other_mods {
-        if let Some((engine_type, mods_folder_path, exception_mod_path)) = engine_mod_info {
-            if let Some(engine_type) = engine_type {
-                // Determine the mods folder path
-                let actual_mods_folder_path = if let Some(custom_path) = mods_folder_path {
-                    // Use custom mods folder path
-                    working_dir.join(custom_path).to_string_lossy().to_string()
-                } else {
-                    // Use default "mods" folder
-                    working_dir.join("mods").to_string_lossy().to_string()
-                };
-
-                info!(
-                    "Disabling other engine mods before launching {} (engine: {}, mods_folder: {})",
-                    mod_name,
-                    engine_type,
-                    actual_mods_folder_path
-                );
-
-                match
-                    crate::modutils::disable_all_mods_except(
-                        &executable_path,
-                        &actual_mods_folder_path,
-                        &engine_type,
-                        &exception_mod_path
-                    )
-                {
-                    Ok(results) => {
-                        let disabled_count = results
-                            .iter()
-                            .filter(|r| r.success && !r.enabled)
-                            .count();
-                        let kept_enabled_count = results
-                            .iter()
-                            .filter(|r| r.success && r.enabled)
-                            .count();
-                        info!(
-                            "Successfully disabled {} other mods, kept {} enabled",
-                            disabled_count,
-                            kept_enabled_count
-                        );
-                        crate::terminaloutput::add_log(
-                            &id,
-                            &format!("Disabled {} other engine mods before launching", disabled_count)
-                        );
-                    }
-                    Err(e) => {
-                        warn!("Failed to disable other engine mods: {}", e);
-                        crate::terminaloutput::add_log(
-                            &id,
-                            &format!("[WARNING] Failed to disable other engine mods: {}", e)
-                        );
-                        // Continue with launch despite this error
-                    }
-                }
-            } else {
-                warn!("Engine mod found but no engine type specified, cannot disable other mods");
-                crate::terminaloutput::add_log(
-                    &id,
-                    &"[WARNING] Engine mod found but no engine type specified"
-                );
-            }
-        }
-    }
 
     // Clear previous logs for this mod
     crate::terminaloutput::clear_logs(&id);
@@ -914,74 +831,6 @@ pub async fn toggle_mod_enabled(
     toggle_mod_enabled_state(&executable_path, &mod_folder_path, &engine_type, enable)
 }
 
-// Command to bulk toggle all mods in a folder
-#[tauri::command]
-pub async fn toggle_all_mods_enabled(
-    executable_path: String,
-    mods_folder_path: String,
-    engine_type: String,
-    enable: bool
-) -> Result<Vec<ModDisableResult>, String> {
-    info!(
-        "Bulk toggling all mods (engine: {}, enable: {}, mods_folder: {})",
-        engine_type,
-        enable,
-        mods_folder_path
-    );
-    crate::modutils::toggle_all_mods_enabled_state(
-        &executable_path,
-        &mods_folder_path,
-        &engine_type,
-        enable
-    )
-}
-
-// Command to disable all mods except one specified mod
-#[tauri::command]
-pub async fn disable_all_mods_except(
-    executable_path: String,
-    mods_folder_path: String,
-    engine_type: String,
-    exception_mod_path: String
-) -> Result<Vec<ModDisableResult>, String> {
-    info!(
-        "Disabling all mods except: {} (engine: {}, mods_folder: {})",
-        exception_mod_path,
-        engine_type,
-        mods_folder_path
-    );
-    crate::modutils::disable_all_mods_except(
-        &executable_path,
-        &mods_folder_path,
-        &engine_type,
-        &exception_mod_path
-    )
-}
-
-// Command to get all mod paths in a mods folder
-#[tauri::command]
-pub async fn get_all_mod_paths(
-    mods_folder_path: String,
-    engine_type: String
-) -> Result<Vec<String>, String> {
-    info!("Getting all mod paths (engine: {}, mods_folder: {})", engine_type, mods_folder_path);
-    crate::modutils::get_all_mod_paths(&mods_folder_path, &engine_type)
-}
-
-// Command to get enabled status for all mods in a folder
-#[tauri::command]
-pub async fn get_all_mods_enabled_status(
-    executable_path: String,
-    mods_folder_path: String,
-    engine_type: String
-) -> Result<Vec<(String, String, bool)>, String> {
-    info!(
-        "Getting enabled status for all mods (engine: {}, mods_folder: {})",
-        engine_type,
-        mods_folder_path
-    );
-    crate::modutils::get_all_mods_enabled_status(&executable_path, &mods_folder_path, &engine_type)
-}
 
 // Command to get a file's content as base64
 #[tauri::command]
