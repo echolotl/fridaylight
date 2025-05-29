@@ -1,22 +1,22 @@
 <template>
   <q-dialog
     :model-value="isOpen"
-    @update:model-value="$emit('update:isOpen', $event)"
     maximized
     transition-show="slide-up"
     transition-hide="slide-down"
     class="mod-details-modal"
+    @update:model-value="$emit('update:isOpen', $event)"
   >
     <q-card class="mod-details-card">
       <q-linear-progress
+        v-if="loading"
         indeterminate
         color="primary"
-        v-if="loading"
       ></q-linear-progress>
       <q-card-section class="row items-center q-pb-none">
         <div
-          class="text-h6 phantom-font-difficulty header-text"
           v-if="!loading"
+          class="text-h6 phantom-font-difficulty header-text"
         >
           <img :src="modInfo?._aCategory._sIconUrl" class="mod-details-icon" />
           {{ modInfo?._sName }}
@@ -25,7 +25,7 @@
           Loading...
         </div>
         <q-space />
-        <q-btn flat round icon="close" @click="closeModal" class="close-btn" />
+        <q-btn flat round icon="close" class="close-btn" @click="closeModal" />
       </q-card-section>
 
       <q-scroll-area class="mod-details-scroll-area">
@@ -53,7 +53,7 @@
               >
                 <q-carousel-slide
                   v-for="(image, index) in modInfo._aPreviewMedia._aImages"
-                  :key="index"
+                  :key="getImageUrl(image) || index"
                   :name="index"
                   class="flex"
                 >
@@ -79,8 +79,8 @@
               </h6>
               <div>
                 <div
-                  v-html="modInfo._sText"
                   class="phantom-font mod-info-text"
+                  v-html="modInfo._sText"
                 ></div>
               </div>
               <div v-if="modInfo._nUpdatesCount > 0">
@@ -99,10 +99,10 @@
                 </h6>
                 <div
                   v-for="update in modUpdates._aRecords"
-                  :key="update._idRow"
+                  :key="update._idRow || update._sName"
                 >
                   <q-expansion-item dense class="phantom-font" group="updates">
-                    <template v-slot:header>
+                    <template #header>
                       <div class="flex column">
                         <div class="flex row">
                           <div class="text-subtitle1">
@@ -117,9 +117,9 @@
                         </div>
                         <div class="">
                           <div
+                            v-if="update._sVersion"
                             class="phantom-font"
                             style="color: var(--theme-text-secondary)"
-                            v-if="update._sVersion"
                           >
                             {{ update._sVersion }}
                           </div>
@@ -128,6 +128,7 @@
                               v-for="(count, category) in groupChanges(
                                 update._aChangeLog
                               )"
+                              :key="category"
                               class="phantom-font"
                               style="color: var(--theme-text-secondary)"
                             >
@@ -137,8 +138,8 @@
                                 }"
                                 >{{ category }}
                                 <span
-                                  style="color: lightgray; margin-left: 0.25rem"
                                   v-if="count > 1"
+                                  style="color: lightgray; margin-left: 0.25rem"
                                   >{{ count }}</span
                                 ></q-badge
                               >
@@ -151,8 +152,8 @@
                     <div class="q-mt-sm">
                       <div class="changelog q-ml-sm q-mb-sm">
                         <div
-                          v-for="change in update._aChangeLog"
-                          :key="change.cat"
+                          v-for="(change, changeIndex) in update._aChangeLog"
+                          :key="`${change.cat}-${changeIndex}`"
                           class="phantom-font flex row items-center q-mb-xs"
                         >
                           <q-chip
@@ -168,8 +169,8 @@
                         </div>
                       </div>
                       <div
-                        v-html="update._sText"
                         class="phantom-font update-text"
+                        v-html="update._sText"
                       ></div>
                     </div>
                   </q-expansion-item>
@@ -193,7 +194,7 @@
                   v-for="comment in modComments._aRecords"
                   :key="comment._idRow"
                 >
-                  <div class="flex column" v-if="comment._aPoster">
+                  <div v-if="comment._aPoster" class="flex column">
                     <div class="flex row items-center phantom-font">
                       <img
                         :src="
@@ -206,17 +207,17 @@
                       <div
                         class="text-subtitle1"
                         style="color: var(--theme-text-secondary)"
+                        :style="
+                          comment._aPoster._sProfileUrl
+                            ? { cursor: 'pointer' }
+                            : {}
+                        "
                         @click="
                           openUrl(
                             comment._aPoster._sProfileUrl
                               ? comment._aPoster._sProfileUrl
                               : ''
                           )
-                        "
-                        :style="
-                          comment._aPoster._sProfileUrl
-                            ? { cursor: 'pointer' }
-                            : {}
                         "
                       >
                         <img
@@ -254,23 +255,23 @@
                     </div>
                     <div class="q-mt-sm">
                       <div
-                        v-html="comment._sText"
                         class="phantom-font comment-text"
+                        v-html="comment._sText"
                       ></div>
                       <div v-if="comment._aPoster._sSigUrl">
                         <img
                           :src="comment._aPoster._sSigUrl"
+                          :style="
+                            comment._aPoster._sProfileUrl
+                              ? { cursor: 'pointer' }
+                              : {}
+                          "
                           @click="
                             openUrl(
                               comment._aPoster._sProfileUrl
                                 ? comment._aPoster._sProfileUrl
                                 : ''
                             )
-                          "
-                          :style="
-                            comment._aPoster._sProfileUrl
-                              ? { cursor: 'pointer' }
-                              : {}
                           "
                         />
                       </div>
@@ -337,20 +338,27 @@
                 <q-btn
                   color="primary"
                   label="Download"
-                  @click="downloadMod"
                   size="lg"
                   class="action-button"
                   :disabled="!modInfo._aFiles"
+                  @click="downloadMod"
                 />
                 <div v-if="modInfo._aFiles[0]._bContainsExe" class="q-mt-sm">
-                  <q-badge v-if="modInfo._aFiles[0]._sClamAvResult === 'clean'" label="CLAMAV" class="q-mr-xs">
+                  <q-badge
+                    v-if="modInfo._aFiles[0]._sClamAvResult === 'clean'"
+                    label="CLAMAV"
+                    class="q-mr-xs"
+                  >
                     <q-icon name="check" size="xs" class="q-ml-xs" />
                   </q-badge>
                   <q-badge v-else label="CLAMAV" color="negative">
                     <q-icon name="warning" size="xs" class="q-ml-xs" />
                   </q-badge>
 
-                  <q-badge v-if="modInfo._aFiles[0]._sAvastAvResult === 'clean'" label="AVAST" >
+                  <q-badge
+                    v-if="modInfo._aFiles[0]._sAvastAvResult === 'clean'"
+                    label="AVAST"
+                  >
                     <q-icon name="check" size="xs" class="q-ml-xs" />
                   </q-badge>
                   <q-badge v-else label="AVAST" color="negative">
@@ -379,18 +387,18 @@
                   <div
                     class="text-subtitle1 phantom-font text-right"
                     style="color: var(--theme-text-secondary)"
-                    @click="openUrl(modInfo._aSubmitter._sProfileUrl)"
                     :style="
                       modInfo._aSubmitter._sProfileUrl
                         ? { cursor: 'pointer' }
                         : {}
                     "
+                    @click="openUrl(modInfo._aSubmitter._sProfileUrl)"
                   >
                     {{ modInfo._aSubmitter._sName }}
                   </div>
                 </div>
               </div>
-              <div class="q-mt-md" v-if="hasCredits">
+              <div v-if="hasCredits" class="q-mt-md">
                 <div class="credits-section">
                   <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                     Credits
@@ -412,19 +420,19 @@
                           <div class="credits-info">
                             <div
                               v-if="author._sUpicUrl"
+                              :style="
+                                author._sProfileUrl || author._sUrl
+                                  ? { cursor: 'pointer' }
+                                  : {}
+                              "
                               @click="
                                 openUrl(
                                   author._sProfileUrl
                                     ? author._sProfileUrl
                                     : author._sUrl
-                                    ? author._sUrl
-                                    : ''
+                                      ? author._sUrl
+                                      : ''
                                 )
-                              "
-                              :style="
-                                author._sProfileUrl || author._sUrl
-                                  ? { cursor: 'pointer' }
-                                  : {}
                               "
                             >
                               <img
@@ -435,24 +443,24 @@
                             <div
                               v-else
                               class="credits-name"
-                              @click="
-                                openUrl(
-                                  author._sProfileUrl
-                                    ? author._sProfileUrl
-                                    : author._sUrl
-                                    ? author._sUrl
-                                    : ''
-                                )
-                              "
                               :style="
                                 author._sProfileUrl || author._sUrl
                                   ? { cursor: 'pointer' }
                                   : {}
                               "
+                              @click="
+                                openUrl(
+                                  author._sProfileUrl
+                                    ? author._sProfileUrl
+                                    : author._sUrl
+                                      ? author._sUrl
+                                      : ''
+                                )
+                              "
                             >
                               {{ author._sName }}
                             </div>
-                            <div class="credits-role" v-if="author._sRole">
+                            <div v-if="author._sRole" class="credits-role">
                               {{ author._sRole }}
                             </div>
                           </div>
@@ -479,9 +487,9 @@ import {
   defineEmits,
   defineProps,
   computed,
-} from "vue";
-import { invoke } from "@tauri-apps/api/core";
-import { openUrl } from "@tauri-apps/plugin-opener";
+} from 'vue'
+import { invoke } from '@tauri-apps/api/core'
+import { openUrl } from '@tauri-apps/plugin-opener'
 
 const props = defineProps({
   modId: {
@@ -490,22 +498,22 @@ const props = defineProps({
   },
   modelType: {
     type: String,
-    default: "Mod",
+    default: 'Mod',
   },
   isOpen: {
     type: Boolean,
     default: false,
   },
-});
+})
 
-const emit = defineEmits(["update:isOpen", "download"]);
+const emit = defineEmits(['update:isOpen', 'download'])
 
-const modInfo = ref<any>(null);
-const modUpdates = ref<any>(null);
-const modComments = ref<any>(null);
-const loading = ref(true);
-const error = ref("");
-const currentSlide = ref(0);
+const modInfo = ref<any>(null)
+const modUpdates = ref<any>(null)
+const modComments = ref<any>(null)
+const loading = ref(true)
+const error = ref('')
+const currentSlide = ref(0)
 
 // Determine if there are credits to display
 const hasCredits = computed(() => {
@@ -513,124 +521,126 @@ const hasCredits = computed(() => {
     modInfo.value?._aCredits &&
     Array.isArray(modInfo.value._aCredits) &&
     modInfo.value._aCredits.length > 0
-  );
-});
+  )
+})
 
 // Function to clear all data from the component
 function clearData() {
-  modInfo.value = null;
-  modUpdates.value = null;
-  modComments.value = null;
-  error.value = "";
-  currentSlide.value = 0;
-  loading.value = true; // Reset loading state for next time
+  modInfo.value = null
+  modUpdates.value = null
+  modComments.value = null
+  error.value = ''
+  currentSlide.value = 0
+  loading.value = true // Reset loading state for next time
 }
 
 // Fetch mod details when component is mounted and isOpen changes to true
 watch(
   () => props.isOpen,
-  async (newVal) => {
+  async newVal => {
     if (newVal) {
-      await fetchModInfo();
+      await fetchModInfo()
     } else {
       // Clear data when modal is closed
-      clearData();
+      clearData()
     }
   }
-);
+)
 
 onMounted(async () => {
   if (props.isOpen) {
-    await fetchModInfo();
+    await fetchModInfo()
   }
-});
+})
 
 // Clear data when component is unmounted
 onUnmounted(() => {
-  clearData();
-});
+  clearData()
+})
 
 async function fetchModInfo() {
-  loading.value = true;
-  error.value = "";
+  loading.value = true
+  error.value = ''
 
-  try {    const infoResult = await invoke<any>("get_mod_info_command", {
+  try {
+    const infoResult = await invoke<any>('get_mod_info_command', {
       modId: props.modId,
-      modelType: props.modelType || "Mod",
-    });
+      modelType: props.modelType || 'Mod',
+    })
 
-    const updatesResult = await invoke<any>("get_mod_updates_command", {
-      modId: props.modId,
-      page: 1,
-      modelType: props.modelType || "Mod",
-    });
-    console.log("Updates result:", updatesResult);    const commentsResult = await invoke<any>("get_mod_posts_command", {
+    const updatesResult = await invoke<any>('get_mod_updates_command', {
       modId: props.modId,
       page: 1,
-      modelType: props.modelType || "Mod",
-    });
+      modelType: props.modelType || 'Mod',
+    })
+    console.log('Updates result:', updatesResult)
+    const commentsResult = await invoke<any>('get_mod_posts_command', {
+      modId: props.modId,
+      page: 1,
+      modelType: props.modelType || 'Mod',
+    })
 
-    console.log("Comments result:", commentsResult);
+    console.log('Comments result:', commentsResult)
 
     if (!infoResult) {
-      throw new Error("Failed to fetch mod information");
+      throw new Error('Failed to fetch mod information')
     }
     if (!updatesResult) {
-      throw new Error("Failed to fetch mod updates");
+      throw new Error('Failed to fetch mod updates')
     }
     if (!commentsResult) {
-      throw new Error("Failed to fetch mod comments");
+      throw new Error('Failed to fetch mod comments')
     }
-    modInfo.value = infoResult;
-    modUpdates.value = updatesResult;
-    modComments.value = commentsResult;
+    modInfo.value = infoResult
+    modUpdates.value = updatesResult
+    modComments.value = commentsResult
   } catch (err: any) {
-    error.value = err.message || "Failed to fetch mod information";
-    console.error("Error fetching mod info:", err);
+    error.value = err.message || 'Failed to fetch mod information'
+    console.error('Error fetching mod info:', err)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 
 // Close the modal
 function closeModal() {
-  emit("update:isOpen", false);
+  emit('update:isOpen', false)
 }
 
 // Helper function to format numbers (e.g., 1000 -> 1K)
 function formatNumber(num: number): string {
-  if (!num) return "0";
+  if (!num) return '0'
   if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + "M";
+    return (num / 1000000).toFixed(1) + 'M'
   } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + "K";
+    return (num / 1000).toFixed(1) + 'K'
   }
-  return num.toString();
+  return num.toString()
 }
 
 // Helper function to format date as relative time
 function formatDate(timestamp: number): string {
-  if (!timestamp) return "N/A";
+  if (!timestamp) return 'N/A'
 
-  const date = new Date(timestamp * 1000);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const date = new Date(timestamp * 1000)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
   // Convert to appropriate time units
   if (diffInSeconds < 60) {
-    return `${diffInSeconds}s`;
+    return `${diffInSeconds}s`
   } else if (diffInSeconds < 3600) {
-    return `${Math.floor(diffInSeconds / 60)}m`;
+    return `${Math.floor(diffInSeconds / 60)}m`
   } else if (diffInSeconds < 86400) {
-    return `${Math.floor(diffInSeconds / 3600)}h`;
+    return `${Math.floor(diffInSeconds / 3600)}h`
   } else if (diffInSeconds < 2592000) {
     // ~30 days
-    return `${Math.floor(diffInSeconds / 86400)}d`;
+    return `${Math.floor(diffInSeconds / 86400)}d`
   } else if (diffInSeconds < 31536000) {
     // ~365 days
-    return `${Math.floor(diffInSeconds / 2592000)}mo`;
+    return `${Math.floor(diffInSeconds / 2592000)}mo`
   } else {
-    return `${Math.floor(diffInSeconds / 31536000)}y`;
+    return `${Math.floor(diffInSeconds / 31536000)}y`
   }
 }
 
@@ -638,24 +648,24 @@ function formatDate(timestamp: number): string {
 function getImageUrl(image: any): string {
   // Use the largest available image size
   if (image._sFile) {
-    return `${image._sBaseUrl}/${image._sFile}`;
+    return `${image._sBaseUrl}/${image._sFile}`
   } else if (image._sFile800) {
-    return `${image._sBaseUrl}/${image._sFile800}`;
+    return `${image._sBaseUrl}/${image._sFile800}`
   } else if (image._sFile530) {
-    return `${image._sBaseUrl}/${image._sFile530}`;
+    return `${image._sBaseUrl}/${image._sFile530}`
   } else if (image._sFile220) {
-    return `${image._sBaseUrl}/${image._sFile220}`;
+    return `${image._sBaseUrl}/${image._sFile220}`
   } else if (image._sFile100) {
-    return `${image._sBaseUrl}/${image._sFile100}`;
+    return `${image._sBaseUrl}/${image._sFile100}`
   }
-  return "";
+  return ''
 }
 
 // Function to transform the raw API response into a proper GameBananaMod object
 function transformToGameBananaMod(rawModInfo: any): any {
-  if (!rawModInfo) return null;
+  if (!rawModInfo) return null
 
-  let previewImages: any[] = [];
+  let previewImages: any[] = []
 
   // Convert preview images if available
   if (
@@ -664,13 +674,13 @@ function transformToGameBananaMod(rawModInfo: any): any {
   ) {
     previewImages = rawModInfo._aPreviewMedia._aImages.map((image: any) => {
       return {
-        imageType: image._sType || "",
-        baseUrl: image._sBaseUrl || "",
-        fileName: image._sFile || "",
-        file100: image._sFile100 || "",
-        file220: image._sFile220 || "",
-        file530: image._sFile530 || "",
-        file800: image._sFile800 || "",
+        imageType: image._sType || '',
+        baseUrl: image._sBaseUrl || '',
+        fileName: image._sFile || '',
+        file100: image._sFile100 || '',
+        file220: image._sFile220 || '',
+        file530: image._sFile530 || '',
+        file800: image._sFile800 || '',
         height100: image._nHeight100 || 0,
         width100: image._nWidth100 || 0,
         height220: image._nHeight220 || 0,
@@ -679,101 +689,101 @@ function transformToGameBananaMod(rawModInfo: any): any {
         width530: image._nWidth530 || 0,
         height800: image._nHeight800 || 0,
         width800: image._nWidth800 || 0,
-      };
-    });
+      }
+    })
   }
 
   // Build a properly formatted GameBananaMod object
   return {
     id: rawModInfo._idRow || props.modId,
-    name: rawModInfo._sName || "",
-    owner: rawModInfo._aSubmitter?._sName || "",
-    description: rawModInfo._sDescription || "",
-    thumbnail_url: rawModInfo._sIconUrl || "",
-    download_url: "", // This will be set correctly by the GameBananaBrowser
+    name: rawModInfo._sName || '',
+    owner: rawModInfo._aSubmitter?._sName || '',
+    description: rawModInfo._sDescription || '',
+    thumbnail_url: rawModInfo._sIconUrl || '',
+    download_url: '', // This will be set correctly by the GameBananaBrowser
     views: rawModInfo._nViewCount || 0,
     downloads: rawModInfo._nDownloadCount || 0,
     likes: rawModInfo._nLikeCount || 0,
-    model_name: rawModInfo._sModelName || "",
-    profile_url: rawModInfo._sProfileUrl || "",
-    image_url: rawModInfo._sImageUrl || "",
-    initial_visibility: rawModInfo._sInitialVisibility || "",
-    period: rawModInfo._sPeriod || "",
+    model_name: rawModInfo._sModelName || '',
+    profile_url: rawModInfo._sProfileUrl || '',
+    image_url: rawModInfo._sImageUrl || '',
+    initial_visibility: rawModInfo._sInitialVisibility || '',
+    period: rawModInfo._sPeriod || '',
     submitter_id: rawModInfo._aSubmitter?._idRow || 0,
-    submitter_name: rawModInfo._aSubmitter?._sName || "",
-    submitter_profile_url: rawModInfo._aSubmitter?._sProfileUrl || "",
-    submitter_avatar_url: rawModInfo._aSubmitter?._sAvatarUrl || "",
-    submitter_u_pic: rawModInfo._aSubmitter?._sUPic || "",
+    submitter_name: rawModInfo._aSubmitter?._sName || '',
+    submitter_profile_url: rawModInfo._aSubmitter?._sProfileUrl || '',
+    submitter_avatar_url: rawModInfo._aSubmitter?._sAvatarUrl || '',
+    submitter_u_pic: rawModInfo._aSubmitter?._sUPic || '',
     post_count: rawModInfo._nPostCount || 0,
-    category_name: rawModInfo._aCategory?._sName || "",
-    category_profile_url: rawModInfo._aCategory?._sProfileUrl || "",
-    category_icon_url: rawModInfo._aCategory?._sIconUrl || "",
-    singular_title: rawModInfo._sSingularTitle || "",
-    icon_classes: rawModInfo._sIconClasses || "",
+    category_name: rawModInfo._aCategory?._sName || '',
+    category_profile_url: rawModInfo._aCategory?._sProfileUrl || '',
+    category_icon_url: rawModInfo._aCategory?._sIconUrl || '',
+    singular_title: rawModInfo._sSingularTitle || '',
+    icon_classes: rawModInfo._sIconClasses || '',
     date_added: rawModInfo._tsDateAdded || 0,
     date_modified: rawModInfo._tsDateModified || 0,
     date_updated: rawModInfo._tsDateUpdated || 0,
     has_files: true,
     tags: rawModInfo._aTags || [],
     preview_images: previewImages,
-    version: rawModInfo._sVersion || "",
+    version: rawModInfo._sVersion || '',
     is_obsolete: rawModInfo._bIsObsolete || false,
     has_content_ratings: rawModInfo._bHasContentRatings || false,
     view_count: rawModInfo._nViewCount || 0,
     is_owned_by_accessor: rawModInfo._bIsOwnedByAccessor || false,
     was_featured: rawModInfo._bWasFeatured || false,
-  };
+  }
 }
 
 // Function to handle the download button click
 // Function to group changelog categories and count occurrences
 function groupChanges(changes: any[]): Record<string, number> {
-  const grouped: Record<string, number> = {};
+  const grouped: Record<string, number> = {}
 
   if (Array.isArray(changes)) {
-    changes.forEach((change) => {
+    changes.forEach(change => {
       if (change.cat) {
         if (grouped[change.cat]) {
-          grouped[change.cat]++;
+          grouped[change.cat]++
         } else {
-          grouped[change.cat] = 1;
+          grouped[change.cat] = 1
         }
       }
-    });
+    })
   }
 
-  return grouped;
+  return grouped
 }
 
 // Function to determine the color for a category
 function getCategoryColor(category: string): string {
   switch (category) {
-    case "Bugfix":
-    case "Overhaul":
-      return "var(--red)";
-    case "Adjustment":
-    case "Amendment":
-      return "var(--green)";
-    case "Improvement":
-    case "Optimization":
-    case "Tweak":
-      return "var(--pink)";
-    case "Addition":
-    case "Suggestion":
-    case "Feature":
-      return "var(--blue)";
-    case "Removal":
-    case "Refactor":
-      return "var(--theme-border)";
+    case 'Bugfix':
+    case 'Overhaul':
+      return 'var(--red)'
+    case 'Adjustment':
+    case 'Amendment':
+      return 'var(--green)'
+    case 'Improvement':
+    case 'Optimization':
+    case 'Tweak':
+      return 'var(--pink)'
+    case 'Addition':
+    case 'Suggestion':
+    case 'Feature':
+      return 'var(--blue)'
+    case 'Removal':
+    case 'Refactor':
+      return 'var(--theme-border)'
     default:
-      return ""; // Use default background
+      return '' // Use default background
   }
 }
 
 function downloadMod() {
-  const formattedMod = transformToGameBananaMod(modInfo.value);
+  const formattedMod = transformToGameBananaMod(modInfo.value)
   if (formattedMod) {
-    emit("download", formattedMod);
+    emit('download', formattedMod)
   }
 }
 </script>
@@ -1097,11 +1107,10 @@ function downloadMod() {
 .comment-text pre {
   background-color: var(--theme-card);
   border: 1px solid var(--theme-border);
-  padding: .5rem;
+  padding: 0.5rem;
   border-radius: 0.2rem;
   font-family: monospace;
   width: fit-content;
-
 }
 
 .BlueColor {

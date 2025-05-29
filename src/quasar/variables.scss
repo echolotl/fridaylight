@@ -1,25 +1,25 @@
 // This file contains the default color variables for Quasar.
-$primary   : #DB2955;
-$secondary : #f7c548;
+$primary: #db2955;
+$secondary: #f7c548;
 
 $transparent: transparent;
 $solid-dark: #313131;
 $solid-light: #e9e9e9;
 
-$white  : #FFFFFF;
+$white: #ffffff;
 
-$positive  : #35CE8D;
-$negative  : #C03221;
-$info      : #39dbce;
-$warning   : #f7c548;
+$positive: #35ce8d;
+$negative: #c03221;
+$info: #39dbce;
+$warning: #f7c548;
 
-$red   : #C03221;
-$orange: #FE621D;
-$yellow: #F7C548;
-$green: #35CE8D;
+$red: #c03221;
+$orange: #fe621d;
+$yellow: #f7c548;
+$green: #35ce8d;
 $blue: #39dbce;
-$purple: #C490D1;
-$pink: #DB2955;
+$purple: #c490d1;
+$pink: #db2955;
 
 // Theme colors - Dark
 $theme-dark-bg: rgba(0, 0, 0, 0.87);
@@ -37,7 +37,7 @@ $theme-light-text: #212121;
 $theme-light-text-secondary: rgba(0, 0, 0, 0.7);
 $theme-light-border: rgba(0, 0, 0, 0.25);
 
-// Theme colors - Yourself 
+// Theme colors - Yourself
 $theme-yourself-bg: #0f142c;
 $theme-yourself-card: #162c46;
 $theme-yourself-surface: #121b38;
@@ -73,8 +73,7 @@ $theme-shaggy-text-secondary: rgba(213, 196, 240, 0.7);
 $theme-shaggy-border: rgba(213, 196, 240, 0.25);
 $theme-shaggy-solid: #2f2e50;
 
-
-// Theme colors - Boo 
+// Theme colors - Boo
 $theme-boo-bg: #cfe2ee;
 $theme-boo-card: #9e9fce;
 $theme-boo-surface: #bac9e4;
@@ -92,7 +91,7 @@ $theme-qt-text-secondary: rgba(73, 52, 63, 0.7);
 $theme-qt-border: rgba(73, 52, 63, 0.25);
 $theme-qt-solid: #d3a2cc;
 
-// Theme colors - Garcello 
+// Theme colors - Garcello
 $theme-garcello-bg: #dbeecf;
 $theme-garcello-card: #a2d3a2;
 $theme-garcello-surface: #bfe4ba;
@@ -101,7 +100,7 @@ $theme-garcello-text-secondary: rgba(52, 59, 73, 0.7);
 $theme-garcello-border: rgba(52, 59, 73, 0.25);
 $theme-garcello-solid: #a2d3a2;
 
-// Theme colors - Pump 
+// Theme colors - Pump
 $theme-pump-bg: #e6e0ad;
 $theme-pump-card: #cca581;
 $theme-pump-surface: #d8c395;
@@ -110,11 +109,10 @@ $theme-pump-text-secondary: rgba(49, 28, 36, 0.7);
 $theme-pump-border: rgba(49, 28, 36, 0.25);
 $theme-pump-solid: #cca581;
 
-
 // Extra themes
 
 // Theme colors - Doe
-$theme-doe-bg: linear-gradient(to top, #FFFFFF 20%, #9cedfc 50%, #7ba2f5);
+$theme-doe-bg: linear-gradient(to top, #ffffff 20%, #9cedfc 50%, #7ba2f5);
 $theme-doe-card: rgba(0, 0, 0, 0.35);
 $theme-doe-surface: rgba(255, 255, 255, 0.5);
 $theme-doe-text: #2c1d07;
@@ -164,7 +162,8 @@ $phantom-muff-difficulty: 'PhantomMuffDifficulty';
   font-style: normal;
 }
 
-@font-face {  font-family: $phantom-muff-display;
+@font-face {
+  font-family: $phantom-muff-display;
   src: url('../assets/fonts/PhantomMuffDisplay.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
@@ -329,10 +328,10 @@ html {
   background: var(--theme-bg) !important;
 }
 
-body.dark-theme, 
-body.yourself-theme, 
-body.hotline-theme, 
-body.corruption-theme, 
+body.dark-theme,
+body.yourself-theme,
+body.hotline-theme,
+body.corruption-theme,
 body.light-theme,
 body.qt-theme,
 body.shaggy-theme,
@@ -343,9 +342,11 @@ body.boo-theme {
   background: var(--theme-bg) !important;
 }
 
-
-
-.text-subtitle1, .text-subtitle2, .text-h6, .text-body1, .text-body2 {
+.text-subtitle1,
+.text-subtitle2,
+.text-h6,
+.text-body1,
+.text-body2 {
   color: var(--theme-text);
 }
 
@@ -353,11 +354,13 @@ body.boo-theme {
   color: var(--theme-text-secondary);
 }
 
-.q-input, .q-select {
+.q-input,
+.q-select {
   color: var(--theme-text) !important;
 }
 
-.q-input .q-field__native, .q-select .q-field__native {
+.q-input .q-field__native,
+.q-select .q-field__native {
   color: var(--theme-text);
 }
 
@@ -375,7 +378,9 @@ body.boo-theme {
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
 }
 .fade-enter-from,
 .fade-leave-to {

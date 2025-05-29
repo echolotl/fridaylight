@@ -11,7 +11,7 @@
           Select Installation Location
         </div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup @click="cancel" />
+        <q-btn v-close-popup icon="close" flat round dense @click="cancel" />
       </q-card-section>
 
       <q-card-section class="q-mb-sm">
@@ -24,12 +24,12 @@
           <q-item
             v-for="engine in compatibleEngines"
             :key="engine.id"
-            clickable
             v-ripple
+            clickable
             :active="selectedEngineMod?.id === engine.id"
-            @click="selectedEngineMod = engine"
             active-class="selected-engine"
             class="engine-item"
+            @click="selectedEngineMod = engine"
           >
             <q-item-section avatar>
               <q-avatar>
@@ -64,17 +64,17 @@
           label="Install as Addon (will run on all mods)"
         />
       </q-card-section>
-      <q-card-section class="text-caption" v-if="selectedEngineMod">
+      <q-card-section v-if="selectedEngineMod" class="text-caption">
         <p>The modpack will be installed to:</p>
         <code>{{ getInstallPath() }}</code>
       </q-card-section>
 
       <q-card-actions align="right">
         <q-btn
+          v-close-popup
           flat
           label="Cancel"
           color="primary"
-          v-close-popup
           @click="cancel"
         />
         <q-btn
@@ -90,21 +90,21 @@
 </template>
 
 <script setup lang="ts">
-import { sep } from "@tauri-apps/api/path";
-import { ref, watch, computed } from "vue";
+import { sep } from '@tauri-apps/api/path'
+import { ref, watch, computed } from 'vue'
 
 interface EngineMod {
-  id: string;
-  name: string;
-  path: string;
-  icon_data?: string;
+  id: string
+  name: string
+  path: string
+  icon_data?: string
   engine?: {
-    engine_type: string;
-    mods_folder_path?: string;
-    mods_folder?: boolean;
-  };
-  engine_type?: string;
-  executable_path?: string;
+    engine_type: string
+    mods_folder_path?: string
+    mods_folder?: boolean
+  }
+  engine_type?: string
+  executable_path?: string
 }
 
 const props = defineProps({
@@ -122,93 +122,93 @@ const props = defineProps({
   },
   modName: {
     type: String,
-    default: "Unknown Mod",
+    default: 'Unknown Mod',
   },
-});
+})
 
-const emit = defineEmits(["update:modelValue", "select", "cancel"]);
+const emit = defineEmits(['update:modelValue', 'select', 'cancel'])
 
-const isOpen = ref(props.modelValue);
-const selectedEngineMod = ref<EngineMod | null>(null);
-const isAddon = ref(false);
+const isOpen = ref(props.modelValue)
+const selectedEngineMod = ref<EngineMod | null>(null)
+const isAddon = ref(false)
 
 // Computed property to check if the selected engine is Codename
 const isCodename = computed(() => {
-  return props.engineType?.toLowerCase() === "codename";
-});
+  return props.engineType?.toLowerCase() === 'codename'
+})
 
 // Set the default selected engine to the first one in the list
 watch(
   () => props.compatibleEngines,
-  (newEngines) => {
+  newEngines => {
     if (newEngines && newEngines.length > 0) {
-      selectedEngineMod.value = newEngines[0];
+      selectedEngineMod.value = newEngines[0]
     }
   },
   { immediate: true }
-);
+)
 
 watch(
   () => props.modelValue,
-  (val) => {
-    isOpen.value = val;
+  val => {
+    isOpen.value = val
   }
-);
+)
 
-watch(isOpen, (val) => {
-  emit("update:modelValue", val);
-});
+watch(isOpen, val => {
+  emit('update:modelValue', val)
+})
 
 const confirm = () => {
   if (selectedEngineMod.value) {
     // Include isAddon in the emitted data
-    emit("select", {
+    emit('select', {
       ...selectedEngineMod.value,
       isAddon: isAddon.value,
-    });
-    isOpen.value = false;
+    })
+    isOpen.value = false
   }
-};
+}
 
 const cancel = () => {
-  emit("cancel");
-  isOpen.value = false;
-};
+  emit('cancel')
+  isOpen.value = false
+}
 
 const formatEngineType = (engineType: string | null): string => {
-  if (!engineType) return "Unknown";
+  if (!engineType) return 'Unknown'
 
   switch (engineType.toLowerCase()) {
-    case "psych":
-      return "Psych Engine";
-    case "vanilla":
-      return "V-Slice";
-    case "codename":
-      return "Codename Engine";
+    case 'psych':
+      return 'Psych Engine'
+    case 'vanilla':
+      return 'V-Slice'
+    case 'codename':
+      return 'Codename Engine'
     default:
-      return engineType.charAt(0).toUpperCase() + engineType.slice(1);
+      return engineType.charAt(0).toUpperCase() + engineType.slice(1)
   }
-};
+}
 
 // Function to get the mods folder path for an engine mod
 const getModsFolderPath = (engineMod: EngineMod): string => {
   // Get base directory first in all cases
-  const basePath = engineMod.path;
-  const executablePath = engineMod.executable_path || "";
+  const basePath = engineMod.path
+  const executablePath = engineMod.executable_path || ''
 
-  if (!basePath) return "Unknown path";
+  if (!basePath) return 'Unknown path'
 
   // Get parent directory of executable if it exists
-  let baseDir = basePath;
+  let baseDir = basePath
   if (executablePath) {
     // Extract the directory from the executable path
-    const lastSlashIndex = executablePath.lastIndexOf("/");
+    const lastSlashIndex = executablePath.lastIndexOf('/')
     if (lastSlashIndex > 0) {
-      baseDir = executablePath.substring(0, lastSlashIndex);
+      baseDir = executablePath.substring(0, lastSlashIndex)
     } else {
-      const lastBackslashIndex = executablePath.lastIndexOf("\\");
+      const lastBackslashIndex = executablePath.lastIndexOf('\\')
       if (lastBackslashIndex > 0) {
-        baseDir = executablePath.substring(0, lastBackslashIndex);
+        baseDir = executablePath.substring(0, lastBackslashIndex)
       }
     }
   }
@@ -220,45 +220,45 @@ const getModsFolderPath = (engineMod: EngineMod): string => {
     engineMod.engine.mods_folder_path
   ) {
     // Combine the base directory with the custom mods folder path
-    return `${baseDir}${sep()}${engineMod.engine.mods_folder_path}`;
+    return `${baseDir}${sep()}${engineMod.engine.mods_folder_path}`
   }
 
   // If no custom path specified, use default mods folder
-  return `${baseDir}${sep()}mods`;
-};
+  return `${baseDir}${sep()}mods`
+}
 
 // Get the installation path based on engine type and addon setting
 const getInstallPath = (): string => {
-  if (!selectedEngineMod.value) return "Unknown path";
+  if (!selectedEngineMod.value) return 'Unknown path'
 
   // If it's a Codename Engine addon, use addons folder instead of mods
   if (isCodename.value && isAddon.value) {
-    const basePath = selectedEngineMod.value.path;
-    const executablePath = selectedEngineMod.value.executable_path || "";
+    const basePath = selectedEngineMod.value.path
+    const executablePath = selectedEngineMod.value.executable_path || ''
 
-    if (!basePath) return "Unknown path";
+    if (!basePath) return 'Unknown path'
 
     // Get parent directory of executable if it exists
-    let baseDir = basePath;
+    let baseDir = basePath
     if (executablePath) {
       // Extract the directory from the executable path
-      const lastSlashIndex = executablePath.lastIndexOf("/");
+      const lastSlashIndex = executablePath.lastIndexOf('/')
       if (lastSlashIndex > 0) {
-        baseDir = executablePath.substring(0, lastSlashIndex);
+        baseDir = executablePath.substring(0, lastSlashIndex)
       } else {
-        const lastBackslashIndex = executablePath.lastIndexOf("\\");
+        const lastBackslashIndex = executablePath.lastIndexOf('\\')
         if (lastBackslashIndex > 0) {
-          baseDir = executablePath.substring(0, lastBackslashIndex);
+          baseDir = executablePath.substring(0, lastBackslashIndex)
         }
       }
     }
 
-    return `${baseDir}${sep()}addons`;
+    return `${baseDir}${sep()}addons`
   }
 
   // Otherwise use the regular mods folder path
-  return getModsFolderPath(selectedEngineMod.value);
-};
+  return getModsFolderPath(selectedEngineMod.value)
+}
 </script>
 
 <style scoped>

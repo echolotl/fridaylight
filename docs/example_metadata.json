@@ -1,26 +1,26 @@
 {
-    "metadata_version": 1,
-    "name": "VS Impostor",
-    "version": "1.0.0",
-    "description": "Codenamed UPDOG, this brand-new version is a full-on reimagining built from the ground up...",
-    "logo_position": "middle",
-    "contributors": [
-      {
-        "group": "UPDOG TEAM",
-        "members": [
-          {
-            "name": "Clowfoe",
-            "icon": "icons/clowfoe.webp",
-            "role": "Director"
-          }
-        ]
-      }
-    ],
-    "engine": {
-      "engine_type": "psych",
-      "engine_name": "Nightmare Vision",
-      "engine_icon": "path/to/icon",
-      "mods_folder": false,
-      "mods_folder_path": ""
+  "metadata_version": 1,
+  "name": "VS Impostor",
+  "version": "1.0.0",
+  "description": "Codenamed UPDOG, this brand-new version is a full-on reimagining built from the ground up...",
+  "logo_position": "middle",
+  "contributors": [
+    {
+      "group": "UPDOG TEAM",
+      "members": [
+        {
+          "name": "Clowfoe",
+          "icon": "icons/clowfoe.webp",
+          "role": "Director"
+        }
+      ]
     }
+  ],
+  "engine": {
+    "engine_type": "psych",
+    "engine_name": "Nightmare Vision",
+    "engine_icon": "path/to/icon",
+    "mods_folder": false,
+    "mods_folder_path": ""
   }
+}

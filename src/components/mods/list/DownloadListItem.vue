@@ -6,21 +6,21 @@
   >
     <q-item-section avatar>
       <q-spinner
-        size="32px"
         v-if="!download.isComplete && !download.isError"
+        size="32px"
         color="primary"
       />
       <q-icon
+        v-else-if="download.isComplete"
         name="check_circle"
         color="positive"
         size="32px"
-        v-else-if="download.isComplete"
       />
       <q-icon
+        v-else-if="download.isError"
         name="error"
         color="negative"
         size="32px"
-        v-else-if="download.isError"
       />
     </q-item-section>
 
@@ -39,7 +39,7 @@
         size="8px"
       />
 
-      <q-item-label caption class="text-negative" v-if="download.isError">
+      <q-item-label v-if="download.isError" caption class="text-negative">
         {{ download.error }}
       </q-item-label>
     </q-item-section>
@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { DownloadProgress } from "@stores/downloadState";
+import { DownloadProgress } from '@stores/downloadState'
 
 defineProps({
   download: {
@@ -75,7 +75,7 @@ defineProps({
     type: Boolean,
     default: false,
   },
-});
+})
 </script>
 
 <style scoped>

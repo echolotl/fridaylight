@@ -34,28 +34,28 @@
       </div>
       <!-- Otherwise show editable title -->
       <div v-else class="title-container">
-        <h1 v-if="!isEditingTitle" @click="startTitleEdit" class="mod-title">
+        <h1 v-if="!isEditingTitle" class="mod-title" @click="startTitleEdit">
           {{ mod.name }}
           <q-icon name="edit" size="sm" class="edit-icon" />
         </h1>
         <q-input
           v-else
+          ref="titleInput"
           v-model="editedTitle"
           dense
           autofocus
           class="title-input phantom-font"
           @keyup.enter="saveTitle"
           @blur="saveTitle"
-          ref="titleInput"
         />
       </div>
       <!-- Show version and engine type if available -->
       <div
-        class="mod-info-overlay"
         v-if="
           mod.version ||
           (mod.engine && (mod.engine.engine_type || mod.engine.engine_icon))
         "
+        class="mod-info-overlay"
       >
         <span v-if="mod.version" class="version-tag phantom-font-difficulty"
           ><b>v{{ mod.version }}</b></span
@@ -111,34 +111,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { Mod } from "@main-types";
+import { ref } from 'vue'
+import { Mod } from '@main-types'
 
 const props = defineProps({
   mod: {
     type: Object as () => Mod,
     required: true,
   },
-});
+})
 
-const emit = defineEmits(["update:title", "open-settings"]);
+const emit = defineEmits(['update:title', 'open-settings'])
 
-const isEditingTitle = ref(false);
-const editedTitle = ref("");
+const isEditingTitle = ref(false)
+const editedTitle = ref('')
 
 const startTitleEdit = () => {
-  isEditingTitle.value = true;
-  editedTitle.value = props.mod.name || "";
-};
+  isEditingTitle.value = true
+  editedTitle.value = props.mod.name || ''
+}
 
 const saveTitle = () => {
-  emit("update:title", editedTitle.value);
-  isEditingTitle.value = false;
-};
+  emit('update:title', editedTitle.value)
+  isEditingTitle.value = false
+}
 
 const formatEngineType = (engineType: string) => {
-  return engineType.charAt(0).toUpperCase() + engineType.slice(1);
-};
+  return engineType.charAt(0).toUpperCase() + engineType.slice(1)
+}
 </script>
 
 <style scoped>
@@ -154,7 +154,7 @@ const formatEngineType = (engineType: string) => {
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, #0575e6, #021b79);
-  background-image: url("/images/menuBG.png");
+  background-image: url('/images/menuBG.png');
   background-size: cover;
   background-position: center;
   position: relative;
@@ -162,7 +162,7 @@ const formatEngineType = (engineType: string) => {
 }
 
 .banner-image::after {
-  content: "";
+  content: '';
   position: absolute;
   bottom: 0;
   left: 0;
@@ -261,7 +261,9 @@ const formatEngineType = (engineType: string) => {
   max-width: 35vw;
   max-height: 200px;
   cursor: pointer;
-  transition: transform 0.2s ease, filter 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
   transform-origin: center;
   filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0));
 }

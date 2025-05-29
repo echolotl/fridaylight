@@ -1,33 +1,32 @@
-import { createApp } from "vue";
-import App from "./App.vue";
-import router from "./router";
+import { createApp } from 'vue'
+import App from './App.vue'
+import router from './router'
 
 // Import Quasar
-import { Quasar, Notify } from 'quasar';
+import { Quasar, Notify } from 'quasar'
 
 // Import Quasar CSS
-import 'quasar/src/css/index.sass';
+import 'quasar/src/css/index.sass'
 
 // Import icon libraries
-import '@quasar/extras/material-icons/material-icons.css';
+import '@quasar/extras/material-icons/material-icons.css'
 
 // Create the app
-const app = createApp(App);
+const app = createApp(App)
 
 // Use plugins
-app.use(router);
+app.use(router)
 app.use(Quasar, {
   plugins: { Notify }, // import Quasar plugins you need
   config: {
-    brand: {
-    },
+    brand: {},
     notify: {
       position: 'bottom-right',
       timeout: 3000,
-      textColor: 'white'
-    }
-  }
-});
+      textColor: 'white',
+    },
+  },
+})
 
 // Mount the app
-app.mount("#app");
+app.mount('#app')

@@ -75,11 +75,11 @@
         dense
         placeholder="Search mods..."
         class="search-input theme-input"
-        @keyup.enter="search"
         clearable
+        @keyup.enter="search"
         @clear="clear"
       >
-        <template v-slot:append>
+        <template #append>
           <q-icon
             name="search"
             class="cursor-pointer theme-icon"
@@ -100,39 +100,39 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed } from 'vue'
 
 const props = defineProps({
   searchQuery: {
     type: String,
-    default: "",
+    default: '',
   },
-});
+})
 
 const emit = defineEmits([
-  "search",
-  "clear",
-  "update:searchQuery",
-  "custom-download",
-]);
+  'search',
+  'clear',
+  'update:searchQuery',
+  'custom-download',
+])
 
 // Use a computed property with getter/setter to maintain two-way binding
 const searchQueryModel = computed({
   get: () => props.searchQuery,
-  set: (value) => emit("update:searchQuery", value),
-});
+  set: value => emit('update:searchQuery', value),
+})
 
 const search = () => {
-  emit("search");
-};
+  emit('search')
+}
 
 const clear = () => {
-  emit("clear");
-};
+  emit('clear')
+}
 
 const openCustomDownload = () => {
-  emit("custom-download");
-};
+  emit('custom-download')
+}
 </script>
 
 <style scoped>

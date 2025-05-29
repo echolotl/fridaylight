@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.quasar/
+
+# Tauri
+src-tauri/target/
+
+# Generated files
+*.min.js
+*.min.css
+
+# Coverage
+coverage/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Package files
+*.tgz
+*.tar.gz
+
+# Lock files (optional - you might want to format these)
+package-lock.json
+yarn.lock
+bun.lockb

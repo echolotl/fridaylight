@@ -1,6 +1,6 @@
 name: Bug Report
 description: Report a bug or issue with Fridaylight.
-title: "Bug:  "
+title: 'Bug:  '
 labels: bug
 body:
   - type: input
@@ -15,12 +15,12 @@ body:
     attributes:
       label: Issue Checklist
       options:
-      - label: I have looked for similar issues before creating this one.
+        - label: I have looked for similar issues before creating this one.
     validations:
       required: true
       min_selected: 1
       max_selected: 1
-  
+
   - type: markdown
     attributes:
       value: |
@@ -28,7 +28,7 @@ body:
         ### Please provide a clear and concise description of the bug you are experiencing.
   - type: textarea
     attributes:
-      label: "Describe the bug and how to reproduce it:"
+      label: 'Describe the bug and how to reproduce it:'
       placeholder: Please describe the bug and how to reproduce it.
     validations:
       required: true

@@ -10,7 +10,14 @@
       "
     >
       <q-card-section class="row items-center">
-        <q-icon :name="icon" :color="iconColor" text-color="white" size="md" v-if="!disableIcon" class="q-mr-sm" />
+        <q-icon
+          v-if="!disableIcon"
+          :name="icon"
+          :color="iconColor"
+          text-color="white"
+          size="md"
+          class="q-mr-sm"
+        />
         <h6 class="dialog-title phantom-font-difficulty">{{ title }}</h6>
       </q-card-section>
 
@@ -24,19 +31,19 @@
 
       <q-card-actions align="right">
         <q-btn
+          v-if="!singleOption"
+          v-close-popup
           flat
           :label="cancelLabel"
           color="primary"
-          v-close-popup
           @click="onCancel"
-          v-if="!singleOption"
         />
         <q-btn
+          v-close-popup
           flat
           :label="confirmLabel"
           :color="confirmColor"
           @click="onConfirm"
-          v-close-popup
         />
       </q-card-actions>
     </q-card>
@@ -44,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -53,23 +60,23 @@ const props = defineProps({
   },
   title: {
     type: String,
-    default: "Confirmation",
+    default: 'Confirmation',
   },
   heading: {
     type: String,
-    default: "",
+    default: '',
   },
   subHeading: {
     type: String,
-    default: "",
+    default: '',
   },
   message: {
     type: String,
-    default: "",
+    default: '',
   },
   icon: {
     type: String,
-    default: "help",
+    default: 'help',
   },
   disableIcon: {
     type: Boolean,
@@ -77,19 +84,19 @@ const props = defineProps({
   },
   iconColor: {
     type: String,
-    default: "primary",
+    default: 'primary',
   },
   confirmLabel: {
     type: String,
-    default: "Confirm",
+    default: 'Confirm',
   },
   cancelLabel: {
     type: String,
-    default: "Cancel",
+    default: 'Cancel',
   },
   confirmColor: {
     type: String,
-    default: "primary",
+    default: 'primary',
   },
   persistent: {
     type: Boolean,
@@ -98,25 +105,24 @@ const props = defineProps({
   singleOption: {
     type: Boolean,
     default: false,
-  }
+  },
+})
 
-});
-
-const emit = defineEmits(["update:modelValue", "confirm", "cancel"]);
+const emit = defineEmits(['update:modelValue', 'confirm', 'cancel'])
 
 // Two-way binding for dialog visibility
 const showDialog = computed({
   get: () => props.modelValue,
-  set: (value) => emit("update:modelValue", value),
-});
+  set: value => emit('update:modelValue', value),
+})
 
 const onConfirm = () => {
-  emit("confirm");
-};
+  emit('confirm')
+}
 
 const onCancel = () => {
-  emit("cancel");
-};
+  emit('cancel')
+}
 </script>
 
 <style scoped>

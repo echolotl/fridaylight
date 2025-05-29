@@ -22,15 +22,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, defineProps, defineEmits } from "vue";
+import { onMounted, onUnmounted, defineProps, defineEmits } from 'vue'
 
 // Define context menu option type
 export interface ContextMenuOption {
-  icon: string;
-  label: string;
-  action: () => void;
-  danger?: boolean;
-  separator?: boolean;
+  icon: string
+  label: string
+  action: () => void
+  danger?: boolean
+  separator?: boolean
 }
 
 // Props
@@ -47,63 +47,63 @@ defineProps({
     type: Object as () => { x: number; y: number },
     default: () => ({ x: 0, y: 0 }),
   },
-});
+})
 
 // Emits
-const emit = defineEmits(["close"]);
+const emit = defineEmits(['close'])
 
 // Handle option click
 const handleOptionClick = (option: ContextMenuOption) => {
   if (option.action) {
-    option.action();
+    option.action()
   }
-  emit("close");
-};
+  emit('close')
+}
 
 // Close the menu when clicking outside
 const handleGlobalClick = (event: MouseEvent) => {
-  const contextMenu = document.querySelector(".context-menu") as HTMLElement;
+  const contextMenu = document.querySelector('.context-menu') as HTMLElement
   if (contextMenu && !contextMenu.contains(event.target as Node)) {
-    emit("close");
+    emit('close')
   }
-};
+}
 
 // Close the menu when pressing escape
 const handleEscapeKey = (event: KeyboardEvent) => {
-  if (event.key === "Escape") {
-    emit("close");
+  if (event.key === 'Escape') {
+    emit('close')
   }
-};
+}
 
 // Add global event listeners when component is mounted
 onMounted(() => {
-  document.addEventListener("click", handleGlobalClick);
-  document.addEventListener("keydown", handleEscapeKey);
+  document.addEventListener('click', handleGlobalClick)
+  document.addEventListener('keydown', handleEscapeKey)
 
   // Adjust position if menu would go off screen
   setTimeout(() => {
-    const contextMenu = document.querySelector(".context-menu") as HTMLElement;
+    const contextMenu = document.querySelector('.context-menu') as HTMLElement
     if (contextMenu) {
-      const rect = contextMenu.getBoundingClientRect();
-      const windowWidth = window.innerWidth;
-      const windowHeight = window.innerHeight;
+      const rect = contextMenu.getBoundingClientRect()
+      const windowWidth = window.innerWidth
+      const windowHeight = window.innerHeight
 
       if (rect.right > windowWidth) {
-        contextMenu.style.left = `${windowWidth - rect.width - 10}px`;
+        contextMenu.style.left = `${windowWidth - rect.width - 10}px`
       }
 
       if (rect.bottom > windowHeight) {
-        contextMenu.style.top = `${windowHeight - rect.height - 10}px`;
+        contextMenu.style.top = `${windowHeight - rect.height - 10}px`
       }
     }
-  }, 0);
-});
+  }, 0)
+})
 
 // Remove global event listeners when component is unmounted
 onUnmounted(() => {
-  document.removeEventListener("click", handleGlobalClick);
-  document.removeEventListener("keydown", handleEscapeKey);
-});
+  document.removeEventListener('click', handleGlobalClick)
+  document.removeEventListener('keydown', handleEscapeKey)
+})
 </script>
 
 <style scoped>
@@ -143,7 +143,9 @@ onUnmounted(() => {
 /* Fade transition animations */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .fade-enter-from,

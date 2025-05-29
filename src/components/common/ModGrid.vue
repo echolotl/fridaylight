@@ -1,11 +1,11 @@
 <template>
   <div>
-    <div class="loading-content" v-if="loading">
+    <div v-if="loading" class="loading-content">
       <q-spinner color="primary" size="48px" />
       <div>{{ loadingMessage }}</div>
     </div>
 
-    <div class="no-results" v-else-if="mods.length === 0">
+    <div v-else-if="mods.length === 0" class="no-results">
       <q-icon name="search_off" size="48px" />
       <div>{{ emptyMessage }}</div>
     </div>
@@ -16,11 +16,11 @@
         :key="mod.id"
         :mod="mod"
         @download="$emit('download', mod)"
-        @showDetails="$emit('showDetails', mod.id, mod.model_name)"
+        @show-details="$emit('showDetails', mod.id, mod.model_name)"
       />
     </div>
 
-    <div class="pagination" v-if="showPagination && mods.length > 0">
+    <div v-if="showPagination && mods.length > 0" class="pagination">
       <q-pagination
         v-model="currentPageModel"
         :max="totalPages"
@@ -35,9 +35,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import type { GameBananaMod } from "@main-types";
-import ModCard from "./ModCard.vue";
+import { computed } from 'vue'
+import type { GameBananaMod } from '@main-types'
+import ModCard from './ModCard.vue'
 
 const props = defineProps({
   mods: {
@@ -50,11 +50,11 @@ const props = defineProps({
   },
   loadingMessage: {
     type: String,
-    default: "Loading mods...",
+    default: 'Loading mods...',
   },
   emptyMessage: {
     type: String,
-    default: "No mods found",
+    default: 'No mods found',
   },
   currentPage: {
     type: Number,
@@ -72,18 +72,18 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-});
+})
+
+const emit = defineEmits(['download', 'page-change', 'showDetails'])
 
 // Use a computed property with getter/setter for the pagination model
 const currentPageModel = computed({
   get: () => props.currentPage,
-  set: (value) => {
+  set: value => {
     // Emit an event to update the page in the parent component
-    emit("page-change", value);
+    emit('page-change', value)
   },
-});
-
-const emit = defineEmits(["download", "page-change", "showDetails"]);
+})
 </script>
 
 <style scoped>

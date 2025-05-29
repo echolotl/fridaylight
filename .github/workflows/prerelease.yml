@@ -2,7 +2,7 @@ name: 'publish-prerelease'
 on:
   push:
     tags:
-      - 'v*-pre*'  # Match tags like v0.6.5-pre1, v0.6.5-preview, etc.
+      - 'v*-pre*' # Match tags like v0.6.5-pre1, v0.6.5-preview, etc.
 
 jobs:
   create-release:
@@ -71,6 +71,6 @@ jobs:
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           tagName: ${{ needs.create-release.outputs.tag_name }}
-          releaseBody: "Prerelease build. This is an automated build and may be unstable."
+          releaseBody: 'Prerelease build. This is an automated build and may be unstable.'
           prerelease: true
           args: --target x86_64-pc-windows-msvc

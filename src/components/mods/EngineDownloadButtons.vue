@@ -8,8 +8,8 @@
       <q-btn
         flat
         label="Psych Engine"
-        @click="$emit('download-engine', 'psych')"
         class="engine-btn"
+        @click="$emit('download-engine', 'psych')"
       >
         <img
           src="/images/engine_icons/Psych.webp"
@@ -20,8 +20,8 @@
       <q-btn
         flat
         label="V-Slice"
-        @click="$emit('download-engine', 'vanilla')"
         class="engine-btn"
+        @click="$emit('download-engine', 'vanilla')"
       >
         <img
           src="/images/engine_icons/Vanilla.webp"
@@ -32,8 +32,8 @@
       <q-btn
         flat
         label="FPS Plus (7.1.0)"
-        @click="$emit('download-engine', 'fps-plus')"
         class="engine-btn"
+        @click="$emit('download-engine', 'fps-plus')"
       >
         <img
           src="/images/engine_icons/Fps-plus.webp"
@@ -44,8 +44,8 @@
       <q-btn
         flat
         label="Codename Engine"
-        @click="$emit('download-engine', 'codename')"
         class="engine-btn"
+        @click="$emit('download-engine', 'codename')"
       >
         <img
           src="/images/engine_icons/Codename.webp"
@@ -55,7 +55,7 @@
       </q-btn>
     </div>
     <q-expansion-item class="more-engines" dense>
-      <template v-slot:header>
+      <template #header>
         <div class="engine-text">
           <span>More Engines</span>
         </div>
@@ -63,12 +63,12 @@
       <div class="more-engines-content">
         None yet, but you can help suggest what engines to include on the
         <span
-          @click="openUrl('https://github.com/echolotl/fridaylight')"
           style="
             cursor: pointer;
             text-decoration: underline;
             color: var(--q-primary);
           "
+          @click="openUrl('https://github.com/echolotl/fridaylight')"
           >Github</span
         >!
       </div>
@@ -77,9 +77,9 @@
 </template>
 
 <script setup lang="ts">
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl } from '@tauri-apps/plugin-opener'
 
-defineEmits(["download-engine"]);
+defineEmits(['download-engine'])
 </script>
 
 <style scoped>
@@ -98,7 +98,9 @@ defineEmits(["download-engine"]);
   border-radius: 8px;
   padding: 8px 16px;
   width: 100%;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   background-color: var(--theme-card);
   border-bottom: 2px solid var(--theme-border);
 }

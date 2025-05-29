@@ -77,31 +77,31 @@
 defineProps({
   themeName: {
     type: String,
-    default: "dark",
+    default: 'dark',
     validator: (value: string) =>
       [
-        "light",
-        "dark",
-        "yourself",
-        "hotline",
-        "corruption",
-        "shaggy",
-        "qt",
-        "garcello",
-        "pump",
-        "doe",
-        "boo",
+        'light',
+        'dark',
+        'yourself',
+        'hotline',
+        'corruption',
+        'shaggy',
+        'qt',
+        'garcello',
+        'pump',
+        'doe',
+        'boo',
       ].includes(value),
   },
   accentColor: {
     type: String,
-    default: "#DB2955",
+    default: '#DB2955',
   },
   compactMode: {
     type: Boolean,
     default: false,
   },
-});
+})
 </script>
 
 <style scoped>

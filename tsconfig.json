@@ -30,10 +30,9 @@
       "@services/*": ["services/*"],
       "@layouts/*": ["components/layout/*"],
       "@mods/*": ["components/mods/*"],
-      "@utils/*": ["utils/*"],
-
+      "@utils/*": ["utils/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
-  "references": [{ "path": "./tsconfig.node.json" }],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

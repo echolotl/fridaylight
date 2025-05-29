@@ -5,21 +5,27 @@
       @click="$emit('showDetails', mod.id, mod.model_name)"
       @contextmenu.prevent="showContextMenu"
     >
-      <q-img :src="previewImageUrl" class="mod-thumbnail" :img-style="{ filter: mod.initial_visibility == 'warn' ? 'blur(5px)' : 'none' }">
+      <q-img
+        :src="previewImageUrl"
+        class="mod-thumbnail"
+        :img-style="{
+          filter: mod.initial_visibility == 'warn' ? 'blur(5px)' : 'none',
+        }"
+      >
         <img :src="mod.category_icon_url" class="mod-category-icon" />
         <img
+          v-if="mod.submitter_avatar_url"
           :src="mod.submitter_avatar_url"
           class="author-avatar"
-          v-if="mod.submitter_avatar_url"
         />
       </q-img>
       <div class="mod-info">
         <div class="mod-title">{{ mod.name }}</div>
         <div class="mod-author-container">
-          <div class="author-upic" v-if="mod.submitter_u_pic">
+          <div v-if="mod.submitter_u_pic" class="author-upic">
             <span>by</span><img :src="mod.submitter_u_pic" alt="User Picture" />
           </div>
-          <div class="mod-author" v-else>by {{ mod.owner }}</div>
+          <div v-else class="mod-author">by {{ mod.owner }}</div>
         </div>
 
         <div class="mod-stats">
@@ -39,87 +45,87 @@
       </div>
     </div>
     <q-btn
+      v-if="mod.has_files"
       color="primary"
       label="Download"
       class="download-btn"
       @click.stop="$emit('download', mod)"
-      v-if="mod.has_files"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import type { GameBananaMod } from "@main-types";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { computed } from 'vue'
+import type { GameBananaMod } from '@main-types'
+import { openUrl } from '@tauri-apps/plugin-opener'
 
 const props = defineProps({
   mod: {
     type: Object as () => GameBananaMod,
     required: true,
   },
-});
+})
 
-const emit = defineEmits(["download", "showDetails"]);
+const emit = defineEmits(['download', 'showDetails'])
 
 const previewImageUrl = computed(() => {
-  console.log(props.mod);
-  return props.mod.image_url ||props.mod.thumbnail_url;
-});
+  console.log(props.mod)
+  return props.mod.image_url || props.mod.thumbnail_url
+})
 
-console.log(props.mod);
+console.log(props.mod)
 
 // Helper function to format numbers (e.g., 1000 -> 1K)
 const formatNumber = (num: number): string => {
   if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + "M";
+    return (num / 1000000).toFixed(1) + 'M'
   } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + "K";
+    return (num / 1000).toFixed(1) + 'K'
   }
-  return num.toString();
-};
+  return num.toString()
+}
 
 // Context menu handler
 const showContextMenu = (event: MouseEvent) => {
-  event.preventDefault();
-  event.stopPropagation();
+  event.preventDefault()
+  event.stopPropagation()
 
   // Create context menu options
   const contextMenuOptions = [
     {
-      icon: "download",
-      label: "Download Mod",
-      action: () => emit("download", props.mod),
+      icon: 'download',
+      label: 'Download Mod',
+      action: () => emit('download', props.mod),
     },
     {
-      icon: "info",
-      label: "Show Details",
-      action: () => emit("showDetails", props.mod.id),
+      icon: 'info',
+      label: 'Show Details',
+      action: () => emit('showDetails', props.mod.id),
     },
     {
-      icon: "open_in_new",
-      label: "Open GameBanana Page",
+      icon: 'open_in_new',
+      label: 'Open GameBanana Page',
       action: () => openUrl(props.mod.profile_url),
     },
-  ];
+  ]
 
   // Create and dispatch custom event to show context menu
-  const customEvent = new CustomEvent("show-context-menu", {
+  const customEvent = new CustomEvent('show-context-menu', {
     detail: {
       position: { x: event.clientX, y: event.clientY },
       options: contextMenuOptions,
     },
     bubbles: true,
-  });
+  })
 
   // Safely handle the case where event.target could be null
   if (event.target) {
-    event.target.dispatchEvent(customEvent);
+    event.target.dispatchEvent(customEvent)
   } else {
     // Fallback to document if target is null
-    document.dispatchEvent(customEvent);
+    document.dispatchEvent(customEvent)
   }
-};
+}
 </script>
 
 <style scoped>
@@ -129,7 +135,9 @@ const showContextMenu = (event: MouseEvent) => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   border-bottom: 2px solid var(--theme-border);
   min-width: 300px;
 }

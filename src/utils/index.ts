@@ -1,27 +1,27 @@
-import { readTextFile, exists } from "@tauri-apps/plugin-fs";
-import { sep } from "@tauri-apps/api/path";
+import { readTextFile, exists } from '@tauri-apps/plugin-fs'
+import { sep } from '@tauri-apps/api/path'
 
 /**
- * Function to format the engine name based on the engine type 
+ * Function to format the engine name based on the engine type
  * @param engineType The engine type string to format
  * @returns The formatted engine name
  */
 export function formatEngineName(engineType: string): string {
   switch (engineType) {
     case 'psych':
-      return 'Psych Engine';
+      return 'Psych Engine'
     case 'kade':
-      return 'Kade Engine';
+      return 'Kade Engine'
     case 'vanilla':
-      return 'Vanilla';
+      return 'Vanilla'
     case 'fps-plus':
-      return 'FPS Plus';
+      return 'FPS Plus'
     case 'prevslice':
-      return 'Ludum Dare';
+      return 'Ludum Dare'
     case 'codename':
-      return 'Codename Engine';
+      return 'Codename Engine'
     default:
-      return engineType; // Return original if unknown
+      return engineType // Return original if unknown
   }
 }
 
@@ -31,22 +31,20 @@ export function formatEngineName(engineType: string): string {
  * @returns The parsed metadata from the metadata.json file
  */
 export function getMetadataJSON(modFolderPath: string): Promise<any> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const metadataPath = `${modFolderPath}${sep()}.flight${sep()}metadata.json`;
-      if (await exists(metadataPath)) {
-        const metadataContent = await readTextFile(metadataPath);
-        const metadata = JSON.parse(metadataContent);
-        resolve(metadata);
-      } else {
-        reject(new Error("Metadata file not found."));
-      }
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
+  const metadataPath = `${modFolderPath}${sep()}.flight${sep()}metadata.json`
 
+  return exists(metadataPath)
+    .then(fileExists => {
+      if (fileExists) {
+        return readTextFile(metadataPath)
+      } else {
+        throw new Error('Metadata file not found.')
+      }
+    })
+    .then(metadataContent => {
+      return JSON.parse(metadataContent)
+    })
+}
 
 /**
  * Function to get the mods folder path for a given engine executable
@@ -54,18 +52,21 @@ export function getMetadataJSON(modFolderPath: string): Promise<any> {
  * @param customModsFolder Optional custom mods folder name
  * @returns The path to the mods folder
  */
-export function getEngineModsFolderPath(executablePath: string, customModsFolder?: string): string {
-
+export function getEngineModsFolderPath(
+  executablePath: string,
+  customModsFolder?: string
+): string {
   // Check if the path is valid
   const lastSlashIndex = Math.max(
-    executablePath.lastIndexOf("/"),
-    executablePath.lastIndexOf("\\")
-  );
-  
-  const baseDir = lastSlashIndex > 0 
-    ? executablePath.substring(0, lastSlashIndex) 
-    : executablePath;
-    
+    executablePath.lastIndexOf('/'),
+    executablePath.lastIndexOf('\\')
+  )
+
+  const baseDir =
+    lastSlashIndex > 0
+      ? executablePath.substring(0, lastSlashIndex)
+      : executablePath
+
   // Most engines use "mods" folder in the same directory as the executable
-  return `${baseDir}${sep()}${customModsFolder || "mods"}${sep()}`;
+  return `${baseDir}${sep()}${customModsFolder || 'mods'}${sep()}`
 }

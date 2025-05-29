@@ -3,7 +3,7 @@ on:
   push:
     tags:
       - 'v*'
-      - '!v*-pre*'  # Exclude prerelease tags
+      - '!v*-pre*' # Exclude prerelease tags
 
 jobs:
   create-release:

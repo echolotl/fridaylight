@@ -9,13 +9,13 @@
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6 phantom-font-difficulty">Download Custom Mod</div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup @click="cancel" />
+        <q-btn v-close-popup icon="close" flat round dense @click="cancel" />
       </q-card-section>
 
       <q-card-section>
         <p>Enter the direct download link and metadata for your mod:</p>
 
-        <q-form @submit="onSubmit" class="q-gutter-md">
+        <q-form class="q-gutter-md" @submit="onSubmit">
           <!-- Required Fields -->
           <q-input
             v-model="form.url"
@@ -24,7 +24,7 @@
             :rules="[urlValidationMessage]"
             hint="Direct link to the mod file (zip, rar, 7z)"
           >
-            <template v-slot:prepend>
+            <template #prepend>
               <q-icon name="link" />
             </template>
           </q-input>
@@ -33,9 +33,9 @@
             v-model="form.name"
             label="Mod Name"
             outlined
-            :rules="[(val) => !!val || 'Name is required']"
+            :rules="[val => !!val || 'Name is required']"
           >
-            <template v-slot:prepend>
+            <template #prepend>
               <q-icon name="title" />
             </template>
           </q-input>
@@ -55,7 +55,7 @@
                   class="q-mb-md"
                   outlined
                 >
-                  <template v-slot:prepend>
+                  <template #prepend>
                     <q-icon name="tag" />
                   </template>
                 </q-input>
@@ -69,7 +69,7 @@
                   type="textarea"
                   autogrow
                 >
-                  <template v-slot:prepend>
+                  <template #prepend>
                     <q-icon name="description" />
                   </template>
                 </q-input>
@@ -81,10 +81,10 @@
                   class="q-mb-md"
                   outlined
                   accept=".jpg, .jpeg, .png, .webp"
-                  @update:model-value="handleBannerFileChange"
                   hint="Add a custom banner image for this mod"
+                  @update:model-value="handleBannerFileChange"
                 >
-                  <template v-slot:prepend>
+                  <template #prepend>
                     <q-icon name="panorama" />
                   </template>
                 </q-file>
@@ -98,10 +98,10 @@
                   label="Logo Image"
                   outlined
                   accept=".jpg, .jpeg, .png, .webp"
-                  @update:model-value="handleLogoFileChange"
                   hint="Add a custom logo image for this mod"
+                  @update:model-value="handleLogoFileChange"
                 >
-                  <template v-slot:prepend>
+                  <template #prepend>
                     <q-icon name="image" />
                   </template>
                 </q-file>
@@ -116,18 +116,18 @@
 
       <q-card-actions align="right">
         <q-btn
+          v-close-popup
           flat
           label="Cancel"
           color="primary"
-          v-close-popup
           @click="cancel"
         />
         <q-btn
           flat
           label="Next"
           color="primary"
-          @click="onSubmit"
           :disable="!isFormValid"
+          @click="onSubmit"
         />
       </q-card-actions>
     </q-card>
@@ -135,16 +135,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch } from 'vue'
 
 // Interface for the form data
 interface FormData {
-  url: string;
-  name: string;
-  version?: string;
-  description?: string;
-  bannerData?: string;
-  logoData?: string;
+  url: string
+  name: string
+  version?: string
+  description?: string
+  bannerData?: string
+  logoData?: string
 }
 
 const props = defineProps({
@@ -152,118 +152,118 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-});
+})
 
-const emit = defineEmits(["update:modelValue", "submit", "cancel"]);
+const emit = defineEmits(['update:modelValue', 'submit', 'cancel'])
 
 // Form state
 const form = ref<FormData>({
-  url: "",
-  name: "",
-});
+  url: '',
+  name: '',
+})
 
 // File uploads
-const bannerFile = ref<File | null>(null);
-const logoFile = ref<File | null>(null);
-const bannerPreview = ref<string | null>(null);
-const logoPreview = ref<string | null>(null);
+const bannerFile = ref<File | null>(null)
+const logoFile = ref<File | null>(null)
+const bannerPreview = ref<string | null>(null)
+const logoPreview = ref<string | null>(null)
 
 // Dialog state
-const isOpen = ref(props.modelValue);
+const isOpen = ref(props.modelValue)
 
 // URL validation function
 const isValidUrl = (url: string): boolean => {
   try {
     // Check if it's a valid URL format
-    new URL(url);
+    new URL(url)
 
     // Check if it's an HTTP/HTTPS URL
-    return url.startsWith("http://") || url.startsWith("https://");
-  } catch (e) {
-    return false;
+    return url.startsWith('http://') || url.startsWith('https://')
+  } catch {
+    return false
   }
-};
+}
 
 // URL validation message function
 const urlValidationMessage = (url: string): string | boolean => {
-  if (!url) return "URL is required";
+  if (!url) return 'URL is required'
   if (!isValidUrl(url))
-    return "Please enter a valid URL (must start with http:// or https://)";
-  return true;
-};
+    return 'Please enter a valid URL (must start with http:// or https://)'
+  return true
+}
 
 // Computed property to check if form is valid
 const isFormValid = computed(() => {
-  return !!form.value.url && !!form.value.name && isValidUrl(form.value.url);
-});
+  return !!form.value.url && !!form.value.name && isValidUrl(form.value.url)
+})
 
 // Watch for changes in props
 watch(
   () => props.modelValue,
-  (val) => {
-    isOpen.value = val;
+  val => {
+    isOpen.value = val
   }
-);
+)
 
 // Watch for changes in isOpen
-watch(isOpen, (val) => {
-  emit("update:modelValue", val);
-});
+watch(isOpen, val => {
+  emit('update:modelValue', val)
+})
 
 // File handling methods
 const handleBannerFileChange = (file: File) => {
   if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      bannerPreview.value = e.target?.result as string;
-      form.value.bannerData = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    const reader = new FileReader()
+    reader.onload = e => {
+      bannerPreview.value = e.target?.result as string
+      form.value.bannerData = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
   } else {
-    bannerPreview.value = null;
-    form.value.bannerData = undefined;
+    bannerPreview.value = null
+    form.value.bannerData = undefined
   }
-};
+}
 
 const handleLogoFileChange = (file: File) => {
   if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      logoPreview.value = e.target?.result as string;
-      form.value.logoData = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    const reader = new FileReader()
+    reader.onload = e => {
+      logoPreview.value = e.target?.result as string
+      form.value.logoData = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
   } else {
-    logoPreview.value = null;
-    form.value.logoData = undefined;
+    logoPreview.value = null
+    form.value.logoData = undefined
   }
-};
+}
 
 // Form submission
 const onSubmit = () => {
   if (isFormValid.value) {
-    emit("submit", form.value);
-    resetForm();
+    emit('submit', form.value)
+    resetForm()
   }
-};
+}
 
 // Cancel form
 const cancel = () => {
-  emit("cancel");
-  resetForm();
-};
+  emit('cancel')
+  resetForm()
+}
 
 // Reset the form
 const resetForm = () => {
   form.value = {
-    url: "",
-    name: "",
-  };
-  bannerFile.value = null;
-  logoFile.value = null;
-  bannerPreview.value = null;
-  logoPreview.value = null;
-};
+    url: '',
+    name: '',
+  }
+  bannerFile.value = null
+  logoFile.value = null
+  bannerPreview.value = null
+  logoPreview.value = null
+}
 </script>
 
 <style scoped>
