@@ -19,6 +19,8 @@
     "updater:default",
     "opener:allow-open-path",
     "fs:default",
+    "fs:allow-read-text-file",
+    "fs:allow-resource-read-recursive",
     "fs:allow-appdata-read",
     "fs:allow-appdata-write",
     "fs:allow-appdata-read-recursive",

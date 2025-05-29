@@ -14,7 +14,7 @@ export async function formatEngineName(engineType: string): Promise<string> {
     try {
       const engineTypeJson = JSON.parse(await readTextFile(engineTypeData))
       // Return the formatted name
-      return engineTypeJson.name || engineType
+      return engineTypeJson.engine_name || engineType
     } catch (error) {
       console.error('Error parsing engine type JSON:', error)
       return engineType // Fallback to original if parsing fails
