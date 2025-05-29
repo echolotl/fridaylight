@@ -186,11 +186,8 @@
       <div v-if="selectedMod.license" class="q-mb-md">
         <div class="text-subtitle2">License</div>
         <div>{{ selectedMod.license }}</div>
-      </div>      <div v-if="selectedMod.credits" class="q-mb-md">
-        <div class="text-subtitle2">Credits</div>
-        <div v-html="selectedMod.credits"></div>
       </div>
-
+      
       <div v-if="selectedMod.dependencies && Object.keys(selectedMod.dependencies).length > 0" class="q-mb-md">
         <div class="text-subtitle2">Dependencies</div>
         <ul>
