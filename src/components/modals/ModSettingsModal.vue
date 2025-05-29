@@ -670,7 +670,7 @@ const removeMod = () => {
   // Close the settings modal
   showModal.value = false;
   // Emit the event to the parent component to handle the actual deletion
-  emit("delete-mod", props.mod);
+  emit("delete-mod", props.mod?.id);
 };
 
 const superDeleteMod = () => {
@@ -680,7 +680,7 @@ const superDeleteMod = () => {
   // Close the settings modal
   showModal.value = false;
   // Emit the event to the parent component to handle the actual deletion
-  emit("super-delete-mod", props.mod);
+  emit("super-delete-mod", props.mod?.id);
 };
 
 const save = async () => {

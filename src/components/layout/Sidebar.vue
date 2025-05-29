@@ -172,6 +172,8 @@
       @save="handleSaveMod"
       @change-folder="handleSelectModFolder"
       @select-executable="handleSelectExecutable"
+      @delete-mod="deleteMod"
+      @super-delete-mod="superDeleteMod"
     />
 
     <!-- App Settings Modal -->
