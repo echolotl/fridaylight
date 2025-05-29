@@ -275,14 +275,9 @@ const loadAppSettings = async () => {
     if (installLocation) appSettings.installLocation = installLocation;
 
     const theme = await storeService.getSetting("theme");
-    if (theme) appSettings.theme = theme;
-
-    const useSystemTheme = await storeService.getSetting("useSystemTheme");
+    if (theme) appSettings.theme = theme;    const useSystemTheme = await storeService.getSetting("useSystemTheme");
     if (useSystemTheme !== undefined)
       appSettings.useSystemTheme = useSystemTheme === true;
-
-    const customCSS = await storeService.getSetting("customCSS");
-    if (customCSS) appSettings.customCSS = customCSS;
 
     const validateFnfMods = await storeService.getSetting("validateFnfMods");
     if (validateFnfMods !== undefined)
@@ -435,25 +430,6 @@ const getSystemTheme = (): boolean => {
     window.matchMedia &&
     window.matchMedia("(prefers-color-scheme: light)").matches
   );
-};
-
-// Apply custom CSS from settings
-const loadCustomCSS = async () => {
-  try {
-    const storeService = StoreService.getInstance();
-    const customCSS = await storeService.getSetting("customCSS");
-
-    if (customCSS) {
-      // Create a style element for custom CSS
-      const styleElement = document.createElement("style");
-      styleElement.id = "custom-user-css";
-      styleElement.textContent = customCSS;
-      document.head.appendChild(styleElement);
-      console.log("Applied custom CSS from settings");
-    }
-  } catch (error) {
-    console.error("Failed to load custom CSS:", error);
-  }
 };
 
 // Handle system theme changes
@@ -653,15 +629,11 @@ onMounted(async () => {
     if (useSystemTheme) {
       // If using system theme, apply light or dark based on system preference
       const isSystemLight = getSystemTheme();
-      applyTheme(isSystemLight ? "light" : "dark");
-    } else {
+      applyTheme(isSystemLight ? "light" : "dark");    } else {
       // If using custom theme, apply the saved theme directly
       const themeValue = await getThemePreference();
       applyTheme(themeValue);
     }
-
-    // Apply custom CSS
-    await loadCustomCSS();
 
     // Update progress bar - Step 5: Load settings
     initStatusText.value = "Loading settings...";

@@ -134,27 +134,7 @@
                     }}
                   </div>
                 </div>
-              </template>
-            </q-select>
-
-            <div class="q-mt-lg">
-              <div class="text-subtitle2 q-mb-md">Custom CSS</div>
-              <q-input
-                v-model="settings.customCSS"
-                type="textarea"
-                outlined
-                class="custom-css-editor"
-                label="Custom CSS Rules"
-                placeholder="/* Example: */&#10;:root {&#10;  --my-custom-color: #FF00FF;&#10;}&#10;&#10;.q-card {&#10;  border-radius: 16px !important;&#10;}"
-                autogrow
-                :rows="8"
-                :max-rows="12"
-              />
-              <div class="text-caption q-mt-sm">
-                Custom CSS allows you to override the application's default
-                styles. Changes will apply after saving and restarting the app.
-              </div>
-            </div>
+              </template>            </q-select>
           </q-card-section>
 
           <!-- Installation Section -->

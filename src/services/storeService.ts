@@ -7,7 +7,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   installLocation: 'C:\\Users\\Public\\Documents\\FNF Mods',
   theme: 'dark',
   useSystemTheme: true,
-  customCSS: '',
   validateFnfMods: true,
   showTerminalOutput: true,
   compactMode: false,

@@ -1003,27 +1003,6 @@ const openAppSettings = () => {
   showAppSettingsModal.value = true;
 };
 
-// Function that applies custom CSS from settings
-const applyCustomCSS = (customCSS: string) => {
-  try {
-    // Find existing custom CSS element or create a new one
-    let styleElement = document.getElementById("custom-user-css");
-
-    if (!styleElement) {
-      // Create new element if it doesn't exist
-      styleElement = document.createElement("style");
-      styleElement.id = "custom-user-css";
-      document.head.appendChild(styleElement);
-    }
-
-    // Update the CSS content
-    styleElement.textContent = customCSS;
-    console.log("Applied custom CSS");
-  } catch (error) {
-    console.error("Failed to apply custom CSS:", error);
-  }
-};
-
 // Function to save app settings
 const saveAppSettings = async (settings: any) => {
   console.log("App settings saved:", settings);
@@ -1080,14 +1059,8 @@ const saveAppSettings = async (settings: any) => {
   if (typeof colorValue !== "string" || !colorValue.startsWith("#")) {
     colorValue = "#DB2955"; // Fallback to default if invalid
   }
-
   document.documentElement.style.setProperty("--q-primary", colorValue);
   console.log("Applied accent color from settings:", colorValue);
-
-  // Update custom CSS if provided
-  if (settings.customCSS !== undefined) {
-    applyCustomCSS(settings.customCSS);
-  }
 
   window.dispatchEvent(new CustomEvent("settings-saved", { detail: settings }));
 };
@@ -1168,15 +1141,8 @@ const loadAppSettings = async () => {
     // Ensure colorValue is always a valid CSS color string
     if (typeof colorValue !== "string" || !colorValue.startsWith("#")) {
       colorValue = "#DB2955"; // Fallback to default if invalid
-    }
-
-    document.documentElement.style.setProperty("--q-primary", colorValue);
+    }    document.documentElement.style.setProperty("--q-primary", colorValue);
     console.log("Applied accent color from settings:", colorValue);
-
-    // Apply any custom CSS
-    if (settings.customCSS) {
-      applyCustomCSS(settings.customCSS);
-    }
   } catch (error) {
     console.error("Failed to load and apply app settings:", error);
   }
