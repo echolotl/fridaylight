@@ -680,14 +680,14 @@ const save = async () => {
   if (!updatedMod.engine) {
     updatedMod.engine = {
       engine_type: 'unknown',
-      engine_name: formatEngineName('unknown'),
+      engine_name: await formatEngineName('unknown'),
       engine_icon: '',
       mods_folder: false,
       mods_folder_path: '',
     }
   } else {
-    const defaultName = formatEngineName(updatedMod.engine.engine_type)
-    const originalDefaultName = formatEngineName(
+    const defaultName = await formatEngineName(updatedMod.engine.engine_type)
+    const originalDefaultName = await formatEngineName(
       props.mod?.engine?.engine_type || 'unknown'
     )
     if (

@@ -258,13 +258,8 @@ import ModTypeSelectionModal from '@modals/ModTypeSelectionModal.vue'
 import MessageDialog from '@modals/MessageDialog.vue'
 import { useQuasar, Notify } from 'quasar'
 import { StoreService } from '../../services/storeService'
+import { formatEngineName } from '@utils/index'
 
-const emit = defineEmits([
-  'select-mod',
-  'launch-mod',
-  'open-mod-settings',
-  'gamebanana-browser',
-])
 // Featured mods state
 const featuredMods = ref<GameBananaMod[]>([])
 const isLoadingFeatured = ref(false)
@@ -654,8 +649,8 @@ const onFileSelected = async (selectedFile: any) => {
         $q.notify({
           type: 'negative',
           message: `Cannot download ${modpackType} modpack`,
-          caption: `You don't have ${gamebananaService.formatEngineType(
-            modpackType
+          caption: `You don't have ${await formatEngineName(
+            modpackType || 'whatever engine this mod needs'
           )} installed. Please install it.`,
           position: 'bottom-right',
           timeout: 5000,
@@ -779,7 +774,7 @@ const onModTypeSubmit = async (typeData: any) => {
         )
       } else {
         throw new Error(
-          `No ${gamebananaService.formatEngineType(typeData.modType)} installation found`
+          `No ${await formatEngineName(typeData.modType)} installation found`
         )
       }
     }
@@ -842,9 +837,7 @@ const onModTypeSubmit = async (typeData: any) => {
           typeData.modType !== 'executable'
             ? {
                 engine_type: typeData.modType,
-                engine_name: gamebananaService.formatEngineType(
-                  typeData.modType
-                ),
+                engine_name: await formatEngineName(typeData.modType),
                 mods_folder: true,
                 mods_folder_path: 'mods',
               }
@@ -865,7 +858,7 @@ const onModTypeSubmit = async (typeData: any) => {
         modInfo.engine = {
           ...(modInfo.engine || {}),
           engine_type: typeData.modType,
-          engine_name: gamebananaService.formatEngineType(typeData.modType),
+          engine_name: await formatEngineName(typeData.modType),
           mods_folder: true,
           mods_folder_path: 'mods',
         }

@@ -1,0 +1,10 @@
+{
+  "engine_type": "codename",
+  "engine_name": "Codename Engine",
+  "engine_url": "https://nightly.link/CodenameCrew/CodenameEngine/workflows/windows/main/Codename%20Engine.zip",
+  "engine_banner": "banner_codename.png",
+  "engine_logo": "logo_codename.png",
+  "engine_icon": "Codename.webp",
+  "engine_description": "Codename Engine is a new Friday Night Funkin' Engine aimed at simplifying modding, along with extensibility and ease of use.",
+  "engine_version": ""
+}

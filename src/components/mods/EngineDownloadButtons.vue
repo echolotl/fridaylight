@@ -61,24 +61,24 @@
         </div>
       </template>
       <div class="more-engines-content">
-        None yet, but you can help suggest what engines to include on the
-        <span
-          style="
-            cursor: pointer;
-            text-decoration: underline;
-            color: var(--q-primary);
-          "
-          @click="openUrl('https://github.com/echolotl/fridaylight')"
-          >Github</span
-        >!
+        <q-btn
+          flat
+          label="P-Slice"
+          @click="$emit('download-engine', 'pslice')"
+          class="engine-btn"
+        >
+          <img
+            src="/images/engine_icons/P-slice.png"
+            alt="P-Slice"
+            class="engine-icon"
+          />
+        </q-btn>
       </div>
     </q-expansion-item>
   </div>
 </template>
 
 <script setup lang="ts">
-import { openUrl } from '@tauri-apps/plugin-opener'
-
 defineEmits(['download-engine'])
 </script>
 
@@ -128,7 +128,6 @@ defineEmits(['download-engine'])
   border-radius: 1rem;
 }
 .more-engines-content {
-  color: var(--theme-text-secondary);
   padding: 1rem;
   text-align: center;
 }

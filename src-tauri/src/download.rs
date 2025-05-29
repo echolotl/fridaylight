@@ -11,10 +11,23 @@ use crate::models::{
 use crate::utils::{ fetch_image_as_base64, extract_rar_archive };
 use futures_util::StreamExt;
 use log::{ debug, error, info, warn };
+use serde::{ Deserialize, Serialize };
 use tauri::path::BaseDirectory;
 use std::fs;
 use std::path::{ Path, PathBuf };
 use tauri::{ Manager, Emitter };
+
+#[derive(Debug, Deserialize, Serialize)]
+struct EngineConfig {
+    engine_type: String,
+    engine_name: String,
+    engine_url: String,
+    engine_banner: String,
+    engine_logo: String,
+    engine_icon: String,
+    engine_description: String,
+    engine_version: String,
+}
 
 // Command to download a mod from GameBanana
 pub async fn download_gamebanana_mod(
@@ -918,84 +931,65 @@ pub async fn download_custom_mod(
         percentage: 100,
         step: "Mod installation complete".to_string(),
     }).unwrap_or_else(|e| error!("Failed to emit download-progress event: {}", e));
-
     Ok(mod_folder.to_string_lossy().to_string())
+}
+
+// Helper function to load engine configuration from JSON
+fn load_engine_config(engine_id: &str, app: &tauri::AppHandle) -> Result<EngineConfig, String> {
+    let config_path = format!("resources/{}.json", engine_id);
+
+    let config_file_path = app
+        .path()
+        .resolve(&config_path, BaseDirectory::Resource)
+        .map_err(|e| format!("Failed to resolve config path for {}: {}", engine_id, e))?;
+
+    if !config_file_path.exists() {
+        return Err(format!("Engine configuration file not found: {}", config_path));
+    }
+
+    let config_content = fs
+        ::read_to_string(&config_file_path)
+        .map_err(|e| format!("Failed to read config file for {}: {}", engine_id, e))?;
+
+    let config: EngineConfig = serde_json
+        ::from_str(&config_content)
+        .map_err(|e| format!("Failed to parse config JSON for {}: {}", engine_id, e))?;
+
+    info!("Successfully loaded configuration for {} engine", engine_id);
+    Ok(config)
 }
 
 // Function to download a specific FNF engine directly
 pub async fn download_engine(
-    engine_type: String,
+    engine_id: String,
     install_location: Option<String>,
     custom_name: Option<String>,
     app: tauri::AppHandle
 ) -> Result<String, String> {
-    info!("Starting direct engine download for: {}", engine_type);
+    info!("Starting direct engine download for: {}", engine_id);
 
-    // Set up engine-specific details
-    let (
-        engine_name,
-        engine_url,
-        engine_banner,
-        engine_logo,
-        engine_icon,
-        engine_description,
-        engine_version,
-    ) = match engine_type.as_str() {
-        "psych" =>
-            (
-                "Psych Engine",
-                "https://github.com/ShadowMario/FNF-PsychEngine/releases/latest/download/PsychEngine-Windows64.zip",
-                "banner_psych.png",
-                "logo_psych.png",
-                "Psych.webp",
-                "Engine originally used on Mind Games Mod, intended to be a fix for the vanilla version's many issues while keeping the casual play aspect of it. Also aiming to be an easier alternative to newbie coders.",
-                "1.0.4",
-            ),
-        "fps-plus" =>
-            (
-                "FPS Plus",
-                "https://github.com/ThatRozebudDude/FPS-Plus-Public/releases/download/v7.1.0/fpsplus_v7_1_0.zip",
-                "banner_fpsplus.png",
-                "logo_fpsplus.png",
-                "Fps-plus.webp",
-                "Friday Night Funkin' FPS Plus is an engine mod of Friday Night Funkin' that aims to improve gameplay and add quality of life features.",
-                "7.1.0",
-            ),
-        "codename" =>
-            (
-                "Codename Engine",
-                "https://nightly.link/CodenameCrew/CodenameEngine/workflows/windows/main/Codename%20Engine.zip",
-                "banner_codename.png",
-                "logo_codename.png",
-                "Codename.webp",
-                "Codename Engine is a new Friday Night Funkin' Engine aimed at simplifying modding, along with extensibility and ease of use.",
-                "",
-            ),
-        "vanilla" =>
-            (
-                "V-Slice",
-                "https://github.com/FunkinCrew/Funkin/releases/latest/download/funkin-windows-64bit.zip",
-                "banner_vslice.png",
-                "logo_vslice.png",
-                "Pre-vslice.webp",
-                "Friday Night Funkin' is a rhythm game. Built using HaxeFlixel for Ludum Dare 47.",
-                "0.6.3",
-            ),
-        _ => {
-            return Err(format!("Unknown engine type: {}", engine_type));
-        }
-    };
+    // Load engine configuration from JSON
+    let config = load_engine_config(&engine_id, &app)?;
+
+    let engine_type = config.engine_type;
+    let engine_name = config.engine_name;
+    let engine_url = config.engine_url;
+    let engine_banner = config.engine_banner;
+    let engine_logo = config.engine_logo;
+    let engine_icon = config.engine_icon;
+    let engine_description = config.engine_description;
+    let engine_version = config.engine_version;
 
     // Create a unique mod ID for tracking downloads
     let mod_id = uuid::Uuid::new_v4().as_u128() as i64;
-    info!("Generated mod_id for {} engine: {}", engine_type, mod_id);
+    info!("Generated mod_id for {} engine: {}", engine_id, mod_id);
 
     // Emit download started event
     app.emit("download-started", DownloadStarted {
         mod_id,
         name: engine_name.to_string(),
         content_length: 0, // We don't know the size yet
-        thumbnail_url: format!("/images/engine_icons/{}", engine_icon),
+        thumbnail_url: "".to_string(),
     }).unwrap_or_else(|e| error!("Failed to emit download-started event: {}", e));
 
     // Emit progress event for the engine download fetch step
@@ -1085,7 +1079,7 @@ pub async fn download_engine(
         mod_id,
         name: engine_name.to_string(),
         content_length: total_size,
-        thumbnail_url: format!("/images/engine_icons/{}", engine_icon),
+        thumbnail_url: "".to_string(),
     }).unwrap_or_else(|e| error!("Failed to emit updated download-started event: {}", e));
 
     // Create a file to write to
@@ -1261,7 +1255,7 @@ pub async fn download_engine(
     let extraction_result = extract_archive(
         &download_path,
         &engine_folder,
-        engine_name,
+        &engine_name,
         mod_id,
         &app
     );
@@ -1310,8 +1304,9 @@ pub async fn download_engine(
     }
 
     // Copy standard banner and logo from resources
-    let banner_path = "resources/banners/".to_string() + engine_banner;
-    let logo_path = "resources/logos/".to_string() + engine_logo;
+    let banner_path = "resources/".to_string() + &engine_banner;
+    let logo_path = "resources/".to_string() + &engine_logo;
+    let engine_icon_path = "resources/".to_string() + &engine_icon;
 
     let banner_src = app
         .path()
@@ -1320,6 +1315,7 @@ pub async fn download_engine(
             error!("Failed to resolve banner path: {}", e);
             PathBuf::new()
         });
+    info!("Resolved banner path: {}", banner_src.display());
     let logo_src = app
         .path()
         .resolve(&logo_path, BaseDirectory::Resource)
@@ -1327,8 +1323,17 @@ pub async fn download_engine(
             error!("Failed to resolve logo path: {}", e);
             PathBuf::new()
         });
+    info!("Resolved logo path: {}", logo_src.display());
+    let icon_src = app
+        .path()
+        .resolve(&engine_icon_path, BaseDirectory::Resource)
+        .unwrap_or_else(|e| {
+            error!("Failed to resolve engine icon path: {}", e);
+            PathBuf::new()
+        });
+    info!("Resolved engine icon path: {}", icon_src.display());
 
-    // Read the banner and logo files if they exist in resources
+    // Read the banner, logo, and icon files if they exist in resources
     let banner_data = if banner_src.exists() {
         match crate::modutils::get_mod_icon_data(&banner_src.to_string_lossy().to_string()) {
             Ok(data) => Some(data),
@@ -1338,30 +1343,8 @@ pub async fn download_engine(
             }
         }
     } else {
-        // Use default banner as fallback instead of engine icon
-        let default_banner_path = "resources/banners/menuBG.png";
-        let default_banner = app
-            .path()
-            .resolve(&default_banner_path, BaseDirectory::Resource)
-            .unwrap_or_else(|e| {
-                error!("Failed to resolve default banner path: {}", e);
-                PathBuf::new()
-            });
-        if default_banner.exists() {
-            match crate::modutils::get_mod_icon_data(&default_banner.to_string_lossy().to_string()) {
-                Ok(data) => {
-                    debug!("Using default banner image as fallback");
-                    Some(data)
-                }
-                Err(e) => {
-                    warn!("Failed to read default banner image: {}", e);
-                    None
-                }
-            }
-        } else {
-            debug!("Default banner image not found");
-            None
-        }
+        debug!("{} banner image not found", engine_name);
+        None
     };
 
     let logo_data = if logo_src.exists() {
@@ -1373,6 +1356,18 @@ pub async fn download_engine(
             }
         }
     } else {
+        None
+    };    let engine_icon_data = if icon_src.exists() {
+        debug!("Loading engine icon from: {}", icon_src.display());
+        match crate::modutils::get_mod_icon_data(&icon_src.to_string_lossy().to_string()) {
+            Ok(data) => Some(data),
+            Err(e) => {
+                warn!("Failed to read engine icon image: {}", e);
+                None
+            }
+        }
+    } else {
+        debug!("{} engine icon image not found", engine_name);
         None
     };
 
@@ -1391,9 +1386,9 @@ pub async fn download_engine(
         logo_position: Some("left_bottom".to_string()),
         version: Some(engine_version.to_string()),
         engine: Some(crate::models::Engine {
-            engine_type: Some(engine_type.clone()),
+            engine_type: Some(engine_type.to_string()),
             engine_name: Some(engine_name.to_string()),
-            engine_icon: None, // Don't set the engine icon
+            engine_icon: engine_icon_data,
             mods_folder: Some(true),
             mods_folder_path: Some("mods".to_string()),
         }),
