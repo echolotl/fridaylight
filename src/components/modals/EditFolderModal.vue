@@ -176,7 +176,7 @@ const cancel = () => {
 <style scoped>
 .folder-modal {
   width: 400px;
-  background-color: var(--solid);
+  background-color: var(--theme-solid);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
   backdrop-filter: blur(30px);

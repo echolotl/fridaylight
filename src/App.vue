@@ -75,6 +75,7 @@ import {
   gamebananaService,
   setupGameBananaEventListeners,
 } from "@services/gamebananaService";
+import { themeService } from "@services/themeService";
 import { AppSettings } from "./types";
 
 // Define window.db
@@ -307,121 +308,128 @@ const applyTheme = async (themeValue: string | boolean) => {
 
   console.log("Applying theme:", activeThemeValue);
 
-  // First check if we're running on Windows 11
-  const isWindows11 = await invoke<boolean>("is_windows_11");
-  console.log("Is Windows 11:", isWindows11, "Theme:", activeThemeValue);
+  try {
+    // Apply theme using the theme service
+    await themeService.applyTheme(activeThemeValue);
 
-  // Apply CSS classes for theme by first removing all theme classes
-  document.body.classList.remove(
-    "light-theme",
-    "dark-theme",
-    "yourself-theme",
-    "hotline-theme",
-    "corruption-theme",
-    "shaggy-theme",
-    "boo-theme",
-    "qt-theme",
-    "garcello-theme",
-    "pump-theme",
-    "doe-theme"
+    // Check if we're running on Windows 11 for Mica effect
+    const isWindows11 = await invoke<boolean>("is_windows_11");
+    console.log("Is Windows 11:", isWindows11, "Theme:", activeThemeValue);
+
+    // Handle platform-specific styling
+    if (!isWindows11) {
+      // Apply solid theme styling for non-Windows 11 platforms
+      handleNonWindows11Styling(activeThemeValue);
+    } else {
+      // Handle Windows 11 Mica effect
+      await handleWindows11Styling(activeThemeValue);
+    }
+  } catch (error) {
+    console.error("Failed to apply theme:", error);
+    // Fallback to basic theme application
+    fallbackThemeApplication(activeThemeValue);
+  }
+};
+
+// Handle styling for non-Windows 11 platforms
+const handleNonWindows11Styling = (themeValue: string) => {
+  // Only apply solid-theme to light and dark themes
+  if (themeValue === "light" || themeValue === "dark") {
+    document.body.classList.add("solid-theme");
+  } else {
+    document.body.classList.remove("solid-theme");
+  }
+
+  // Remove transparent background styles
+  document.documentElement.style.setProperty(
+    "--transparent-bg-override",
+    "none"
   );
 
-  // Then add the active theme class
-  document.body.classList.add(`${activeThemeValue}-theme`);
+  // Set background to solid color instead of transparent
+  const bgColor = `var(--theme-bg)`;
+  document.documentElement.style.setProperty("background", bgColor);
+  document.body.style.removeProperty("background");
+  document.body.style.backgroundColor = bgColor;
+  document
+    .querySelector(".q-layout")
+    ?.setAttribute("style", "background: " + bgColor + " !important");
+};
 
-  // Apply solid theme if not on Windows 11
-  if (!isWindows11) {
-    // Only apply solid-theme to light and dark themes
-    if (activeThemeValue === "light" || activeThemeValue === "dark") {
-      document.body.classList.add("solid-theme");
+// Handle Windows 11 Mica effect styling
+const handleWindows11Styling = async (themeValue: string) => {
+  // Only light and dark themes should be transparent for Mica
+  if (themeService.supportsWindowsMica(themeValue)) {
+    document.body.classList.remove("solid-theme");
+    document.documentElement.style.setProperty(
+      "--transparent-bg-override",
+      "transparent"
+    );
+    document.body.style.removeProperty("background");
+    document.body.setAttribute("style", "background: transparent !important");
 
-      // Remove transparent background styles
-      document.documentElement.style.setProperty(
-        "--transparent-bg-override",
-        "none"
+    // Make sure q-layout is also transparent for Mica to work properly
+    const qLayout = document.querySelector(".q-layout");
+    if (qLayout) {
+      qLayout.removeAttribute("style");
+      qLayout.setAttribute("style", "background: transparent !important");
+    }
+
+    // Apply Mica effect based on theme
+    try {
+      await invoke("change_mica_theme", {
+        window: "main",
+        dark: themeValue !== "light",
+      });
+      console.log(
+        "Applied Mica theme effect:",
+        themeValue !== "light" ? "dark" : "light"
       );
-
-      // Set background to solid color instead of transparent
-      const bgColor = `var(--theme-bg)`;
-      // Apply background explicitly instead of using style property
-      document.documentElement.style.setProperty("background", bgColor);
-      document.body.style.removeProperty("background");
-      document.body.style.backgroundColor = bgColor;
-      document
-        .querySelector(".q-layout")
-        ?.setAttribute("style", "background: " + bgColor + " !important");
-    } else {
-      // For other themes on non-Windows 11, don't use solid-theme
-      document.body.classList.remove("solid-theme");
-
-      // Use the semi-transparent theme variables directly
-      const bgColor = `var(--theme-bg)`;
-      document.documentElement.style.setProperty("background", bgColor);
-      document.body.style.removeProperty("background");
-      document.body.style.backgroundColor = bgColor;
-      document
-        .querySelector(".q-layout")
-        ?.setAttribute("style", "background: " + bgColor + " !important");
+    } catch (error) {
+      console.error("Failed to apply Mica effect:", error);
     }
   } else {
-    // On Windows 11, only light and dark themes should be transparent for Mica
-    if (activeThemeValue === "light" || activeThemeValue === "dark") {
-      document.body.classList.remove("solid-theme");
-      document.documentElement.style.setProperty(
-        "--transparent-bg-override",
-        "transparent"
-      );
-      // Fix for background style being commented out
-      document.body.style.removeProperty("background");
-      document.body.setAttribute("style", "background: transparent !important");
+    // For custom themes on Windows 11, use solid styling
+    document.body.classList.remove("solid-theme");
+    document.documentElement.style.setProperty(
+      "--transparent-bg-override",
+      "none"
+    );
 
-      // Make sure q-layout is also transparent for Mica to work properly
-      const qLayout = document.querySelector(".q-layout");
-      if (qLayout) {
-        qLayout.removeAttribute("style");
-        qLayout.setAttribute("style", "background: transparent !important");
-      }
+    // Set background to solid color based on the theme
+    const bgColor = `var(--theme-bg)`;
+    document.documentElement.style.setProperty("background", bgColor);
+    document.body.style.removeProperty("background");
+    document.body.style.backgroundColor = bgColor;
+    document
+      .querySelector(".q-layout")
+      ?.setAttribute("style", "background: " + bgColor + " !important");
 
-      // Apply Mica effect based on theme (Windows 11 only)
-      try {
-        await invoke("change_mica_theme", {
-          window: "main",
-          dark: activeThemeValue !== "light",
-        });
-        console.log(
-          "Applied Mica theme effect:",
-          activeThemeValue !== "light" ? "dark" : "light"
-        );
-      } catch (error) {
-        console.error("Failed to apply Mica effect:", error);
-      }
-    } else {
-      document.body.classList.remove("solid-theme");
-      document.documentElement.style.setProperty(
-        "--transparent-bg-override",
-        "none"
-      );
-
-      // Set background to solid color based on the theme
-      const bgColor = `var(--theme-bg)`;
-      document.documentElement.style.setProperty("background", bgColor);
-      document.body.style.removeProperty("background");
-      document.body.style.backgroundColor = bgColor;
-      document
-        .querySelector(".q-layout")
-        ?.setAttribute("style", "background: " + bgColor + " !important");
-
-      // Remove Mica effect for non-standard themes
-      try {
-        await invoke("remove_mica_theme", {
-          window: "main",
-        });
-        console.log("Removed Mica effect for theme:", activeThemeValue);
-      } catch (error) {
-        console.error("Failed to remove Mica effect:", error);
-      }
+    // Remove Mica effect for non-standard themes
+    try {
+      await invoke("remove_mica_theme", {
+        window: "main",
+      });
+      console.log("Removed Mica effect for theme:", themeValue);
+    } catch (error) {
+      console.error("Failed to remove Mica effect:", error);
     }
   }
+};
+
+// Fallback theme application without theme service
+const fallbackThemeApplication = (themeValue: string) => {
+  console.warn("Using fallback theme application for:", themeValue);
+  
+  // Remove all theme classes
+  document.body.classList.forEach(className => {
+    if (className.endsWith('-theme')) {
+      document.body.classList.remove(className);
+    }
+  });
+
+  // Add the active theme class
+  document.body.classList.add(`${themeValue}-theme`);
 };
 
 // Get the current system theme (light or dark)
@@ -618,9 +626,14 @@ onMounted(async () => {
       // No need to sync with backend as the dbService handles this internally
     } else {
       console.log("No mods found in database");
-    }
+    }    // Update progress bar - Step 4: Initialize theme service
+    initStatusText.value = "Initializing theme service...";
+    initProgress.value = 0.5;
 
-    // Update progress bar - Step 4: Apply theme
+    // Initialize the theme service
+    await themeService.initialize();
+
+    // Update progress bar - Step 5: Apply theme
     initStatusText.value = "Applying theme...";
     initProgress.value = 0.6;
 
@@ -629,13 +642,12 @@ onMounted(async () => {
     if (useSystemTheme) {
       // If using system theme, apply light or dark based on system preference
       const isSystemLight = getSystemTheme();
-      applyTheme(isSystemLight ? "light" : "dark");    } else {
+      await applyTheme(isSystemLight ? "light" : "dark");
+    } else {
       // If using custom theme, apply the saved theme directly
       const themeValue = await getThemePreference();
-      applyTheme(themeValue);
-    }
-
-    // Update progress bar - Step 5: Load settings
+      await applyTheme(themeValue);
+    }    // Update progress bar - Step 6: Load settings
     initStatusText.value = "Loading settings...";
     initProgress.value = 0.8;
 

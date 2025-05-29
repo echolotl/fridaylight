@@ -55,7 +55,6 @@
                 </q-item-section>
               </q-item>
             </div>
-
             <div class="theme-selector q-mb-md" v-if="!settings.useSystemTheme">
               <q-select
                 v-model="settings.theme"
@@ -65,15 +64,71 @@
                 class="q-mb-md selector"
               >
                 <template v-slot:option="scope">
-                  <q-item v-bind="scope.itemProps">
+                  <q-item
+                    v-bind="scope.itemProps"
+                    class="phantom-font list-item"
+                  >
                     <q-item-section>
                       <q-item-label text-color="var(--theme-text)">{{
                         scope.opt.label
                       }}</q-item-label>
+                      <q-item-label v-if="scope.opt.isCustom" caption>
+                        Custom Theme
+                      </q-item-label>
                     </q-item-section>
                   </q-item>
                 </template>
               </q-select>
+            </div>
+            <div class="row q-gutter-sm q-mb-md">
+              <q-btn
+              flat
+                color="primary"
+                icon="folder_open"
+                label="Open Themes Folder"
+                @click="openThemesFolder"
+                class="phantom-font"
+              />
+              <q-btn
+                flat
+                color="primary"
+                icon="refresh"
+                label="Refresh Themes"
+                @click="refreshThemes"
+                class="phantom-font"
+              />
+            </div>            <div class="text-subtitle2 q-mb-sm">Accent Color</div>
+            <div class="color-row q-mb-md">
+              <q-btn
+                v-for="color in accentColorOptions"
+                :key="color.value"
+                round
+                flat
+                :style="{ backgroundColor: color.value }"
+                class="color-button"
+                :class="{ 'color-selected': getAccentColor() === color.value && !isCustomAccentColor }"
+                @click="selectPresetAccentColor(color.value)"
+              />
+              <q-btn
+                round
+                flat
+                icon="colorize"
+                class="color-button custom-color-btn"
+                :class="{ 'color-selected': isCustomAccentColor }"
+                :style="
+                  isCustomAccentColor
+                    ? { backgroundColor: customAccentColor }
+                    : { backgroundColor: 'transparent' }
+                "
+                @click="openAccentColorPicker"
+              />
+              <input
+                type="color"
+                ref="accentColorPickerInput"
+                v-model="customAccentColor"
+                class="hidden-color-picker"
+                @change="selectCustomAccentColor"
+              />
             </div>
 
             <q-item tag="label" class="q-mb-md">
@@ -87,54 +142,6 @@
                 <q-toggle v-model="settings.compactMode" color="primary" />
               </q-item-section>
             </q-item>
-
-            <q-select
-              v-model="settings.accentColor"
-              :options="accentColorOptions"
-              label="Accent Color"
-              outlined
-              class="q-mb-md selector phantom-font"
-            >
-              <template v-slot:option="scope">
-                <q-item v-bind="scope.itemProps">
-                  <q-item-section avatar>
-                    <div
-                      class="color-preview"
-                      :style="{ backgroundColor: scope.opt.value }"
-                    ></div>
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label
-                      text-color="var(--theme-text)"
-                      class="phantom-font"
-                      >{{ scope.opt.label }}</q-item-label
-                    >
-                  </q-item-section>
-                </q-item>
-              </template>
-
-              <template v-slot:selected>
-                <div class="row items-center phantom-font">
-                  <div
-                    class="color-preview q-mr-sm"
-                    :style="{
-                      backgroundColor:
-                        typeof settings.accentColor === 'string'
-                          ? settings.accentColor
-                          : settings.accentColor?.value || '#DB2955',
-                    }"
-                  ></div>
-                  <div>
-                    {{
-                      typeof settings.accentColor === "string"
-                        ? accentColorOptions.find(
-                            (opt) => opt.value === settings.accentColor
-                          )?.label
-                        : settings.accentColor?.label || "Custom"
-                    }}
-                  </div>
-                </div>
-              </template>            </q-select>
           </q-card-section>
 
           <!-- Installation Section -->
@@ -344,6 +351,7 @@ import ThemePreview from "../common/ThemePreview.vue";
 import MessageDialog from "./MessageDialog.vue";
 import { StoreService, DEFAULT_SETTINGS } from "../../services/storeService";
 import { DatabaseService } from "../../services/dbService";
+import { themeService } from "../../services/themeService";
 
 // Use the singleton directly instead of through a ref
 const storeService = StoreService.getInstance();
@@ -369,28 +377,23 @@ const settingsSections = [
 // Track the active section
 const activeSection = ref("appearance");
 
-// Theme options - "doe" is hidden until unlocked
+// Theme options - dynamically loaded from theme service
 const hasUnlockedExtraThemes = ref(false);
+const availableThemes = ref<any[]>([]);
+
 const themeOptions = computed(() => {
-  const baseOptions = [
-    { label: "Light", value: "light" },
-    { label: "Dark", value: "dark" },
-    { label: "Shaggy", value: "shaggy" },
-    { label: "Hotline", value: "hotline" },
-    { label: "Yourself", value: "yourself" },
-    { label: "Corruption", value: "corruption" },
-    { label: "QT", value: "qt" },
-    { label: "Garcello", value: "garcello" },
-    { label: "Pump", value: "pump" },
-    { label: "Boo", value: "boo" },
-  ];
-
-  // Only add Extra themes if they are unlocked
-  if (hasUnlockedExtraThemes.value) {
-    baseOptions.push({ label: "Doe", value: "doe" });
-  }
-
-  return baseOptions;
+  const options = availableThemes.value.map((theme) => ({
+    label: theme.displayName,
+    value: theme.id,
+    isCustom: theme.isCustom,
+  }));
+  // Filter out "doe" theme unless extra themes are unlocked
+  return options.filter((option) => {
+    if (option.value === "doe" && !hasUnlockedExtraThemes.value) {
+      return false;
+    }
+    return true;
+  });
 });
 
 const accentColorOptions = [
@@ -411,15 +414,18 @@ const getThemeName = () => {
     return value.value;
   }
   // Ensure we're working with a string value
+  let themeId = "";
   if (typeof settings.value.theme === "string") {
-    return settings.value.theme;
+    themeId = settings.value.theme;
+  } else {
+    // Handle case where theme is an object
+    let value = settings.value.theme as unknown as {
+      label: string;
+      value: string;
+    };
+    themeId = value.value;
   }
-  // Handle case where theme is an object
-  let value = settings.value.theme as unknown as {
-    label: string;
-    value: string;
-  };
-  return value.value;
+  return themeId;
 };
 
 // Helper function to get current accent color
@@ -437,6 +443,11 @@ const showModal = computed({
 
 const showResetSettingsDialog = ref(false);
 const showResetAppDataDialog = ref(false);
+
+// Custom accent color variables
+const customAccentColor = ref("#DB2955");
+const isCustomAccentColor = ref(false);
+const accentColorPickerInput = ref<HTMLInputElement | null>(null);
 
 // Load saved settings when modal is opened
 watch(
@@ -456,10 +467,22 @@ const loadSettings = async () => {
     }
 
     // Get all settings from StoreService
-    const storedSettings = await storeService.getAllSettings();
-
-    // Apply stored settings to our local settings ref
+    const storedSettings = await storeService.getAllSettings();    // Apply stored settings to our local settings ref
     settings.value = { ...settings.value, ...storedSettings };
+
+    // Initialize custom accent color state
+    const currentAccentColor = getAccentColor();
+    const isPresetColor = accentColorOptions.some(option => option.value === currentAccentColor);
+    
+    if (!isPresetColor) {
+      // Current color is custom
+      isCustomAccentColor.value = true;
+      customAccentColor.value = currentAccentColor;
+    } else {
+      // Current color is a preset
+      isCustomAccentColor.value = false;
+      customAccentColor.value = "#DB2955"; // Reset to default
+    }
 
     console.log("Settings loaded from store service:", settings.value);
 
@@ -507,39 +530,32 @@ const updateTheme = async () => {
           "dark";
   }
 
-  console.log("Applying theme:", activeThemeValue);
+  console.log("Applying theme via themeService:", activeThemeValue);
 
-  // First check if we're running on Windows 11
-  const isWindows11 = await invoke<boolean>("is_windows_11");
-  console.log("Is Windows 11:", isWindows11, "Theme:", activeThemeValue);
+  try {
+    // Use the theme service to apply the theme
+    await themeService.applyTheme(activeThemeValue);
 
-  // Apply CSS classes for theme by first removing all theme classes
-  document.body.classList.remove(
-    "light-theme",
-    "dark-theme",
-    "yourself-theme",
-    "hotline-theme",
-    "corruption-theme",
-    "shaggy-theme",
-    "boo-theme",
-    "qt-theme",
-    "garcello-theme",
-    "pump-theme",
-    "doe-theme"
-  );
+    // Check if we're running on Windows 11 for additional styling
+    const isWindows11 = await invoke<boolean>("is_windows_11");
+    console.log("Is Windows 11:", isWindows11, "Theme:", activeThemeValue);
 
-  // Then add the active theme class
-  document.body.classList.add(`${activeThemeValue}-theme`);
-
-  // Apply solid theme if not on Windows 11
-  if (!isWindows11) {
-    // Only apply solid-theme to light and dark themes
-    if (activeThemeValue === "light" || activeThemeValue === "dark") {
-      document.body.classList.add("solid-theme");
-      console.log(
-        "Using solid background for non-Windows 11 theme:",
-        activeThemeValue
-      );
+    // Apply platform-specific styling
+    if (!isWindows11) {
+      // Apply solid theme styling for non-Windows 11
+      if (activeThemeValue === "light" || activeThemeValue === "dark") {
+        document.body.classList.add("solid-theme");
+        console.log(
+          "Using solid background for non-Windows 11 theme:",
+          activeThemeValue
+        );
+      } else {
+        document.body.classList.remove("solid-theme");
+        console.log(
+          "Using theme background for non-Windows 11 theme:",
+          activeThemeValue
+        );
+      }
 
       // Remove transparent background styles
       document.documentElement.style.setProperty(
@@ -556,85 +572,72 @@ const updateTheme = async () => {
         .querySelector(".q-layout")
         ?.setAttribute("style", "background: " + bgColor + " !important");
     } else {
-      // For other themes on non-Windows 11, don't use solid-theme
-      document.body.classList.remove("solid-theme");
-      console.log(
-        "Using transparent background for non-Windows 11 theme:",
-        activeThemeValue
-      );
-
-      // Use the semi-transparent theme variables directly
-      const bgColor = `var(--theme-bg)`;
-      document.documentElement.style.setProperty("background", bgColor);
-      document.body.style.removeProperty("background");
-      document.body.style.backgroundColor = bgColor;
-      document
-        .querySelector(".q-layout")
-        ?.setAttribute("style", "background: " + bgColor + " !important");
-    }
-  } else {
-    // On Windows 11, only light and dark themes should be transparent for Mica
-    if (activeThemeValue === "light" || activeThemeValue === "dark") {
-      document.body.classList.remove("solid-theme");
-      document.documentElement.style.setProperty(
-        "--transparent-bg-override",
-        "transparent"
-      );
-      // Fix for background style being commented out
-      document.body.style.removeProperty("background");
-      document.body.setAttribute("style", "background: transparent !important");
-
-      // Make sure q-layout is also transparent for Mica to work properly
-      const qLayout = document.querySelector(".q-layout");
-      if (qLayout) {
-        qLayout.removeAttribute("style");
-        qLayout.setAttribute("style", "background: transparent !important");
-      }
-
-      // Call the Rust backend to apply Mica effect (Windows only)
-      try {
-        // Only light and dark themes should use the Mica effect
-        const isDarkMica = activeThemeValue !== "light";
-
-        await invoke("change_mica_theme", {
-          window: "main", // Main window label
-          dark: isDarkMica, // true for dark themes, false for light theme
-        });
-        console.log(
-          "Applied Mica theme effect:",
-          isDarkMica ? "dark" : "light"
+      // On Windows 11, handle Mica effect for light and dark themes
+      if (themeService.supportsWindowsMica(activeThemeValue)) {
+        document.body.classList.remove("solid-theme");
+        document.documentElement.style.setProperty(
+          "--transparent-bg-override",
+          "transparent"
         );
-      } catch (error) {
-        console.error("Failed to apply/remove Mica effect:", error);
-        // Non-fatal error, the app will still work without Mica
+
+        // Make background transparent for Mica
+        document.body.style.removeProperty("background");
+        document.body.setAttribute(
+          "style",
+          "background: transparent !important"
+        );
+
+        // Make sure q-layout is also transparent for Mica to work properly
+        const qLayout = document.querySelector(".q-layout");
+        if (qLayout) {
+          qLayout.removeAttribute("style");
+          qLayout.setAttribute("style", "background: transparent !important");
+        }
+
+        // Apply Mica effect via Rust backend
+        try {
+          const isDarkMica = activeThemeValue !== "light";
+          await invoke("change_mica_theme", {
+            window: "main",
+            dark: isDarkMica,
+          });
+          console.log(
+            "Applied Mica theme effect:",
+            isDarkMica ? "dark" : "light"
+          );
+        } catch (error) {
+          console.error("Failed to apply Mica effect:", error);
+        }
+      } else {
+        // For other themes on Windows 11, use solid background
+        document.body.classList.remove("solid-theme");
+        document.documentElement.style.setProperty(
+          "--transparent-bg-override",
+          "none"
+        );
+
+        const bgColor = `var(--theme-bg)`;
+        document.documentElement.style.setProperty("background", bgColor);
+        document.body.style.removeProperty("background");
+        document.body.style.backgroundColor = bgColor;
+        document
+          .querySelector(".q-layout")
+          ?.setAttribute("style", "background: " + bgColor + " !important");
       }
-    } else {
-      document.body.classList.remove("solid-theme");
-      document.documentElement.style.setProperty(
-        "--transparent-bg-override",
-        "none"
-      );
-
-      // Set background to solid color based on the theme
-      const bgColor = `var(--theme-bg)`;
-      document.documentElement.style.setProperty("background", bgColor);
-      document.body.style.removeProperty("background");
-      document.body.style.backgroundColor = bgColor;
-      document
-        .querySelector(".q-layout")
-        ?.setAttribute("style", "background: " + bgColor + " !important");
     }
-  }
 
-  // Dispatch an event so other components can know about theme changes
-  window.dispatchEvent(
-    new CustomEvent("theme-changed", {
-      detail: {
-        theme: activeThemeValue,
-        useSystemTheme: settings.value.useSystemTheme,
-      },
-    })
-  );
+    // Dispatch an event so other components can know about theme changes
+    window.dispatchEvent(
+      new CustomEvent("theme-changed", {
+        detail: {
+          theme: activeThemeValue,
+          useSystemTheme: settings.value.useSystemTheme,
+        },
+      })
+    );
+  } catch (error) {
+    console.error("Failed to apply theme:", error);
+  }
 };
 
 const save = async () => {
@@ -720,6 +723,49 @@ const cancel = () => {
   loadSettings();
 };
 
+// Theme management functions
+const customThemesPath = ref("");
+
+const refreshThemes = async () => {
+  try {
+    // Make sure theme service is initialized
+    await themeService.initialize();
+
+    await themeService.refreshThemes();
+    const themes = themeService.getThemes();
+    availableThemes.value = themes;
+    console.log("Refreshed themes:", themes);
+  } catch (error) {
+    console.error("Failed to refresh themes:", error);
+  }
+};
+
+const openThemesFolder = async () => {
+  try {
+    const themesDir = themeService.getCustomThemesDirectory();
+    await invoke("open_path", { path: themesDir });
+  } catch (error) {
+    console.error("Failed to open themes folder:", error);
+  }
+};
+
+// Accent color management functions
+const openAccentColorPicker = () => {
+  if (accentColorPickerInput.value) {
+    accentColorPickerInput.value.click();
+  }
+};
+
+const selectCustomAccentColor = () => {
+  settings.value.accentColor = customAccentColor.value;
+  isCustomAccentColor.value = true;
+};
+
+const selectPresetAccentColor = (color: string) => {
+  settings.value.accentColor = color;
+  isCustomAccentColor.value = false;
+};
+
 const resetSettings = () => {
   // Reset all settings to default values
   settings.value = { ...DEFAULT_SETTINGS };
@@ -753,18 +799,39 @@ onMounted(async () => {
   // Initialize StoreService
   await storeService.initialize();
 
-  // Really silly fix for dropdown background, oh Quasar why
-  const style = document.createElement("style");
-  style.innerHTML = `
-    .q-menu {
-      background-color: var(--theme-card) !important;
-      color: var(--theme-text) !important;
-    }
-    .q-item {
-      color: var(--theme-text) !important;
-    }
-  `;
-  document.head.appendChild(style);
+  // Initialize theme service first
+  try {
+    await themeService.initialize();
+  } catch (error) {
+    console.error("Failed to initialize theme service:", error);
+  }
+
+  // Load available themes from theme service
+  try {
+    const themes = themeService.getThemes();
+    availableThemes.value = themes;
+    customThemesPath.value = themeService.getCustomThemesDirectory();
+    console.log("Loaded themes for settings:", themes);
+  } catch (error) {
+    console.error("Failed to load themes:", error);
+    // Fallback to basic themes if service fails
+    availableThemes.value = [
+      {
+        id: "light",
+        name: "light",
+        displayName: "Light",
+        isBuiltIn: true,
+        isCustom: false,
+      },
+      {
+        id: "dark",
+        name: "dark",
+        displayName: "Dark",
+        isBuiltIn: true,
+        isCustom: false,
+      },
+    ];
+  }
 });
 
 // Initialize settings on component creation
@@ -777,11 +844,11 @@ loadSettings();
   height: 90vh;
   max-width: 90vw;
   max-height: 90vh;
-  background-color: var(--solid);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
   backdrop-filter: blur(30px);
   scrollbar-width: none;
+  background-color: var(--theme-solid);
 }
 
 .settings-layout {
@@ -820,6 +887,54 @@ loadSettings();
   height: 24px;
   border-radius: 4px;
   border: 1px solid var(--theme-border);
+}
+
+.color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.color-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.color-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 2px var(--theme-border);
+}
+
+.color-selected {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 3px var(--theme-border) !important;
+}
+
+.custom-color-btn {
+  background-color: white;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-color-btn.color-selected {
+  background-image: none;
+}
+
+.custom-color-btn .q-icon {
+  color: rgba(0, 0, 0, 0.7);
+  position: absolute;
+}
+
+.hidden-color-picker {
+  position: absolute;
+  opacity: 0;
+  height: 0;
+  width: 0;
+  pointer-events: none;
 }
 
 .acknowledgements {
@@ -865,6 +980,10 @@ a {
   display: flex;
   flex-direction: column;
   margin-top: 16px;
+}
+
+.list-item {
+  background-color: var(--theme-surface);
 }
 
 :deep(.q-field__messages, .q-field__native::placeholder, .q-field__label) {

@@ -784,7 +784,7 @@ function downloadMod() {
 }
 
 .mod-details-card {
-  background: var(--solid);
+  background: var(--theme-solid);
   width: 80vw;
   margin-top: 5vh;
   border-radius: 1rem !important;

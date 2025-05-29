@@ -3,7 +3,7 @@
     <q-card
       class="phantom-font"
       style="
-        background: var(--solid);
+        background: var(--theme-solid);
         color: var(--text-color);
         border: 2px solid var(--theme-border);
         backdrop-filter: blur(30px);

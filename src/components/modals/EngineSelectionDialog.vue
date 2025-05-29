@@ -266,7 +266,7 @@ const getInstallPath = (): string => {
   width: 700px;
   max-width: 90vw;
   max-height: 90vh;
-  background-color: var(--solid);
+  background-color: var(--theme-solid);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
   backdrop-filter: blur(30px);
