@@ -258,7 +258,7 @@ const props = defineProps({
   },
   modData: {
     type: Object,
-    required: true,
+    required: false,
   },
 });
 
