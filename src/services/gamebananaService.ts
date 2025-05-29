@@ -187,13 +187,7 @@ export class GameBananaService {
     return null;
   }
 
-  /**
-   * Format engine type for display
-   */
-  public formatEngineType(engineType: string | null): string {
-    if (!engineType) return "Unknown";
-    return formatEngineName(engineType);
-  }
+
 
   /**
    * Get mods folder path for an engine mod
@@ -352,8 +346,8 @@ export class GameBananaService {
           Notify.create({
             type: "negative",
             message: `Cannot download ${modpackType} modpack`,
-            caption: `You don't have ${this.formatEngineType(
-              modpackType
+            caption: `You don't have ${await formatEngineName(
+              modpackType || "whatever engine this mod needs"
             )} installed. Please install it.`,
             position: "bottom-right",
             timeout: 5000,
@@ -361,7 +355,7 @@ export class GameBananaService {
 
           return {
             success: false,
-            error: `No compatible ${this.formatEngineType(modpackType)} installation found`
+            error: `No compatible ${await formatEngineName(modpackType)} installation found`
           };
         } else {
           // Compatible engine found, proceed with showing engine selection dialog
@@ -639,8 +633,8 @@ export class GameBananaService {
           Notify.create({
             type: "negative",
             message: `Cannot download ${modpackType} modpack`,
-            caption: `You don't have ${this.formatEngineType(
-              modpackType
+            caption: `You don't have ${await formatEngineName(
+              modpackType || "whatever engine this mod needs"
             )} installed. Please install it.`,
             position: "bottom-right",
             timeout: 5000,
@@ -768,7 +762,7 @@ export class GameBananaService {
       Notify.create({
         type: "positive",
         message: `"${mod.name}" installed successfully!`,
-        caption: `Ready to play in ${this.formatEngineType(modpackInfo.type || "")}`,
+        caption: `Ready to play in ${await formatEngineName(modpackInfo.type || "")}`,
         position: "bottom-right",
         timeout: 5000,
       });
@@ -805,7 +799,7 @@ export class GameBananaService {
     try {
       // Check if the engine folder already exists before downloading
       // Determine the folder name based on engine type
-      const engineName = this.formatEngineType(engineType);
+      const engineName = await formatEngineName(engineType);
       const folderExists = await this.checkModFolderExists(engineName);
       
       if (folderExists) {
@@ -826,7 +820,7 @@ export class GameBananaService {
       // Show error notification
       Notify.create({
         type: "negative",
-        message: `Failed to download ${this.formatEngineType(engineType)}`,
+        message: `Failed to download ${await formatEngineName(engineType)}`,
         caption: String(error),
         position: "bottom-right",
         timeout: 5000,
@@ -842,10 +836,11 @@ export class GameBananaService {
    */
   private async proceedWithEngineDownload(engineType: string, isRetry: boolean = false): Promise<OperationResult> {
     try {
+      var engineName = await formatEngineName(engineType);
       // Show loading notification
       this.pendingDownloadNotification = Notify.create({
         type: "ongoing",
-        message: `Preparing to download ${this.formatEngineType(engineType)}...`,
+        message: `Preparing to download ${engineName}...`,
         position: "bottom-right",
         timeout: 0,
       });
@@ -861,7 +856,6 @@ export class GameBananaService {
       }
 
       // If this is a retry (folder exists case), append a timestamp to make the folder unique
-      let engineName = this.formatEngineType(engineType);
       if (isRetry) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         engineName = `${engineName}_${timestamp}`;
@@ -907,7 +901,7 @@ export class GameBananaService {
       // Show success notification
       Notify.create({
         type: "positive",
-        message: `${this.formatEngineType(engineType)} installed successfully!`,
+        message: `${await formatEngineName(engineType)} installed successfully!`,
         caption: `Ready to play from the mods list`,
         position: "bottom-right",
         timeout: 5000,
@@ -922,7 +916,7 @@ export class GameBananaService {
       // Show error notification
       Notify.create({
         type: "negative",
-        message: `Failed to download ${this.formatEngineType(engineType)}`,
+        message: `Failed to download ${await formatEngineName(engineType)}`,
         caption: String(error),
         position: "bottom-right",
         timeout: 5000,
@@ -979,7 +973,7 @@ export class GameBananaService {
           Notify.create({
             type: "negative",
             message: `Cannot download ${modpackType} modpack`,
-            caption: `You don't have "${this.formatEngineType(
+            caption: `You don't have "${await formatEngineName(
               modpackType
             )}" engines installed. Please install it from the GameBanana browser first.`,
             position: "bottom-right",
@@ -1166,7 +1160,7 @@ export class GameBananaService {
       // Show loading notification
       this.pendingDownloadNotification = Notify.create({
         type: "ongoing",
-        message: `Downloading "${modName}" to ${this.formatEngineType(
+        message: `Downloading "${modName}" to ${await formatEngineName(
           engine.engine?.engine_type
         )}...`,
         position: "bottom-right",
@@ -1212,7 +1206,7 @@ export class GameBananaService {
       Notify.create({
         type: "positive",
         message: `"${modName}" installed successfully!`,
-        caption: `Ready to play in ${this.formatEngineType(engine.engine?.engine_type || "")}`,
+        caption: `Ready to play in ${await formatEngineName(engine.engine?.engine_type || "")}`,
         position: "bottom-right",
         timeout: 5000,
       });

@@ -1,28 +1,26 @@
 import { readTextFile, exists } from "@tauri-apps/plugin-fs";
 import { sep } from "@tauri-apps/api/path";
+import { resolveResource } from '@tauri-apps/api/path';
 
 /**
  * Function to format the engine name based on the engine type 
  * @param engineType The engine type string to format
  * @returns The formatted engine name
  */
-export function formatEngineName(engineType: string): string {
-  switch (engineType) {
-    case 'psych':
-      return 'Psych Engine';
-    case 'kade':
-      return 'Kade Engine';
-    case 'vanilla':
-      return 'Vanilla';
-    case 'fps-plus':
-      return 'FPS Plus';
-    case 'prevslice':
-      return 'Ludum Dare';
-    case 'codename':
-      return 'Codename Engine';
-    default:
-      return engineType; // Return original if unknown
+export async function formatEngineName(engineType: string): Promise<string> {
+  // Get the JSON for the engine type
+  const engineTypeData = await resolveResource(`resources/${engineType}.json`);
+  if (engineTypeData) {
+    try {
+      const engineTypeJson = JSON.parse(await readTextFile(engineTypeData));
+      // Return the formatted name
+      return engineTypeJson.name || engineType;
+    } catch (error) {
+      console.error("Error parsing engine type JSON:", error);
+      return engineType; // Fallback to original if parsing fails
+    }
   }
+  return engineType; // Default return if no engineTypeData 
 }
 
 /**

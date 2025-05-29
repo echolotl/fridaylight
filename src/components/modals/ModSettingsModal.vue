@@ -556,21 +556,21 @@ watch(
 // Add a watcher to keep engine.engine_type and engine_type in sync
 watch(
   () => form.value.engine?.engine_type,
-  (newEngineType) => {
+  async (newEngineType) => {
     if (newEngineType && form.value.engine) {
       // When engine.engine_type changes, update engine_type to match
       console.log("Engine type changed to:", newEngineType);
 
       // Always update engine name based on the selected engine type
       // Only update if the name is currently the default for the *previous* type or empty
-      const previousDefaultName = formatEngineName(
+      const previousDefaultName = await formatEngineName(
         props.mod?.engine?.engine_type || "unknown"
       );
       if (
         !form.value.engine.engine_name ||
         form.value.engine.engine_name === previousDefaultName
       ) {
-        form.value.engine.engine_name = formatEngineName(newEngineType);
+        form.value.engine.engine_name = await formatEngineName(newEngineType);
         console.log(
           "Updated engine name to default:",
           form.value.engine.engine_name
@@ -722,14 +722,14 @@ const save = async () => {
   if (!updatedMod.engine) {
     updatedMod.engine = {
       engine_type: "unknown",
-      engine_name: formatEngineName("unknown"),
+      engine_name: await formatEngineName("unknown"),
       engine_icon: "",
       mods_folder: false,
       mods_folder_path: "",
     };
   } else {
-    const defaultName = formatEngineName(updatedMod.engine.engine_type);
-    const originalDefaultName = formatEngineName(
+    const defaultName = await formatEngineName(updatedMod.engine.engine_type);
+    const originalDefaultName = await formatEngineName(
       props.mod?.engine?.engine_type || "unknown"
     );
     if (

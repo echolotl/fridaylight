@@ -411,11 +411,11 @@ const saveModToDatabase = async (mod: ModInfo) => {
   try {
     // Ensure engine name is formatted before initial save
     if (mod.engine && !mod.engine.engine_name) {
-      mod.engine.engine_name = formatEngineName(mod.engine.engine_type);
+      mod.engine.engine_name = await formatEngineName(mod.engine.engine_type);
     } else if (!mod.engine) {
       mod.engine = {
         engine_type: "unknown",
-        engine_name: formatEngineName("unknown"),
+        engine_name: await formatEngineName("unknown"),
         engine_icon: "",
         mods_folder: false,
         mods_folder_path: "",
@@ -617,17 +617,17 @@ const handleSaveMod = async (updatedMod: Mod) => {
       console.warn("Mod engine object missing, creating default.");
       updatedMod.engine = {
         engine_type: "unknown",
-        engine_name: formatEngineName("unknown"), // Use util
+        engine_name: await formatEngineName("unknown"), 
         engine_icon: "",
         mods_folder: false,
         mods_folder_path: "",
       };
     } else {
       // Ensure engine_name is set correctly based on type if needed
-      const defaultName = formatEngineName(updatedMod.engine.engine_type);
+      const defaultName = await formatEngineName(updatedMod.engine.engine_type);
       // Only update name if it's empty or matches the default name of the *original* type
       const originalMod = mods.value.find((m) => m.id === updatedMod.id);
-      const originalDefaultName = formatEngineName(
+      const originalDefaultName = await formatEngineName(
         originalMod?.engine?.engine_type || "unknown"
       );
       if (

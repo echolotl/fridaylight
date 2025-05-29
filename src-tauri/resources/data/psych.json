@@ -1,0 +1,10 @@
+{
+  "engine_type": "psych",
+  "engine_name": "Psych Engine",
+  "engine_url": "https://github.com/ShadowMario/FNF-PsychEngine/releases/latest/download/PsychEngine-Windows64.zip",
+  "engine_banner": "banner_psych.png",
+  "engine_logo": "logo_psych.png",
+  "engine_icon": "Psych.webp",
+  "engine_description": "Engine originally used on Mind Games Mod, intended to be a fix for the vanilla version's many issues while keeping the casual play aspect of it. Also aiming to be an easier alternative to newbie coders.",
+  "engine_version": "1.0.4"
+}

@@ -600,12 +600,6 @@ export class DatabaseService {
     });
   }
 
-  // Helper to format engine name from engine type
-  // Just wraps the utility function so I don't have to change stuff
-  private formatEngineName(engineType: string): string {
-    return formatEngineName(engineType);
-  }
-
   // Helper to upsert mods in a single transaction with rollback
   private async _upsertMods(mods: Mod[], db?: any): Promise<void> {
     dbConsole.log("_upsertMods - Starting to save mods to database...");
@@ -625,7 +619,7 @@ export class DatabaseService {
             dbConsole.log("_upsertMods - Creating missing engine object");
             mod.engine = {
               engine_type: "unknown",
-              engine_name: this.formatEngineName("unknown"),
+              engine_name: await formatEngineName("unknown"),
               engine_icon: "",
               mods_folder: false,
               mods_folder_path: "",
@@ -704,7 +698,7 @@ export class DatabaseService {
             if (!mod.engine) {
               mod.engine = {
                 engine_type: "unknown",
-                engine_name: this.formatEngineName("unknown"),
+                engine_name: await formatEngineName("unknown"),
                 engine_icon: "",
                 mods_folder: false,
                 mods_folder_path: "",
