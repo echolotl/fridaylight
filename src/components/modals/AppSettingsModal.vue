@@ -345,7 +345,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
 import { AppSettings } from "@main-types";
 import ThemePreview from "../common/ThemePreview.vue";
 import MessageDialog from "./MessageDialog.vue";
@@ -743,7 +743,7 @@ const refreshThemes = async () => {
 const openThemesFolder = async () => {
   try {
     const themesDir = themeService.getCustomThemesDirectory();
-    await invoke("open_path", { path: themesDir });
+    await revealItemInDir(themesDir);
   } catch (error) {
     console.error("Failed to open themes folder:", error);
   }
