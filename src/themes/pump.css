@@ -1,0 +1,10 @@
+/* Pump Theme */
+:root {
+  --theme-bg: #e6e0ad;
+  --theme-card: #cca581;
+  --theme-surface: #d8c395;
+  --theme-text: #311c24;
+  --theme-text-secondary: rgba(49, 28, 36, 0.7);
+  --theme-border: rgba(49, 28, 36, 0.25);
+  --theme-solid: #cca581;
+}

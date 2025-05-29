@@ -1,0 +1,10 @@
+/* Hotline Theme */
+:root {
+  --theme-bg: #2c1c2d;
+  --theme-card: #5a283c;
+  --theme-surface: #462639;
+  --theme-text: #ffdab9;
+  --theme-text-secondary: rgba(255, 218, 185, 0.7);
+  --theme-border: rgba(255, 218, 185, 0.25);
+  --theme-solid: #664146;
+}

@@ -1,0 +1,14 @@
+/* Light Theme */
+:root {
+  --theme-bg: rgba(255, 255, 255, 0.87);
+  --theme-card: rgba(0, 0, 0, 0.1);
+  --theme-surface: rgba(0, 0, 0, 0.1);
+  --theme-text: #212121;
+  --theme-text-secondary: rgba(0, 0, 0, 0.7);
+  --theme-border: rgba(0, 0, 0, 0.25);
+  
+  /* Solid colors for non-Windows 11 platforms */
+  --theme-bg-solid: #f5f5f5;
+  --theme-card-solid: #ffffff;
+  --theme-surface-solid: #f0f0f0;
+}

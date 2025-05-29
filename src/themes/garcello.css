@@ -1,0 +1,10 @@
+/* Garcello Theme */
+:root {
+  --theme-bg: #dbeecf;
+  --theme-card: #a2d3a2;
+  --theme-surface: #bfe4ba;
+  --theme-text: #343b49;
+  --theme-text-secondary: rgba(52, 59, 73, 0.7);
+  --theme-border: rgba(52, 59, 73, 0.25);
+  --theme-solid: #a2d3a2;
+}
