@@ -10,7 +10,21 @@
           text-color="var(--theme-text-secondary)"
           class="button"
         >
-          <template #label> Profiles </template>
+          <template #label>
+            <div v-if="currentActiveProfile" class="row items-center">
+              <q-icon
+                :name="
+                  currentActiveProfile.icon_data
+                    ? currentActiveProfile.icon_data
+                    : 'account_circle'
+                "
+                size="md"
+                class="q-mr-sm"
+              />
+              {{ currentActiveProfile.name }}
+            </div>
+            <span v-else>Profiles</span>
+          </template>
           <q-list dense class="phantom-font q-pa-none">
             <q-item
               v-for="profile in profiles"
@@ -20,15 +34,13 @@
             >
               <q-item-section>
                 <div class="row items-center q-pt-sm q-pb-sm">
-                  <q-avatar
-                    :icon="profile.icon_data ? undefined : 'account_circle'"
-                    size="sm"
+                  <q-icon
+                    :name="
+                      profile.icon_data ? profile.icon_data : 'account_circle'
+                    "
+                    size="md"
                     class="q-mr-sm"
-                    color="primary"
-                    square
-                  >
-                    <q-img v-if="profile.icon_data" :src="profile.icon_data" />
-                  </q-avatar>
+                  />
                   <q-item-label>{{ profile.name }}</q-item-label>
                 </div>
               </q-item-section>
@@ -38,6 +50,7 @@
                   size="sm"
                   flat
                   round
+                  style="color: var(--theme-text-secondary)"
                   @click.stop="
                     ((selectedProfile = profile),
                     (isCreatingNewProfile = false),
@@ -46,8 +59,21 @@
                 />
               </q-item-section>
             </q-item>
-
             <q-separator v-if="profiles.length > 0" />
+
+            <!-- Clear active profile -->
+            <q-item
+              v-if="currentActiveProfile"
+              clickable
+              @click="clearActiveProfile"
+            >
+              <q-item-section>
+                <div class="row items-center">
+                  <q-icon name="clear" size="sm" />
+                  <q-item-label>Clear Active Profile</q-item-label>
+                </div>
+              </q-item-section>
+            </q-item>
 
             <!-- Create new profile -->
             <q-item clickable @click="createNewProfile">
@@ -72,7 +98,7 @@
           color="transparent"
           text-color="var(--theme-text-secondary)"
           icon="folder"
-          label="Open Mods Folder"
+          label="Reveal Mods Folder"
           flat
           class="button"
           @click="openModsFolder"
@@ -358,6 +384,7 @@ const toggleLoading = ref<Record<string, boolean>>({}) // Track loading state fo
 // Profiles
 const profiles = ref<EngineModProfile[]>([])
 const selectedProfile = ref<EngineModProfile | null>(null)
+const currentActiveProfile = ref<EngineModProfile | null>(null)
 const showProfileDialog = ref(false)
 const isCreatingNewProfile = ref(false)
 const dbService = DatabaseService.getInstance()
@@ -393,6 +420,44 @@ const hasDependencyErrors = (mod: ModMetadataFile): boolean => {
   return false
 }
 
+// Detect which profile matches the current mod states
+const detectActiveProfile = () => {
+  if (profiles.value.length === 0 || mods.value.length === 0) {
+    currentActiveProfile.value = null
+    return
+  }
+
+  // Create a map of current mod states
+  const currentStates: Record<string, boolean> = {}
+  mods.value.forEach(mod => {
+    currentStates[mod.folder_path] = mod.enabled
+  })
+
+  // Find a profile that matches the current states
+  const matchingProfile = profiles.value.find(profile => {
+    // Check if all mod states in the profile match current states
+    for (const [folderPath, enabled] of Object.entries(profile.mod_states)) {
+      if (currentStates[folderPath] !== enabled) {
+        return false
+      }
+    }
+
+    // Also check if there are any current mods not covered by the profile
+    for (const [folderPath, enabled] of Object.entries(currentStates)) {
+      if (profile.mod_states[folderPath] === undefined) {
+        // If the profile doesn't specify this mod's state, it should be disabled by default
+        if (enabled) {
+          return false
+        }
+      }
+    }
+
+    return true
+  })
+
+  currentActiveProfile.value = matchingProfile || null
+}
+
 const scanForMods = async () => {
   if (!props.executablePath || !props.engineType) {
     error.value = 'Missing executable path or engine type'
@@ -419,12 +484,13 @@ const scanForMods = async () => {
     })
 
     mods.value = response.mods
-    hasScanned.value = true
-
-    // Check dependencies for all mods after they are loaded
+    hasScanned.value = true // Check dependencies for all mods after they are loaded
     if (mods.value.length > 0) {
       checkAllModsDependencies()
     }
+
+    // Detect which profile is currently active
+    detectActiveProfile()
   } catch (e: any) {
     console.error('Failed to scan for mods:', e)
     error.value = e.toString()
@@ -573,13 +639,13 @@ const toggleModEnabled = async (mod: ModMetadataFile, enable: boolean) => {
       engineType: props.engineType,
       enable,
     })
-
-    console.log(
+    console.info(
       `Toggled mod ${mod.name} to ${result.enabled ? 'enabled' : 'disabled'}`
-    )
-
-    // Update the mod's enabled state based on the result
+    ) // Update the mod's enabled state based on the result
     mod.enabled = result.enabled
+
+    // Check if any profile still matches the current state
+    detectActiveProfile()
   } catch (e: any) {
     console.error(`Failed to toggle mod ${mod.name}:`, e)
     // Reset the toggle to its previous state on error
@@ -621,6 +687,9 @@ const loadProfiles = async () => {
     if (!parentMod) return
 
     profiles.value = await dbService.getProfilesByParentMod(parentMod.id)
+
+    // Detect which profile is currently active after loading profiles
+    detectActiveProfile()
   } catch (error) {
     console.error('Failed to load profiles:', error)
   }
@@ -667,14 +736,27 @@ const applyProfile = async (profile: EngineModProfile) => {
     // Apply the profile's mod states
     for (const mod of mods.value) {
       const shouldBeEnabled = profile.mod_states[mod.folder_path]
-      if (shouldBeEnabled !== undefined && shouldBeEnabled !== mod.enabled) {
-        await toggleModEnabled(mod, shouldBeEnabled)
+
+      // If the mod is not in the profile's mod_states, it should be disabled by default
+      const targetState =
+        shouldBeEnabled !== undefined ? shouldBeEnabled : false
+
+      if (targetState !== mod.enabled) {
+        await toggleModEnabled(mod, targetState)
       }
     }
-    console.log(`Applied profile: ${profile.name}`)
+
+    // Set this profile as the currently active one
+    currentActiveProfile.value = profile
+
+    console.info(`Applied profile: ${profile.name}`)
   } catch (error) {
     console.error('Failed to apply profile:', error)
   }
+}
+
+const clearActiveProfile = () => {
+  currentActiveProfile.value = null
 }
 
 const saveProfileChanges = async (updatedProfile: EngineModProfile) => {
