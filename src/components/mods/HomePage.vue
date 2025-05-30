@@ -208,10 +208,10 @@
     :mod-data="customModData"
     @submit="onModTypeSubmit"
     @back="
-      showModTypeModal = false
-      if (customModData?.isCustomUrl) {
-        showCustomUrlModal = true
-      }
+      showModTypeModal =
+        false && customModData?.isCustomUrl
+          ? (showCustomUrlModal = true)
+          : false
     "
     @cancel="handleModTypeCancel"
   />
