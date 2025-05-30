@@ -65,6 +65,52 @@ export interface Mod {
 }
 
 /**
+ * Represents a mod profile for engine mods
+ */
+export interface EngineModProfile {
+  id: string
+  name: string
+  icon_data?: string
+  parent_mod_id: string
+  mod_states: Record<string, boolean> // folder_path -> enabled state
+  created_at: number
+  updated_at: number
+}
+
+export interface ModMetadataFile {
+  name: string
+  description?: string
+  folder_path: string
+  config_file_path?: string
+  icon_file_path?: string
+  icon_data?: string
+  enabled: boolean
+  version?: string
+  homepage?: string
+  contributors?: ContributorMetadata[]
+  license?: string
+  credits?: string
+  dependencies?: DependencyMetadata[]
+}
+
+interface DependencyMetadata {
+  [modName: string]: string // Key: mod name, Value: version
+}
+
+interface ContributorMetadata {
+  name: string
+  role: string
+  email?: string
+  url?: string
+}
+
+export interface EngineModsResponse {
+  engine_type: string
+  executable_path: string
+  mods: ModMetadataFile[]
+}
+
+/**
  * Represents a display item in lists (can be either a mod or folder)
  */
 export interface DisplayItem {

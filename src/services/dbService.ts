@@ -1,7 +1,13 @@
 import Database from '@tauri-apps/plugin-sql'
 import { invoke } from '@tauri-apps/api/core'
 import { v4 as uuidv4 } from 'uuid'
-import { Mod, Folder, DisplayItem, AppSettings } from '../types'
+import {
+  Mod,
+  Folder,
+  DisplayItem,
+  AppSettings,
+  EngineModProfile,
+} from '../types'
 import { StoreService } from './storeService'
 import { formatEngineName } from '../utils'
 
@@ -302,6 +308,11 @@ export class DatabaseService {
         false,
         'createFoldersTable'
       )
+      await withDatabaseLock(
+        () => this.createProfilesTable(),
+        false,
+        'createProfilesTable'
+      )
 
       // Set initialized flag
       this.initialized = true
@@ -463,6 +474,37 @@ export class DatabaseService {
       }
     } catch (error) {
       dbConsole.error('Failed to initialize folders table:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Create or update the engine_mod_profiles table
+   */
+  private async createProfilesTable(): Promise<void> {
+    try {
+      const profilesTableInfo: any[] = await this.db.select(
+        `PRAGMA table_info(engine_mod_profiles)`
+      )
+
+      if (profilesTableInfo.length === 0) {
+        // Table doesn't exist, create it
+        await this.db.execute(`
+        CREATE TABLE IF NOT EXISTS engine_mod_profiles (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          icon_data TEXT,
+          parent_mod_id TEXT NOT NULL,
+          mod_states TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (parent_mod_id) REFERENCES mods(id) ON DELETE CASCADE
+        )
+      `)
+        dbConsole.log('Created engine_mod_profiles table')
+      }
+    } catch (error) {
+      dbConsole.error('Failed to initialize engine_mod_profiles table:', error)
       throw error
     }
   }
@@ -1125,19 +1167,15 @@ export class DatabaseService {
 
     return withDatabaseLock(
       async db => {
-        try {
-          // Remove folder_id from all mods in this folder
-          await db.execute(
-            `UPDATE mods SET folder_id = NULL WHERE folder_id = ?`,
-            [folderId]
-          )
+        // Remove folder_id from all mods in this folder
+        await db.execute(
+          `UPDATE mods SET folder_id = NULL WHERE folder_id = ?`,
+          [folderId]
+        )
 
-          // Delete the folder
-          await db.execute('DELETE FROM folders WHERE id = ?', [folderId])
-          dbConsole.log(`Deleted folder ${folderId} from database`)
-        } catch (error) {
-          throw error
-        }
+        // Delete the folder
+        await db.execute('DELETE FROM folders WHERE id = ?', [folderId])
+        dbConsole.log(`Deleted folder ${folderId} from database`)
       },
       true,
       'deleteFolder'
@@ -1659,5 +1697,158 @@ export class DatabaseService {
       dbConsole.error('Failed to get mod by path:', error)
       throw error
     })
+  }
+  /**
+   * Get a mod by executable path
+   * @param executablePath The filesystem path of the mod's executable
+   * @return The mod if found, null otherwise
+   */
+  public async getModByExecutablePath(
+    executablePath: string
+  ): Promise<Mod | null> {
+    if (!this.db) {
+      throw new Error('Database not initialized')
+    }
+
+    return withDatabaseLock(
+      async db => {
+        const results = await db.select(
+          'SELECT * FROM mods WHERE executable_path = ?',
+          [executablePath]
+        )
+
+        if (results.length === 0) {
+          return null
+        }
+
+        const mod = results[0]
+
+        // Parse engine data if it exists
+        let engine
+        try {
+          engine = mod.engine_data
+            ? JSON.parse(mod.engine_data)
+            : {
+                engine_type: 'unknown',
+                engine_name: 'Unknown Engine',
+                engine_icon: '',
+                mods_folder: false,
+                mods_folder_path: '',
+              }
+        } catch (e) {
+          dbConsole.error('Failed to parse engine data for mod:', mod.id, e)
+          engine = {
+            engine_type: 'unknown',
+            engine_name: 'Unknown Engine',
+            engine_icon: '',
+            mods_folder: false,
+            mods_folder_path: '',
+          }
+        }
+
+        return {
+          ...mod,
+          engine,
+        }
+      },
+      false,
+      'getModByExecutablePath'
+    ).catch(error => {
+      dbConsole.error('Failed to get mod by executable path:', error)
+      throw error
+    })
+  }
+
+  public async getProfilesByParentMod(
+    parentModId: string
+  ): Promise<EngineModProfile[]> {
+    if (!this.db) {
+      throw new Error('Database not initialized')
+    }
+
+    return withDatabaseLock(
+      async db => {
+        const profiles = await db.select(
+          'SELECT * FROM engine_mod_profiles WHERE parent_mod_id = ? ORDER BY created_at DESC',
+          [parentModId]
+        )
+        return profiles.map((profile: any) => ({
+          ...profile,
+          mod_states: JSON.parse(profile.mod_states),
+        }))
+      },
+      false,
+      'getProfilesByParentMod'
+    ).catch(error => {
+      dbConsole.error('Failed to get profiles by parent mod:', error)
+      throw error
+    })
+  }
+
+  public async saveProfile(profile: EngineModProfile): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database not initialized')
+    }
+
+    return withDatabaseLock(
+      async db => {
+        const now = Math.floor(Date.now() / 1000)
+        await db.execute(
+          `INSERT OR REPLACE INTO engine_mod_profiles 
+         (id, name, icon_data, parent_mod_id, mod_states, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            profile.id,
+            profile.name,
+            profile.icon_data || null,
+            profile.parent_mod_id,
+            JSON.stringify(profile.mod_states),
+            profile.created_at || now,
+            now,
+          ]
+        )
+        dbConsole.log(
+          `Saved profile ${profile.name} for mod ${profile.parent_mod_id}`
+        )
+      },
+      true,
+      'saveProfile'
+    ).catch(error => {
+      dbConsole.error('Failed to save profile:', error)
+      throw error
+    })
+  }
+
+  public async deleteProfile(profileId: string): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database not initialized')
+    }
+
+    return withDatabaseLock(
+      async db => {
+        await db.execute('DELETE FROM engine_mod_profiles WHERE id = ?', [
+          profileId,
+        ])
+        dbConsole.log(`Deleted profile ${profileId}`)
+      },
+      true,
+      'deleteProfile'
+    ).catch(error => {
+      dbConsole.error('Failed to delete profile:', error)
+      throw error
+    })
+  }
+
+  public async createEmptyProfile(
+    parentModId: string
+  ): Promise<EngineModProfile> {
+    return {
+      id: uuidv4(),
+      name: 'New Profile',
+      parent_mod_id: parentModId,
+      mod_states: {},
+      created_at: Math.floor(Date.now() / 1000),
+      updated_at: Math.floor(Date.now() / 1000),
+    }
   }
 }
