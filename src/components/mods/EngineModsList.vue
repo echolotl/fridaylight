@@ -2,7 +2,64 @@
   <div v-if="mods.length >= 0" class="mods-title">
     <div class="header">
       <h6 class="phantom-font-difficulty">Installed Mods</h6>
+
       <div class="scan-actions">
+        <q-btn-dropdown
+          v-if="props.engineType !== 'codename' && mods.length > 0"
+          flat
+          text-color="var(--theme-text-secondary)"
+          class="button"
+        >
+          <template #label> Profiles </template>
+          <q-list dense class="phantom-font q-pa-none">
+            <q-item
+              v-for="profile in profiles"
+              :key="profile.id"
+              clickable
+              @click="applyProfile(profile)"
+            >
+              <q-item-section>
+                <div class="row items-center q-pt-sm q-pb-sm">
+                  <q-avatar
+                    :icon="profile.icon_data ? undefined : 'account_circle'"
+                    size="sm"
+                    class="q-mr-sm"
+                    color="primary"
+                    square
+                  >
+                    <q-img v-if="profile.icon_data" :src="profile.icon_data" />
+                  </q-avatar>
+                  <q-item-label>{{ profile.name }}</q-item-label>
+                </div>
+              </q-item-section>
+              <q-item-section side>
+                <q-btn
+                  icon="edit"
+                  size="sm"
+                  flat
+                  round
+                  @click.stop="
+                    ((selectedProfile = profile),
+                    (isCreatingNewProfile = false),
+                    (showProfileDialog = true))
+                  "
+                />
+              </q-item-section>
+            </q-item>
+
+            <q-separator v-if="profiles.length > 0" />
+
+            <!-- Create new profile -->
+            <q-item clickable @click="createNewProfile">
+              <q-item-section>
+                <div class="row items-center">
+                  <q-icon name="add" size="sm" />
+                  <q-item-label>Create New Profile</q-item-label>
+                </div>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
         <q-btn
           round
           color="primary"
@@ -250,6 +307,17 @@
       <div class="text-caption q-mb-md">{{ selectedMod.folder_path }}</div>
     </div>
   </MessageDialog>
+  <!-- Profile Create Dialog -->
+  <ProfileCreateDialog
+    v-if="selectedProfile"
+    v-model="showProfileDialog"
+    :profile="selectedProfile"
+    :mods="mods"
+    :is-create="isCreatingNewProfile"
+    @save="saveProfileChanges"
+    @cancel="handleProfileCancel"
+    @delete="deleteProfileConfirm"
+  />
 </template>
 
 <script setup lang="ts">
@@ -258,39 +326,9 @@ import { invoke } from '@tauri-apps/api/core'
 import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener'
 import { getEngineModsFolderPath } from '@utils/index'
 import MessageDialog from '@components/modals/MessageDialog.vue'
-
-interface ModMetadataFile {
-  name: string
-  description?: string
-  folder_path: string
-  config_file_path?: string
-  icon_file_path?: string
-  icon_data?: string
-  enabled: boolean
-  version?: string
-  homepage?: string
-  contributors?: ContributorMetadata[]
-  license?: string
-  credits?: string
-  dependencies?: DependencyMetadata[]
-}
-
-interface DependencyMetadata {
-  [modName: string]: string // Key: mod name, Value: version
-}
-
-interface ContributorMetadata {
-  name: string
-  role: string
-  email?: string
-  url?: string
-}
-
-interface EngineModsResponse {
-  engine_type: string
-  executable_path: string
-  mods: ModMetadataFile[]
-}
+import ProfileCreateDialog from '@components/modals/ProfileCreateDialog.vue'
+import { DatabaseService } from '@services/dbService'
+import type { ModMetadataFile, EngineModsResponse } from '@main-types'
 
 const props = defineProps({
   executablePath: {
@@ -316,6 +354,13 @@ const loading = ref(false)
 const error = ref('')
 const hasScanned = ref(false)
 const toggleLoading = ref<Record<string, boolean>>({}) // Track loading state for each toggle
+
+// Profiles
+const profiles = ref<EngineModProfile[]>([])
+const selectedProfile = ref<EngineModProfile | null>(null)
+const showProfileDialog = ref(false)
+const isCreatingNewProfile = ref(false)
+const dbService = DatabaseService.getInstance()
 
 // Dialog state for mod details
 const showModDetailsDialog = ref(false)
@@ -565,12 +610,112 @@ const openModsFolder = async () => {
   }
 }
 
+const loadProfiles = async () => {
+  if (!props.executablePath) return
+
+  try {
+    // Get the parent mod (the mod that contains this engine)
+    const parentMod = await dbService.getModByExecutablePath(
+      props.executablePath
+    )
+    if (!parentMod) return
+
+    profiles.value = await dbService.getProfilesByParentMod(parentMod.id)
+  } catch (error) {
+    console.error('Failed to load profiles:', error)
+  }
+}
+
+const createNewProfile = async () => {
+  if (!props.executablePath) return
+
+  try {
+    // Get the parent mod
+    const parentMod = await dbService.getModByExecutablePath(
+      props.executablePath
+    )
+    if (!parentMod) {
+      console.error('Parent mod not found')
+      return
+    }
+
+    // Create profile with current mod states (but don't save to DB yet)
+    const newProfile = await dbService.createEmptyProfile(parentMod.id)
+
+    // Capture current enabled states
+    const currentStates: Record<string, boolean> = {}
+    mods.value.forEach(mod => {
+      currentStates[mod.folder_path] = mod.enabled
+    })
+
+    newProfile.mod_states = currentStates
+    newProfile.name = `Profile ${profiles.value.length + 1}`
+
+    // Set flag to indicate we're creating a new profile
+    isCreatingNewProfile.value = true
+
+    // Open dialog to create the new profile
+    selectedProfile.value = newProfile
+    showProfileDialog.value = true
+  } catch (error) {
+    console.error('Failed to prepare new profile:', error)
+  }
+}
+
+const applyProfile = async (profile: EngineModProfile) => {
+  try {
+    // Apply the profile's mod states
+    for (const mod of mods.value) {
+      const shouldBeEnabled = profile.mod_states[mod.folder_path]
+      if (shouldBeEnabled !== undefined && shouldBeEnabled !== mod.enabled) {
+        await toggleModEnabled(mod, shouldBeEnabled)
+      }
+    }
+    console.log(`Applied profile: ${profile.name}`)
+  } catch (error) {
+    console.error('Failed to apply profile:', error)
+  }
+}
+
+const saveProfileChanges = async (updatedProfile: EngineModProfile) => {
+  try {
+    await dbService.saveProfile(updatedProfile)
+    await loadProfiles()
+    showProfileDialog.value = false
+    selectedProfile.value = null
+    isCreatingNewProfile.value = false
+  } catch (error) {
+    console.error('Failed to save profile:', error)
+  }
+}
+
+const deleteProfileConfirm = async (profile: EngineModProfile) => {
+  try {
+    await dbService.deleteProfile(profile.id)
+    await loadProfiles()
+    if (selectedProfile.value?.id === profile.id) {
+      showProfileDialog.value = false
+      selectedProfile.value = null
+      isCreatingNewProfile.value = false
+    }
+  } catch (error) {
+    console.error('Failed to delete profile:', error)
+  }
+}
+
+const handleProfileCancel = () => {
+  showProfileDialog.value = false
+  selectedProfile.value = null
+  isCreatingNewProfile.value = false
+}
+
 // Watch for changes in executable path or engine type
 watch(
   () => [props.executablePath, props.engineType],
   () => {
     if (props.autoScan && props.executablePath && props.engineType) {
       scanForMods()
+      loadProfiles()
     }
   },
   { immediate: true }
@@ -579,6 +724,7 @@ watch(
 onMounted(() => {
   if (props.autoScan && props.executablePath && props.engineType) {
     scanForMods()
+    loadProfiles()
   }
 })
 </script>
