@@ -550,11 +550,15 @@ pub async fn download_gamebanana_mod(
     metadata_version: Some(CURRENT_METADATA_VERSION),
     date_added: Some(chrono::Utc::now().timestamp()), // Set current timestamp as date added
     last_played: None, // Initialize with None since mod is not played yet
-    gamebanana_url: mod_info_response.as_ref().and_then(|info| {
-      info
-        .get("_sProfileUrl")
+    gamebanana: Some(crate::models::ModInfoGBData {
+      url: mod_info_response
+        .as_ref()
+        .and_then(|info| info.get("_sProfileUrl"))
         .and_then(|v| v.as_str())
-        .map(|s| s.to_string())
+        .unwrap_or("")
+        .to_string(),
+      id: mod_id,
+      model_type: model_type.clone(),
     }),
   };
 
@@ -585,11 +589,15 @@ pub async fn download_gamebanana_mod(
       .unwrap_or(serde_json::Value::Array(vec![]));
     metadata["contributors"] = contributors_array;
 
-    // Add gamebanana URL if available
-    if let Some(url) = &mod_info.gamebanana_url {
-      metadata["gamebanana_url"] = serde_json::Value::String(url.clone());
+    // Add gamebanana data if available
+    if let Some(gamebanana) = &mod_info.gamebanana {
+      metadata["gamebanana"] =
+        serde_json::json!({
+        "url": gamebanana.url,
+        "id": gamebanana.id,
+        "model_type": gamebanana.model_type,
+      });
     }
-
     // Save metadata.json file
     match crate::filesystem::save_metadata_json(&mod_folder, metadata) {
       Ok(_) => debug!("Successfully saved metadata.json with contributors"),
@@ -1071,7 +1079,7 @@ pub async fn download_custom_mod(
     metadata_version: Some(CURRENT_METADATA_VERSION),
     date_added: Some(chrono::Utc::now().timestamp()), // Set current timestamp as date added
     last_played: None, // Initialize with None since mod is not played yet
-    gamebanana_url: None, // No GameBanana URL for custom mods
+    gamebanana: None, // No GameBanana data for custom mods
   };
 
   // Add the mod to our state
@@ -1665,7 +1673,7 @@ pub async fn download_engine(
     metadata_version: Some(CURRENT_METADATA_VERSION),
     date_added: Some(chrono::Utc::now().timestamp()), // Set current timestamp as date added
     last_played: None, // Initialize with None since mod is not played yet
-    gamebanana_url: None, // No GameBanana URL for engines
+    gamebanana: None, // No GameBanana data for engines
   };
 
   // Add the mod to our state

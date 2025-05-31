@@ -675,6 +675,39 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
     None => None,
   };
 
+  let gamebanana = match &metadata {
+    Some(json) => {
+      if let Some(gb_data) = json.get("gamebanana") {
+        debug!("Found GameBanana data in metadata.json");
+
+        // Extract URL
+        let url = gb_data
+          .get("url")
+          .and_then(|v| v.as_str())
+          .map(|s| s.to_string());
+
+        // Extract ID
+        let id = gb_data.get("id").and_then(|v| v.as_i64());
+
+        // Extract model_type
+        let model_type = gb_data
+          .get("model_type")
+          .and_then(|v| v.as_str())
+          .map(|s| s.to_string());
+
+        // Create the GameBanana data object
+        Some(crate::models::ModInfoGBData {
+          url: url.unwrap_or_default(),
+          id: id.unwrap_or(0),
+          model_type: model_type.unwrap_or_default(),
+        })
+      } else {
+        None
+      }
+    }
+    None => None,
+  };
+
   // Parse the new engine field if it exists
   let engine = match &metadata {
     Some(json) => {
@@ -812,7 +845,7 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
     contributors, // Add the parsed contributors
     last_played: None, // Initialize with None since the mod hasn't been played yet
     date_added: Some(current_time), // Set the current timestamp
-    gamebanana_url: None,
+    gamebanana: None,
   };
 
   Ok(mod_info)
