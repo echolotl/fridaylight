@@ -135,7 +135,13 @@ pub struct ModInfo {
   pub contributors: Option<Vec<ContributorGroup>>, // List of contributor groups
   pub last_played: Option<i64>, // Unix timestamp when mod was last played
   pub date_added: Option<i64>, // Unix timestamp when mod was added
-  pub gamebanana_url: Option<String>, // GameBanana URL for the mod
+  pub gamebanana: Option<ModInfoGBData>, // GameBanana mod data
+}
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ModInfoGBData {
+  pub url: String,
+  pub id: i64,
+  pub model_type: String,
 }
 
 impl ModInfo {
@@ -189,7 +195,7 @@ pub struct ModDisableResult {
   pub message: String,
 }
 
-// Define a structure for the engine mods response
+// Structure for the engine mods response
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct EngineModsResponse {
   pub engine_type: String,

@@ -1,4 +1,17 @@
 <template>
+  <div v-if="hasGamebanana && gameBananaInfo" class="flex justify-center">
+    <q-btn
+      flat
+      label="Open in Gamebanana"
+      icon="open_in_new"
+      @click="openUrl(gameBananaInfo.url)"
+    ></q-btn>
+    <div v-if="actualVersion" class="ml-2">
+      <span class="text-caption text-secondary"
+        >Version: {{ actualVersion }}</span
+      >
+    </div>
+  </div>
   <div v-if="hasContributors" class="contributor-infobox">
     <h6 class="phantom-font-difficulty">Credits</h6>
     <hr />
@@ -38,16 +51,17 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, watch, reactive } from 'vue'
-import { Contributor, ContributorGroup } from '@main-types'
+import { Contributor, ContributorGroup, ModInfoGBData } from '@main-types'
 import { sep } from '@tauri-apps/api/path'
 import { invoke } from '@tauri-apps/api/core'
+import { openUrl } from '@tauri-apps/plugin-opener'
 
 const props = defineProps({
   contributors: {
     type: Array as () => ContributorGroup[],
     default: () => [],
   },
-  folder_path: {
+  folderPath: {
     type: String,
     default: '',
   },
@@ -55,7 +69,10 @@ const props = defineProps({
 
 // Local state to store contributor data from metadata.json
 const contributorsData = ref<ContributorGroup[]>([])
+const gameBananaInfo = ref<ModInfoGBData | null>(null)
+const actualVersion = ref<string>('')
 const metadataLoaded = ref(false)
+const metadataData = ref<any>(null)
 
 // Map to store processed icon data
 const iconCache = reactive(new Map<string, string>())
@@ -64,29 +81,22 @@ const iconCache = reactive(new Map<string, string>())
 const hasContributors = computed(() => {
   return contributorsData.value.length > 0
 })
+// Determine if there is GameBanana info to display
+const hasGamebanana = computed(() => {
+  return gameBananaInfo.value !== null
+})
 
 // Function to load metadata.json and extract contributors
 const loadContributorsFromMetadata = async () => {
-  if (!props.folder_path) return
-
   try {
-    console.log(`Attempting to load metadata from: ${props.folder_path}`)
-
-    // Get metadata.json using the Tauri command
-    const metadata = await invoke('get_mod_metadata', {
-      modPath: props.folder_path,
-    })
-    console.log('Metadata loaded:', metadata)
-
     // Check if metadata has contributors in the supported format
-    if (metadata && typeof metadata === 'object') {
-      const meta = metadata as any
+    if (metadataData.value && typeof metadataData.value === 'object') {
+      const meta = metadataData.value
 
       if (Array.isArray(meta.contributors)) {
         // Process only if it has the right structure
         console.log('Found contributors in metadata:', meta.contributors)
         contributorsData.value = meta.contributors
-        metadataLoaded.value = true
 
         // Preload all icon data
         preloadIconData()
@@ -115,9 +125,63 @@ const loadContributorsFromMetadata = async () => {
   }
 }
 
+const loadGameBananaInfo = async () => {
+  try {
+    // Check if metadata has GameBanana info
+    if (metadataData.value && typeof metadataData.value === 'object') {
+      const meta = metadataData.value
+
+      if (meta.gamebanana) {
+        console.log('Found GameBanana info in metadata:', meta.gamebanana)
+        gameBananaInfo.value = meta.gamebanana
+      } else {
+        console.log('No GameBanana info found in metadata, using default.')
+        gameBananaInfo.value = null
+      }
+    } else {
+      console.log('Invalid metadata format, using default GameBanana info.')
+      gameBananaInfo.value = null
+    }
+    checkGamebananaVersion()
+  } catch (error) {
+    console.warn('Failed to load GameBanana info:', error)
+    gameBananaInfo.value = null
+  }
+}
+
+const loadMetadataData = async () => {
+  if (!props.folderPath) return
+
+  try {
+    const metadata = await invoke('get_mod_metadata', {
+      modPath: props.folderPath,
+    })
+    metadataData.value = metadata
+    console.log('Metadata data loaded:', metadataData.value)
+  } catch (error) {
+    console.warn('Failed to load metadata data:', error)
+  }
+  await loadContributorsFromMetadata()
+  await loadGameBananaInfo()
+  metadataLoaded.value = true
+}
+
+const checkGamebananaVersion = async () => {
+  try {
+    const version = await invoke('check_gamebanana_mod_version', {
+      id: gameBananaInfo.value?.id,
+      modelType: gameBananaInfo.value?.model_type,
+    })
+
+    actualVersion.value = version as string
+  } catch (error) {
+    console.warn('Failed to check GameBanana version:', error)
+  }
+}
+
 // Function to preload all icon data
 const preloadIconData = async () => {
-  if (!contributorsData.value || !props.folder_path) return
+  if (!contributorsData.value || !props.folderPath) return
   const fileSeperator = sep()
 
   // Extract all contributors needing icon processing
@@ -134,7 +198,7 @@ const preloadIconData = async () => {
   for (const contributor of allContributors) {
     if (contributor.icon && !contributor.icon.startsWith('data:')) {
       const originalPath = contributor.icon
-      const iconPath = `${props.folder_path}${fileSeperator}.flight${fileSeperator}${originalPath}`
+      const iconPath = `${props.folderPath}${fileSeperator}.flight${fileSeperator}${originalPath}`
       console.log(`Preloading icon from: ${iconPath}`)
 
       try {
@@ -173,9 +237,9 @@ const getIconSrc = (contributor: Contributor): string => {
   return contributor.icon
 }
 
-// Load contributors data when component mounts or folder_path changes
-onMounted(loadContributorsFromMetadata)
-watch(() => props.folder_path, loadContributorsFromMetadata)
+// Load contributors data when component mounts or folderPath changes
+onMounted(loadMetadataData)
+watch(() => props.folderPath, loadContributorsFromMetadata)
 </script>
 
 <style scoped>
