@@ -62,6 +62,7 @@ export interface Mod {
   contributors?: ContributorGroup[] // List of contributors to the mod, organized by groups
   last_played?: number // Unix timestamp when mod was last played
   date_added?: number // Unix timestamp when mod was added
+  gamebanana_url?: string // URL to the mod on GameBanana, if applicable
 }
 
 /**
