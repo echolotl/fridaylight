@@ -337,9 +337,12 @@ export class GameBananaService {
         modId: mod.id,
         modelType: mod.model_name || 'Mod',
       })
-
-      // Check if there are multiple files
-      if (downloadInfo._aFiles && downloadInfo._aFiles.length > 1) {
+      // Check if there are multiple files or alternative downloads
+      if (
+        (downloadInfo._aFiles && downloadInfo._aFiles.length > 1) ||
+        (downloadInfo._aAlternateFileSources &&
+          downloadInfo._aAlternateFileSources.length > 0)
+      ) {
         // Return information for file selector dialog
         this.dismissNotification()
         return {
