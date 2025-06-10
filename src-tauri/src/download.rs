@@ -1028,7 +1028,7 @@ pub async fn download_engine(
 
     // Use reqwest to perform download with progress tracking
     let client = reqwest::Client::new();
-    let response = match client.get(engine_url).send().await {
+    let response = match client.get(&engine_url).send().await {
         Ok(resp) => {
             debug!("Received response with status: {}", resp.status());
             if !resp.status().is_success() {
@@ -1057,15 +1057,48 @@ pub async fn download_engine(
                 error: error_msg.clone(),
             }).unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
 
-            return Err(error_msg);
-        }
+            return Err(error_msg);        }
     };
+
+    // Detect archive type from Content-Type header or URL
+    let extension = response
+        .headers()
+        .get(reqwest::header::CONTENT_TYPE)
+        .and_then(|ct| ct.to_str().ok())
+        .and_then(|ct| {
+            if ct.contains("application/zip") || ct.contains("application/x-zip") {
+                Some("zip")
+            } else if ct.contains("application/x-7z-compressed") {
+                Some("7z")
+            } else if
+                ct.contains("application/x-rar-compressed") ||
+                ct.contains("application/vnd.rar")
+            {
+                Some("rar")
+            } else {
+                None // Fall back to URL detection
+            }
+        })
+        .or_else(|| {
+            // Fall back to detecting from URL extension
+            if engine_url.ends_with(".7z") {
+                Some("7z")
+            } else if engine_url.ends_with(".rar") {
+                Some("rar")
+            } else if engine_url.ends_with(".zip") {
+                Some("zip")
+            } else {
+                Some("zip") // Default to zip if unknown
+            }
+        })
+        .unwrap_or("zip");
 
     // Create a unique filename for the download
     let filename = format!(
-        "FNF-{}-{}.zip",
+        "FNF-{}-{}.{}",
         engine_name.replace(' ', "-"),
-        chrono::Utc::now().timestamp()
+        chrono::Utc::now().timestamp(),
+        extension
     );
     let download_path = downloads_dir.join(&filename);
 
