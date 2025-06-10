@@ -173,7 +173,6 @@ export interface AppSettings {
   installLocation: string
   theme: string // Changed from enableLightTheme to theme
   useSystemTheme: boolean
-  customCSS: string
   validateFnfMods: boolean // Whether to validate FNF mods structure before adding
   showTerminalOutput: boolean // Whether to show terminal output from running mods
   compactMode: boolean // Whether to display the sidebar in compact mode with only icons

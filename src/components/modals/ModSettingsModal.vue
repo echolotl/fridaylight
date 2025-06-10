@@ -420,7 +420,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { Mod } from '@main-types'
 import { formatEngineName } from '../../utils'
 import MessageDialog from './MessageDialog.vue'
