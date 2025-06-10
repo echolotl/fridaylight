@@ -1,0 +1,10 @@
+{
+  "engine_type": "kade",
+  "engine_name": "Kade Engine",
+  "engine_url": "https://files.gamebanana.com/mods/16_release_of_kade_engine.7z",
+  "engine_banner": "banner_kade.png",
+  "engine_logo": "logo_kade.png",
+  "engine_icon": "Kade.webp",
+  "engine_description": "Kade Engine is an outdated engine, originally based off early version of the base game. Used to be the most popular engine for modding Friday Night Funkin'. <br/> It has been replaced by a variety of newer engines, but is still used by some mods.",
+  "engine_version": "16"
+}

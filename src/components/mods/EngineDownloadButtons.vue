@@ -6,72 +6,67 @@
     </h6>
     <div class="engine-download-buttons text-center">
       <q-btn
+        v-for="engine in primaryEngines"
+        :key="engine.engineType"
         flat
-        label="Psych Engine"
         class="engine-btn"
-        @click="$emit('download-engine', 'psych')"
+        no-caps
+        @click="$emit('download-engine', engine.engineType)"
       >
-        <img
-          src="/images/engine_icons/Psych.webp"
-          alt="Psych Engine"
-          class="engine-icon"
-        />
-      </q-btn>
-      <q-btn
-        flat
-        label="V-Slice"
-        class="engine-btn"
-        @click="$emit('download-engine', 'vanilla')"
-      >
-        <img
-          src="/images/engine_icons/Vanilla.webp"
-          alt="V-Slice"
-          class="engine-icon"
-        />
-      </q-btn>
-      <q-btn
-        flat
-        label="FPS Plus (7.1.0)"
-        class="engine-btn"
-        @click="$emit('download-engine', 'fps-plus')"
-      >
-        <img
-          src="/images/engine_icons/Fps-plus.webp"
-          alt="FPS Plus"
-          class="engine-icon"
-        />
-      </q-btn>
-      <q-btn
-        flat
-        label="Codename Engine"
-        class="engine-btn"
-        @click="$emit('download-engine', 'codename')"
-      >
-        <img
-          src="/images/engine_icons/Codename.webp"
-          alt="Codename Engine"
-          class="engine-icon"
-        />
+        <template #default>
+          <div class="engine-text">
+            <span>{{ engine.engineName }}</span>
+          </div>
+          <span v-if="engine.data.engine_version" class="engine-version">
+            (v{{ engine.data.engine_version }})
+          </span>
+          <img
+            v-if="
+              engine.data.engine_icon && engineIcons[engine.data.engine_icon]
+            "
+            :src="engineIcons[engine.data.engine_icon]"
+            :alt="engine.engineName"
+            class="engine-icon"
+          />
+        </template>
       </q-btn>
     </div>
-    <q-expansion-item class="more-engines" dense>
+    <q-expansion-item
+      v-if="secondaryEngines.length > 0"
+      class="more-engines full-width"
+      dense
+      expand-icon-class="dropdown-icon"
+    >
       <template #header>
-        <div class="engine-text">
+        <div class="flex items-center justify-between">
           <span>More Engines</span>
         </div>
       </template>
       <div class="more-engines-content">
         <q-btn
+          v-for="engine in secondaryEngines"
+          :key="engine.engineType"
           flat
-          label="P-Slice"
+          no-caps
           class="engine-btn"
-          @click="$emit('download-engine', 'pslice')"
+          @click="$emit('download-engine', engine.engineType)"
         >
-          <img
-            src="/images/engine_icons/P-slice.png"
-            alt="P-Slice"
-            class="engine-icon"
-          />
+          <template #default>
+            <div class="engine-text">
+              <span>{{ engine.engineName }}</span>
+            </div>
+            <span v-if="engine.data.engine_version" class="engine-version">
+              (v{{ engine.data.engine_version }})
+            </span>
+            <img
+              v-if="
+                engine.data.engine_icon && engineIcons[engine.data.engine_icon]
+              "
+              :src="engineIcons[engine.data.engine_icon]"
+              :alt="engine.engineName"
+              class="engine-icon"
+            />
+          </template>
         </q-btn>
       </div>
       <div>
@@ -87,17 +82,65 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
 import { openUrl } from '@tauri-apps/plugin-opener'
+import { getAllEngineTypes, type EngineTypeInfo } from '../../utils'
+import { resolveResource } from '@tauri-apps/api/path'
+import { invoke } from '@tauri-apps/api/core'
 
 defineEmits(['download-engine'])
+
+const engineTypes = ref<EngineTypeInfo[]>([])
+const engineIcons = ref<Record<string, string>>({})
+
+const primaryEngines = computed(() =>
+  engineTypes.value.filter((engine: EngineTypeInfo) => engine.isPrimary)
+)
+
+const secondaryEngines = computed(() =>
+  engineTypes.value.filter((engine: EngineTypeInfo) => !engine.isPrimary)
+)
+
+onMounted(async () => {
+  try {
+    engineTypes.value = await getAllEngineTypes()
+    await loadEngineIcons()
+  } catch (error) {
+    console.error('Failed to load engine types:', error)
+  }
+})
+
+async function getIconAsBase64(iconPath: string): Promise<string> {
+  try {
+    const resourcePath = await resolveResource(iconPath)
+    const iconData = await invoke<string>('get_file_as_base64', {
+      filePath: resourcePath,
+    })
+    return iconData
+  } catch (error) {
+    console.error(`Error loading icon from ${iconPath}:`, error)
+    return ''
+  }
+}
+
+async function loadEngineIcons() {
+  for (const engine of engineTypes.value) {
+    if (engine.data.engine_icon) {
+      try {
+        engineIcons.value[engine.data.engine_icon] = await getIconAsBase64(
+          `resources/${engine.data.engine_icon}`
+        )
+      } catch (error) {
+        console.error(`Failed to load icon for ${engine.engineName}:`, error)
+      }
+    }
+  }
+}
 </script>
 
 <style scoped>
 .engine-download {
   margin-top: 1rem;
-}
-.engine-text {
-  margin-bottom: 1rem;
 }
 .engine-download-buttons {
   display: flex;
@@ -107,12 +150,15 @@ defineEmits(['download-engine'])
 .engine-btn {
   border-radius: 8px;
   padding: 8px 16px;
+  max-width: fit-content;
   width: 100%;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
   background-color: var(--theme-card);
   border-bottom: 2px solid var(--theme-border);
+  display: flex;
+  flex-direction: row;
 }
 .engine-btn:hover {
   transform: translateY(-2px);
@@ -126,19 +172,24 @@ defineEmits(['download-engine'])
 }
 
 .engine-text {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  text-transform: uppercase;
-  margin-bottom: 0;
+  margin-bottom: none;
+}
+.engine-version {
+  font-size: 0.75rem;
+  color: var(--theme-text-secondary);
+  margin-left: 4px;
 }
 .more-engines {
   border-radius: 1rem;
 }
 .more-engines-content {
+  flex-wrap: wrap;
+  display: flex;
   padding: 1rem 0;
+  gap: 8px;
   text-align: center;
+}
+:deep(.dropdown-icon) {
+  color: var(--theme-text-secondary);
 }
 </style>

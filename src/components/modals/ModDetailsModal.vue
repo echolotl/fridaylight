@@ -101,7 +101,12 @@
                   v-for="update in modUpdates._aRecords"
                   :key="update._idRow || update._sName"
                 >
-                  <q-expansion-item dense class="phantom-font" group="updates">
+                  <q-expansion-item
+                    dense
+                    class="phantom-font"
+                    group="updates"
+                    expand-icon-class="dropdown-icon"
+                  >
                     <template #header>
                       <div class="flex column">
                         <div class="flex row">
@@ -1133,5 +1138,8 @@ function downloadMod() {
 }
 .PinkColor {
   color: var(--pink);
+}
+:deep(.dropdown-icon) {
+  color: var(--theme-text-secondary);
 }
 </style>

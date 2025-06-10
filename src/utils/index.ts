@@ -68,3 +68,84 @@ export function getEngineModsFolderPath(
   // Most engines use "mods" folder in the same directory as the executable
   return `${baseDir}${sep()}${customModsFolder || 'mods'}${sep()}`
 }
+
+/**
+ * Interface for engine data structure
+ */
+export interface EngineData {
+  engine_type: string
+  engine_name: string
+  engine_url?: string
+  engine_banner?: string
+  engine_logo?: string
+  engine_icon?: string
+  engine_description?: string
+  engine_version?: string
+  primary?: boolean
+  [key: string]: unknown // Allow for additional properties
+}
+
+/**
+ * Interface for engine type information
+ */
+export interface EngineTypeInfo {
+  engineType: string
+  engineName: string
+  isPrimary: boolean
+  data: EngineData
+}
+
+/**
+ * Function to get all available engine types from the resources directory
+ * @returns Promise<EngineTypeInfo[]> Array of engine type information including primary status
+ */
+export async function getAllEngineTypes(): Promise<EngineTypeInfo[]> {
+  const engineTypes: EngineTypeInfo[] = []
+
+  try {
+    // Get the resources/data directory path
+    const resourcesDataPath = await resolveResource('resources')
+    if (!resourcesDataPath) {
+      throw new Error('Resources data directory not found')
+    }
+
+    // Read all JSON files in the resources directory
+    const { readDir } = await import('@tauri-apps/plugin-fs')
+    const entries = await readDir(resourcesDataPath)
+
+    for (const entry of entries) {
+      if (entry.isFile && entry.name.endsWith('.json')) {
+        try {
+          const filePath = `${resourcesDataPath}${sep()}${entry.name}`
+          const fileContent = await readTextFile(filePath)
+          const engineData = JSON.parse(fileContent)
+
+          // Extract engine type from filename (remove .json extension)
+          const engineType = entry.name.replace('.json', '')
+
+          engineTypes.push({
+            engineType,
+            engineName: engineData.engine_name || engineType,
+            isPrimary: engineData.primary || false, // Default to false if primary field doesn't exist yet
+            data: engineData,
+          })
+        } catch (error) {
+          console.error(`Error parsing engine file ${entry.name}:`, error)
+        }
+      }
+    }
+
+    // Sort by primary status first (primary engines first), then by name
+    engineTypes.sort((a, b) => {
+      if (a.isPrimary !== b.isPrimary) {
+        return a.isPrimary ? -1 : 1
+      }
+      return a.engineName.localeCompare(b.engineName)
+    })
+
+    return engineTypes
+  } catch (error) {
+    console.error('Error getting engine types:', error)
+    return []
+  }
+}

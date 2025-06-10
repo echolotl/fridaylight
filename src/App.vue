@@ -740,6 +740,16 @@ onMounted(async () => {
 </script>
 
 <style>
+:root {
+  --red: #c03221;
+  --orange: #fe621d;
+  --yellow: #f7c548;
+  --green: #35ce8d;
+  --blue: #39dbce;
+  --purple: #c490d1;
+  --pink: #db2955;
+}
+
 html,
 body {
   margin: 0;
