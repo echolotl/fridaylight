@@ -542,12 +542,33 @@ let cleanupEventListeners: (() => void) | undefined;
 
 onMounted(async () => {
   try {
+    // Update progress bar - Step 1: Initialize theme service
+    initStatusText.value = "Initializing theme service...";
+    initProgress.value = 0.1;
+
+    // Initialize the theme service first
+    await themeService.initialize(); // Update progress bar - Step 2: Apply theme
+    initStatusText.value = "Applying theme...";
+    initProgress.value = 0.15;
+
+    // Apply initial theme based on system or user preference
+    const useSystemThemeInitial = await getUseSystemThemeSetting();
+    if (useSystemThemeInitial) {
+      // If using system theme, apply light or dark based on system preference
+      const isSystemLight = getSystemTheme();
+      await applyTheme(isSystemLight ? "light" : "dark");
+    } else {
+      // If using custom theme, apply the saved theme directly
+      const themeValue = await getThemePreference();
+      await applyTheme(themeValue);
+    }
+
     // Set up download event listeners
     cleanupEventListeners = setupGameBananaEventListeners();
 
-    // Update progress bar - Step 1: Initialize deep link handler
+    // Update progress bar - Step 3: Initialize deep link handler
     initStatusText.value = "Setting up deep link handler...";
-    initProgress.value = 0.1;
+    initProgress.value = 0.2;
 
     // Set up deep link handler
     onOpenUrl(async (url) => {
@@ -587,9 +608,9 @@ onMounted(async () => {
       }
     });
 
-    // Update progress bar - Step 2: Initialize database
+    // Update progress bar - Step 4: Initialize database
     initStatusText.value = "Initializing database...";
-    initProgress.value = 0.2;
+    initProgress.value = 0.3;
 
     // Initialize the database service
     const dbService = DatabaseService.getInstance();
@@ -611,9 +632,7 @@ onMounted(async () => {
 
     // Update progress bar - Step 3: Load mods
     initStatusText.value = "Loading mods...";
-    initProgress.value = 0.4;
-
-    // Load mods from the database
+    initProgress.value = 0.4; // Load mods from the database
     const mods = await dbService.getAllMods();
     console.log("Loaded mods from database:", mods);
     if (mods && mods.length > 0) {
@@ -621,30 +640,11 @@ onMounted(async () => {
       // No need to sync with backend as the dbService handles this internally
     } else {
       console.log("No mods found in database");
-    } // Update progress bar - Step 4: Initialize theme service
-    initStatusText.value = "Initializing theme service...";
-    initProgress.value = 0.5;
+    }
 
-    // Initialize the theme service
-    await themeService.initialize();
-
-    // Update progress bar - Step 5: Apply theme
-    initStatusText.value = "Applying theme...";
-    initProgress.value = 0.6;
-
-    // Apply initial theme based on system or user preference
-    const useSystemTheme = await getUseSystemThemeSetting();
-    if (useSystemTheme) {
-      // If using system theme, apply light or dark based on system preference
-      const isSystemLight = getSystemTheme();
-      await applyTheme(isSystemLight ? "light" : "dark");
-    } else {
-      // If using custom theme, apply the saved theme directly
-      const themeValue = await getThemePreference();
-      await applyTheme(themeValue);
-    } // Update progress bar - Step 6: Load settings
+    // Update progress bar - Step 5: Load settings
     initStatusText.value = "Loading settings...";
-    initProgress.value = 0.8;
+    initProgress.value = 0.6;
 
     // Load app settings
     await loadAppSettings();
@@ -658,11 +658,9 @@ onMounted(async () => {
 
     // Listen for system theme changes
     const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
-    mediaQuery.addEventListener("change", handleSystemThemeChange);
-
-    // Update progress bar - Step 6: Check for updates
+    mediaQuery.addEventListener("change", handleSystemThemeChange); // Update progress bar - Step 6: Check for updates
     initStatusText.value = "Checking for updates...";
-    initProgress.value = 0.9;
+    initProgress.value = 0.8;
 
     // Check for updates
     try {
@@ -683,7 +681,7 @@ onMounted(async () => {
               let percent = contentLength
                 ? Math.round((downloaded / contentLength) * 100)
                 : 0;
-              initProgress.value = 0.9 + percent / 1000;
+              initProgress.value = 0.8 + percent / 1000;
               break;
             case "Finished":
               initProgress.value = 1.0;
