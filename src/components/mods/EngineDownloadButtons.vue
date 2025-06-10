@@ -74,11 +74,21 @@
           />
         </q-btn>
       </div>
+      <div>
+        Have a suggestion for an engine? Ask on the
+        <a
+          class="cursor-pointer"
+          @click="openUrl('https://www.github.com/echolotl/fridaylight/issues')"
+          >GitHub</a
+        >!
+      </div>
     </q-expansion-item>
   </div>
 </template>
 
 <script setup lang="ts">
+import { openUrl } from '@tauri-apps/plugin-opener'
+
 defineEmits(['download-engine'])
 </script>
 
@@ -128,7 +138,7 @@ defineEmits(['download-engine'])
   border-radius: 1rem;
 }
 .more-engines-content {
-  padding: 1rem;
+  padding: 1rem 0;
   text-align: center;
 }
 </style>
