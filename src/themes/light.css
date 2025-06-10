@@ -1,0 +1,16 @@
+/* Light Theme */
+:root {
+  --theme-bg: rgba(255, 255, 255, 0.87);
+  --theme-card: rgba(0, 0, 0, 0.1);
+  --theme-surface: rgba(0, 0, 0, 0.1);
+  --theme-text: #212121;
+  --theme-text-secondary: rgba(0, 0, 0, 0.7);
+  --theme-border: rgba(0, 0, 0, 0.25);
+  --theme-solid: #f0f0f0;
+
+  .solid-theme {
+    --theme-bg: #f5f5f5;
+    --theme-card: #ffffff;
+    --theme-surface: #f0f0f0;
+  }
+}

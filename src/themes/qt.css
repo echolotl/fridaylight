@@ -1,0 +1,10 @@
+/* Qt Theme */
+:root {
+  --theme-bg: #eecfd8;
+  --theme-card: #d3a2cc;
+  --theme-surface: #e4bad1;
+  --theme-text: #49343f;
+  --theme-text-secondary: rgba(73, 52, 63, 0.7);
+  --theme-border: rgba(73, 52, 63, 0.25);
+  --theme-solid: #d3a2cc;
+}

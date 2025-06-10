@@ -36,12 +36,6 @@
             <div class="text-subtitle1 q-mb-md">Appearance</div>
 
             <div class="theme-toggle-container row q-mb-md">
-              <!-- Use our ThemePreview component -->
-              <ThemePreview
-                :theme-name="getThemeName()"
-                :accent-color="getAccentColor()"
-                :compact-mode="settings.compactMode"
-              />
               <q-item tag="label" class="full-width">
                 <q-item-section>
                   <q-item-label>Use System Theme</q-item-label>
@@ -55,25 +49,128 @@
                 </q-item-section>
               </q-item>
             </div>
+            <div class="theme-selector q-mb-md" v-if="!settings.useSystemTheme">
+              <!-- Built-in Themes Section -->
+              <div class="theme-section">
+                <div class="text-subtitle2 q-mb-sm">Built-in Themes</div>
+                <div class="theme-grid">
+                  <div
+                    v-for="theme in builtInThemes"
+                    :key="theme.value"
+                    class="theme-grid-item"
+                    @click="selectTheme(theme.value)"
+                  >
+                    <ThemePreview
+                      :themeName="theme.value"
+                      :themeDisplayName="theme.label"
+                      :accentColor="getAccentColor()"
+                      :compactMode="settings.compactMode"
+                      :curSelected="getSelectedTheme() === theme.value"
+                    />
+                  </div>
+                </div>
+              </div>
 
-            <div v-if="!settings.useSystemTheme" class="theme-selector q-mb-md">
-              <q-select
-                v-model="settings.theme"
-                :options="themeOptions"
-                label="Theme"
-                outlined
-                class="q-mb-md selector"
+              <!-- Custom Themes Section (only if there are custom themes) -->
+              <div
+                v-if="customThemes.length > 0"
+                class="theme-section custom-themes-section"
               >
-                <template #option="scope">
-                  <q-item v-bind="scope.itemProps">
-                    <q-item-section>
-                      <q-item-label text-color="var(--theme-text)">{{
-                        scope.opt.label
-                      }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </template>
-              </q-select>
+                <div class="row items-center justify-between q-mb-sm">
+                  <div class="text-subtitle2">Custom Themes</div>
+                  <div class="row items-center">
+                    <q-btn
+                      flat
+                      color="primary"
+                      icon="folder_open"
+                      label="Reveal Themes Folder"
+                      @click="openThemesFolder"
+                      class="phantom-font q-mr-sm"
+                    />
+                    <q-btn
+                      flat
+                      color="primary"
+                      icon="refresh"
+                      label="Refresh Themes"
+                      @click="refreshThemes"
+                      class="phantom-font"
+                    />
+                  </div>
+                </div>
+                <div class="theme-grid">
+                  <div
+                    v-for="theme in customThemes"
+                    :key="theme.value"
+                    class="theme-grid-item"
+                    @click="selectTheme(theme.value)"
+                  >
+                    <ThemePreview
+                      :themeName="theme.value"
+                      :themeDisplayName="theme.label"
+                      :accentColor="getAccentColor()"
+                      :compactMode="settings.compactMode"
+                      :curSelected="getSelectedTheme() === theme.value"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div v-else class="text-caption q-mt-sm">
+                <div class="row items-center justify-between">
+                  <div>
+                    Want to add custom themes? Place them in the
+                    <a
+                      @click="revealItemInDir(customThemesPath)"
+                      class="text-primary"
+                      >/themes</a
+                    >
+                    folder, then click the refresh button to load them.
+                  </div>
+                  <q-btn
+                    flat
+                    color="primary"
+                    icon="refresh"
+                    label="Refresh Themes"
+                    @click="refreshThemes"
+                    class="phantom-font"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="text-subtitle2 q-mb-sm">Accent Color</div>
+            <div class="color-row q-mb-md">
+              <q-btn
+                v-for="color in accentColorOptions"
+                :key="color.value"
+                round
+                flat
+                :style="{ backgroundColor: color.value }"
+                class="color-button"
+                :class="{
+                  'color-selected':
+                    getAccentColor() === color.value && !isCustomAccentColor,
+                }"
+                @click="selectPresetAccentColor(color.value)"
+              />
+              <q-btn
+                round
+                flat
+                icon="colorize"
+                class="color-button custom-color-btn"
+                :class="{ 'color-selected': isCustomAccentColor }"
+                :style="
+                  isCustomAccentColor
+                    ? { backgroundColor: customAccentColor }
+                    : { backgroundColor: 'transparent' }
+                "
+                @click="openAccentColorPicker"
+              />
+              <input
+                type="color"
+                ref="accentColorPickerInput"
+                v-model="customAccentColor"
+                class="hidden-color-picker"
+                @change="selectCustomAccentColor"
+              />
             </div>
 
             <q-item tag="label" class="q-mb-md">
@@ -87,74 +184,6 @@
                 <q-toggle v-model="settings.compactMode" color="primary" />
               </q-item-section>
             </q-item>
-
-            <q-select
-              v-model="settings.accentColor"
-              :options="accentColorOptions"
-              label="Accent Color"
-              outlined
-              class="q-mb-md selector phantom-font"
-            >
-              <template #option="scope">
-                <q-item v-bind="scope.itemProps">
-                  <q-item-section avatar>
-                    <div
-                      class="color-preview"
-                      :style="{ backgroundColor: scope.opt.value }"
-                    ></div>
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label
-                      text-color="var(--theme-text)"
-                      class="phantom-font"
-                      >{{ scope.opt.label }}</q-item-label
-                    >
-                  </q-item-section>
-                </q-item>
-              </template>
-
-              <template #selected>
-                <div class="row items-center phantom-font">
-                  <div
-                    class="color-preview q-mr-sm"
-                    :style="{
-                      backgroundColor:
-                        typeof settings.accentColor === 'string'
-                          ? settings.accentColor
-                          : settings.accentColor?.value || '#DB2955',
-                    }"
-                  ></div>
-                  <div>
-                    {{
-                      typeof settings.accentColor === 'string'
-                        ? accentColorOptions.find(
-                            opt => opt.value === settings.accentColor
-                          )?.label
-                        : settings.accentColor?.label || 'Custom'
-                    }}
-                  </div>
-                </div>
-              </template>
-            </q-select>
-
-            <div class="q-mt-lg">
-              <div class="text-subtitle2 q-mb-md">Custom CSS</div>
-              <q-input
-                v-model="settings.customCSS"
-                type="textarea"
-                outlined
-                class="custom-css-editor"
-                label="Custom CSS Rules"
-                placeholder="/* Example: */&#10;:root {&#10;  --my-custom-color: #FF00FF;&#10;}&#10;&#10;.q-card {&#10;  border-radius: 16px !important;&#10;}"
-                autogrow
-                :rows="8"
-                :max-rows="12"
-              />
-              <div class="text-caption q-mt-sm">
-                Custom CSS allows you to override the application's default
-                styles. Changes will apply after saving and restarting the app.
-              </div>
-            </div>
           </q-card-section>
 
           <!-- Installation Section -->
@@ -210,43 +239,43 @@
 
           <!-- About Section -->
           <q-card-section v-show="activeSection === 'about'">
-            <div class="text-subtitle1 q-mb-md">About</div>
+            <div class="text-subtitle1">About</div>
 
-            <div class="text-body2 q-mb-sm">
-              Fridaylight v0.10.1
-              <br />
-              A mod manager for Friday Night Funkin'.
-              <br />
-              <br />
-
-              <div class="text-subtitle1 q-mb-md">Credits</div>
-              <div class="acknowledgements q-mb-md">
-                <ul style="background-color: transparent">
-                  <li>
-                    <a @click="openUrl('https://www.echolotl.lol')">echolotl</a>
-                    - Coder, Designer, Director, Creator of Fridaylight
-                  </li>
-                </ul>
-                <div class="text-subtitle2 q-mb-sm q-mt-sm">Special Thanks</div>
-                <ul>
-                  <li>
-                    <a
-                      @click="openUrl('https://gamebanana.com/members/1844732')"
-                      >Cracsthor</a
-                    >
-                    - Creator of PhantomMuff Full + Difficulty fonts
-                  </li>
-                  <li>
-                    <a
-                      @click="openUrl('https://gamebanana.com/members/3083321')"
-                      >NoizDynamic</a
-                    >
-                    - Creator of Tardling font
-                  </li>
-                </ul>
+            <div class="about-content">
+              <div class="about-content-left">
+                <img
+                  src="/images/fridaylight-colored.svg"
+                  class="fridaylight-logo"
+                />
+                <div class="text-subtitle2 q-mb-sm flex align-center">
+                  Created by
+                  <img
+                    @click="openUrl('https://www.echolotl.lol/')"
+                    src="/images/echolotlGB.png"
+                    class="q-ml-xs cursor-pointer"
+                  />
+                </div>
+                <div class="q-mb-sm">
+                  Version: 0.10.1
+                  <span class="text-caption">(Windows, 64 bit)</span>
+                </div>
+                <div class="flex items-center q-mb-sm">
+                  <q-icon name="bug_report" size="sm" color="primary" />
+                  <a
+                    @click="
+                      openUrl('https://github.com/echolotl/fridaylight/issues')
+                    "
+                    class="q-ml-xs"
+                    >Found a bug, or have a suggestion? Report it on GitHub!</a
+                  >
+                </div>
+                <div class="text-caption">
+                  This is pre-release software, so things might be unstable, and
+                  you should expect to lose data.
+                </div>
               </div>
-              <div class="text-subtitle1 q-mb-md">Created with</div>
-              <div class="center-credits">
+              <div class="about-content-right">
+                <div class="text-subtitle2 q-mb-sm">Created with</div>
                 <div class="logo-grid">
                   <img
                     src="/images/vue.svg"
@@ -273,46 +302,85 @@
                     @click="openUrl('https://quasar.dev/')"
                   />
                 </div>
-              </div>
-
-              <div class="settings-reset-section q-mt-lg">
-                <q-separator class="q-my-md" />
-                <div class="text-subtitle1 q-mb-md">Danger Zone</div>
-                <q-btn
-                  color="negative"
-                  icon="restart_alt"
-                  label="Reset to Default Settings"
-                  class="full-width"
-                  outline
-                  @click="showResetSettingsDialog = true"
-                />
-                <div class="text-caption q-mt-sm">
-                  This will reset all app settings to their default values.
-                  You'll need to save for changes to take effect.
+                <div class="text-subtitle2 q-mt-md">
+                  Acknowledgements and Special Thanks
                 </div>
-
-                <q-btn
-                  color="negative"
-                  icon="delete_forever"
-                  label="Reset App Data"
-                  class="full-width q-mt-md"
-                  outline
-                  @click="showResetAppDataDialog = true"
-                />
-                <div class="text-caption q-mt-sm">
-                  This will wipe the database and reset all application data.
-                  All mod information will be lost, but files will not be
-                  deleted.
-                </div>
+                <q-scroll-area class="acknowledgements">
+                  <ul style="list-style-type: none; padding-left: 0">
+                    <li>
+                      <a @click="openUrl('https://gamebanana.com/games/8694')">
+                        Gamebanana
+                      </a>
+                      <div class="text-caption">
+                        For providing a stable platform for Friday Night Funkin'
+                        mods!
+                      </div>
+                    </li>
+                    <li>
+                      <a
+                        @click="
+                          openUrl('https://gamebanana.com/members/1844732')
+                        "
+                      >
+                        Cracsthor
+                      </a>
+                      <div class="text-caption">
+                        Created the original PhantomMuff font family files
+                      </div>
+                    </li>
+                    <li>
+                      <a
+                        @click="
+                          openUrl('https://gamebanana.com/members/1844732')
+                        "
+                      >
+                        NoizDynamic
+                      </a>
+                      <div class="text-caption">
+                        Created the Tardling font file used in-app
+                      </div>
+                    </li>
+                    <li>
+                      <span> Funkin' Launcher Dev Team </span>
+                      <div class="text-caption">
+                        For providing inspiration and ideas for this app
+                      </div>
+                    </li>
+                  </ul>
+                </q-scroll-area>
               </div>
             </div>
 
-            <AnimationPlayer
-              json-path="/images/animations/characters/bf-holding-gf.json"
-              :width="500"
-              :height="500"
-              :scale="1"
-            />
+            <div class="settings-reset-section q-mt-lg">
+              <q-separator class="q-my-md" />
+              <div class="text-subtitle1 q-mb-md">Danger Zone</div>
+              <q-btn
+                color="negative"
+                icon="restart_alt"
+                label="Reset to Default Settings"
+                class="full-width"
+                @click="showResetSettingsDialog = true"
+                outline
+              />
+              <div class="text-caption q-mt-sm">
+                This will reset all app settings to their default values. You'll
+                need to save for changes to take effect.
+              </div>
+
+              <q-btn
+                color="negative"
+                icon="delete_forever"
+                label="Reset App Data"
+                class="full-width q-mt-md"
+                @click="showResetAppDataDialog = true"
+                outline
+              />
+              <div class="text-caption q-mt-sm">
+                This will wipe the database and reset all application data. All
+                mod information will be lost, but files will not be deleted.
+              </div>
+            </div>
+
           </q-card-section>
         </q-scroll-area>
       </div>
@@ -356,14 +424,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { openUrl } from '@tauri-apps/plugin-opener'
-import { AppSettings } from '@main-types'
-import ThemePreview from '../common/ThemePreview.vue'
-import MessageDialog from './MessageDialog.vue'
-import { StoreService, DEFAULT_SETTINGS } from '../../services/storeService'
-import { DatabaseService } from '../../services/dbService'
+import { ref, watch, computed, onMounted } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import { openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
+import { AppSettings } from "@main-types";
+import ThemePreview from "../common/ThemePreview.vue";
+import MessageDialog from "./MessageDialog.vue";
+import { StoreService, DEFAULT_SETTINGS } from "../../services/storeService";
+import { DatabaseService } from "../../services/dbService";
+import { themeService } from "../../services/themeService";
+
+// Use the singleton directly instead of through a ref
+const storeService = StoreService.getInstance();
 
 const props = defineProps({
   modelValue: {
@@ -389,29 +461,34 @@ const settingsSections = [
 // Track the active section
 const activeSection = ref('appearance')
 
-// Theme options - "doe" is hidden until unlocked
-const hasUnlockedExtraThemes = ref(false)
+// Theme options - dynamically loaded from theme service
+const hasUnlockedExtraThemes = ref(false);
+const availableThemes = ref<any[]>([]);
+
 const themeOptions = computed(() => {
-  const baseOptions = [
-    { label: 'Light', value: 'light' },
-    { label: 'Dark', value: 'dark' },
-    { label: 'Shaggy', value: 'shaggy' },
-    { label: 'Hotline', value: 'hotline' },
-    { label: 'Yourself', value: 'yourself' },
-    { label: 'Corruption', value: 'corruption' },
-    { label: 'QT', value: 'qt' },
-    { label: 'Garcello', value: 'garcello' },
-    { label: 'Pump', value: 'pump' },
-    { label: 'Boo', value: 'boo' },
-  ]
+  const options = availableThemes.value.map((theme) => ({
+    label: theme.displayName,
+    value: theme.id,
+    isCustom: theme.isCustom,
+  }));
+  // Filter out "doe" theme unless extra themes are unlocked
+  return options.filter((option) => {
+    if (option.value === "doe" && !hasUnlockedExtraThemes.value) {
+      return false;
+    }
+    return true;
+  });
+});
 
-  // Only add Extra themes if they are unlocked
-  if (hasUnlockedExtraThemes.value) {
-    baseOptions.push({ label: 'Doe', value: 'doe' })
-  }
+// Separate computed properties for built-in and custom themes
+const builtInThemes = computed(() => {
+  return themeOptions.value.filter((theme) => !theme.isCustom);
+});
 
-  return baseOptions
-})
+const customThemes = computed(() => {
+  return themeOptions.value.filter((theme) => theme.isCustom);
+});
+
 
 const accentColorOptions = [
   { label: 'Pink', value: '#DB2955' },
@@ -423,24 +500,6 @@ const accentColorOptions = [
   { label: 'Red', value: '#C03221' },
   { label: 'Cyan', value: '#39dbce' },
 ]
-
-// Helper function to get current theme name
-const getThemeName = () => {
-  if (settings.value.useSystemTheme) {
-    const value = getSystemTheme()
-    return value.value
-  }
-  // Ensure we're working with a string value
-  if (typeof settings.value.theme === 'string') {
-    return settings.value.theme
-  }
-  // Handle case where theme is an object
-  const value = settings.value.theme as unknown as {
-    label: string
-    value: string
-  }
-  return value.value
-}
 
 // Helper function to get current accent color
 const getAccentColor = () => {
@@ -457,6 +516,11 @@ const showModal = computed({
 
 const showResetSettingsDialog = ref(false)
 const showResetAppDataDialog = ref(false)
+
+// Custom accent color variables
+const customAccentColor = ref("#DB2955");
+const isCustomAccentColor = ref(false);
+const accentColorPickerInput = ref<HTMLInputElement | null>(null);
 
 // Load saved settings when modal is opened
 watch(
@@ -476,12 +540,27 @@ const loadSettings = async () => {
     }
 
     // Get all settings from StoreService
-    const storedSettings = await storeService.getAllSettings()
+    const storedSettings = await storeService.getAllSettings(); // Apply stored settings to our local settings ref
+    settings.value = { ...settings.value, ...storedSettings };
 
-    // Apply stored settings to our local settings ref
-    settings.value = { ...settings.value, ...storedSettings }
+    // Initialize custom accent color state
+    const currentAccentColor = getAccentColor();
+    const isPresetColor = accentColorOptions.some(
+      (option) => option.value === currentAccentColor
+    );
 
-    console.log('Settings loaded from store service:', settings.value)
+    if (!isPresetColor) {
+      // Current color is custom
+      isCustomAccentColor.value = true;
+      customAccentColor.value = currentAccentColor;
+    } else {
+      // Current color is a preset
+      isCustomAccentColor.value = false;
+      customAccentColor.value = "#DB2955"; // Reset to default
+    }
+
+    console.log("Settings loaded from store service:", settings.value);
+
 
     // Apply theme immediately upon loading
     await updateTheme()
@@ -527,39 +606,33 @@ const updateTheme = async () => {
           'dark'
   }
 
-  console.log('Applying theme:', activeThemeValue)
+  console.log("Applying theme via themeService:", activeThemeValue);
 
-  // First check if we're running on Windows 11
-  const isWindows11 = await invoke<boolean>('is_windows_11')
-  console.log('Is Windows 11:', isWindows11, 'Theme:', activeThemeValue)
+  try {
+    // Use the theme service to apply the theme
+    await themeService.applyTheme(activeThemeValue);
 
-  // Apply CSS classes for theme by first removing all theme classes
-  document.body.classList.remove(
-    'light-theme',
-    'dark-theme',
-    'yourself-theme',
-    'hotline-theme',
-    'corruption-theme',
-    'shaggy-theme',
-    'boo-theme',
-    'qt-theme',
-    'garcello-theme',
-    'pump-theme',
-    'doe-theme'
-  )
+    // Check if we're running on Windows 11 for additional styling
+    const isWindows11 = await invoke<boolean>("is_windows_11");
+    console.log("Is Windows 11:", isWindows11, "Theme:", activeThemeValue);
 
-  // Then add the active theme class
-  document.body.classList.add(`${activeThemeValue}-theme`)
+    // Apply platform-specific styling
+    if (!isWindows11) {
+      // Apply solid theme styling for non-Windows 11
+      if (activeThemeValue === "light" || activeThemeValue === "dark") {
+        document.body.classList.add("solid-theme");
+        console.log(
+          "Using solid background for non-Windows 11 theme:",
+          activeThemeValue
+        );
+      } else {
+        document.body.classList.remove("solid-theme");
+        console.log(
+          "Using theme background for non-Windows 11 theme:",
+          activeThemeValue
+        );
+      }
 
-  // Apply solid theme if not on Windows 11
-  if (!isWindows11) {
-    // Only apply solid-theme to light and dark themes
-    if (activeThemeValue === 'light' || activeThemeValue === 'dark') {
-      document.body.classList.add('solid-theme')
-      console.log(
-        'Using solid background for non-Windows 11 theme:',
-        activeThemeValue
-      )
 
       // Remove transparent background styles
       document.documentElement.style.setProperty(
@@ -568,91 +641,82 @@ const updateTheme = async () => {
       )
 
       // Set background to solid color based on the theme
-      const bgColor = `var(--theme-bg)`
-      document.documentElement.style.setProperty('background', bgColor)
-      document.body.style.removeProperty('background')
-      document.body.style.backgroundColor = bgColor
+      const bgColor = `var(--theme-bg)`;
+
+      document.body.style.removeProperty("background");
+      document.body.style.backgroundColor = bgColor;
+
       document
         .querySelector('.q-layout')
         ?.setAttribute('style', 'background: ' + bgColor + ' !important')
     } else {
-      // For other themes on non-Windows 11, don't use solid-theme
-      document.body.classList.remove('solid-theme')
-      console.log(
-        'Using transparent background for non-Windows 11 theme:',
-        activeThemeValue
-      )
+      // On Windows 11, handle Mica effect for light and dark themes
+      if (themeService.supportsWindowsMica(activeThemeValue)) {
+        document.body.classList.remove("solid-theme");
+        document.documentElement.style.setProperty(
+          "--transparent-bg-override",
+          "transparent"
+        );
 
-      // Use the semi-transparent theme variables directly
-      const bgColor = `var(--theme-bg)`
-      document.documentElement.style.setProperty('background', bgColor)
-      document.body.style.removeProperty('background')
-      document.body.style.backgroundColor = bgColor
-      document
-        .querySelector('.q-layout')
-        ?.setAttribute('style', 'background: ' + bgColor + ' !important')
-    }
-  } else {
-    // On Windows 11, only light and dark themes should be transparent for Mica
-    if (activeThemeValue === 'light' || activeThemeValue === 'dark') {
-      document.body.classList.remove('solid-theme')
-      document.documentElement.style.setProperty(
-        '--transparent-bg-override',
-        'transparent'
-      )
-      // Fix for background style being commented out
-      document.body.style.removeProperty('background')
-      document.body.setAttribute('style', 'background: transparent !important')
+        // Make background transparent for Mica
+        document.body.style.removeProperty("background");
+        document.body.setAttribute(
+          "style",
+          "background: transparent !important"
+        );
 
-      // Make sure q-layout is also transparent for Mica to work properly
-      const qLayout = document.querySelector('.q-layout')
-      if (qLayout) {
-        qLayout.removeAttribute('style')
-        qLayout.setAttribute('style', 'background: transparent !important')
+        // Make sure q-layout is also transparent for Mica to work properly
+        const qLayout = document.querySelector(".q-layout");
+        if (qLayout) {
+          qLayout.removeAttribute("style");
+          qLayout.setAttribute("style", "background: transparent !important");
+        }
+
+        // Apply Mica effect via Rust backend
+        try {
+          const isDarkMica = activeThemeValue !== "light";
+          await invoke("change_mica_theme", {
+            window: "main",
+            dark: isDarkMica,
+          });
+          console.log(
+            "Applied Mica theme effect:",
+            isDarkMica ? "dark" : "light"
+          );
+        } catch (error) {
+          console.error("Failed to apply Mica effect:", error);
+        }
+      } else {
+        // For other themes on Windows 11, use solid background
+        document.body.classList.remove("solid-theme");
+        document.documentElement.style.setProperty(
+          "--transparent-bg-override",
+          "none"
+        );
+
+        const bgColor = `var(--theme-bg)`;
+
+        document.body.style.removeProperty("background");
+        document.body.style.backgroundColor = bgColor;
+        document
+          .querySelector(".q-layout")
+          ?.setAttribute("style", "background: " + bgColor + " !important");
       }
-
-      // Call the Rust backend to apply Mica effect (Windows only)
-      try {
-        // Only light and dark themes should use the Mica effect
-        const isDarkMica = activeThemeValue !== 'light'
-
-        await invoke('change_mica_theme', {
-          window: 'main', // Main window label
-          dark: isDarkMica, // true for dark themes, false for light theme
-        })
-        console.log('Applied Mica theme effect:', isDarkMica ? 'dark' : 'light')
-      } catch (error) {
-        console.error('Failed to apply/remove Mica effect:', error)
-        // Non-fatal error, the app will still work without Mica
-      }
-    } else {
-      document.body.classList.remove('solid-theme')
-      document.documentElement.style.setProperty(
-        '--transparent-bg-override',
-        'none'
-      )
-
-      // Set background to solid color based on the theme
-      const bgColor = `var(--theme-bg)`
-      document.documentElement.style.setProperty('background', bgColor)
-      document.body.style.removeProperty('background')
-      document.body.style.backgroundColor = bgColor
-      document
-        .querySelector('.q-layout')
-        ?.setAttribute('style', 'background: ' + bgColor + ' !important')
     }
+
+    // Dispatch an event so other components can know about theme changes
+    window.dispatchEvent(
+      new CustomEvent("theme-changed", {
+        detail: {
+          theme: activeThemeValue,
+          useSystemTheme: settings.value.useSystemTheme,
+        },
+      })
+    );
+  } catch (error) {
+    console.error("Failed to apply theme:", error);
   }
-
-  // Dispatch an event so other components can know about theme changes
-  window.dispatchEvent(
-    new CustomEvent('theme-changed', {
-      detail: {
-        theme: activeThemeValue,
-        useSystemTheme: settings.value.useSystemTheme,
-      },
-    })
-  )
-}
+};
 
 const save = async () => {
   try {
@@ -737,6 +801,69 @@ const cancel = () => {
   loadSettings()
 }
 
+// Theme management functions
+const customThemesPath = ref("");
+
+const refreshThemes = async () => {
+  try {
+    // Make sure theme service is initialized
+    await themeService.initialize();
+
+    await themeService.refreshThemes();
+    const themes = themeService.getThemes();
+    availableThemes.value = themes;
+    console.log("Refreshed themes:", themes);
+  } catch (error) {
+    console.error("Failed to refresh themes:", error);
+  }
+};
+
+const openThemesFolder = async () => {
+  try {
+    const themesDir = themeService.getCustomThemesDirectory();
+    await revealItemInDir(themesDir);
+  } catch (error) {
+    console.error("Failed to open themes folder:", error);
+  }
+};
+
+// Accent color management functions
+const openAccentColorPicker = () => {
+  if (accentColorPickerInput.value) {
+    accentColorPickerInput.value.click();
+  }
+};
+
+const selectCustomAccentColor = () => {
+  settings.value.accentColor = customAccentColor.value;
+  isCustomAccentColor.value = true;
+};
+
+const selectPresetAccentColor = (color: string) => {
+  settings.value.accentColor = color;
+  isCustomAccentColor.value = false;
+};
+
+// Theme selection functions
+const getSelectedTheme = (): string => {
+  if (settings.value.useSystemTheme) {
+    return getSystemTheme().value;
+  }
+
+  // Handle both string and object theme values
+  if (typeof settings.value.theme === "string") {
+    return settings.value.theme;
+  } else {
+    // Handle case where theme is an object
+    const themeObj = settings.value.theme as unknown as { value: string };
+    return themeObj?.value || "dark";
+  }
+};
+
+const selectTheme = (themeId: string) => {
+  settings.value.theme = themeId;
+};
+
 const resetSettings = () => {
   // Reset all settings to default values
   settings.value = { ...DEFAULT_SETTINGS }
@@ -770,19 +897,40 @@ onMounted(async () => {
   // Initialize StoreService
   await storeService.initialize()
 
-  // Really silly fix for dropdown background, oh Quasar why
-  const style = document.createElement('style')
-  style.innerHTML = `
-    .q-menu {
-      background-color: var(--theme-card) !important;
-      color: var(--theme-text) !important;
-    }
-    .q-item {
-      color: var(--theme-text) !important;
-    }
-  `
-  document.head.appendChild(style)
-})
+  // Initialize theme service first
+  try {
+    await themeService.initialize();
+  } catch (error) {
+    console.error("Failed to initialize theme service:", error);
+  }
+
+  // Load available themes from theme service
+  try {
+    const themes = themeService.getThemes();
+    availableThemes.value = themes;
+    customThemesPath.value = themeService.getCustomThemesDirectory();
+    console.log("Loaded themes for settings:", themes);
+  } catch (error) {
+    console.error("Failed to load themes:", error);
+    // Fallback to basic themes if service fails
+    availableThemes.value = [
+      {
+        id: "light",
+        name: "light",
+        displayName: "Light",
+        isBuiltIn: true,
+        isCustom: false,
+      },
+      {
+        id: "dark",
+        name: "dark",
+        displayName: "Dark",
+        isBuiltIn: true,
+        isCustom: false,
+      },
+    ];
+  }
+});
 
 // Initialize settings on component creation
 loadSettings()
@@ -794,11 +942,11 @@ loadSettings()
   height: 90vh;
   max-width: 90vw;
   max-height: 90vh;
-  background-color: var(--solid);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
   backdrop-filter: blur(30px);
   scrollbar-width: none;
+  background-color: var(--theme-solid);
 }
 
 .settings-layout {
@@ -839,10 +987,59 @@ loadSettings()
   border: 1px solid var(--theme-border);
 }
 
+.color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 1rem;
+}
+
+.color-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.color-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 2px var(--theme-border);
+}
+
+.color-selected {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 3px var(--theme-border) !important;
+}
+
+.custom-color-btn {
+  background-color: white;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-color-btn.color-selected {
+  background-image: none;
+}
+
+.custom-color-btn .q-icon {
+  color: rgba(0, 0, 0, 0.7);
+  position: absolute;
+}
+
+.hidden-color-picker {
+  position: absolute;
+  opacity: 0;
+  height: 0;
+  width: 0;
+  pointer-events: none;
+}
+
 .acknowledgements {
-  max-height: 200px;
-  overflow-y: auto;
+  height: 200px;
   line-height: 1.5;
+  padding: 1rem;
 }
 
 a {
@@ -862,7 +1059,7 @@ a {
 }
 
 .logo-grid {
-  display: flex;
+  display: inline-flex;
   gap: 8px;
 }
 
@@ -884,11 +1081,60 @@ a {
   margin-top: 16px;
 }
 
+.list-item {
+  background-color: var(--theme-surface);
+}
+
 :deep(.q-field__messages, .q-field__native::placeholder, .q-field__label) {
   color: var(--theme-text-secondary);
 }
 
 :deep(.q-field__native::placeholder) {
   color: var(--theme-text-secondary);
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.theme-grid-item {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.theme-grid-item:hover {
+  transform: scale(1.02);
+}
+
+.theme-section {
+  margin-bottom: 24px;
+}
+
+.theme-section:last-child {
+  margin-bottom: 0;
+}
+
+.custom-themes-section {
+  padding-top: 16px;
+  border-top: 1px solid var(--theme-border);
+}
+
+.about-content {
+  display: flex;
+  justify-content: space-between;
+}
+.about-content-left {
+  flex: 1;
+}
+.about-content-right {
+  flex: 1;
+  text-align: right;
+}
+.fridaylight-logo {
+  max-height: 125px;
+  width: auto;
 }
 </style>

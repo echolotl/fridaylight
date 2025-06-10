@@ -110,7 +110,7 @@ onUnmounted(() => {
 .context-menu {
   position: fixed;
   z-index: 9999;
-  background-color: var(--solid);
+  background-color: var(--theme-solid);
   border: 2px solid var(--theme-border);
   border-radius: 0.5rem;
   min-width: 150px;

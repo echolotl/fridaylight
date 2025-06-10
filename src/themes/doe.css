@@ -1,0 +1,10 @@
+/* Doe Theme */
+:root {
+  --theme-bg: linear-gradient(to top, #FFFFFF 20%, #9cedfc 50%, #7ba2f5);
+  --theme-card: rgba(0, 0, 0, 0.35);
+  --theme-surface: rgba(255, 255, 255, 0.5);
+  --theme-text: #2c1d07;
+  --theme-text-secondary: rgba(44, 29, 7, 0.7);
+  --theme-border: rgba(44, 29, 7, 0.25);
+  --theme-solid: #ffffff;
+}

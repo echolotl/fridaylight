@@ -552,7 +552,7 @@ const currentModName = ref<string>('Unknown Mod')
 .mod-type-selection-modal {
   width: 700px;
   max-width: 90vw;
-  background-color: var(--solid);
+  background-color: var(--theme-solid);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
   backdrop-filter: blur(30px);
@@ -581,7 +581,7 @@ const currentModName = ref<string>('Unknown Mod')
 
 .mod-type-card.selected {
   border-color: var(--q-primary);
-  background-color: var(--solid);
+  background-color: var(--theme-solid);
 }
 
 .disabled-card {

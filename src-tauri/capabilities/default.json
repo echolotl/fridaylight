@@ -18,6 +18,10 @@
     "updater:allow-check",
     "updater:default",
     "opener:allow-open-path",
-    "fs:default"
+    "fs:default",
+    "fs:allow-appdata-read",
+    "fs:allow-appdata-write",
+    "fs:allow-appdata-read-recursive",
+    "core:window:allow-show"
   ]
 }

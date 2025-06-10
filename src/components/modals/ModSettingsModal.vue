@@ -166,6 +166,8 @@
               emit-value
               map-options
               hint="The type of engine this mod uses"
+              popup-content-class="phantom-font"
+              popup-content-style="background-color: var(--theme-solid); color: var(--theme-text);"
             />
 
             <q-input
@@ -250,7 +252,6 @@
               </div>
               <div v-else class="icon-placeholder">
                 <q-icon name="image" size="48px" />
-                <div>No icon image</div>
               </div>
               <q-file
                 v-model="iconFile"
@@ -505,22 +506,6 @@ const activeSection = ref('general')
 const showRemoveDialog = ref(false)
 const showSuperDeleteDialog = ref(false)
 
-// Add style to dropdown menu when component is mounted
-onMounted(() => {
-  // Fix for dropdown background
-  const style = document.createElement('style')
-  style.innerHTML = `
-    .q-menu {
-      background-color: var(--theme-card);
-      color: var(--theme-text);
-    }
-    .q-item {
-      color: var(--theme-text);
-    }
-  `
-  document.head.appendChild(style)
-})
-
 // Reset form when modal is opened
 watch(
   () => props.modelValue,
@@ -553,32 +538,6 @@ watch(
   }
 )
 
-// Add a watcher to keep engine.engine_type and engine_type in sync
-watch(
-  () => form.value.engine?.engine_type,
-  newEngineType => {
-    if (newEngineType && form.value.engine) {
-      // When engine.engine_type changes, update engine_type to match
-      console.log('Engine type changed to:', newEngineType)
-
-      // Always update engine name based on the selected engine type
-      // Only update if the name is currently the default for the *previous* type or empty
-      const previousDefaultName = formatEngineName(
-        props.mod?.engine?.engine_type || 'unknown'
-      )
-      if (
-        !form.value.engine.engine_name ||
-        form.value.engine.engine_name === previousDefaultName
-      ) {
-        form.value.engine.engine_name = formatEngineName(newEngineType)
-        console.log(
-          'Updated engine name to default:',
-          form.value.engine.engine_name
-        )
-      }
-    }
-  }
-)
 
 const handleBannerFileChange = (file: File | null) => {
   bannerFile.value = file // Store the file reference
@@ -778,7 +737,7 @@ const handleOpenFileLocationClick = async (path: string) => {
   height: 90vh;
   max-width: 90vw;
   max-height: 90vh;
-  background-color: var(--solid);
+  background-color: var(--theme-solid);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
   backdrop-filter: blur(30px);
@@ -878,5 +837,14 @@ const handleOpenFileLocationClick = async (path: string) => {
 
 .q-field.q-field--outlined :deep(.q-field__control) {
   color: var(--theme-text);
+}
+:deep(.q-field__native) {
+  color: var(--theme-text);
+}
+:deep(.q-field__messages) {
+  color: var(--theme-text-secondary);
+}
+.list-item {
+  background-color: var(--theme-surface);
 }
 </style>

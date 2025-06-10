@@ -1,0 +1,15 @@
+/* Shaggy Theme */
+:root {
+  --theme-bg: #152423;
+  --theme-card: #2c4235;
+  --theme-surface: #1e3129;
+  --theme-text: #d5c4f0;
+  --theme-text-secondary: rgba(213, 196, 240, 0.7);
+  --theme-border: rgba(213, 196, 240, 0.25);
+  --theme-solid: #2f2e50;
+  
+  /* Solid colors for non-Windows 11 platforms */
+  --theme-bg-solid: #23282e;
+  --theme-card-solid: #2e2d3b;
+  --theme-surface-solid: rgba(69, 38, 95, 0.2);
+}

@@ -1,0 +1,10 @@
+/* Boo Theme */
+:root {
+  --theme-bg: #cfe2ee;
+  --theme-card: #9e9fce;
+  --theme-surface: #bac9e4;
+  --theme-text: #614545;
+  --theme-text-secondary: rgba(97, 69, 69, 0.7);
+  --theme-border: rgba(97, 69, 69, 0.25);
+  --theme-solid: #bac9e4;
+}

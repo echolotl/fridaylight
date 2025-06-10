@@ -74,8 +74,11 @@ import { StoreService, DEFAULT_SETTINGS } from '@services/storeService'
 import {
   gamebananaService,
   setupGameBananaEventListeners,
-} from '@services/gamebananaService'
-import { AppSettings } from './types'
+
+} from "@services/gamebananaService";
+import { themeService } from "@services/themeService";
+import { AppSettings } from "./types";
+
 
 // Define window.db
 declare global {
@@ -271,21 +274,21 @@ const loadAppSettings = async () => {
     const installLocation = await storeService.getSetting('installLocation')
     if (installLocation) appSettings.installLocation = installLocation
 
-    const theme = await storeService.getSetting('theme')
-    if (theme) appSettings.theme = theme
+    const theme = await storeService.getSetting("theme");
+    if (theme) appSettings.theme = theme;
+    const useSystemTheme = await storeService.getSetting("useSystemTheme");
 
-    const useSystemTheme = await storeService.getSetting('useSystemTheme')
     if (useSystemTheme !== undefined)
       appSettings.useSystemTheme = useSystemTheme === true
 
-    const customCSS = await storeService.getSetting('customCSS')
-    if (customCSS) appSettings.customCSS = customCSS
+    const validateFnfMods = await storeService.getSetting("validateFnfMods");
 
-    const validateFnfMods = await storeService.getSetting('validateFnfMods')
     if (validateFnfMods !== undefined)
       appSettings.validateFnfMods = validateFnfMods === true
 
     const showTerminalOutput =
+      await storeService.getSetting("showTerminalOutput");
+
       await storeService.getSetting('showTerminalOutput')
     if (showTerminalOutput !== undefined)
       appSettings.showTerminalOutput = showTerminalOutput === true
@@ -308,122 +311,130 @@ const applyTheme = async (themeValue: string | boolean) => {
 
   console.log('Applying theme:', activeThemeValue)
 
-  // First check if we're running on Windows 11
-  const isWindows11 = await invoke<boolean>('is_windows_11')
-  console.log('Is Windows 11:', isWindows11, 'Theme:', activeThemeValue)
+  try {
+    // Apply theme using the theme service
+    await themeService.applyTheme(activeThemeValue);
 
-  // Apply CSS classes for theme by first removing all theme classes
-  document.body.classList.remove(
-    'light-theme',
-    'dark-theme',
-    'yourself-theme',
-    'hotline-theme',
-    'corruption-theme',
-    'shaggy-theme',
-    'boo-theme',
-    'qt-theme',
-    'garcello-theme',
-    'pump-theme',
-    'doe-theme'
-  )
+    // Check if we're running on Windows 11 for Mica effect
+    const isWindows11 = await invoke<boolean>("is_windows_11");
+    console.log("Is Windows 11:", isWindows11, "Theme:", activeThemeValue);
 
-  // Then add the active theme class
-  document.body.classList.add(`${activeThemeValue}-theme`)
-
-  // Apply solid theme if not on Windows 11
-  if (!isWindows11) {
-    // Only apply solid-theme to light and dark themes
-    if (activeThemeValue === 'light' || activeThemeValue === 'dark') {
-      document.body.classList.add('solid-theme')
-
-      // Remove transparent background styles
-      document.documentElement.style.setProperty(
-        '--transparent-bg-override',
-        'none'
-      )
-
-      // Set background to solid color instead of transparent
-      const bgColor = `var(--theme-bg)`
-      // Apply background explicitly instead of using style property
-      document.documentElement.style.setProperty('background', bgColor)
-      document.body.style.removeProperty('background')
-      document.body.style.backgroundColor = bgColor
-      document
-        .querySelector('.q-layout')
-        ?.setAttribute('style', 'background: ' + bgColor + ' !important')
+    // Handle platform-specific styling
+    if (!isWindows11) {
+      // Apply solid theme styling for non-Windows 11 platforms
+      handleNonWindows11Styling(activeThemeValue);
     } else {
-      // For other themes on non-Windows 11, don't use solid-theme
-      document.body.classList.remove('solid-theme')
+      // Handle Windows 11 Mica effect
+      await handleWindows11Styling(activeThemeValue);
+    }
+  } catch (error) {
+    console.error("Failed to apply theme:", error);
+    // Fallback to basic theme application
+    fallbackThemeApplication(activeThemeValue);
+  }
+};
 
-      // Use the semi-transparent theme variables directly
-      const bgColor = `var(--theme-bg)`
-      document.documentElement.style.setProperty('background', bgColor)
-      document.body.style.removeProperty('background')
-      document.body.style.backgroundColor = bgColor
-      document
-        .querySelector('.q-layout')
-        ?.setAttribute('style', 'background: ' + bgColor + ' !important')
+// Handle styling for non-Windows 11 platforms
+const handleNonWindows11Styling = (themeValue: string) => {
+  // Only apply solid-theme to light and dark themes
+  if (themeValue === "light" || themeValue === "dark") {
+    document.body.classList.add("solid-theme");
+  } else {
+    document.body.classList.remove("solid-theme");
+  }
+
+  // Remove transparent background styles
+  document.documentElement.style.setProperty(
+    "--transparent-bg-override",
+    "none"
+  );
+
+  // Set background to solid color instead of transparent
+  const bgColor = `var(--theme-bg)`;
+
+  document.body.style.removeProperty("background");
+  document.body.style.backgroundColor = bgColor;
+  document
+    .querySelector(".q-layout")
+    ?.setAttribute("style", "background: " + bgColor + " !important");
+};
+
+// Handle Windows 11 Mica effect styling
+const handleWindows11Styling = async (themeValue: string) => {
+  // Only light and dark themes should be transparent for Mica
+  if (themeService.supportsWindowsMica(themeValue)) {
+    document.body.classList.remove("solid-theme");
+    document.documentElement.style.setProperty(
+      "--transparent-bg-override",
+      "transparent"
+    );
+    document.body.style.removeProperty("background");
+    document.body.setAttribute("style", "background: transparent !important");
+
+    // Make sure q-layout is also transparent for Mica to work properly
+    const qLayout = document.querySelector(".q-layout");
+    if (qLayout) {
+      qLayout.removeAttribute("style");
+      qLayout.setAttribute("style", "background: transparent !important");
+    }
+
+    // Apply Mica effect based on theme
+    try {
+      await invoke("change_mica_theme", {
+        window: "main",
+        dark: themeValue !== "light",
+      });
+      console.log(
+        "Applied Mica theme effect:",
+        themeValue !== "light" ? "dark" : "light"
+      );
+    } catch (error) {
+      console.error("Failed to apply Mica effect:", error);
     }
   } else {
-    // On Windows 11, only light and dark themes should be transparent for Mica
-    if (activeThemeValue === 'light' || activeThemeValue === 'dark') {
-      document.body.classList.remove('solid-theme')
-      document.documentElement.style.setProperty(
-        '--transparent-bg-override',
-        'transparent'
-      )
-      // Fix for background style being commented out
-      document.body.style.removeProperty('background')
-      document.body.setAttribute('style', 'background: transparent !important')
+    // For custom themes on Windows 11, use solid styling
+    document.body.classList.remove("solid-theme");
+    document.documentElement.style.setProperty(
+      "--transparent-bg-override",
+      "none"
+    );
 
-      // Make sure q-layout is also transparent for Mica to work properly
-      const qLayout = document.querySelector('.q-layout')
-      if (qLayout) {
-        qLayout.removeAttribute('style')
-        qLayout.setAttribute('style', 'background: transparent !important')
-      }
+    // Set background to solid color based on the theme
+    const bgColor = `var(--theme-bg)`;
 
-      // Apply Mica effect based on theme (Windows 11 only)
-      try {
-        await invoke('change_mica_theme', {
-          window: 'main',
-          dark: activeThemeValue !== 'light',
-        })
-        console.log(
-          'Applied Mica theme effect:',
-          activeThemeValue !== 'light' ? 'dark' : 'light'
-        )
-      } catch (error) {
-        console.error('Failed to apply Mica effect:', error)
-      }
-    } else {
-      document.body.classList.remove('solid-theme')
-      document.documentElement.style.setProperty(
-        '--transparent-bg-override',
-        'none'
-      )
+    document.body.style.removeProperty("background");
+    document.body.style.backgroundColor = bgColor;
+    document
+      .querySelector(".q-layout")
+      ?.setAttribute("style", "background: " + bgColor + " !important");
 
-      // Set background to solid color based on the theme
-      const bgColor = `var(--theme-bg)`
-      document.documentElement.style.setProperty('background', bgColor)
-      document.body.style.removeProperty('background')
-      document.body.style.backgroundColor = bgColor
-      document
-        .querySelector('.q-layout')
-        ?.setAttribute('style', 'background: ' + bgColor + ' !important')
+    // Remove Mica effect for non-standard themes
+    try {
+      await invoke("remove_mica_theme", {
+        window: "main",
+      });
+      console.log("Removed Mica effect for theme:", themeValue);
+    } catch (error) {
+      console.error("Failed to remove Mica effect:", error);
 
-      // Remove Mica effect for non-standard themes
-      try {
-        await invoke('remove_mica_theme', {
-          window: 'main',
-        })
-        console.log('Removed Mica effect for theme:', activeThemeValue)
-      } catch (error) {
-        console.error('Failed to remove Mica effect:', error)
-      }
     }
   }
 }
+
+// Fallback theme application without theme service
+const fallbackThemeApplication = (themeValue: string) => {
+  console.warn("Using fallback theme application for:", themeValue);
+
+  // Remove all theme classes
+  document.body.classList.forEach((className) => {
+    if (className.endsWith("-theme")) {
+      document.body.classList.remove(className);
+    }
+  });
+
+  // Add the active theme class
+  document.body.classList.add(`${themeValue}-theme`);
+};
 
 // Get the current system theme (light or dark)
 const getSystemTheme = (): boolean => {
@@ -431,25 +442,6 @@ const getSystemTheme = (): boolean => {
     window.matchMedia &&
     window.matchMedia('(prefers-color-scheme: light)').matches
   )
-}
-
-// Apply custom CSS from settings
-const loadCustomCSS = async () => {
-  try {
-    const storeService = StoreService.getInstance()
-    const customCSS = await storeService.getSetting('customCSS')
-
-    if (customCSS) {
-      // Create a style element for custom CSS
-      const styleElement = document.createElement('style')
-      styleElement.id = 'custom-user-css'
-      styleElement.textContent = customCSS
-      document.head.appendChild(styleElement)
-      console.log('Applied custom CSS from settings')
-    }
-  } catch (error) {
-    console.error('Failed to load custom CSS:', error)
-  }
 }
 
 // Handle system theme changes
@@ -504,7 +496,8 @@ const processDeepLinkModDownload = async (
       modId,
       archiveExt,
       modelType,
-    })
+    });
+
 
     // Use the gamebananaService to handle the deep link download
     const result = await gamebananaService.downloadModFromDeepLink(
@@ -554,12 +547,34 @@ let cleanupEventListeners: (() => void) | undefined
 
 onMounted(async () => {
   try {
+    // Update progress bar - Step 1: Initialize theme service
+    initStatusText.value = "Initializing theme service...";
+    initProgress.value = 0.1;
+
+    // Initialize the theme service first
+    await themeService.initialize(); // Update progress bar - Step 2: Apply theme
+    initStatusText.value = "Applying theme...";
+    initProgress.value = 0.15;
+
+    // Apply initial theme based on system or user preference
+    const useSystemThemeInitial = await getUseSystemThemeSetting();
+    if (useSystemThemeInitial) {
+      // If using system theme, apply light or dark based on system preference
+      const isSystemLight = getSystemTheme();
+      await applyTheme(isSystemLight ? "light" : "dark");
+    } else {
+      // If using custom theme, apply the saved theme directly
+      const themeValue = await getThemePreference();
+      await applyTheme(themeValue);
+    }
+
     // Set up download event listeners
     cleanupEventListeners = setupGameBananaEventListeners()
 
-    // Update progress bar - Step 1: Initialize deep link handler
-    initStatusText.value = 'Setting up deep link handler...'
-    initProgress.value = 0.1
+    // Update progress bar - Step 3: Initialize deep link handler
+    initStatusText.value = "Setting up deep link handler...";
+    initProgress.value = 0.2;
+
 
     // Set up deep link handler
     onOpenUrl(async url => {
@@ -589,7 +604,8 @@ onMounted(async () => {
               archiveExt,
             })
 
-            processDeepLinkModDownload(downloadUrl, modId, archiveExt, modType)
+            processDeepLinkModDownload(downloadUrl, modId, archiveExt, modType);
+
           } else {
             console.error('Invalid deep link format, missing required parts')
           }
@@ -599,9 +615,10 @@ onMounted(async () => {
       }
     })
 
-    // Update progress bar - Step 2: Initialize database
-    initStatusText.value = 'Initializing database...'
-    initProgress.value = 0.2
+    // Update progress bar - Step 4: Initialize database
+    initStatusText.value = "Initializing database...";
+    initProgress.value = 0.3;
+
 
     // Initialize the database service
     const dbService = DatabaseService.getInstance()
@@ -622,12 +639,11 @@ onMounted(async () => {
     }
 
     // Update progress bar - Step 3: Load mods
-    initStatusText.value = 'Loading mods...'
-    initProgress.value = 0.4
+    initStatusText.value = "Loading mods...";
+    initProgress.value = 0.4; // Load mods from the database
+    const mods = await dbService.getAllMods();
+    console.log("Loaded mods from database:", mods);
 
-    // Load mods from the database
-    const mods = await dbService.getAllMods()
-    console.log('Loaded mods from database:', mods)
     if (mods && mods.length > 0) {
       console.log(`Loading ${mods.length} mods from database to backend`)
       // No need to sync with backend as the dbService handles this internally
@@ -635,28 +651,9 @@ onMounted(async () => {
       console.log('No mods found in database')
     }
 
-    // Update progress bar - Step 4: Apply theme
-    initStatusText.value = 'Applying theme...'
-    initProgress.value = 0.6
-
-    // Apply initial theme based on system or user preference
-    const useSystemTheme = await getUseSystemThemeSetting()
-    if (useSystemTheme) {
-      // If using system theme, apply light or dark based on system preference
-      const isSystemLight = getSystemTheme()
-      applyTheme(isSystemLight ? 'light' : 'dark')
-    } else {
-      // If using custom theme, apply the saved theme directly
-      const themeValue = await getThemePreference()
-      applyTheme(themeValue)
-    }
-
-    // Apply custom CSS
-    await loadCustomCSS()
-
     // Update progress bar - Step 5: Load settings
-    initStatusText.value = 'Loading settings...'
-    initProgress.value = 0.8
+    initStatusText.value = "Loading settings...";
+    initProgress.value = 0.6;
 
     // Load app settings
     await loadAppSettings()
@@ -669,12 +666,13 @@ onMounted(async () => {
     })
 
     // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: light)')
-    mediaQuery.addEventListener('change', handleSystemThemeChange)
-
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+    mediaQuery.addEventListener("change", handleSystemThemeChange); 
+    
     // Update progress bar - Step 6: Check for updates
-    initStatusText.value = 'Checking for updates...'
-    initProgress.value = 0.9
+    initStatusText.value = "Checking for updates...";
+    initProgress.value = 0.8;
+
 
     // Check for updates
     try {
@@ -694,12 +692,12 @@ onMounted(async () => {
               downloaded += event.data.chunkLength
               const percent = contentLength
                 ? Math.round((downloaded / contentLength) * 100)
-                : 0
-              initProgress.value = 0.9 + percent / 1000
-              break
-            case 'Finished':
-              initProgress.value = 1.0
-              break
+                : 0;
+              initProgress.value = 0.8 + percent / 1000;
+              break;
+            case "Finished":
+              initProgress.value = 1.0;
+              break;
           }
         })
 
@@ -743,7 +741,15 @@ onMounted(async () => {
       }
     })
   }
-})
+});
+
+// Show the window when DOM content is loaded
+document.addEventListener("DOMContentLoaded", () => {
+  const currentWindow = getCurrentWindow();
+  console.log("Current window:", currentWindow);
+  currentWindow.show();
+});
+
 </script>
 
 <style>

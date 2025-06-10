@@ -1,0 +1,16 @@
+/* Dark Theme */
+:root {
+  --theme-bg: rgba(0, 0, 0, 0.87);
+  --theme-card: rgba(255, 255, 255, 0.2);
+  --theme-surface: rgba(0, 0, 0, 0.1);
+  --theme-text: #e6e6e6;
+  --theme-text-secondary: rgba(230, 230, 230, 0.7);
+  --theme-border: rgba(230, 230, 230, 0.25);
+  --theme-solid: #282828;
+
+  .solid-theme {
+    --theme-bg: #121212;
+    --theme-card: #1e1e1e;
+    --theme-surface: #282828;
+  }
+}

@@ -270,7 +270,7 @@ const resetForm = () => {
 .custom-url-download-modal {
   width: 700px;
   max-width: 90vw;
-  background-color: var(--solid);
+  background-color: var(--theme-solid);
   border: 2px solid var(--theme-border);
   color: var(--theme-text);
 }

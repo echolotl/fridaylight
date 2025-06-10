@@ -106,7 +106,10 @@
           class="home-button q-my-sm"
           :active="activePage === 'home'"
           active-class="active-home"
-          @click="$emit('go-home')"
+          :class="{
+            'compact-mode': compactMode
+          }"
+
         >
           <q-item-section avatar>
             <q-icon name="home" style="margin-left: 4px" />
@@ -1090,6 +1093,11 @@ const editFolder = (folder: Folder) => {
   border-radius: 0 1rem 1rem 0;
   transition: all 0.2s ease;
   background-color: none;
+  color: var(--theme-text-secondary);
+}
+
+.home-button.compact-mode {
+  
 }
 
 .active-home {
