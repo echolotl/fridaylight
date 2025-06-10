@@ -64,8 +64,8 @@
         <q-btn
           flat
           label="P-Slice"
-          @click="$emit('download-engine', 'pslice')"
           class="engine-btn"
+          @click="$emit('download-engine', 'pslice')"
         >
           <img
             src="/images/engine_icons/P-slice.png"

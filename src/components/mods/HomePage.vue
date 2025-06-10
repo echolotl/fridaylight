@@ -260,6 +260,12 @@ import { useQuasar, Notify } from 'quasar'
 import { StoreService } from '../../services/storeService'
 import { formatEngineName } from '@utils/index'
 
+const emit = defineEmits([
+  'launch-mod',
+  'open-mod-settings',
+  'select-mod',
+  'gamebanana-browser',
+])
 // Featured mods state
 const featuredMods = ref<GameBananaMod[]>([])
 const isLoadingFeatured = ref(false)
