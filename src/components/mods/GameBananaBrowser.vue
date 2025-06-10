@@ -1,15 +1,15 @@
 <template>
   <div class="gamebanana-browser phantom-font">
     <SearchBar
-      :searchQuery="searchQuery"
-      @update:searchQuery="searchQuery = $event"
+      :search-query="searchQuery"
+      @update:search-query="searchQuery = $event"
       @search="searchMods"
       @clear="clearSearch"
       @custom-download="showCustomUrlModal = true"
     />
 
     <!-- Search Results View -->
-    <div class="section-header phantom-font" v-if="activeView === 'search'">
+    <div v-if="activeView === 'search'" class="section-header phantom-font">
       <div class="text-subtitle1 phantom-font-difficulty">Search Results</div>
       <q-btn
         flat
@@ -23,14 +23,14 @@
       <ModGrid
         :mods="searchResults"
         :loading="isLoadingSearch"
-        loadingMessage="Searching mods..."
-        :emptyMessage="`No mods found matching '${searchQuery}'`"
-        :currentPage="currentPage"
-        :totalPages="totalPages"
+        loading-message="Searching mods..."
+        :empty-message="`No mods found matching '${searchQuery}'`"
+        :current-page="currentPage"
+        :total-pages="totalPages"
         :input-pagination="true"
         @download="downloadMod"
         @page-change="changePage"
-        @showDetails="openModDetails"
+        @show-details="openModDetails"
       />
     </q-scroll-area>
 
@@ -44,7 +44,7 @@
               :mods="featuredMods"
               :loading="isLoadingFeatured"
               @download="downloadMod"
-              @showDetails="openModDetails"
+              @show-details="openModDetails"
             />
           </div>
         </div>
@@ -77,14 +77,14 @@
               <ModGrid
                 :mods="latestMods"
                 :loading="isLoadingLatest"
-                loadingMessage="Loading latest mods..."
-                emptyMessage="No mods found"
-                :currentPage="currentPage"
-                :totalPages="totalPages"
-                :inputPagination="true"
+                loading-message="Loading latest mods..."
+                empty-message="No mods found"
+                :current-page="currentPage"
+                :total-pages="totalPages"
+                :input-pagination="true"
                 @download="downloadMod"
                 @page-change="changePage"
-                @showDetails="openModDetails"
+                @show-details="openModDetails"
               />
             </q-tab-panel>
 
@@ -93,14 +93,14 @@
               <ModGrid
                 :mods="psychModpacks"
                 :loading="isLoadingPsychModpacks"
-                loadingMessage="Loading Psych Engine modpacks..."
-                emptyMessage="No Psych Engine modpacks found"
-                :currentPage="currentPage"
-                :totalPages="totalPages"
-                :inputPagination="true"
+                loading-message="Loading Psych Engine modpacks..."
+                empty-message="No Psych Engine modpacks found"
+                :current-page="currentPage"
+                :total-pages="totalPages"
+                :input-pagination="true"
                 @download="downloadMod"
                 @page-change="changePage"
-                @showDetails="openModDetails"
+                @show-details="openModDetails"
               />
             </q-tab-panel>
 
@@ -109,14 +109,14 @@
               <ModGrid
                 :mods="vsliceModpacks"
                 :loading="isLoadingVsliceModpacks"
-                loadingMessage="Loading V-Slice modpacks..."
-                emptyMessage="No V-Slice modpacks found"
-                :currentPage="currentPage"
-                :totalPages="totalPages"
-                :inputPagination="true"
+                loading-message="Loading V-Slice modpacks..."
+                empty-message="No V-Slice modpacks found"
+                :current-page="currentPage"
+                :total-pages="totalPages"
+                :input-pagination="true"
                 @download="downloadMod"
                 @page-change="changePage"
-                @showDetails="openModDetails"
+                @show-details="openModDetails"
               />
             </q-tab-panel>
 
@@ -125,14 +125,14 @@
               <ModGrid
                 :mods="codenameModpacks"
                 :loading="isLoadingCodenameModpacks"
-                loadingMessage="Loading Codename Engine modpacks..."
-                emptyMessage="No Codename Engine modpacks found"
-                :currentPage="currentPage"
-                :totalPages="totalPages"
-                :inputPagination="true"
+                loading-message="Loading Codename Engine modpacks..."
+                empty-message="No Codename Engine modpacks found"
+                :current-page="currentPage"
+                :total-pages="totalPages"
+                :input-pagination="true"
                 @download="downloadMod"
                 @page-change="changePage"
-                @showDetails="openModDetails"
+                @show-details="openModDetails"
               />
             </q-tab-panel>
           </q-tab-panels>
@@ -172,13 +172,13 @@
     <!-- Mod Type Selection Modal -->
     <ModTypeSelectionModal
       v-model="showModTypeModal"
-      :modData="customModData"
+      :mod-data="customModData"
       @submit="onModTypeSubmit"
       @back="
-        showModTypeModal = false;
-        if (customModData?.isCustomUrl) {
-          showCustomUrlModal = true;
-        }
+        showModTypeModal =
+          false && customModData?.isCustomUrl
+            ? (showCustomUrlModal = true)
+            : false
       "
       @cancel="handleModTypeCancel"
     />
@@ -206,620 +206,620 @@
 
     <!-- Mod Details Modal -->
     <ModDetailsModal
-      :modId="selectedModId"
-      :modelType="currentModelType"
-      :isOpen="isModDetailsModalOpen"
-      @update:isOpen="isModDetailsModalOpen = $event"
+      :mod-id="selectedModId"
+      :model-type="currentModelType"
+      :is-open="isModDetailsModalOpen"
+      @update:is-open="isModDetailsModalOpen = $event"
       @download="downloadMod"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from "vue";
-import { invoke } from "@tauri-apps/api/core";
-import { useQuasar, Notify } from "quasar";
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
+import { useQuasar, Notify } from 'quasar'
 import {
   gamebananaService,
   setupGameBananaEventListeners,
-} from "@services/gamebananaService";
-import type { ModpackInfo } from "@services/gamebananaService";
+} from '@services/gamebananaService'
+import type { ModpackInfo } from '@services/gamebananaService'
 
 // Import local components
-import SearchBar from "@components/common/SearchBar.vue";
-import ModGrid from "@components/common/ModGrid.vue";
-import FeaturedModsCarousel from "@mods/FeaturedModsCarousel.vue";
-import EngineDownloadButtons from "@mods/EngineDownloadButtons.vue";
-import DownloadFileSelector from "@modals/DownloadFileSelector.vue";
-import EngineSelectionDialog from "@modals/EngineSelectionDialog.vue";
-import CustomUrlDownloadModal from "@modals/CustomUrlDownloadModal.vue";
-import ModTypeSelectionModal from "@modals/ModTypeSelectionModal.vue";
-import MessageDialog from "@modals/MessageDialog.vue";
-import ModDetailsModal from "@modals/ModDetailsModal.vue";
-import { StoreService } from "../../services/storeService";
+import SearchBar from '@components/common/SearchBar.vue'
+import ModGrid from '@components/common/ModGrid.vue'
+import FeaturedModsCarousel from '@mods/FeaturedModsCarousel.vue'
+import EngineDownloadButtons from '@mods/EngineDownloadButtons.vue'
+import DownloadFileSelector from '@modals/DownloadFileSelector.vue'
+import EngineSelectionDialog from '@modals/EngineSelectionDialog.vue'
+import CustomUrlDownloadModal from '@modals/CustomUrlDownloadModal.vue'
+import ModTypeSelectionModal from '@modals/ModTypeSelectionModal.vue'
+import MessageDialog from '@modals/MessageDialog.vue'
+import ModDetailsModal from '@modals/ModDetailsModal.vue'
+import { StoreService } from '../../services/storeService'
 
 // Declare db for TypeScript
 declare global {
   interface Window {
-    db: any;
+    db: any
   }
 }
 
 // Ensure Notify is properly registered
-Notify.create = Notify.create || (() => {});
+Notify.create = Notify.create || (() => {})
 
 // Create a quasar instance at the top level of the script setup
-const $q = useQuasar();
+const $q = useQuasar()
 
 // Event listener cleanup
-let eventListenerCleanup: (() => void) | undefined;
+let eventListenerCleanup: (() => void) | undefined
 
 // Search state
-const searchQuery = ref("");
-const isLoadingSearch = ref(false);
-const hasSearched = ref(false);
-const searchResults = ref<any[]>([]);
+const searchQuery = ref('')
+const isLoadingSearch = ref(false)
+const hasSearched = ref(false)
+const searchResults = ref<any[]>([])
 
 // Featured mods state
-const featuredMods = ref<any[]>([]);
-const isLoadingFeatured = ref(false);
+const featuredMods = ref<any[]>([])
+const isLoadingFeatured = ref(false)
 
 // Latest mods and modpacks state
-const latestMods = ref<any[]>([]);
-const psychModpacks = ref<any[]>([]);
-const vsliceModpacks = ref<any[]>([]);
-const codenameModpacks = ref<any[]>([]);
-const isLoadingLatest = ref(false);
-const isLoadingPsychModpacks = ref(false);
-const isLoadingVsliceModpacks = ref(false);
-const isLoadingCodenameModpacks = ref(false);
+const latestMods = ref<any[]>([])
+const psychModpacks = ref<any[]>([])
+const vsliceModpacks = ref<any[]>([])
+const codenameModpacks = ref<any[]>([])
+const isLoadingLatest = ref(false)
+const isLoadingPsychModpacks = ref(false)
+const isLoadingVsliceModpacks = ref(false)
+const isLoadingCodenameModpacks = ref(false)
 
 // Pagination state
-const currentPage = ref(1);
-const totalPages = ref(1);
-const itemsPerPage = 20;
+const currentPage = ref(1)
+const totalPages = ref(1)
+const itemsPerPage = 20
 
 // View state
-const activeView = ref("all"); // 'all', 'search'
-const selectedModType = ref("executables"); // For tabs
+const activeView = ref('all') // 'all', 'search'
+const selectedModType = ref('executables') // For tabs
 
 // For file selection
-const showFileSelector = ref(false);
-const downloadFiles = ref<any[]>([]);
-const alternateFileSources = ref<any[]>([]);
-const currentDownloadMod = ref<any | null>(null);
-let pendingDownloadNotification: any = null;
+const showFileSelector = ref(false)
+const downloadFiles = ref<any[]>([])
+const alternateFileSources = ref<any[]>([])
+const currentDownloadMod = ref<any | null>(null)
+let pendingDownloadNotification: any = null
 
 // For modpack handling
-const showEngineSelectDialog = ref(false);
-const currentModpackInfo = ref<ModpackInfo | null>(null);
-const selectedEngineMod = ref<any>(null);
+const showEngineSelectDialog = ref(false)
+const currentModpackInfo = ref<ModpackInfo | null>(null)
+const selectedEngineMod = ref<any>(null)
 
 // For custom URL download
-const showCustomUrlModal = ref(false);
-const showModTypeModal = ref(false);
-const customModData = ref<any>(null);
+const showCustomUrlModal = ref(false)
+const showModTypeModal = ref(false)
+const customModData = ref<any>(null)
 
 // For folder existence confirmation
-const showFolderExistsDialog = ref(false);
-const folderExistsModName = ref("");
+const showFolderExistsDialog = ref(false)
+const folderExistsModName = ref('')
 
 // For mod details modal
-const selectedModId = ref<number>(0);
-const currentModelType = ref<string>("");
-const isModDetailsModalOpen = ref<boolean>(false);
+const selectedModId = ref<number>(0)
+const currentModelType = ref<string>('')
+const isModDetailsModalOpen = ref<boolean>(false)
 
 // Variables for handling folder existence check
 const folderExistsDownloadContinueFunction = ref<(() => Promise<any>) | null>(
   null
-);
+)
 
-watch(selectedModType, async (newType) => {
-  console.log("Tab changed to:", newType);
-  currentPage.value = 1; // Reset to first page when changing tabs
+watch(selectedModType, async newType => {
+  console.log('Tab changed to:', newType)
+  currentPage.value = 1 // Reset to first page when changing tabs
 
-  if (newType === "psychModpacks") {
+  if (newType === 'psychModpacks') {
     if (psychModpacks.value.length === 0) {
-      await fetchPsychModpacks();
+      await fetchPsychModpacks()
     } else {
       // If data is already loaded, just update the totalPages
       const response = await invoke<{ mods: any[]; total: number }>(
-        "fetch_gamebanana_mods_command",
+        'fetch_gamebanana_mods_command',
         {
-          query: "_psychmodpack",
+          query: '_psychmodpack',
           page: 1,
         }
-      );
-      totalPages.value = Math.ceil(response.total / itemsPerPage);
+      )
+      totalPages.value = Math.ceil(response.total / itemsPerPage)
     }
-  } else if (newType === "vsliceModpacks") {
+  } else if (newType === 'vsliceModpacks') {
     if (vsliceModpacks.value.length === 0) {
-      await fetchVsliceModpacks();
+      await fetchVsliceModpacks()
     } else {
       // If data is already loaded, just update the totalPages
       const response = await invoke<{ mods: any[]; total: number }>(
-        "fetch_gamebanana_mods_command",
+        'fetch_gamebanana_mods_command',
         {
-          query: "_vslicemodpack",
+          query: '_vslicemodpack',
           page: 1,
         }
-      );
-      totalPages.value = Math.ceil(response.total / itemsPerPage);
+      )
+      totalPages.value = Math.ceil(response.total / itemsPerPage)
     }
-  } else if (newType === "codenameModpacks") {
+  } else if (newType === 'codenameModpacks') {
     if (codenameModpacks.value.length === 0) {
-      await fetchCodenameModpacks();
+      await fetchCodenameModpacks()
     } else {
       // If data is already loaded, just update the totalPages
       const response = await invoke<{ mods: any[]; total: number }>(
-        "fetch_gamebanana_mods_command",
+        'fetch_gamebanana_mods_command',
         {
-          query: "_codenamemodpack",
+          query: '_codenamemodpack',
           page: 1,
         }
-      );
-      totalPages.value = Math.ceil(response.total / itemsPerPage);
+      )
+      totalPages.value = Math.ceil(response.total / itemsPerPage)
     }
-  } else if (newType === "executables") {
+  } else if (newType === 'executables') {
     if (latestMods.value.length === 0) {
-      await fetchLatestMods();
+      await fetchLatestMods()
     } else {
       // If data is already loaded, just update the totalPages
       const response = await invoke<{ mods: any[]; total: number }>(
-        "fetch_gamebanana_mods_command",
+        'fetch_gamebanana_mods_command',
         {
-          query: "latest",
+          query: 'latest',
           page: 1,
         }
-      );
-      totalPages.value = Math.ceil(response.total / itemsPerPage);
+      )
+      totalPages.value = Math.ceil(response.total / itemsPerPage)
     }
   }
-});
+})
 
 onMounted(() => {
   // Load initial data
-  fetchFeaturedMods();
-  fetchLatestMods();
+  fetchFeaturedMods()
+  fetchLatestMods()
 
   // Also load the first tab of mod packs data if needed
-  if (selectedModType.value === "psychModpacks") {
-    fetchPsychModpacks();
-  } else if (selectedModType.value === "vsliceModpacks") {
-    fetchVsliceModpacks();
-  } else if (selectedModType.value === "codenameModpacks") {
-    fetchCodenameModpacks();
+  if (selectedModType.value === 'psychModpacks') {
+    fetchPsychModpacks()
+  } else if (selectedModType.value === 'vsliceModpacks') {
+    fetchVsliceModpacks()
+  } else if (selectedModType.value === 'codenameModpacks') {
+    fetchCodenameModpacks()
   }
 
   // Set up event listeners using the centralized function
-  eventListenerCleanup = setupGameBananaEventListeners();
-});
+  eventListenerCleanup = setupGameBananaEventListeners()
+})
 
 // Clean up event listeners when component is unmounted
 onBeforeUnmount(() => {
   if (eventListenerCleanup) {
-    eventListenerCleanup();
+    eventListenerCleanup()
   }
-});
+})
 
 // Data fetching functions
 const fetchFeaturedMods = async () => {
-  isLoadingFeatured.value = true;
+  isLoadingFeatured.value = true
   try {
     const response = await invoke<{ mods: any[]; total: number }>(
-      "fetch_gamebanana_mods_command",
+      'fetch_gamebanana_mods_command',
       {
-        query: "featured",
+        query: 'featured',
         page: 1, // Always get first page for featured
       }
-    );
+    )
 
-    featuredMods.value = response.mods;
+    featuredMods.value = response.mods
   } catch (error) {
-    console.error("Failed to fetch featured mods:", error);
+    console.error('Failed to fetch featured mods:', error)
   } finally {
-    isLoadingFeatured.value = false;
+    isLoadingFeatured.value = false
   }
-};
+}
 
 const fetchLatestMods = async () => {
-  isLoadingLatest.value = true;
+  isLoadingLatest.value = true
   try {
     const response = await invoke<{ mods: any[]; total: number }>(
-      "fetch_gamebanana_mods_command",
+      'fetch_gamebanana_mods_command',
       {
-        query: "latest",
+        query: 'latest',
         page: currentPage.value,
       }
-    );
+    )
 
-    latestMods.value = response.mods;
-    totalPages.value = Math.ceil(response.total / itemsPerPage);
+    latestMods.value = response.mods
+    totalPages.value = Math.ceil(response.total / itemsPerPage)
   } catch (error) {
-    console.error("Failed to fetch latest mods:", error);
+    console.error('Failed to fetch latest mods:', error)
   } finally {
-    isLoadingLatest.value = false;
+    isLoadingLatest.value = false
   }
-};
+}
 
 const fetchPsychModpacks = async () => {
-  isLoadingPsychModpacks.value = true;
+  isLoadingPsychModpacks.value = true
   try {
     const response = await invoke<{ mods: any[]; total: number }>(
-      "fetch_gamebanana_mods_command",
+      'fetch_gamebanana_mods_command',
       {
-        query: "_psychmodpack",
+        query: '_psychmodpack',
         page: currentPage.value,
       }
-    );
+    )
 
-    psychModpacks.value = response.mods;
-    if (selectedModType.value === "psychModpacks") {
-      totalPages.value = Math.ceil(response.total / itemsPerPage);
+    psychModpacks.value = response.mods
+    if (selectedModType.value === 'psychModpacks') {
+      totalPages.value = Math.ceil(response.total / itemsPerPage)
     }
   } catch (error) {
-    console.error("Failed to fetch Psych Engine modpacks:", error);
+    console.error('Failed to fetch Psych Engine modpacks:', error)
   } finally {
-    isLoadingPsychModpacks.value = false;
+    isLoadingPsychModpacks.value = false
   }
-};
+}
 
 const fetchVsliceModpacks = async () => {
-  isLoadingVsliceModpacks.value = true;
+  isLoadingVsliceModpacks.value = true
   try {
     const response = await invoke<{ mods: any[]; total: number }>(
-      "fetch_gamebanana_mods_command",
+      'fetch_gamebanana_mods_command',
       {
-        query: "_vslicemodpack",
+        query: '_vslicemodpack',
         page: currentPage.value,
       }
-    );
+    )
 
-    vsliceModpacks.value = response.mods;
-    if (selectedModType.value === "vsliceModpacks") {
-      totalPages.value = Math.ceil(response.total / itemsPerPage);
+    vsliceModpacks.value = response.mods
+    if (selectedModType.value === 'vsliceModpacks') {
+      totalPages.value = Math.ceil(response.total / itemsPerPage)
     }
   } catch (error) {
-    console.error("Failed to fetch V-Slice modpacks:", error);
+    console.error('Failed to fetch V-Slice modpacks:', error)
   } finally {
-    isLoadingVsliceModpacks.value = false;
+    isLoadingVsliceModpacks.value = false
   }
-};
+}
 
 const fetchCodenameModpacks = async () => {
-  isLoadingCodenameModpacks.value = true;
+  isLoadingCodenameModpacks.value = true
   try {
     const response = await invoke<{ mods: any[]; total: number }>(
-      "fetch_gamebanana_mods_command",
+      'fetch_gamebanana_mods_command',
       {
-        query: "_codenamemodpack",
+        query: '_codenamemodpack',
         page: currentPage.value,
       }
-    );
+    )
 
-    codenameModpacks.value = response.mods;
-    if (selectedModType.value === "codenameModpacks") {
-      totalPages.value = Math.ceil(response.total / itemsPerPage);
+    codenameModpacks.value = response.mods
+    if (selectedModType.value === 'codenameModpacks') {
+      totalPages.value = Math.ceil(response.total / itemsPerPage)
     }
   } catch (error) {
-    console.error("Failed to fetch Codename Engine modpacks:", error);
+    console.error('Failed to fetch Codename Engine modpacks:', error)
   } finally {
-    isLoadingCodenameModpacks.value = false;
+    isLoadingCodenameModpacks.value = false
   }
-};
+}
 
 // Search functions
 const searchMods = async () => {
   if (!searchQuery.value.trim()) {
-    activeView.value = "all";
-    return;
+    activeView.value = 'all'
+    return
   }
 
-  activeView.value = "search";
-  isLoadingSearch.value = true;
-  currentPage.value = 1;
+  activeView.value = 'search'
+  isLoadingSearch.value = true
+  currentPage.value = 1
 
   try {
     const response = await invoke<{ mods: any[]; total: number }>(
-      "fetch_gamebanana_mods_command",
+      'fetch_gamebanana_mods_command',
       {
         query: searchQuery.value,
         page: currentPage.value,
       }
-    );
+    )
 
-    searchResults.value = response.mods;
-    totalPages.value = Math.ceil(response.total / itemsPerPage);
-    hasSearched.value = true;
+    searchResults.value = response.mods
+    totalPages.value = Math.ceil(response.total / itemsPerPage)
+    hasSearched.value = true
   } catch (error) {
-    console.error("Failed to search mods:", error);
+    console.error('Failed to search mods:', error)
   } finally {
-    isLoadingSearch.value = false;
+    isLoadingSearch.value = false
   }
-};
+}
 
 const clearSearch = () => {
-  searchQuery.value = "";
-  activeView.value = "all";
-  hasSearched.value = false;
-};
+  searchQuery.value = ''
+  activeView.value = 'all'
+  hasSearched.value = false
+}
 
 // Function to open mod details modal
 const openModDetails = (modId: number, modelType: string) => {
-  console.log("Opening mod details for ID:", modId);
-  selectedModId.value = modId ? modId : 0;
-  currentModelType.value = modelType;
-  console.log("Selected mod ID:", selectedModId.value, "Model Type:", modelType);
-  isModDetailsModalOpen.value = true;
-  console.log("Mod details modal opened");
-};
+  console.log('Opening mod details for ID:', modId)
+  selectedModId.value = modId ? modId : 0
+  currentModelType.value = modelType
+  console.log('Selected mod ID:', selectedModId.value, 'Model Type:', modelType)
+  isModDetailsModalOpen.value = true
+  console.log('Mod details modal opened')
+}
 
 // Pagination handling
 const changePage = async (page: number) => {
-  currentPage.value = page;
+  currentPage.value = page
 
-  if (activeView.value === "search") {
-    isLoadingSearch.value = true;
+  if (activeView.value === 'search') {
+    isLoadingSearch.value = true
     try {
       const response = await invoke<{ mods: any[]; total: number }>(
-        "fetch_gamebanana_mods_command",
+        'fetch_gamebanana_mods_command',
         {
           query: searchQuery.value,
           page: page,
         }
-      );
+      )
 
-      searchResults.value = response.mods;
+      searchResults.value = response.mods
       // Make sure to update totalPages from the response
-      totalPages.value = Math.ceil(response.total / itemsPerPage);
+      totalPages.value = Math.ceil(response.total / itemsPerPage)
     } catch (error) {
-      console.error("Failed to fetch search page:", error);
+      console.error('Failed to fetch search page:', error)
     } finally {
-      isLoadingSearch.value = false;
+      isLoadingSearch.value = false
     }
   } else {
     // Handle pagination based on the current active tab
-    if (selectedModType.value === "executables") {
-      isLoadingLatest.value = true;
+    if (selectedModType.value === 'executables') {
+      isLoadingLatest.value = true
       try {
         const response = await invoke<{ mods: any[]; total: number }>(
-          "fetch_gamebanana_mods_command",
+          'fetch_gamebanana_mods_command',
           {
-            query: "latest",
+            query: 'latest',
             page: page,
           }
-        );
+        )
 
-        latestMods.value = response.mods;
+        latestMods.value = response.mods
         // Make sure to update totalPages from the response
-        totalPages.value = Math.ceil(response.total / itemsPerPage);
+        totalPages.value = Math.ceil(response.total / itemsPerPage)
       } catch (error) {
-        console.error("Failed to fetch latest page:", error);
+        console.error('Failed to fetch latest page:', error)
       } finally {
-        isLoadingLatest.value = false;
+        isLoadingLatest.value = false
       }
-    } else if (selectedModType.value === "psychModpacks") {
-      isLoadingPsychModpacks.value = true;
+    } else if (selectedModType.value === 'psychModpacks') {
+      isLoadingPsychModpacks.value = true
       try {
         const response = await invoke<{ mods: any[]; total: number }>(
-          "fetch_gamebanana_mods_command",
+          'fetch_gamebanana_mods_command',
           {
-            query: "_psychmodpack",
+            query: '_psychmodpack',
             page: page,
           }
-        );
+        )
 
-        psychModpacks.value = response.mods;
+        psychModpacks.value = response.mods
         // Make sure to update totalPages from the response
-        totalPages.value = Math.ceil(response.total / itemsPerPage);
+        totalPages.value = Math.ceil(response.total / itemsPerPage)
       } catch (error) {
-        console.error("Failed to fetch Psych Engine modpacks page:", error);
+        console.error('Failed to fetch Psych Engine modpacks page:', error)
       } finally {
-        isLoadingPsychModpacks.value = false;
+        isLoadingPsychModpacks.value = false
       }
-    } else if (selectedModType.value === "vsliceModpacks") {
-      isLoadingVsliceModpacks.value = true;
+    } else if (selectedModType.value === 'vsliceModpacks') {
+      isLoadingVsliceModpacks.value = true
       try {
         const response = await invoke<{ mods: any[]; total: number }>(
-          "fetch_gamebanana_mods_command",
+          'fetch_gamebanana_mods_command',
           {
-            query: "_vslicemodpack",
+            query: '_vslicemodpack',
             page: page,
           }
-        );
+        )
 
-        vsliceModpacks.value = response.mods;
+        vsliceModpacks.value = response.mods
         // Make sure to update totalPages from the response
-        totalPages.value = Math.ceil(response.total / itemsPerPage);
+        totalPages.value = Math.ceil(response.total / itemsPerPage)
       } catch (error) {
-        console.error("Failed to fetch V-Slice modpacks page:", error);
+        console.error('Failed to fetch V-Slice modpacks page:', error)
       } finally {
-        isLoadingVsliceModpacks.value = false;
+        isLoadingVsliceModpacks.value = false
       }
-    } else if (selectedModType.value === "codenameModpacks") {
-      isLoadingCodenameModpacks.value = true;
+    } else if (selectedModType.value === 'codenameModpacks') {
+      isLoadingCodenameModpacks.value = true
       try {
         const response = await invoke<{ mods: any[]; total: number }>(
-          "fetch_gamebanana_mods_command",
+          'fetch_gamebanana_mods_command',
           {
-            query: "_codenamemodpack",
+            query: '_codenamemodpack',
             page: page,
           }
-        );
+        )
 
-        codenameModpacks.value = response.mods;
+        codenameModpacks.value = response.mods
         // Make sure to update totalPages from the response
-        totalPages.value = Math.ceil(response.total / itemsPerPage);
+        totalPages.value = Math.ceil(response.total / itemsPerPage)
       } catch (error) {
-        console.error("Failed to fetch Codename Engine modpacks page:", error);
+        console.error('Failed to fetch Codename Engine modpacks page:', error)
       } finally {
-        isLoadingCodenameModpacks.value = false;
+        isLoadingCodenameModpacks.value = false
       }
     }
   }
-};
+}
 
 // Download handling
 const downloadMod = async (mod: any) => {
   try {
-    currentDownloadMod.value = mod;
+    currentDownloadMod.value = mod
 
-    const result = await gamebananaService.downloadMod(mod);
+    const result = await gamebananaService.downloadMod(mod)
 
     // Handle different scenarios based on the result
-    if ("showFileSelector" in result) {
+    if ('showFileSelector' in result) {
       // If we need to show file selector
-      downloadFiles.value = result.files;
-      alternateFileSources.value = result.alternateFileSources || [];
-      showFileSelector.value = true;
-      return;
+      downloadFiles.value = result.files
+      alternateFileSources.value = result.alternateFileSources || []
+      showFileSelector.value = true
+      return
     }
 
-    if ("showEngineSelectDialog" in result) {
+    if ('showEngineSelectDialog' in result) {
       // If we need to show engine selection dialog
-      currentModpackInfo.value = result.modpackInfo;
-      showEngineSelectDialog.value = true;
-      return;
+      currentModpackInfo.value = result.modpackInfo
+      showEngineSelectDialog.value = true
+      return
     }
 
-    if ("showModTypeModal" in result) {
+    if ('showModTypeModal' in result) {
       // If we need to show mod type selection
-      customModData.value = result.customModData;
-      showModTypeModal.value = true;
-      return;
+      customModData.value = result.customModData
+      showModTypeModal.value = true
+      return
     }
 
-    if ("showFolderExistsDialog" in result) {
+    if ('showFolderExistsDialog' in result) {
       // If the mod folder already exists, show confirmation dialog
-      folderExistsModName.value = result.modName;
-      folderExistsDownloadContinueFunction.value = result.continueDownload;
-      showFolderExistsDialog.value = true;
-      return;
+      folderExistsModName.value = result.modName
+      folderExistsDownloadContinueFunction.value = result.continueDownload
+      showFolderExistsDialog.value = true
+      return
     }
   } catch (error) {
     // Show error notification
     $q.notify({
-      type: "negative",
+      type: 'negative',
       message: `Failed to prepare download for "${mod.name}"`,
       caption: String(error),
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 5000,
-    });
+    })
 
-    console.error("Failed to prepare mod download:", error);
+    console.error('Failed to prepare mod download:', error)
   }
-};
+}
 
 // Function called when an engine is selected from the dialog
 const onEngineSelected = async (engine: any) => {
-  if (!currentModpackInfo.value) return;
+  if (!currentModpackInfo.value) return
 
   try {
     // Hide the dialog immediately to provide feedback to the user
-    showEngineSelectDialog.value = false;
+    showEngineSelectDialog.value = false
 
     // Use the centralized gamebananaService to handle modpack download
     const result = await gamebananaService.downloadModpackForEngine(
       currentModpackInfo.value,
       engine
-    );
+    )
 
     if (!result.success) {
       $q.notify({
-        type: "negative",
+        type: 'negative',
         message: `Failed to install modpack`,
         caption: String(result.error),
-        position: "bottom-right",
+        position: 'bottom-right',
         timeout: 5000,
-      });
+      })
     }
   } catch (error) {
     $q.notify({
-      type: "negative",
+      type: 'negative',
       message: `Failed to install modpack`,
       caption: String(error),
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 5000,
-    });
+    })
   } finally {
     // Reset state
-    currentModpackInfo.value = null;
-    selectedEngineMod.value = null;
+    currentModpackInfo.value = null
+    selectedEngineMod.value = null
   }
-};
+}
 
 // Function called when a file is selected from the dialog
 const onFileSelected = async (selectedFile: any) => {
-  if (!currentDownloadMod.value) return;
+  if (!currentDownloadMod.value) return
 
   try {
     // Create a new notification for the download process
     pendingDownloadNotification = $q.notify({
-      type: "ongoing",
+      type: 'ongoing',
       message: `Preparing "${currentDownloadMod.value.name}"...`,
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 0,
-    });
+    })
 
     // Use the specific download URL from the selected file
-    const mod = currentDownloadMod.value;
+    const mod = currentDownloadMod.value
 
     // Clear any existing pending modpack path
-    localStorage.removeItem("pendingModpackInstallPath");
+    localStorage.removeItem('pendingModpackInstallPath')
 
     // Check if the selected file contains an executable
     // If it does, treat it as an executable mod regardless of other factors
     if (selectedFile._bContainsExe) {
       console.log(
-        "Selected file contains an executable, treating as standard mod"
-      );
+        'Selected file contains an executable, treating as standard mod'
+      )
 
       // Update notification to downloading
       if (pendingDownloadNotification) {
-        pendingDownloadNotification();
+        pendingDownloadNotification()
       }
       pendingDownloadNotification = $q.notify({
-        type: "ongoing",
+        type: 'ongoing',
         message: `Downloading "${mod.name}"...`,
-        position: "bottom-right",
+        position: 'bottom-right',
         timeout: 0,
-      });
+      })
 
       // Get the install location from settings
-      let installLocation: string | null = null;
+      let installLocation: string | null = null
       try {
-        installLocation = await getInstallLocation();
+        installLocation = await getInstallLocation()
       } catch (error) {
-        console.warn("Could not get install location from settings:", error);
+        console.warn('Could not get install location from settings:', error)
       }
 
-      console.log("Using selected file URL:", selectedFile._sDownloadUrl);
-      console.log("Using installation location:", installLocation);
+      console.log('Using selected file URL:', selectedFile._sDownloadUrl)
+      console.log('Using installation location:', installLocation)
 
       // Call backend to download using the specific file URL
-      const result = await invoke<string>("download_gamebanana_mod_command", {
+      const result = await invoke<string>('download_gamebanana_mod_command', {
         url: selectedFile._sDownloadUrl,
         name: mod.name,
         modId: mod.id,
         modelType: mod._sModelName,
         installLocation,
-      });
+      })
 
       // Process the result
-      let modInfo: any;
-      let modPath: string;
+      let modInfo: any
+      let modPath: string
 
       try {
         // Try to parse as JSON first
-        const parsed = JSON.parse(result);
-        modPath = parsed.path;
-        modInfo = parsed.mod_info;
-      } catch (e) {
+        const parsed = JSON.parse(result)
+        modPath = parsed.path
+        modInfo = parsed.mod_info
+      } catch {
         // If parsing fails, assume it's just the path string
-        modPath = result;
+        modPath = result
         // Get mod info directly from the backend
-        const allMods = await invoke<any[]>("get_mods");
-        modInfo = allMods.find((m) => m.path === modPath);
+        const allMods = await invoke<any[]>('get_mods')
+        modInfo = allMods.find(m => m.path === modPath)
 
         // If we still don't have mod info, create a basic one
         if (!modInfo) {
@@ -832,132 +832,132 @@ const onFileSelected = async (selectedFile: any) => {
             banner_data: mod.thumbnailUrl,
             version: mod.version || null,
             engine_type: null,
-          };
+          }
         }
       }
 
       // Save the mod to the database
       if (modInfo) {
-        await saveModToDatabase(modInfo);
+        await saveModToDatabase(modInfo)
       }
 
       // Dismiss loading notification
       if (pendingDownloadNotification) {
-        pendingDownloadNotification();
-        pendingDownloadNotification = null;
+        pendingDownloadNotification()
+        pendingDownloadNotification = null
       }
 
       // Show success notification
       $q.notify({
-        type: "positive",
+        type: 'positive',
         message: `"${mod.name}" downloaded and installed successfully!`,
         caption: `Ready to play from the mods list`,
-        position: "bottom-right",
+        position: 'bottom-right',
         timeout: 5000,
-      });
+      })
 
       // Trigger the refresh event to update the mod list
-      const refreshEvent = new CustomEvent("refresh-mods");
-      window.dispatchEvent(refreshEvent);
+      const refreshEvent = new CustomEvent('refresh-mods')
+      window.dispatchEvent(refreshEvent)
 
       // Reset current download mod
-      currentDownloadMod.value = null;
-      return;
+      currentDownloadMod.value = null
+      return
     }
 
     // If file doesn't contain an executable, check if this is a modpack
-    const isModpack = determineIfModpack(mod);
-    const modpackType = determineModpackType(mod);
+    const isModpack = determineIfModpack(mod)
+    const modpackType = determineModpackType(mod)
 
     if (isModpack) {
       // Handle modpack download logic for selected file
-      const engineMods = await getCompatibleEngineMods(modpackType);
+      const engineMods = await getCompatibleEngineMods(modpackType)
 
       if (engineMods.length === 0) {
         // No compatible engine found, show error
         if (pendingDownloadNotification) {
-          pendingDownloadNotification();
-          pendingDownloadNotification = null;
+          pendingDownloadNotification()
+          pendingDownloadNotification = null
         }
 
         $q.notify({
-          type: "negative",
+          type: 'negative',
           message: `Cannot download ${modpackType} modpack`,
           caption: `You don't have ${formatEngineType(
             modpackType
           )} installed. Please install it.`,
-          position: "bottom-right",
+          position: 'bottom-right',
           timeout: 5000,
-        });
+        })
 
-        return;
+        return
       } else {
         // Compatible engine found, store the selected file URL for later use
         currentModpackInfo.value = {
           mod: { ...mod, downloadUrl: selectedFile._sDownloadUrl }, // Override with selected URL
           type: modpackType,
           compatibleEngines: engineMods,
-        };
+        }
 
         // Show engine selection dialog
-        showEngineSelectDialog.value = true;
+        showEngineSelectDialog.value = true
 
         // Dismiss the loading notification
         if (pendingDownloadNotification) {
-          pendingDownloadNotification();
-          pendingDownloadNotification = null;
+          pendingDownloadNotification()
+          pendingDownloadNotification = null
         }
 
-        return; // Wait for user selection of an engine
+        return // Wait for user selection of an engine
       }
     }
 
     // If not a modpack and doesn't contain an executable, proceed with standard download
     // Update notification to downloading
     if (pendingDownloadNotification) {
-      pendingDownloadNotification();
+      pendingDownloadNotification()
     }
     pendingDownloadNotification = $q.notify({
-      type: "ongoing",
+      type: 'ongoing',
       message: `Downloading "${mod.name}"...`,
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 0,
-    });
+    })
 
     // Get the install location from settings
-    let installLocation: string | null = null;
+    let installLocation: string | null = null
     try {
-      installLocation = await getInstallLocation();
+      installLocation = await getInstallLocation()
     } catch (error) {
-      console.warn("Could not get install location from settings:", error);
+      console.warn('Could not get install location from settings:', error)
     }
 
-    console.log("Using selected file URL:", selectedFile._sDownloadUrl);
-    console.log("Using installation location:", installLocation);
+    console.log('Using selected file URL:', selectedFile._sDownloadUrl)
+    console.log('Using installation location:', installLocation)
 
     // Call backend to download using the specific file URL
-    const result = await invoke<string>("download_gamebanana_mod_command", {
+    const result = await invoke<string>('download_gamebanana_mod_command', {
       url: selectedFile._sDownloadUrl,
       name: mod.name,
       modId: mod.id,
       modelType: mod._sModelName,
       installLocation,
-    });
+    })
     // Process the result
-    let modInfo: any;
-    let modPath: string;
+    let modInfo: any
+    let modPath: string
 
     try {
       // Try to parse as JSON first
-      const parsed = JSON.parse(result);
-      modPath = parsed.path;
-      modInfo = parsed.mod_info;
-    } catch (e) {
+      const parsed = JSON.parse(result)
+      modPath = parsed.path
+      modInfo = parsed.mod_info
+    } catch {
       // If parsing fails, assume it's just the path string
-      modPath = result;
+      modPath = result
       // Get mod info directly from the backend
-      const allMods = await invoke<any[]>("get_mods");
-      modInfo = allMods.find((m) => m.path === modPath);
+      const allMods = await invoke<any[]>('get_mods')
+      modInfo = allMods.find(m => m.path === modPath)
 
       // If we still don't have mod info, create a basic one
       if (!modInfo) {
@@ -970,206 +970,204 @@ const onFileSelected = async (selectedFile: any) => {
           banner_data: mod.thumbnailUrl,
           version: mod.version || null,
           engine_type: null,
-        };
+        }
       }
     }
 
     // Save the mod to the database
     if (modInfo) {
-      await saveModToDatabase(modInfo);
+      await saveModToDatabase(modInfo)
     }
 
     // Dismiss loading notification
     if (pendingDownloadNotification) {
-      pendingDownloadNotification();
-      pendingDownloadNotification = null;
+      pendingDownloadNotification()
+      pendingDownloadNotification = null
     }
 
     // Show success notification
     $q.notify({
-      type: "positive",
+      type: 'positive',
       message: `"${mod.name}" downloaded and installed successfully!`,
       caption: `Ready to play from the mods list`,
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 5000,
-    });
+    })
 
     // Trigger the refresh event to update the mod list
-    const refreshEvent = new CustomEvent("refresh-mods");
-    window.dispatchEvent(refreshEvent);
+    const refreshEvent = new CustomEvent('refresh-mods')
+    window.dispatchEvent(refreshEvent)
 
     // Reset current download mod
-    currentDownloadMod.value = null;
+    currentDownloadMod.value = null
   } catch (error) {
     // Show error notification
     $q.notify({
-      type: "negative",
+      type: 'negative',
       message: `Failed to download "${
-        currentDownloadMod.value?.name || "Mod"
+        currentDownloadMod.value?.name || 'Mod'
       }"`,
       caption: String(error),
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 5000,
-    });
+    })
 
     // Dismiss any pending notification
     if (pendingDownloadNotification) {
-      pendingDownloadNotification();
-      pendingDownloadNotification = null;
+      pendingDownloadNotification()
+      pendingDownloadNotification = null
     }
 
-    console.error("Failed to download mod:", error);
+    console.error('Failed to download mod:', error)
 
     // Reset current download mod
-    currentDownloadMod.value = null;
+    currentDownloadMod.value = null
   }
-};
+}
 
 // Function to cancel the download
 const cancelDownload = () => {
   // Dismiss any pending notification
   if (pendingDownloadNotification) {
-    pendingDownloadNotification();
-    pendingDownloadNotification = null;
+    pendingDownloadNotification()
+    pendingDownloadNotification = null
   }
 
   // Show cancellation notification
   if (currentDownloadMod.value) {
     $q.notify({
-      type: "info",
+      type: 'info',
       message: `Download of "${currentDownloadMod.value.name}" cancelled`,
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 3000,
-    });
+    })
   }
 
   // Reset current download mod
-  currentDownloadMod.value = null;
-};
+  currentDownloadMod.value = null
+}
 
 // Save a mod to the database
 const saveModToDatabase = async (mod: any) => {
   try {
     // Check if DatabaseService is initialized
     if (!window.db || !window.db.service) {
-      console.warn("Database service not initialized yet, cannot save mod");
-      return false;
+      console.warn('Database service not initialized yet, cannot save mod')
+      return false
     }
 
-    console.log("Saving mod to database using DatabaseService:", mod);
+    console.log('Saving mod to database using DatabaseService:', mod)
 
     // Make sure the mod has an engine field required by the type
     if (!mod.engine) {
       mod.engine = {
-        engine_type: "unknown",
-        engine_name: "",
-        engine_icon: "",
+        engine_type: 'unknown',
+        engine_name: '',
+        engine_icon: '',
         mods_folder: false,
-        mods_folder_path: "",
-      };
+        mods_folder_path: '',
+      }
     }
 
     // Use the DatabaseService to save the mod
-    await window.db.service.saveMod(mod);
+    await window.db.service.saveMod(mod)
 
-    console.log("Mod saved successfully to database:", mod.name);
-    return true;
+    console.log('Mod saved successfully to database:', mod.name)
+    return true
   } catch (error) {
-    console.error("Failed to save mod to database:", error);
-    return false;
+    console.error('Failed to save mod to database:', error)
+    return false
   }
-};
+}
 
 // Determine if a mod is a modpack based on the current tab or mod properties
 const determineIfModpack = (mod: any): boolean => {
   // Check mod category if available
   if (mod.categoryName) {
-    const lowerCaseCategoryName = mod.categoryName.toLowerCase();
-    if (lowerCaseCategoryName.includes("executables")) return false;
-    if (lowerCaseCategoryName.includes("psych")) return true;
-    if (lowerCaseCategoryName.includes("v-slice")) return true;
-    if (lowerCaseCategoryName.includes("codename")) return true;
+    const lowerCaseCategoryName = mod.categoryName.toLowerCase()
+    if (lowerCaseCategoryName.includes('executables')) return false
+    if (lowerCaseCategoryName.includes('psych')) return true
+    if (lowerCaseCategoryName.includes('v-slice')) return true
+    if (lowerCaseCategoryName.includes('codename')) return true
   }
 
-  return false;
-};
+  return false
+}
 
 // Determine modpack type (psych, vslice, codename, or null if not a modpack)
 const determineModpackType = (mod: any): string | null => {
   if (mod.categoryName) {
-    const lowerCaseCategoryName = mod.categoryName.toLowerCase();
-    if (lowerCaseCategoryName.includes("psych")) return "psych";
-    if (lowerCaseCategoryName.includes("v-slice")) return "vanilla";
-    if (lowerCaseCategoryName.includes("codename")) return "codename";
+    const lowerCaseCategoryName = mod.categoryName.toLowerCase()
+    if (lowerCaseCategoryName.includes('psych')) return 'psych'
+    if (lowerCaseCategoryName.includes('v-slice')) return 'vanilla'
+    if (lowerCaseCategoryName.includes('codename')) return 'codename'
   }
-  return null;
-};
+  return null
+}
 
 // Get a list of compatible engine mods
 const getCompatibleEngineMods = async (
   engineType: string | null
 ): Promise<any[]> => {
-  if (!engineType) return [];
+  if (!engineType) return []
 
   try {
     // Fetch all mods
-    let allMods: any[] = [];
+    let allMods: any[] = []
     if (window.db && window.db.service) {
-      allMods = await window.db.service.getAllMods();
+      allMods = await window.db.service.getAllMods()
     } else {
-      allMods = await invoke<any[]>("get_mods");
+      allMods = await invoke<any[]>('get_mods')
     }
 
     // Filter mods by engine type
     return allMods.filter((mod: { engine: { engine_type: string } }) => {
       // Check engine.engine_type
       if (mod.engine && mod.engine.engine_type) {
-        return (
-          mod.engine.engine_type.toLowerCase() === engineType.toLowerCase()
-        );
+        return mod.engine.engine_type.toLowerCase() === engineType.toLowerCase()
       }
-      return false;
-    });
+      return false
+    })
   } catch (error) {
-    console.error("Failed to get compatible engine mods:", error);
-    return [];
+    console.error('Failed to get compatible engine mods:', error)
+    return []
   }
-};
+}
 
 const formatEngineType = (engineType: string | null): string => {
-  if (!engineType) return "Unknown";
+  if (!engineType) return 'Unknown'
 
   switch (engineType.toLowerCase()) {
-    case "psych":
-      return "Psych Engine";
-    case "vanilla":
-      return "V-Slice";
-    case "codename":
-      return "Codename Engine";
+    case 'psych':
+      return 'Psych Engine'
+    case 'vanilla':
+      return 'V-Slice'
+    case 'codename':
+      return 'Codename Engine'
     default:
-      return engineType.charAt(0).toUpperCase() + engineType.slice(1);
+      return engineType.charAt(0).toUpperCase() + engineType.slice(1)
   }
-};
+}
 
 // Function to get the mods folder path for an engine mod
 const getModsFolderPath = (engineMod: any): string => {
   // Get base directory first in all cases
-  const basePath = engineMod.path;
-  const executablePath = engineMod.executable_path || "";
+  const basePath = engineMod.path
+  const executablePath = engineMod.executable_path || ''
 
-  if (!basePath) return "Unknown path";
+  if (!basePath) return 'Unknown path'
 
   // Get parent directory of executable if it exists
-  let baseDir = basePath;
+  let baseDir = basePath
   if (executablePath) {
     // Extract the directory from the executable path
-    const lastSlashIndex = executablePath.lastIndexOf("/");
+    const lastSlashIndex = executablePath.lastIndexOf('/')
     if (lastSlashIndex > 0) {
-      baseDir = executablePath.substring(0, lastSlashIndex);
+      baseDir = executablePath.substring(0, lastSlashIndex)
     } else {
-      const lastBackslashIndex = executablePath.lastIndexOf("\\");
+      const lastBackslashIndex = executablePath.lastIndexOf('\\')
       if (lastBackslashIndex > 0) {
-        baseDir = executablePath.substring(0, lastBackslashIndex);
+        baseDir = executablePath.substring(0, lastBackslashIndex)
       }
     }
   }
@@ -1181,116 +1179,116 @@ const getModsFolderPath = (engineMod: any): string => {
     engineMod.engine.mods_folder_path
   ) {
     // Combine the base directory with the custom mods folder path
-    return `${baseDir}/${engineMod.engine.mods_folder_path}`;
+    return `${baseDir}/${engineMod.engine.mods_folder_path}`
   }
 
   // If no custom path specified, use default mods folder
-  return `${baseDir}/mods`;
-};
+  return `${baseDir}/mods`
+}
 
 // Add new method to handle direct engine downloads
 const downloadEngine = async (engineType: string) => {
   try {
     // Use the centralized gamebananaService to download the engine
-    const result = await gamebananaService.downloadEngine(engineType);
+    const result = await gamebananaService.downloadEngine(engineType)
 
     // Check if we need to show the folder exists dialog
-    if ("showFolderExistsDialog" in result) {
+    if ('showFolderExistsDialog' in result) {
       // If the engine folder already exists, show confirmation dialog
-      folderExistsModName.value = result.modName;
-      folderExistsDownloadContinueFunction.value = result.continueDownload;
-      showFolderExistsDialog.value = true;
-      return;
+      folderExistsModName.value = result.modName
+      folderExistsDownloadContinueFunction.value = result.continueDownload
+      showFolderExistsDialog.value = true
+      return
     }
 
     // Otherwise, the download was successful or failed without folder conflict
-    if ("success" in result && !result.success) {
+    if ('success' in result && !result.success) {
       $q.notify({
-        type: "negative",
+        type: 'negative',
         message: `Failed to download ${formatEngineType(engineType)}`,
-        caption: result.error || "Unknown error",
-        position: "bottom-right",
+        caption: result.error || 'Unknown error',
+        position: 'bottom-right',
         timeout: 5000,
-      });
+      })
     }
   } catch (error) {
     // Show error notification
     $q.notify({
-      type: "negative",
+      type: 'negative',
       message: `Failed to download ${formatEngineType(engineType)}`,
       caption: String(error),
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 5000,
-    });
+    })
 
-    console.error(`Failed to download ${engineType} engine:`, error);
+    console.error(`Failed to download ${engineType} engine:`, error)
   }
-};
+}
 
 // Get the install location from settings
 const getInstallLocation = async (): Promise<string | null> => {
   try {
-    const storeService = StoreService.getInstance();
-    return await storeService.getSetting("installLocation");
+    const storeService = StoreService.getInstance()
+    return await storeService.getSetting('installLocation')
   } catch (error) {
-    console.warn("Could not get install location from settings:", error);
-    return null;
+    console.warn('Could not get install location from settings:', error)
+    return null
   }
-};
+}
 
 // Custom URL download flow
 const onCustomUrlSubmit = (formData: any) => {
-  console.log("Custom URL form submitted:", formData);
+  console.log('Custom URL form submitted:', formData)
   // Add isCustomUrl flag to identify the source of this mod data
   customModData.value = {
     ...formData,
     isCustomUrl: true,
-  };
-  showCustomUrlModal.value = false;
-  showModTypeModal.value = true;
-};
+  }
+  showCustomUrlModal.value = false
+  showModTypeModal.value = true
+}
 
 const onModTypeSubmit = async (typeData: any) => {
-  console.log("Mod type selected:", typeData);
-  if (!customModData.value) return;
+  console.log('Mod type selected:', typeData)
+  if (!customModData.value) return
 
   try {
     // Show loading notification
     pendingDownloadNotification = $q.notify({
-      type: "ongoing",
+      type: 'ongoing',
       message: `Preparing to download "${customModData.value.name}"...`,
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 0,
-    });
+    })
 
     // Determine install location based on mod type
-    let installLocation: string | null = null;
+    let installLocation: string | null = null
 
-    if (typeData.modType === "executable") {
+    if (typeData.modType === 'executable') {
       // For standalone mods, use the standard install location
-      installLocation = await getInstallLocation();
+      installLocation = await getInstallLocation()
     } else {
       // For modpacks, use the engine's mods folder
       if (typeData.engineMod) {
-        installLocation = getModsFolderPath(typeData.engineMod);
+        installLocation = getModsFolderPath(typeData.engineMod)
       } else {
         throw new Error(
           `No ${formatEngineType(typeData.modType)} installation found`
-        );
+        )
       }
     }
 
     console.log(
       `Downloading ${customModData.value.name} to ${
-        installLocation || "default location"
+        installLocation || 'default location'
       }`
-    );
+    )
 
     // Generate a random modId for tracking the download
-    const modId = Math.floor(Math.random() * 1000000);
+    const modId = Math.floor(Math.random() * 1000000)
 
     // Call backend to download using the custom mod command instead
-    const result = await invoke<string>("download_custom_mod_command", {
+    const result = await invoke<string>('download_custom_mod_command', {
       url: customModData.value.url,
       name: customModData.value.name,
       modId,
@@ -1298,23 +1296,23 @@ const onModTypeSubmit = async (typeData: any) => {
       thumbnailUrl: customModData.value.bannerData,
       description: customModData.value.description,
       version: customModData.value.version,
-    });
+    })
 
     // Process the result
-    let modInfo: any;
-    let modPath: string;
+    let modInfo: any
+    let modPath: string
 
     try {
       // Try to parse as JSON
-      const parsed = JSON.parse(result);
-      modPath = parsed.path;
-      modInfo = parsed.mod_info;
-    } catch (e) {
+      const parsed = JSON.parse(result)
+      modPath = parsed.path
+      modInfo = parsed.mod_info
+    } catch {
       // If parsing fails, assume it's just the path string
-      modPath = result;
+      modPath = result
       // Get mod info directly from the backend
-      const allMods = await invoke<any[]>("get_mods");
-      modInfo = allMods.find((m) => m.path === modPath);
+      const allMods = await invoke<any[]>('get_mods')
+      modInfo = allMods.find(m => m.path === modPath)
     }
 
     // If we still don't have mod info, create one with custom data
@@ -1330,198 +1328,198 @@ const onModTypeSubmit = async (typeData: any) => {
         description: customModData.value.description,
         version: customModData.value.version || null,
         engine_type:
-          typeData.modType !== "executable" ? typeData.modType : null,
+          typeData.modType !== 'executable' ? typeData.modType : null,
         engine:
-          typeData.modType !== "executable"
+          typeData.modType !== 'executable'
             ? {
                 engine_type: typeData.modType,
                 engine_name: formatEngineType(typeData.modType),
                 mods_folder: true,
-                mods_folder_path: "mods",
+                mods_folder_path: 'mods',
               }
             : null,
-      };
+      }
     } else {
       // Update the mod info with custom data
-      modInfo.name = customModData.value.name;
+      modInfo.name = customModData.value.name
       modInfo.banner_data =
-        customModData.value.bannerData || modInfo.banner_data;
-      modInfo.logo_data = customModData.value.logoData || modInfo.logo_data;
+        customModData.value.bannerData || modInfo.banner_data
+      modInfo.logo_data = customModData.value.logoData || modInfo.logo_data
       modInfo.description =
-        customModData.value.description || modInfo.description;
-      modInfo.version = customModData.value.version || modInfo.version;
+        customModData.value.description || modInfo.description
+      modInfo.version = customModData.value.version || modInfo.version
 
-      if (typeData.modType !== "executable") {
-        modInfo.engine_type = typeData.modType;
+      if (typeData.modType !== 'executable') {
+        modInfo.engine_type = typeData.modType
         modInfo.engine = {
           ...(modInfo.engine || {}),
           engine_type: typeData.modType,
           engine_name: formatEngineType(typeData.modType),
           mods_folder: true,
-          mods_folder_path: "mods",
-        };
+          mods_folder_path: 'mods',
+        }
       }
     }
 
     // Save the mod to the database
     if (modInfo) {
-      await saveModToDatabase(modInfo);
+      await saveModToDatabase(modInfo)
     }
 
     // Dismiss loading notification
     if (pendingDownloadNotification) {
-      pendingDownloadNotification();
-      pendingDownloadNotification = null;
+      pendingDownloadNotification()
+      pendingDownloadNotification = null
     }
 
     // Show success notification
     $q.notify({
-      type: "positive",
+      type: 'positive',
       message: `"${customModData.value.name}" downloaded and installed successfully!`,
       caption: `Ready to play from the mods list`,
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 5000,
-    });
+    })
 
     // Trigger the refresh event to update the mod list
-    const refreshEvent = new CustomEvent("refresh-mods");
-    window.dispatchEvent(refreshEvent);
+    const refreshEvent = new CustomEvent('refresh-mods')
+    window.dispatchEvent(refreshEvent)
 
     // Reset state
-    showModTypeModal.value = false;
-    customModData.value = null;
+    showModTypeModal.value = false
+    customModData.value = null
   } catch (error) {
     // Show error notification
     $q.notify({
-      type: "negative",
+      type: 'negative',
       message: `Failed to download "${customModData.value.name}"`,
       caption: String(error),
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 5000,
-    });
+    })
 
     // Dismiss any pending notification
     if (pendingDownloadNotification) {
-      pendingDownloadNotification();
-      pendingDownloadNotification = null;
+      pendingDownloadNotification()
+      pendingDownloadNotification = null
     }
 
-    console.error("Failed to download custom mod:", error);
+    console.error('Failed to download custom mod:', error)
 
     // Reset state but keep the modal open to allow for corrections
-    showModTypeModal.value = false;
-    showCustomUrlModal.value = true;
+    showModTypeModal.value = false
+    showCustomUrlModal.value = true
   }
-};
+}
 
 // Handle cancel from mod type selection modal
 const handleModTypeCancel = () => {
   // Check the source of the mod type modal - custom URL or regular download
   if (customModData.value?.isCustomUrl) {
     // If from custom URL, go back to custom URL modal
-    showModTypeModal.value = false;
-    showCustomUrlModal.value = true;
+    showModTypeModal.value = false
+    showCustomUrlModal.value = true
   } else {
     // If from regular mod download, just close the modal and clean up
-    showModTypeModal.value = false;
-    customModData.value = null;
+    showModTypeModal.value = false
+    customModData.value = null
 
     // Show cancellation notification
     $q.notify({
-      type: "info",
-      message: "Download cancelled",
-      position: "bottom-right",
+      type: 'info',
+      message: 'Download cancelled',
+      position: 'bottom-right',
       timeout: 3000,
-    });
+    })
   }
-};
+}
 
 // Function to continue download when folder exists
 const continueFolderExistsDownload = async () => {
-  showFolderExistsDialog.value = false;
+  showFolderExistsDialog.value = false
 
   try {
     // Show downloading notification
     pendingDownloadNotification = $q.notify({
-      type: "ongoing",
+      type: 'ongoing',
       message: `Downloading "${folderExistsModName.value}"...`,
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 0,
-    });
+    })
 
     // Call the continue download function that was stored
     if (folderExistsDownloadContinueFunction.value) {
-      const result = await folderExistsDownloadContinueFunction.value();
+      const result = await folderExistsDownloadContinueFunction.value()
 
       // Handle the result based on its type
-      if ("showFileSelector" in result) {
+      if ('showFileSelector' in result) {
         // If we need to show file selector
-        downloadFiles.value = result.files;
-        alternateFileSources.value = result.alternateFileSources || [];
-        showFileSelector.value = true;
-      } else if ("showEngineSelectDialog" in result) {
+        downloadFiles.value = result.files
+        alternateFileSources.value = result.alternateFileSources || []
+        showFileSelector.value = true
+      } else if ('showEngineSelectDialog' in result) {
         // If we need to show engine selection dialog
-        currentModpackInfo.value = result.modpackInfo;
-        showEngineSelectDialog.value = true;
-      } else if ("showModTypeModal" in result) {
+        currentModpackInfo.value = result.modpackInfo
+        showEngineSelectDialog.value = true
+      } else if ('showModTypeModal' in result) {
         // If we need to show mod type selection
-        customModData.value = result.customModData;
-        showModTypeModal.value = true;
-      } else if ("success" in result) {
+        customModData.value = result.customModData
+        showModTypeModal.value = true
+      } else if ('success' in result) {
         // If it's a direct download result
         if (pendingDownloadNotification) {
-          pendingDownloadNotification();
-          pendingDownloadNotification = null;
+          pendingDownloadNotification()
+          pendingDownloadNotification = null
         }
 
         if (result.success) {
           // Show success notification
           $q.notify({
-            type: "positive",
+            type: 'positive',
             message: `"${folderExistsModName.value}" downloaded and installed successfully!`,
             caption: `Ready to play from the mods list`,
-            position: "bottom-right",
+            position: 'bottom-right',
             timeout: 5000,
-          });
+          })
 
           // Trigger the refresh event to update the mod list
-          const refreshEvent = new CustomEvent("refresh-mods");
-          window.dispatchEvent(refreshEvent);
+          const refreshEvent = new CustomEvent('refresh-mods')
+          window.dispatchEvent(refreshEvent)
         } else {
           // Show error notification
           $q.notify({
-            type: "negative",
+            type: 'negative',
             message: `Failed to download "${folderExistsModName.value}"`,
-            caption: result.error || "Unknown error",
-            position: "bottom-right",
+            caption: result.error || 'Unknown error',
+            position: 'bottom-right',
             timeout: 5000,
-          });
+          })
         }
       }
     }
   } catch (error) {
     // Show error notification
     $q.notify({
-      type: "negative",
+      type: 'negative',
       message: `Failed to download "${folderExistsModName.value}"`,
       caption: String(error),
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 5000,
-    });
+    })
 
     // Dismiss any pending notification
     if (pendingDownloadNotification) {
-      pendingDownloadNotification();
-      pendingDownloadNotification = null;
+      pendingDownloadNotification()
+      pendingDownloadNotification = null
     }
 
-    console.error("Failed to download mod:", error);
+    console.error('Failed to download mod:', error)
   } finally {
     // Reset state
-    folderExistsModName.value = "";
-    folderExistsDownloadContinueFunction.value = null;
+    folderExistsModName.value = ''
+    folderExistsDownloadContinueFunction.value = null
   }
-};
+}
 </script>
 
 <style scoped>

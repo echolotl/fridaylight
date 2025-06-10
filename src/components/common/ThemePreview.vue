@@ -105,10 +105,11 @@ const props = defineProps({
   themeDisplayName: {
     type: String,
     default: "Dark",
+
   },
   accentColor: {
     type: String,
-    default: "#DB2955",
+    default: '#DB2955',
   },
   compactMode: {
     type: Boolean,
@@ -301,6 +302,7 @@ watch(
   },
   { immediate: true }
 );
+
 </script>
 
 <style scoped>

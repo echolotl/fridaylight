@@ -1,26 +1,25 @@
 // This file contains the default color variables for Quasar.
-$primary   : #DB2955;
-$secondary : #f7c548;
+$primary: #db2955;
+$secondary: #f7c548;
 
 $transparent: transparent;
 $solid-dark: #313131;
 $solid-light: #e9e9e9;
 
-$white  : #FFFFFF;
+$white: #ffffff;
 
-$positive  : #35CE8D;
-$negative  : #C03221;
-$info      : #39dbce;
-$warning   : #f7c548;
+$positive: #35ce8d;
+$negative: #c03221;
+$info: #39dbce;
+$warning: #f7c548;
 
-$red   : #C03221;
-$orange: #FE621D;
-$yellow: #F7C548;
-$green: #35CE8D;
+$red: #c03221;
+$orange: #fe621d;
+$yellow: #f7c548;
+$green: #35ce8d;
 $blue: #39dbce;
-$purple: #C490D1;
-$pink: #DB2955;
-
+$purple: #c490d1;
+$pink: #db2955;
 
 // Font definitions
 $phantom-muff-empty: 'PhantomMuffEmpty';
@@ -43,7 +42,8 @@ $phantom-muff-difficulty: 'PhantomMuffDifficulty';
   font-style: normal;
 }
 
-@font-face {  font-family: $phantom-muff-display;
+@font-face {
+  font-family: $phantom-muff-display;
   src: url('../assets/fonts/PhantomMuffDisplay.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
@@ -72,8 +72,6 @@ $phantom-muff-difficulty: 'PhantomMuffDifficulty';
   font-family: 'PhantomMuffDifficulty', sans-serif;
 }
 
-// Global Quasar overrides
-
 .text-subtitle1, .text-subtitle2, .text-h6, .text-body1, .text-body2 {
   color: var(--theme-text);
 }
@@ -82,11 +80,13 @@ $phantom-muff-difficulty: 'PhantomMuffDifficulty';
   color: var(--theme-text-secondary);
 }
 
-.q-input, .q-select {
+.q-input,
+.q-select {
   color: var(--theme-text) !important;
 }
 
-.q-input .q-field__native, .q-select .q-field__native {
+.q-input .q-field__native,
+.q-select .q-field__native {
   color: var(--theme-text);
 }
 
@@ -104,7 +104,9 @@ $phantom-muff-difficulty: 'PhantomMuffDifficulty';
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
 }
 .fade-enter-from,
 .fade-leave-to {

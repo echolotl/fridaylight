@@ -9,7 +9,7 @@
         <!-- Display banner if available, otherwise use a placeholder or background color -->
         <div class="mod-thumbnail" :style="bannerStyle">
           <!-- Show engine icon -->
-          <img :src="engineIconUrl" class="engine-icon" v-if="engineIconUrl" />
+          <img v-if="engineIconUrl" :src="engineIconUrl" class="engine-icon" />
 
           <!-- Show logo if available -->
           <img
@@ -26,16 +26,16 @@
 
         <div class="mod-metadata">
           <!-- Show version if available -->
-          <span class="badge" v-if="mod.version">v{{ mod.version }}</span>
+          <span v-if="mod.version" class="badge">v{{ mod.version }}</span>
 
           <!-- Show engine name -->
-          <span class="badge" v-if="mod.engine.engine_name != 'unknown'">{{
+          <span v-if="mod.engine.engine_name != 'unknown'" class="badge">{{
             mod.engine.engine_name
           }}</span>
         </div>
 
         <!-- Contributors if available -->
-        <div class="contributors" v-if="hasContributors">
+        <div v-if="hasContributors" class="contributors">
           <div class="contributor-list">
             <span>by {{ primaryContributor }}</span>
             <span v-if="contributorCount > 1"
@@ -62,105 +62,106 @@
         label="Play"
         class="play-btn"
         text-color="white"
-        @click.stop="$emit('play', mod.id)"
         flat
+        @click.stop="$emit('play', mod.id)"
       />
       <q-btn
         color="var(--theme-text)"
         icon="settings"
         class="settings-btn"
-        @click.stop="$emit('configure', mod)"
         flat
         round
+        @click.stop="$emit('configure', mod)"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import type { Mod } from "@main-types";
-import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { computed } from 'vue'
+import type { Mod } from '@main-types'
+import { revealItemInDir } from '@tauri-apps/plugin-opener'
 
 const props = defineProps({
   mod: {
     type: Object as () => Mod,
     required: true,
   },
-});
+})
 
-const emit = defineEmits(["play", "configure", "showDetails"]);
+const emit = defineEmits(['play', 'configure', 'showDetails'])
 
 // Create banner style based on available data
 const bannerStyle = computed(() => {
   if (props.mod.banner_data) {
     return {
       backgroundImage: `url(${props.mod.banner_data})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    };
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    }
   }
   return {
     backgroundImage: 'url("/images/menuBG.png")',
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-});
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  }
+})
 
 // Get engine icon URL
 const engineIconUrl = computed(() => {
   if (props.mod.engine && props.mod.engine.engine_icon) {
-    return props.mod.engine.engine_icon;
+    return props.mod.engine.engine_icon
   }
-  return null;
-});
+  return null
+})
 
 // Handle logo positioning
 const logoPositionClass = computed(() => {
   switch (props.mod.logo_position) {
-    case "left_bottom":
-      return "logo-left-bottom";
-    case "left_middle":
-      return "logo-left-middle";
-    case "middle":
-      return "logo-middle";
+    case 'left_bottom':
+      return 'logo-left-bottom'
+    case 'left_middle':
+      return 'logo-left-middle'
+    case 'middle':
+      return 'logo-middle'
     default:
-      return "logo-left-bottom";
+      return 'logo-left-bottom'
   }
-});
+})
 
 // Format date to relative time (e.g. "2 days ago")
 const formatDate = (timestamp: number): string => {
   // Ensure timestamp is always treated as seconds and convert to milliseconds for Date operations
   // If the timestamp appears to be in seconds (less than year 2100 in milliseconds), convert to milliseconds
-  const normalizedTimestamp = timestamp < 4102444800000 
-    ? Math.trunc(timestamp) * 1000
-    : Math.trunc(timestamp);
+  const normalizedTimestamp =
+    timestamp < 4102444800000
+      ? Math.trunc(timestamp) * 1000
+      : Math.trunc(timestamp)
 
-  const now = Date.now();
-  const difference = now - normalizedTimestamp;
+  const now = Date.now()
+  const difference = now - normalizedTimestamp
 
   // Debug info
-  console.log(`Current time: ${now}`);
-  console.log(`Original timestamp: ${timestamp}`);
-  console.log(`Normalized timestamp: ${normalizedTimestamp}`);
+  console.log(`Current time: ${now}`)
+  console.log(`Original timestamp: ${timestamp}`)
+  console.log(`Normalized timestamp: ${normalizedTimestamp}`)
 
   // Convert milliseconds to days, hours, etc.
-  const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+  const days = Math.floor(difference / (1000 * 60 * 60 * 24))
   const hours = Math.floor(
     (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-  );
+  )
 
   if (days > 30) {
-    return new Date(normalizedTimestamp).toLocaleDateString();
+    return new Date(normalizedTimestamp).toLocaleDateString()
   } else if (days > 0) {
-    return `${days}d ago`;
+    return `${days}d ago`
   } else if (hours > 0) {
-    return `${hours}h ago`;
+    return `${hours}h ago`
   } else {
-    return "Just now";
+    return 'Just now'
   }
-};
+}
 
 // Contributor-related computed properties
 const hasContributors = computed(() => {
@@ -168,87 +169,87 @@ const hasContributors = computed(() => {
     props.mod.contributors &&
     props.mod.contributors.length > 0 &&
     props.mod.contributors.some(
-      (group) => group.members && group.members.length > 0
+      group => group.members && group.members.length > 0
     )
-  );
-});
+  )
+})
 
 const primaryContributor = computed(() => {
   if (!hasContributors.value) {
-    return "Unknown";
+    return 'Unknown'
   }
 
   // Try to find a "Creator" or "Main" group first
-  const mainGroups = ["Creator", "Main", "Developer", "Author"];
+  const mainGroups = ['Creator', 'Main', 'Developer', 'Author']
   for (const groupName of mainGroups) {
     const group = props.mod.contributors?.find(
-      (g) => g.group.toLowerCase() === groupName.toLowerCase()
-    );
+      g => g.group.toLowerCase() === groupName.toLowerCase()
+    )
     if (group && group.members.length > 0) {
-      return group.members[0].name;
+      return group.members[0].name
     }
   }
 
   // Fallback to first contributor in the first group
-  return props.mod.contributors?.[0]?.members[0]?.name || "Unknown";
-});
+  return props.mod.contributors?.[0]?.members[0]?.name || 'Unknown'
+})
 
 const contributorCount = computed(() => {
-  if (!props.mod.contributors) return 0;
+  if (!props.mod.contributors) return 0
 
   return props.mod.contributors.reduce((total, group) => {
-    return total + (group.members ? group.members.length : 0);
-  }, 0);
-});
+    return total + (group.members ? group.members.length : 0)
+  }, 0)
+})
 
 // Context menu handler
 const showContextMenu = (event: MouseEvent) => {
-  event.preventDefault();
-  event.stopPropagation();
+  event.preventDefault()
+  event.stopPropagation()
 
   // Create context menu options
   const contextMenuOptions = [
     {
-      icon: "play_arrow",
-      label: "Launch Mod",
-      action: () => emit("play", props.mod.id),
+      icon: 'play_arrow',
+      label: 'Launch Mod',
+      action: () => emit('play', props.mod.id),
     },
     {
-      icon: "settings",
-      label: "Edit Settings",
-      action: () => emit("configure", props.mod.id),
+      icon: 'settings',
+      label: 'Edit Settings',
+      action: () => emit('configure', props.mod.id),
     },
     {
-      icon: "folder_open",
-      label: "Open Mod Folder",
+      icon: 'folder_open',
+      label: 'Open Mod Folder',
       action: () => {
-        revealItemInDir(props.mod.path);
+        revealItemInDir(props.mod.path)
       },
     },
     {
-      icon: "info",
-      label: "Show Details",
-      action: () => emit("showDetails", props.mod.id),
+      icon: 'info',
+      label: 'Show Details',
+      action: () => emit('showDetails', props.mod.id),
     },
-  ];
+  ]
 
   // Create and dispatch custom event to show context menu
-  const customEvent = new CustomEvent("show-context-menu", {
+  const customEvent = new CustomEvent('show-context-menu', {
     detail: {
       position: { x: event.clientX, y: event.clientY },
       options: contextMenuOptions,
     },
     bubbles: true,
-  });
+  })
 
   // Safely handle the case where event.target could be null
   if (event.target) {
-    event.target.dispatchEvent(customEvent);
+    event.target.dispatchEvent(customEvent)
   } else {
     // Fallback to document if target is null
-    document.dispatchEvent(customEvent);
+    document.dispatchEvent(customEvent)
   }
-};
+}
 </script>
 
 <style scoped>
@@ -258,7 +259,9 @@ const showContextMenu = (event: MouseEvent) => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   border-bottom: 2px solid var(--theme-border);
 }
 

@@ -11,9 +11,10 @@
       <ModList
         :mods="mods"
         :folders="folders"
-        :selectedModId="selectedMod?.id"
+        :selected-mod-id="selectedMod?.id"
         :compact-mode="isCompactMode"
         :active-page="activePage"
+        class="modlist"
         @select-mod="selectMod"
         @add-mod="selectModFolder"
         @add-mods-folder="selectModsParentFolder"
@@ -31,7 +32,6 @@
         @super-delete-mod="superDeleteMod"
         @open-mod-folder="openModFolder"
         @go-home="setActivePage('home')"
-        class="modlist"
       />
 
       <!-- GameBanana button -->
@@ -42,8 +42,8 @@
             'active-gamebanana': activePage === 'gamebanana',
           }"
           color="primary"
-          @click="setActivePage('gamebanana')"
           flat
+          @click="setActivePage('gamebanana')"
         >
           <div class="gb-logo-container">
             <svg
@@ -138,8 +138,8 @@
                 ? selectedMod.id
                 : 'no-mod'
               : activePage === 'gamebanana'
-              ? 'gamebanana-browser'
-              : 'home-page'
+                ? 'gamebanana-browser'
+                : 'home-page'
           "
           class="main-content"
         >
@@ -149,8 +149,8 @@
               activePage === 'mods'
                 ? ModDetails
                 : activePage === 'gamebanana'
-                ? GameBananaBrowser
-                : HomePage
+                  ? GameBananaBrowser
+                  : HomePage
             "
             :mod="selectedMod"
             :error="launchError || ''"
@@ -172,6 +172,8 @@
       @save="handleSaveMod"
       @change-folder="handleSelectModFolder"
       @select-executable="handleSelectExecutable"
+      @delete-mod="deleteMod"
+      @super-delete-mod="superDeleteMod"
     />
 
     <!-- App Settings Modal -->
@@ -180,195 +182,193 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
-import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
-import ModList from "@mods/ModList.vue";
-import ModDetails from "@mods/ModDetails.vue";
-import ModSettingsModal from "@modals/ModSettingsModal.vue";
-import AppSettingsModal from "@modals/AppSettingsModal.vue";
-import GameBananaBrowser from "@mods/GameBananaBrowser.vue";
-import HomePage from "@mods/HomePage.vue";
-import { Mod, Folder, DisplayItem } from "@main-types";
-import { useQuasar } from "quasar";
-import { StoreService } from "../../services/storeService";
-import { DatabaseService } from "@services/dbService";
-import { formatEngineName } from "@utils/index";
-import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import { sep } from "@tauri-apps/api/path";
+import { ref, onMounted, onUnmounted } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
+import { open } from '@tauri-apps/plugin-dialog'
+import ModList from '@mods/ModList.vue'
+import ModDetails from '@mods/ModDetails.vue'
+import ModSettingsModal from '@modals/ModSettingsModal.vue'
+import AppSettingsModal from '@modals/AppSettingsModal.vue'
+import GameBananaBrowser from '@mods/GameBananaBrowser.vue'
+import HomePage from '@mods/HomePage.vue'
+import { Mod, Folder, DisplayItem } from '@main-types'
+import { useQuasar } from 'quasar'
+import { StoreService } from '../../services/storeService'
+import { DatabaseService } from '@services/dbService'
+import { formatEngineName } from '@utils/index'
+import { revealItemInDir } from '@tauri-apps/plugin-opener'
+import { sep } from '@tauri-apps/api/path'
 
+// Use the props without storing in a variable to avoid the unused variable warning
+defineProps<{
+  modelValue: boolean
+}>()
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void
+  (e: 'resize', width: number): void
+}>()
 // Use the singleton directly instead of through a ref
-const storeService = StoreService.getInstance();
-const dbService = DatabaseService.getInstance();
+const storeService = StoreService.getInstance()
+const dbService = DatabaseService.getInstance()
 
 // TypeScript declaration for db
 declare global {
   interface Window {
-    db: any;
+    db: any
   }
 }
 
 // So I didn't have to change anything
-type ModInfo = Mod;
-
-// Use the props without storing in a variable to avoid the unused variable warning
-defineProps<{
-  modelValue: boolean;
-}>();
-
-const emit = defineEmits<{
-  (e: "update:modelValue", value: boolean): void;
-  (e: "resize", width: number): void;
-}>();
+type ModInfo = Mod
 
 // Default width and min/max constraints
-const sidebarWidth = ref(250);
-const minWidth = 240;
-const maxWidth = 400;
+const sidebarWidth = ref(250)
+const minWidth = 240
+const maxWidth = 400
 
 // Resize functionality
-let isResizing = false;
+let isResizing = false
 
 const startResize = (_e: MouseEvent) => {
-  isResizing = true;
-  document.addEventListener("mousemove", handleResize);
-  document.addEventListener("mouseup", stopResize);
-  document.body.style.userSelect = "none";
-};
+  isResizing = true
+  document.addEventListener('mousemove', handleResize)
+  document.addEventListener('mouseup', stopResize)
+  document.body.style.userSelect = 'none'
+}
 
-const $q = useQuasar();
+const $q = useQuasar()
 
 const handleResize = (e: MouseEvent) => {
-  if (!isResizing) return;
+  if (!isResizing) return
 
   // Calculate new width based on mouse position
-  let newWidth = e.clientX;
+  let newWidth = e.clientX
 
   // Apply constraints
-  if (newWidth < minWidth) newWidth = minWidth;
-  if (newWidth > maxWidth) newWidth = maxWidth;
+  if (newWidth < minWidth) newWidth = minWidth
+  if (newWidth > maxWidth) newWidth = maxWidth
 
   // Update width
-  sidebarWidth.value = newWidth;
+  sidebarWidth.value = newWidth
 
   // Emit resize event
-  emit("resize", newWidth);
-};
+  emit('resize', newWidth)
+}
 
 const stopResize = () => {
-  isResizing = false;
-  document.removeEventListener("mousemove", handleResize);
-  document.removeEventListener("mouseup", stopResize);
-  document.body.style.userSelect = "";
-};
+  isResizing = false
+  document.removeEventListener('mousemove', handleResize)
+  document.removeEventListener('mouseup', stopResize)
+  document.body.style.userSelect = ''
+}
 
 // Mod list and selection
-const mods = ref<ModInfo[]>([]);
-const folders = ref<Folder[]>([]);
-const selectedMod = ref<ModInfo | null>(null);
-const launchError = ref<string | null>(null);
-const showSettingsModal = ref(false);
-const activePage = ref("home"); // Default to showing home page
-const showAppSettingsModal = ref(false);
+const mods = ref<ModInfo[]>([])
+const folders = ref<Folder[]>([])
+const selectedMod = ref<ModInfo | null>(null)
+const launchError = ref<string | null>(null)
+const showSettingsModal = ref(false)
+const activePage = ref('home') // Default to showing home page
+const showAppSettingsModal = ref(false)
 
 // Add compact mode state
-const isCompactMode = ref(false);
+const isCompactMode = ref(false)
 
 // Load mods on component mount
 onMounted(async () => {
   // Initialize the StoreService
-  await storeService.initialize();
+  await storeService.initialize()
 
-  emit("resize", sidebarWidth.value);
+  emit('resize', sidebarWidth.value)
   try {
     // Initialize dbService
-    await dbService.initialize();
+    await dbService.initialize()
     // Assign the service instance to the window object if needed elsewhere
-    window.db = { service: dbService };
-    await loadModsFromDatabase();
-    await loadFoldersFromDatabase(); // Load folders after mods
+    window.db = { service: dbService }
+    await loadModsFromDatabase()
+    await loadFoldersFromDatabase() // Load folders after mods
 
     // Load and apply app settings
-    await loadAppSettings();
+    await loadAppSettings()
 
-    activePage.value = "home"; // Show home page by default
+    activePage.value = 'home' // Show home page by default
 
     // Add event listener for refreshing the mods list
-    window.addEventListener("refresh-mods", handleRefreshMods);
+    window.addEventListener('refresh-mods', handleRefreshMods)
 
     // Add event listener for compact mode changes
-    window.addEventListener("compact-mode-changed", (event: Event) => {
-      const customEvent = event as CustomEvent;
+    window.addEventListener('compact-mode-changed', (event: Event) => {
+      const customEvent = event as CustomEvent
       if (customEvent.detail && customEvent.detail.compactMode !== undefined) {
-        isCompactMode.value = customEvent.detail.compactMode;
-        console.log("Applied compact mode from event:", isCompactMode.value);
+        isCompactMode.value = customEvent.detail.compactMode
+        console.log('Applied compact mode from event:', isCompactMode.value)
       }
-    });
+    })
   } catch (error) {
-    console.error("Error loading mods:", error);
+    console.error('Error loading mods:', error)
   }
-});
+})
 
 // Load mods from the database
 const loadModsFromDatabase = async () => {
   try {
     // Use the DatabaseService to get all mods
-    const processedMods = await dbService.getAllMods();
+    const processedMods = await dbService.getAllMods()
 
     if (processedMods && processedMods.length > 0) {
-      mods.value = processedMods;
+      mods.value = processedMods
 
       // Sync mods from database to backend in-memory state
-      console.log("Syncing mods from database to backend state on app start");
-      await dbService.syncModsWithBackend();
+      console.log('Syncing mods from database to backend state on app start')
+      await dbService.syncModsWithBackend()
 
       // If there's at least one mod, select the first one
       if (processedMods.length > 0 && !selectedMod.value) {
-        selectMod(processedMods[0]);
+        selectMod(processedMods[0])
       }
     } else {
       // If no mods in database, load from memory
-      await loadModsFromMemory();
+      await loadModsFromMemory()
     }
   } catch (error) {
-    console.error("Failed to load mods from database:", error);
+    console.error('Failed to load mods from database:', error)
     // Fallback to in-memory mods
-    await loadModsFromMemory();
+    await loadModsFromMemory()
   }
-};
+}
 
 // Load folders from the database
 const loadFoldersFromDatabase = async () => {
   try {
-    console.log("Loading folders from database");
+    console.log('Loading folders from database')
 
     // Use the DatabaseService to get all folders
-    const loadedFolders = await dbService.getAllFolders();
+    const loadedFolders = await dbService.getAllFolders()
 
     if (loadedFolders && loadedFolders.length > 0) {
-      console.log(`Found ${loadedFolders.length} folders in database`);
+      console.log(`Found ${loadedFolders.length} folders in database`)
 
       // Update the reactive folders ref
-      folders.value = loadedFolders;
-      console.log("Folders loaded successfully:", folders.value);
+      folders.value = loadedFolders
+      console.log('Folders loaded successfully:', folders.value)
     } else {
-      console.log("No folders found in database");
-      folders.value = [];
+      console.log('No folders found in database')
+      folders.value = []
     }
   } catch (error) {
-    console.error("Failed to load folders from database:", error);
-    folders.value = [];
+    console.error('Failed to load folders from database:', error)
+    folders.value = []
   }
-};
+}
 
 // Load all mods from backend memory, if any
 // This is a fallback if no mods are found in the database
 const loadModsFromMemory = async () => {
   try {
-    const modList = await invoke<ModInfo[]>("get_mods");
+    const modList = await invoke<ModInfo[]>('get_mods')
 
     // First, check for mods with display_order of 9999 or undefined and fix them
-    let needsReindexing = false;
+    let needsReindexing = false
     const processedMods = modList.map((mod, index) => {
       // Check if display_order is problematic (undefined, null, 9999)
       if (
@@ -376,166 +376,166 @@ const loadModsFromMemory = async () => {
         mod.display_order === null ||
         mod.display_order === 9999
       ) {
-        needsReindexing = true;
+        needsReindexing = true
         // Assign a reasonable index based on position in array
-        return { ...mod, display_order: index };
+        return { ...mod, display_order: index }
       }
-      return mod;
-    });
+      return mod
+    })
 
     // Sort mods by display_order
     mods.value = processedMods.sort((a, b) => {
-      return (a.display_order ?? 0) - (b.display_order ?? 0);
-    });
+      return (a.display_order ?? 0) - (b.display_order ?? 0)
+    })
 
     // If we had to fix any mod display orders, save them back to the database
     if (needsReindexing) {
-      console.log("Fixing incorrect display_order values in mods...");
+      console.log('Fixing incorrect display_order values in mods...')
       try {
-        await dbService.saveMods(mods.value); // Use dbService to save all mods
-        console.log("Successfully fixed display_order values");
+        await dbService.saveMods(mods.value) // Use dbService to save all mods
+        console.log('Successfully fixed display_order values')
 
         // Sync with backend so it's aware of our changes
-        await dbService.syncModsWithBackend();
+        await dbService.syncModsWithBackend()
       } catch (error) {
-        console.error("Failed to fix mod display_order values:", error);
+        console.error('Failed to fix mod display_order values:', error)
       }
     }
   } catch (error) {
-    console.error("Failed to load mods:", error);
+    console.error('Failed to load mods:', error)
   }
-};
+}
 
 // Save a mod to the database
 const saveModToDatabase = async (mod: ModInfo) => {
   try {
     // Ensure engine name is formatted before initial save
     if (mod.engine && !mod.engine.engine_name) {
-      mod.engine.engine_name = formatEngineName(mod.engine.engine_type);
+      mod.engine.engine_name = formatEngineName(mod.engine.engine_type)
     } else if (!mod.engine) {
       mod.engine = {
-        engine_type: "unknown",
-        engine_name: formatEngineName("unknown"),
-        engine_icon: "",
+        engine_type: 'unknown',
+        engine_name: formatEngineName('unknown'),
+        engine_icon: '',
         mods_folder: false,
-        mods_folder_path: "",
-      };
+        mods_folder_path: '',
+      }
     }
-    await dbService.saveMod(mod);
-    console.log("Mod saved successfully:", mod.name);
-    await loadModsFromDatabase(); // Reload mods from DB
-    await loadFoldersFromDatabase(); // Reload folders from DB
+    await dbService.saveMod(mod)
+    console.log('Mod saved successfully:', mod.name)
+    await loadModsFromDatabase() // Reload mods from DB
+    await loadFoldersFromDatabase() // Reload folders from DB
   } catch (error) {
-    console.error("Failed to save mod:", error);
+    console.error('Failed to save mod:', error)
     $q.notify({
-      type: "negative",
-      message: "Failed to save mod",
+      type: 'negative',
+      message: 'Failed to save mod',
       caption: String(error),
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 3000,
-    });
+    })
   }
-};
+}
 
 const selectModFolder = async () => {
   try {
     // Get current validation setting from database
-    let validateFnfMods = true; // default to true if setting not found
+    let validateFnfMods = true // default to true if setting not found
 
     try {
-      const validateResult = await storeService.getSetting("validateFnfMods");
+      const validateResult = await storeService.getSetting('validateFnfMods')
       if (validateResult) {
-        validateFnfMods = validateResult === true;
+        validateFnfMods = validateResult === true
       }
     } catch (settingError) {
       console.warn(
-        "Could not get validateFnfMods setting, using default:",
+        'Could not get validateFnfMods setting, using default:',
         settingError
-      );
+      )
     }
 
-    const modFolderPath = await invoke<string>("select_mod_folder");
+    const modFolderPath = await invoke<string>('select_mod_folder')
     if (modFolderPath) {
       try {
         // Pass the validation setting to the backend
-        const modInfo = await invoke<ModInfo>("add_mod", {
+        const modInfo = await invoke<ModInfo>('add_mod', {
           path: modFolderPath,
           validate: validateFnfMods,
-        });
+        })
 
         // Ensure the mod has an engine object before saving
         if (!modInfo.engine) {
           modInfo.engine = {
-            engine_type: "unknown",
-            engine_name: "",
-            engine_icon: "",
+            engine_type: 'unknown',
+            engine_name: '',
+            engine_icon: '',
             mods_folder: false,
-            mods_folder_path: "",
-          };
+            mods_folder_path: '',
+          }
         }
 
-        mods.value.push(modInfo);
-        selectMod(modInfo);
-        await saveModToDatabase(modInfo);
+        mods.value.push(modInfo)
+        selectMod(modInfo)
+        await saveModToDatabase(modInfo)
 
         // Show success notification
         $q.notify({
-          type: "positive",
+          type: 'positive',
           message: `"${modInfo.name}" added successfully!`,
-          position: "bottom-right",
+          position: 'bottom-right',
           timeout: 3000,
-        });
+        })
       } catch (error) {
         // This likely means the folder failed validation
         $q.notify({
-          type: "negative",
-          message: "Invalid FNF Mod",
+          type: 'negative',
+          message: 'Invalid FNF Mod',
           caption: String(error),
-          position: "bottom-right",
+          position: 'bottom-right',
           timeout: 5000,
-        });
-        console.error("Failed to add mod:", error);
+        })
+        console.error('Failed to add mod:', error)
       }
     }
   } catch (error) {
-    console.error("Failed to select mod folder:", error);
+    console.error('Failed to select mod folder:', error)
   }
-};
+}
 
 const selectModsParentFolder = async () => {
   try {
     // Get current validation setting from database
-    let validateFnfMods = true; // default to true if setting not found
+    let validateFnfMods = true // default to true if setting not found
 
     try {
-      const validateResult = await storeService.getSetting("validateFnfMods");
+      const validateResult = await storeService.getSetting('validateFnfMods')
       if (validateResult) {
-        validateFnfMods = validateResult === true;
+        validateFnfMods = validateResult === true
       }
     } catch (settingError) {
       console.warn(
-        "Could not get validateFnfMods setting, using default:",
+        'Could not get validateFnfMods setting, using default:',
         settingError
-      );
+      )
     }
 
     // Show loading notification
     const loadingNotif = $q.notify({
-      type: "ongoing",
-      message: "Scanning for mods...",
-      caption: "This may take a while for large folders",
-      position: "bottom-right",
+      type: 'ongoing',
+      message: 'Scanning for mods...',
+      caption: 'This may take a while for large folders',
+      position: 'bottom-right',
       timeout: 0,
       spinner: true,
-    });
+    })
 
     // Call the Rust command to select a folder containing multiple mods
-    const addedMods = await invoke<ModInfo[]>("select_mods_parent_folder", {
+    const addedMods = await invoke<ModInfo[]>('select_mods_parent_folder', {
       validate: validateFnfMods,
-    });
+    })
 
     // Dismiss loading notification
-    loadingNotif();
+    loadingNotif()
 
     if (addedMods && addedMods.length > 0) {
       // Add each mod to the mods array
@@ -543,599 +543,602 @@ const selectModsParentFolder = async () => {
         // Ensure the mod has an engine object before saving
         if (!modInfo.engine) {
           modInfo.engine = {
-            engine_type: "unknown",
-            engine_name: "",
-            engine_icon: "",
+            engine_type: 'unknown',
+            engine_name: '',
+            engine_icon: '',
             mods_folder: false,
-            mods_folder_path: "",
-          };
+            mods_folder_path: '',
+          }
         }
-        mods.value.push(modInfo);
-        await saveModToDatabase(modInfo);
+        mods.value.push(modInfo)
+        await saveModToDatabase(modInfo)
       }
 
       // Select the first added mod
-      selectMod(addedMods[0]);
+      selectMod(addedMods[0])
 
       // Show a success message
       $q.notify({
-        type: "positive",
+        type: 'positive',
         message: `Successfully added ${addedMods.length} mods`,
-        position: "bottom-right",
+        position: 'bottom-right',
         timeout: 3000,
-      });
+      })
     } else {
       // Show a message when no mods were found
       $q.notify({
-        type: "info",
-        message: "No compatible mods found",
-        caption: "Make sure the folder contains valid FNF mods",
-        position: "bottom-right",
+        type: 'info',
+        message: 'No compatible mods found',
+        caption: 'Make sure the folder contains valid FNF mods',
+        position: 'bottom-right',
         timeout: 3000,
-      });
+      })
     }
   } catch (error) {
     // This will catch validation errors or other issues
     $q.notify({
-      type: "negative",
-      message: "Failed to import mods",
+      type: 'negative',
+      message: 'Failed to import mods',
       caption: String(error),
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 5000,
-    });
-    console.error("Failed to select mods parent folder:", error);
+    })
+    console.error('Failed to select mods parent folder:', error)
   }
-};
+}
 
 const selectMod = (mod: ModInfo) => {
-  console.log("selectMod called with mod:", mod);
-  selectedMod.value = mod;
-  console.log("selectedMod.value after setting:", selectedMod.value);
-  launchError.value = null;
-  activePage.value = "mods"; // Switch to mod details view when selecting a mod
-};
+  console.log('selectMod called with mod:', mod)
+  selectedMod.value = mod
+  console.log('selectedMod.value after setting:', selectedMod.value)
+  launchError.value = null
+  activePage.value = 'mods' // Switch to mod details view when selecting a mod
+}
 
 const setActivePage = (page: string) => {
-  activePage.value = page;
-};
+  activePage.value = page
+}
 
 // Function to handle saving changes to an existing mod (
 const handleSaveMod = async (updatedMod: Mod) => {
   if (!updatedMod || !updatedMod.id) {
-    console.error("handleSaveMod called with invalid mod data");
-    return;
+    console.error('handleSaveMod called with invalid mod data')
+    return
   }
   console.log(
-    "SIDEBAR: handleSaveMod called for mod:",
+    'SIDEBAR: handleSaveMod called for mod:',
     updatedMod.name,
-    "with data:",
+    'with data:',
     JSON.stringify(updatedMod)
-  ); // Log incoming data
+  ) // Log incoming data
   try {
     // Ensure engine object exists before saving
     if (!updatedMod.engine) {
-      console.warn("Mod engine object missing, creating default.");
+      console.warn('Mod engine object missing, creating default.')
       updatedMod.engine = {
-        engine_type: "unknown",
-        engine_name: formatEngineName("unknown"), // Use util
-        engine_icon: "",
+        engine_type: 'unknown',
+        engine_name: formatEngineName('unknown'), // Use util
+        engine_icon: '',
         mods_folder: false,
-        mods_folder_path: "",
-      };
+        mods_folder_path: '',
+      }
     } else {
       // Ensure engine_name is set correctly based on type if needed
-      const defaultName = formatEngineName(updatedMod.engine.engine_type);
+      const defaultName = formatEngineName(updatedMod.engine.engine_type)
       // Only update name if it's empty or matches the default name of the *original* type
-      const originalMod = mods.value.find((m) => m.id === updatedMod.id);
+      const originalMod = mods.value.find(m => m.id === updatedMod.id)
       const originalDefaultName = formatEngineName(
-        originalMod?.engine?.engine_type || "unknown"
-      );
+        originalMod?.engine?.engine_type || 'unknown'
+      )
       if (
         !updatedMod.engine.engine_name ||
         updatedMod.engine.engine_name === originalDefaultName
       ) {
-        updatedMod.engine.engine_name = defaultName;
+        updatedMod.engine.engine_name = defaultName
       }
     }
 
     console.log(
-      "SIDEBAR: Calling dbService.saveMod with:",
+      'SIDEBAR: Calling dbService.saveMod with:',
       JSON.stringify(updatedMod)
-    ); // Log data being sent to dbService
-    await dbService.saveMod(updatedMod); // Use the main saveMod function
-    console.log("Mod details updated successfully in DB:", updatedMod.name);
+    ) // Log data being sent to dbService
+    await dbService.saveMod(updatedMod) // Use the main saveMod function
+    console.log('Mod details updated successfully in DB:', updatedMod.name)
 
     // Update the local state
-    const index = mods.value.findIndex((m) => m.id === updatedMod.id);
+    const index = mods.value.findIndex(m => m.id === updatedMod.id)
     if (index !== -1) {
       // Create a deep copy to avoid reactivity issues if the same object reference is used elsewhere
-      const savedModCopy = JSON.parse(JSON.stringify(updatedMod));
-      mods.value[index] = savedModCopy; // Update mod in the main list
+      const savedModCopy = JSON.parse(JSON.stringify(updatedMod))
+      mods.value[index] = savedModCopy // Update mod in the main list
       if (selectedMod.value && selectedMod.value.id === updatedMod.id) {
-        selectedMod.value = savedModCopy; // Update selected mod details if it's the one being edited
+        selectedMod.value = savedModCopy // Update selected mod details if it's the one being edited
       }
     }
   } catch (error) {
-    console.error("Failed to update mod details:", error);
+    console.error('Failed to update mod details:', error)
     $q.notify({
-      type: "negative",
+      type: 'negative',
       message: `Failed to update "${updatedMod.name}".`,
       caption: String(error),
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 3000,
-    });
+    })
   }
-};
+}
 
 // Function to handle selecting (updating/changing) a mod folder
 const handleSelectModFolder = async (callback?: (newPath: string) => void) => {
-  if (!selectedMod.value) return;
+  if (!selectedMod.value) return
   try {
     const result = await open({
       directory: true,
-      title: "Select Mod Folder",
-    });
+      title: 'Select Mod Folder',
+    })
 
     if (result) {
       // Update the mod's path with the new folder path
-      console.log("Selected mod folder:", result);
-      const updatedMod = { ...selectedMod.value, path: result };
+      console.log('Selected mod folder:', result)
+      const updatedMod = { ...selectedMod.value, path: result }
 
       // If a callback was provided, call it with the new path
-      if (callback && typeof callback === "function") {
-        callback(result);
+      if (callback && typeof callback === 'function') {
+        callback(result)
       }
 
       // Save the updated mod
-      await handleSaveMod(updatedMod);
+      await handleSaveMod(updatedMod)
 
       // Show success notification
       $q.notify({
-        type: "positive",
-        message: "Mod folder updated",
-        position: "bottom-right",
+        type: 'positive',
+        message: 'Mod folder updated',
+        position: 'bottom-right',
         timeout: 3000,
-      });
+      })
     }
   } catch (error) {
-    console.error("Error selecting mod folder:", error);
+    console.error('Error selecting mod folder:', error)
     $q.notify({
-      type: "negative",
-      message: "Error changing mod folder.",
+      type: 'negative',
+      message: 'Error changing mod folder.',
       caption: String(error),
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 3000,
-    });
+    })
   }
-};
+}
 
 // Function to handle selecting (updating/changing) an executable for the mod
 const handleSelectExecutable = async (
   callback?: (newExecutablePath: string) => void
 ) => {
-  if (!selectedMod.value) return;
+  if (!selectedMod.value) return
   try {
     const result = await open({
-      title: "Select Mod Executable",
+      title: 'Select Mod Executable',
       filters: [
-        { name: "Executables", extensions: ["exe"] },
-        { name: "All Files", extensions: ["*"] },
+        { name: 'Executables', extensions: ['exe'] },
+        { name: 'All Files', extensions: ['*'] },
       ],
       defaultPath: selectedMod.value.path, // Start in the mod's directory
-    });
+    })
 
     if (result) {
       // Update the mod's executable_path with the new executable path
-      console.log("Selected mod executable:", result);
-      const updatedMod = { ...selectedMod.value, executable_path: result };
+      console.log('Selected mod executable:', result)
+      const updatedMod = { ...selectedMod.value, executable_path: result }
 
       // If a callback was provided, call it with the new path
-      if (callback && typeof callback === "function") {
-        callback(result);
+      if (callback && typeof callback === 'function') {
+        callback(result)
       }
 
       // Save the updated mod
-      await handleSaveMod(updatedMod);
+      await handleSaveMod(updatedMod)
 
       // Show success notification
       $q.notify({
-        type: "positive",
-        message: "Executable path updated",
-        position: "bottom-right",
+        type: 'positive',
+        message: 'Executable path updated',
+        position: 'bottom-right',
         timeout: 3000,
-      });
+      })
     }
   } catch (error) {
-    console.error("Error selecting executable:", error);
+    console.error('Error selecting executable:', error)
     $q.notify({
-      type: "negative",
-      message: "Error selecting executable.",
+      type: 'negative',
+      message: 'Error selecting executable.',
       caption: String(error),
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 3000,
-    });
+    })
   }
-};
+}
 
 // Function that launches the selected mod
 const launchMod = async (modId: string) => {
   try {
     // Now invoke the backend to launch the mod
-    await invoke("launch_mod", { id: modId });
+    await invoke('launch_mod', { id: modId })
 
     // Find the mod in our local array by ID
-    const mod = mods.value.find((m) => m.id === modId);
+    const mod = mods.value.find(m => m.id === modId)
 
-    if (mod) {      // Update the last_played timestamp before launching
+    if (mod) {
+      // Update the last_played timestamp before launching
       const updatedMod = {
         ...mod,
         last_played: Math.trunc(Date.now() / 1000), // Current Unix timestamp in seconds
-      };
+      }
 
       // Save to database to persist the last_played value
-      await dbService.saveMod(updatedMod);
+      await dbService.saveMod(updatedMod)
 
       // Update the local state
-      const index = mods.value.findIndex((m) => m.id === modId);
+      const index = mods.value.findIndex(m => m.id === modId)
       if (index !== -1) {
-        mods.value[index] = updatedMod;
+        mods.value[index] = updatedMod
       }
 
       // If this is the currently selected mod, update that reference too
       if (selectedMod.value?.id === modId) {
-        selectedMod.value = updatedMod;
+        selectedMod.value = updatedMod
       }
 
       console.log(
         `Updated last_played timestamp for mod ${updatedMod.name} to ${updatedMod.last_played}`
-      );
+      )
     }
   } catch (error) {
-    console.error("Failed to launch mod:", error);
-    launchError.value = "Failed to launch mod";
+    console.error('Failed to launch mod:', error)
+    launchError.value = 'Failed to launch mod'
   }
-};
+}
 
 // Function that opens the setting modal
 const openSettingsModal = () => {
-  showSettingsModal.value = true;
-};
+  showSettingsModal.value = true
+}
 
 // Function to delete a mod
 const deleteMod = async (modId: string) => {
   try {
     // Remove mod from the mods array
-    mods.value = mods.value.filter((mod) => mod.id !== modId);
+    mods.value = mods.value.filter(mod => mod.id !== modId)
 
     // If the deleted mod was the selected mod, clear the selection
     if (selectedMod.value?.id === modId) {
-      selectedMod.value = null;
+      selectedMod.value = null
     }
 
     // Delete mod from the database using the service
-    await dbService.deleteMod(modId);
+    await dbService.deleteMod(modId)
 
     // Force a refresh of the UI to ensure the mod is removed from displayItems
-    const refreshEvent = new CustomEvent("refresh-mods");
-    window.dispatchEvent(refreshEvent);
+    const refreshEvent = new CustomEvent('refresh-mods')
+    window.dispatchEvent(refreshEvent)
   } catch (error) {
-    console.error("Failed to delete mod:", error);
+    console.error('Failed to delete mod:', error)
   }
-};
+}
 
 // Function to super delete a mod (completely remove its folder from disk)
 const superDeleteMod = async (modId: string) => {
   try {
     // Show a loading notification
     const loadingNotif = $q.notify({
-      type: "ongoing",
-      message: "Super deleting mod...",
-      position: "bottom-right",
+      type: 'ongoing',
+      message: 'Super deleting mod...',
+      position: 'bottom-right',
       timeout: 0,
       spinner: true,
-    });
+    })
 
     // Call the Rust backend to perform super delete
-    await invoke("super_delete_mod", { id: modId });
+    await invoke('super_delete_mod', { id: modId })
 
     // Dismiss loading notification
-    loadingNotif();
+    loadingNotif()
 
     // Remove mod from the mods array
-    mods.value = mods.value.filter((mod) => mod.id !== modId);
+    mods.value = mods.value.filter(mod => mod.id !== modId)
 
     // If the deleted mod was the selected mod, clear the selection
     if (selectedMod.value?.id === modId) {
-      selectedMod.value = null;
+      selectedMod.value = null
     }
 
     // Delete mod from the database using the service
-    await dbService.deleteMod(modId);
+    await dbService.deleteMod(modId)
 
     // Show success notification
     $q.notify({
-      type: "positive",
-      message: "Mod completely deleted",
-      caption: "The mod folder and all its contents have been deleted",
-      position: "bottom-right",
+      type: 'positive',
+      message: 'Mod completely deleted',
+      caption: 'The mod folder and all its contents have been deleted',
+      position: 'bottom-right',
       timeout: 3000,
-    });
+    })
 
     // Force a refresh of the UI to ensure the mod is removed from displayItems
-    const refreshEvent = new CustomEvent("refresh-mods");
-    window.dispatchEvent(refreshEvent);
+    const refreshEvent = new CustomEvent('refresh-mods')
+    window.dispatchEvent(refreshEvent)
   } catch (error) {
-    console.error("Failed to super delete mod:", error);
+    console.error('Failed to super delete mod:', error)
 
     // Show error notification
     $q.notify({
-      type: "negative",
-      message: "Failed to delete mod files",
+      type: 'negative',
+      message: 'Failed to delete mod files',
       caption: String(error),
-      position: "bottom-right",
+      position: 'bottom-right',
       timeout: 5000,
-    });
+    })
   }
-};
+}
 
 // Function to handle refreshing mods list
 const handleRefreshMods = async () => {
-  console.log("Refreshing mods list");
-  await loadModsFromDatabase();
-  await loadFoldersFromDatabase();
-};
+  console.log('Refreshing mods list')
+  await loadModsFromDatabase()
+  await loadFoldersFromDatabase()
+}
 
 // Function that creates a new folder
 const createFolder = async (folder: Folder) => {
-  console.log("Creating new folder:", folder);
+  console.log('Creating new folder:', folder)
   try {
-    await dbService.saveFolder(folder);
+    await dbService.saveFolder(folder)
 
-    console.log("Folder created successfully in database");
+    console.log('Folder created successfully in database')
 
     // Add the folder to the local folders array
     folders.value.push({
       ...folder,
       mods: [], // Ensure mods is initialized as an empty array
-    });
+    })
 
-    console.log("Updated folders list:", folders.value);
+    console.log('Updated folders list:', folders.value)
   } catch (error) {
-    console.error("Error creating folder:", error);
+    console.error('Error creating folder:', error)
   }
-};
+}
 
 // Function to handle folder updates, saving to the database
 const updateFolderDetails = async (updatedFolder: Folder) => {
   console.log(
-    "Updating folder details:",
+    'Updating folder details:',
     updatedFolder.name,
-    "mods count:",
+    'mods count:',
     updatedFolder.mods.length
-  );
+  )
 
   // Find and update the folder in the folders array
-  const folderIndex = folders.value.findIndex((f) => f.id === updatedFolder.id);
+  const folderIndex = folders.value.findIndex(f => f.id === updatedFolder.id)
 
   try {
     if (folderIndex !== -1) {
       // Existing folder: preserve display_order to prevent folder from moving in the list
-      const currentDisplayOrder = folders.value[folderIndex].display_order;
-      updatedFolder.display_order = currentDisplayOrder;
+      const currentDisplayOrder = folders.value[folderIndex].display_order
+      updatedFolder.display_order = currentDisplayOrder
 
       // Update the folder in the array
-      folders.value[folderIndex] = updatedFolder;
-      console.log("Updated existing folder in array at index", folderIndex);
+      folders.value[folderIndex] = updatedFolder
+      console.log('Updated existing folder in array at index', folderIndex)
     } else {
       // New folder: add it to the folders array
-      console.log("Adding new folder to array:", updatedFolder.name);
-      folders.value.push(updatedFolder);
+      console.log('Adding new folder to array:', updatedFolder.name)
+      folders.value.push(updatedFolder)
     }
 
     // Save to database
-    await dbService.saveFolder(updatedFolder);
-    console.log("Folder saved successfully to database:", updatedFolder.name);
+    await dbService.saveFolder(updatedFolder)
+    console.log('Folder saved successfully to database:', updatedFolder.name)
   } catch (error) {
-    console.error("Failed to save folder to database:", error);
+    console.error('Failed to save folder to database:', error)
   }
-};
+}
 
 // Function to add a mod to a folder
 const addModToFolder = async (data: { modId: string; folderId: string }) => {
-  const { modId, folderId } = data;
-  console.log(`Adding mod ${modId} to folder ${folderId}`);
+  const { modId, folderId } = data
+  console.log(`Adding mod ${modId} to folder ${folderId}`)
 
   try {
-    await dbService.moveModToFolder(modId, folderId);
+    await dbService.moveModToFolder(modId, folderId)
 
-    console.log("Mod added to folder in database");
+    console.log('Mod added to folder in database')
 
     // Update the local folders array
-    const folderIndex = folders.value.findIndex((f) => f.id === folderId);
+    const folderIndex = folders.value.findIndex(f => f.id === folderId)
     if (folderIndex !== -1) {
       // Add the mod ID to the folder's mods array if it's not already there
       if (!folders.value[folderIndex].mods.includes(modId)) {
-        folders.value[folderIndex].mods.push(modId);
+        folders.value[folderIndex].mods.push(modId)
       }
-      console.log(`Updated folder ${folderId} with mod ${modId}`);
+      console.log(`Updated folder ${folderId} with mod ${modId}`)
 
       // Update the mod's folder_id in our local mods array
-      const modIndex = mods.value.findIndex((m) => m.id === modId);
+      const modIndex = mods.value.findIndex(m => m.id === modId)
       if (modIndex !== -1) {
-        mods.value[modIndex].folder_id = folderId;
+        mods.value[modIndex].folder_id = folderId
       }
 
       // Force a refresh of the UI
-      folders.value = [...folders.value];
+      folders.value = [...folders.value]
     }
   } catch (error) {
-    console.error("Error adding mod to folder:", error);
+    console.error('Error adding mod to folder:', error)
   }
-};
+}
 
 // Function to delete a folder
 const deleteFolder = async (folderId: string) => {
-  console.log(`Deleting folder with ID: ${folderId}`);
+  console.log(`Deleting folder with ID: ${folderId}`)
 
   try {
-    await dbService.deleteFolder(folderId);
+    await dbService.deleteFolder(folderId)
 
-    console.log("Folder deleted from database");
+    console.log('Folder deleted from database')
 
     // Remove the folder from the local folders array
-    folders.value = folders.value.filter((f) => f.id !== folderId);
+    folders.value = folders.value.filter(f => f.id !== folderId)
 
     // Update any mods that were in this folder
-    mods.value.forEach((mod) => {
+    mods.value.forEach(mod => {
       if (mod.folder_id === folderId) {
-        mod.folder_id = undefined;
+        mod.folder_id = undefined
       }
-    });
+    })
 
-    console.log("Updated folders list after deletion");
+    console.log('Updated folders list after deletion')
   } catch (error) {
-    console.error("Error deleting folder:", error);
+    console.error('Error deleting folder:', error)
   }
-};
+}
 
 // Function to open app settings modal
 const openAppSettings = () => {
-  showAppSettingsModal.value = true;
-};
+  showAppSettingsModal.value = true
+}
 
 // Function to save app settings
 const saveAppSettings = async (settings: any) => {
-  console.log("App settings saved:", settings);
+  console.log('App settings saved:', settings)
 
   // Apply the accent color immediately - ensure it's a string
-  let colorValue = settings.accentColor || "#DB2955";
+  let colorValue = settings.accentColor || '#DB2955'
 
   // Handle if accentColor is stored as a JSON string (from previous version)
   if (
-    typeof colorValue === "string" &&
-    colorValue.trim().startsWith("{") &&
-    colorValue.includes("value")
+    typeof colorValue === 'string' &&
+    colorValue.trim().startsWith('{') &&
+    colorValue.includes('value')
   ) {
     try {
       // Validate JSON format before parsing
       if (/^[\s]*\{.*\}[\s]*$/.test(colorValue)) {
-        const parsedColor = JSON.parse(colorValue);
+        const parsedColor = JSON.parse(colorValue)
         if (
           parsedColor &&
           parsedColor.value &&
-          typeof parsedColor.value === "string"
+          typeof parsedColor.value === 'string'
         ) {
-          colorValue = parsedColor.value;
+          colorValue = parsedColor.value
 
           // Also fix it in the database by saving it back as a string
-          await storeService.saveSetting("accentColor", colorValue);
-          console.log("Fixed accent color format in database:", colorValue);
+          await storeService.saveSetting('accentColor', colorValue)
+          console.log('Fixed accent color format in database:', colorValue)
         } else {
           // If parsed but invalid structure, use default
-          colorValue = "#DB2955";
+          colorValue = '#DB2955'
           console.log(
             "Parsed color doesn't have a valid value property, using default"
-          );
+          )
         }
       } else {
         // Not valid JSON object format
-        colorValue = "#DB2955";
-        console.log("Invalid JSON format for color value, using default");
+        colorValue = '#DB2955'
+        console.log('Invalid JSON format for color value, using default')
       }
     } catch (e) {
-      console.error("Failed to parse accent color JSON:", e);
+      console.error('Failed to parse accent color JSON:', e)
       // Save the default color to fix the database
-      colorValue = "#DB2955";
-      await storeService.saveSetting("accentColor", colorValue);
-      console.log("Saved default accent color to fix invalid data");
+      colorValue = '#DB2955'
+      await storeService.saveSetting('accentColor', colorValue)
+      console.log('Saved default accent color to fix invalid data')
     }
   }
   // Handle if accentColor is an object with a value property
-  else if (typeof colorValue !== "string" && colorValue?.value) {
-    colorValue = colorValue.value;
+  else if (typeof colorValue !== 'string' && colorValue?.value) {
+    colorValue = colorValue.value
   }
 
   // Ensure colorValue is always a valid CSS color string
-  if (typeof colorValue !== "string" || !colorValue.startsWith("#")) {
-    colorValue = "#DB2955"; // Fallback to default if invalid
+  if (typeof colorValue !== 'string' || !colorValue.startsWith('#')) {
+    colorValue = '#DB2955' // Fallback to default if invalid
   }
+
   document.documentElement.style.setProperty("--q-primary", colorValue);
   console.log("Applied accent color from settings:", colorValue);
 
   window.dispatchEvent(new CustomEvent("settings-saved", { detail: settings }));
 };
 
+
 // Function that loads and applies app settings
 const loadAppSettings = async () => {
   try {
     if (!storeService) {
-      console.warn("Store service not initialized yet, cannot load settings");
-      return;
+      console.warn('Store service not initialized yet, cannot load settings')
+      return
     }
 
     // Get all settings at once through the StoreService
-    const settings = await storeService.getAllSettings();
+    const settings = await storeService.getAllSettings()
 
     // Apply compact mode setting
-    isCompactMode.value = settings.compactMode === true;
-    console.log("Applied compact mode setting:", isCompactMode.value);
+    isCompactMode.value = settings.compactMode === true
+    console.log('Applied compact mode setting:', isCompactMode.value)
 
     // Apply the accent color to CSS custom properties
-    let colorValue = settings.accentColor || "#DB2955";
+    let colorValue = settings.accentColor || '#DB2955'
 
     // Handle if accentColor is stored as a JSON string (from previous version)
     if (
-      typeof colorValue === "string" &&
-      colorValue.trim().startsWith("{") &&
-      colorValue.includes("value")
+      typeof colorValue === 'string' &&
+      colorValue.trim().startsWith('{') &&
+      colorValue.includes('value')
     ) {
       try {
         // Validate JSON format before parsing
         if (/^[\s]*\{.*\}[\s]*$/.test(colorValue)) {
-          const parsedColor = JSON.parse(colorValue);
+          const parsedColor = JSON.parse(colorValue)
           if (
             parsedColor &&
             parsedColor.value &&
-            typeof parsedColor.value === "string"
+            typeof parsedColor.value === 'string'
           ) {
-            colorValue = parsedColor.value;
+            colorValue = parsedColor.value
 
             // Also fix it in the database by saving it back as a string
-            await storeService.saveSetting("accentColor", colorValue);
-            console.log("Fixed accent color format in database:", colorValue);
+            await storeService.saveSetting('accentColor', colorValue)
+            console.log('Fixed accent color format in database:', colorValue)
           } else {
             // If parsed but invalid structure, use default
-            colorValue = "#DB2955";
+            colorValue = '#DB2955'
             console.log(
               "Parsed color doesn't have a valid value property, using default"
-            );
+            )
           }
         } else {
           // Not valid JSON object format
-          colorValue = "#DB2955";
-          console.log("Invalid JSON format for color value, using default");
+          colorValue = '#DB2955'
+          console.log('Invalid JSON format for color value, using default')
         }
       } catch (e) {
-        console.error("Failed to parse accent color JSON:", e);
+        console.error('Failed to parse accent color JSON:', e)
         // Save the default color to fix the database
-        colorValue = "#DB2955";
-        await storeService.saveSetting("accentColor", colorValue);
-        console.log("Saved default accent color to fix invalid data");
+        colorValue = '#DB2955'
+        await storeService.saveSetting('accentColor', colorValue)
+        console.log('Saved default accent color to fix invalid data')
       }
     }
     // Handle if accentColor is an object with a value property
-    else if (typeof colorValue !== "string" && colorValue?.value) {
-      const originalValue = colorValue;
-      colorValue = colorValue.value;
+    else if (typeof colorValue !== 'string' && colorValue?.value) {
+      const originalValue = colorValue
+      colorValue = colorValue.value
 
       // Also fix it in the database
-      await storeService.saveSetting("accentColor", colorValue);
+      await storeService.saveSetting('accentColor', colorValue)
       console.log(
-        "Fixed accent color format in database:",
+        'Fixed accent color format in database:',
         originalValue,
-        "→",
+        '→',
         colorValue
-      );
+      )
     }
 
     // Ensure colorValue is always a valid CSS color string
@@ -1143,110 +1146,111 @@ const loadAppSettings = async () => {
       colorValue = "#DB2955"; // Fallback to default if invalid
     }    document.documentElement.style.setProperty("--q-primary", colorValue);
     console.log("Applied accent color from settings:", colorValue);
+
   } catch (error) {
-    console.error("Failed to load and apply app settings:", error);
+    console.error('Failed to load and apply app settings:', error)
   }
-};
+}
 
 // Function to handle reordering mods
 const handleModsReorder = async (newOrder: DisplayItem[]) => {
   console.log(
-    "Reordering display items, new order:",
+    'Reordering display items, new order:',
     newOrder.map(
-      (item) =>
-        `${item.type}:${item.type === "mod" ? item.data.name : item.data.name}`
+      item =>
+        `${item.type}:${item.type === 'mod' ? item.data.name : item.data.name}`
     )
-  );
+  )
 
   // Process the reordered items by type (mods or folders)
   for (let index = 0; index < newOrder.length; index++) {
-    const item = newOrder[index];
+    const item = newOrder[index]
 
-    if (item.type === "mod") {
+    if (item.type === 'mod') {
       // Find the corresponding mod in our mods array and update its display_order
-      const modIndex = mods.value.findIndex((m) => m.id === item.data.id);
+      const modIndex = mods.value.findIndex(m => m.id === item.data.id)
       if (modIndex !== -1) {
-        mods.value[modIndex].display_order = index;
+        mods.value[modIndex].display_order = index
       }
-    } else if (item.type === "folder") {
+    } else if (item.type === 'folder') {
       // Find the corresponding folder in our folders array and update its display_order
-      const folderIndex = folders.value.findIndex((f) => f.id === item.data.id);
+      const folderIndex = folders.value.findIndex(f => f.id === item.data.id)
       if (folderIndex !== -1) {
-        folders.value[folderIndex].display_order = index;
+        folders.value[folderIndex].display_order = index
       }
     }
   }
 
   // Force reactivity update
-  mods.value = [...mods.value];
-  folders.value = [...folders.value];
+  mods.value = [...mods.value]
+  folders.value = [...folders.value]
 
   try {
     // Use the DatabaseService to update display order
-    await dbService.updateDisplayOrder(newOrder);
-    console.log("Successfully saved display order to database");
+    await dbService.updateDisplayOrder(newOrder)
+    console.log('Successfully saved display order to database')
   } catch (error) {
-    console.error("Failed to save mod order:", error);
+    console.error('Failed to save mod order:', error)
   }
-};
+}
 
 // Function to handle reordering mods within a folder
 const handleFolderModsReorder = async (data: {
-  folderId: string;
-  updatedMods: Mod[];
+  folderId: string
+  updatedMods: Mod[]
 }) => {
   console.log(
     `Handling folder mods reorder for folder: ${data.folderId}, mods count: ${data.updatedMods.length}`
-  );
+  )
 
   try {
-    await dbService.updateDisplayOrderInFolder(data.folderId, data.updatedMods);
+    await dbService.updateDisplayOrderInFolder(data.folderId, data.updatedMods)
     console.log(
       `Successfully updated display order for ${data.updatedMods.length} mods in folder`
-    );
+    )
 
     // Update the local mods array with the new display_order_in_folder values
     data.updatedMods.forEach((updatedMod, index) => {
-      const modIndex = mods.value.findIndex((m) => m.id === updatedMod.id);
+      const modIndex = mods.value.findIndex(m => m.id === updatedMod.id)
       if (modIndex !== -1) {
-        mods.value[modIndex].display_order_in_folder = index;
+        mods.value[modIndex].display_order_in_folder = index
       }
-    });
+    })
 
     // Force reactivity update
-    mods.value = [...mods.value];
+    mods.value = [...mods.value]
   } catch (error) {
-    console.error("Failed to save folder mods order:", error);
+    console.error('Failed to save folder mods order:', error)
   }
-};
+}
 
 // Function to handle opening settings for a specific mod
 const openModSettings = (mod: ModInfo) => {
   // Set the selected mod and open the settings modal
-  selectedMod.value = mod;
-  showSettingsModal.value = true;
-};
+  selectedMod.value = mod
+  showSettingsModal.value = true
+}
 
 const openModFolder = async (mod: ModInfo) => {
   // Open the mod folder in the file explorer
-  await revealItemInDir(mod.path + sep());
-};
+  await revealItemInDir(mod.path + sep())
+}
 
 const openGamebananaBrowser = () => {
-  setActivePage("gamebanana");
-};
+  setActivePage('gamebanana')
+}
 
 // Clean up event listeners
 onUnmounted(() => {
   if (isResizing) {
-    document.removeEventListener("mousemove", handleResize);
-    document.removeEventListener("mouseup", stopResize);
-    document.body.style.userSelect = "";
+    document.removeEventListener('mousemove', handleResize)
+    document.removeEventListener('mouseup', stopResize)
+    document.body.style.userSelect = ''
   }
 
   // Remove refresh-mods event listener
-  window.removeEventListener("refresh-mods", handleRefreshMods);
-});
+  window.removeEventListener('refresh-mods', handleRefreshMods)
+})
 </script>
 
 <style scoped>
@@ -1272,7 +1276,7 @@ onUnmounted(() => {
   padding: 16px;
   box-sizing: border-box;
   overflow: auto;
-  background-image: url("/images/menuTransparent.png");
+  background-image: url('/images/menuTransparent.png');
   background-size: cover;
   background-position: center;
   background-blend-mode: overlay;

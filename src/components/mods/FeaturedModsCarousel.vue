@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="loading-content" v-if="loading">
+    <div v-if="loading" class="loading-content">
       <q-spinner color="primary" size="48px" />
       <div>Loading featured mods...</div>
     </div>
@@ -32,7 +32,14 @@
               @click="$emit('showDetails', mod.id, mod.model_name)"
               @contextmenu.prevent="showContextMenu($event, mod)"
             >
-              <q-img :src="mod.image_url" class="featured-thumbnail" :img-style="{ filter: mod.initial_visibility == 'warn' ? 'blur(20px)' : 'none' }">
+              <q-img
+                :src="mod.image_url"
+                class="featured-thumbnail"
+                :img-style="{
+                  filter:
+                    mod.initial_visibility == 'warn' ? 'blur(20px)' : 'none',
+                }"
+              >
                 <div class="absolute-full featured-overlay"></div>
 
                 <div class="absolute-top-right q-pa-sm row items-center">
@@ -57,10 +64,10 @@
                         "
                       />
                     </q-avatar>
-                    <span class="author-upic" v-if="mod.submitter_u_pic"
+                    <span v-if="mod.submitter_u_pic" class="author-upic"
                       ><img :src="mod.submitter_u_pic"
                     /></span>
-                    <span class="author-name" v-else>{{ mod.owner }}</span>
+                    <span v-else class="author-name">{{ mod.owner }}</span>
                   </div>
                 </div>
 
@@ -92,7 +99,6 @@
                       <span v-if="mod.initial_visibility == 'warn'">
                         <q-icon name="warning" size="sm" color="yellow" />
                         Has sensitive content!
-                        
                       </span>
                       <span>
                         <q-icon name="message" size="sm" />
@@ -115,9 +121,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import type { GameBananaMod } from "../../types";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { ref } from 'vue'
+import type { GameBananaMod } from '../../types'
+import { openUrl } from '@tauri-apps/plugin-opener'
 
 const props = defineProps({
   mods: {
@@ -128,87 +134,87 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-});
+})
 
-const emit = defineEmits(["download", "showDetails"]);
+const emit = defineEmits(['download', 'showDetails'])
 
-const currentSlide = ref(0);
+const currentSlide = ref(0)
 
-console.log("Mods in carousel:", props.mods);
+console.log('Mods in carousel:', props.mods)
 
 // Context menu handler
 const showContextMenu = (event: MouseEvent, mod: GameBananaMod) => {
-  event.preventDefault();
-  event.stopPropagation();
+  event.preventDefault()
+  event.stopPropagation()
 
   // Create context menu options
   const contextMenuOptions = [
     {
-      icon: "download",
-      label: "Download Mod",
-      action: () => emit("download", mod),
+      icon: 'download',
+      label: 'Download Mod',
+      action: () => emit('download', mod),
     },
     {
-      icon: "info",
-      label: "Show Details",
-      action: () => emit("showDetails", mod.id),
+      icon: 'info',
+      label: 'Show Details',
+      action: () => emit('showDetails', mod.id),
     },
     {
-      icon: "open_in_new",
-      label: "Open GameBanana Page",
+      icon: 'open_in_new',
+      label: 'Open GameBanana Page',
       action: () => openUrl(mod.profile_url),
     },
-  ];
+  ]
 
   // Create and dispatch custom event to show context menu
-  const customEvent = new CustomEvent("show-context-menu", {
+  const customEvent = new CustomEvent('show-context-menu', {
     detail: {
       position: { x: event.clientX, y: event.clientY },
       options: contextMenuOptions,
     },
     bubbles: true,
-  });
+  })
 
   // Safely handle the case where event.target could be null
   if (event.target) {
-    event.target.dispatchEvent(customEvent);
+    event.target.dispatchEvent(customEvent)
   } else {
     // Fallback to document if target is null
-    document.dispatchEvent(customEvent);
+    document.dispatchEvent(customEvent)
   }
-};
+}
 
 // Helper function to format file sizes
 const formatNumber = (num: number): string => {
   if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + "M";
+    return (num / 1000000).toFixed(1) + 'M'
   } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + "K";
+    return (num / 1000).toFixed(1) + 'K'
   }
-  return num.toString();
-};
+  return num.toString()
+}
 
 // Format period labels
 const periodDisplayMap: Record<string, string> = {
-  today: "Best of Today",
-  week: "Best of this Week",
-  month: "Best of this Month",
-  "3month": "Best of 3 Months",
-  "6month": "Best of 6 Months",
-  year: "Best of this Year",
-  alltime: "Best of All Time",
-};
+  today: 'Best of Today',
+  week: 'Best of this Week',
+  month: 'Best of this Month',
+  '3month': 'Best of 3 Months',
+  '6month': 'Best of 6 Months',
+  year: 'Best of this Year',
+  alltime: 'Best of All Time',
+}
 
 const formatPeriod = (period: string): string => {
-  return periodDisplayMap[period] || `Best of ${period}`;
-};
+  return periodDisplayMap[period] || `Best of ${period}`
+}
 
 // Shorten description for display
 const shortenDescription = (description: string): string => {
   return description?.length > 100
-    ? description.slice(0, 100) + "..."
-    : description || "";
-};
+    ? description.slice(0, 100) + '...'
+    : description || ''
+}
 </script>
 
 <style scoped>

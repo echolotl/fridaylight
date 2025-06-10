@@ -11,7 +11,7 @@
           Select Type for "{{ currentModName }}"
         </div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup @click="cancel" />
+        <q-btn v-close-popup icon="close" flat round dense @click="cancel" />
       </q-card-section>
 
       <q-card-section>
@@ -55,7 +55,7 @@
                 {{
                   engineAvailability.psychCount
                     ? `A modpack for the Psych Engine`
-                    : "No Psych Engine installations found"
+                    : 'No Psych Engine installations found'
                 }}
               </div>
             </q-card-section>
@@ -85,7 +85,7 @@
                 {{
                   engineAvailability.vanillaCount
                     ? `A modpack for V-Slice`
-                    : "No V-Slice installations found"
+                    : 'No V-Slice installations found'
                 }}
               </div>
             </q-card-section>
@@ -115,7 +115,7 @@
                 {{
                   engineAvailability.fpsPlusCount
                     ? `A modpack for FPS Plus`
-                    : "No FPS Plus installations found"
+                    : 'No FPS Plus installations found'
                 }}
               </div>
             </q-card-section>
@@ -145,7 +145,7 @@
                 {{
                   engineAvailability.codenameCount
                     ? `A modpack for the Codename Engine`
-                    : "No Codename Engine installations found"
+                    : 'No Codename Engine installations found'
                 }}
               </div>
             </q-card-section>
@@ -166,12 +166,12 @@
             <q-item
               v-for="engine in compatibleEngines"
               :key="engine.id"
-              clickable
               v-ripple
+              clickable
               :active="selectedEngine?.id === engine.id"
-              @click="selectedEngine = engine"
               active-class="selected-engine"
               class="engine-item"
+              @click="selectedEngine = engine"
             >
               <q-item-section avatar>
                 <q-avatar>
@@ -196,7 +196,7 @@
             </q-item>
           </q-list>
           <!-- Installation path preview -->
-          <div class="text-caption q-mt-sm" v-if="selectedEngine">
+          <div v-if="selectedEngine" class="text-caption q-mt-sm">
             <!-- Codename Engine Addon Option -->
             <div v-if="isCodename" class="q-pt-none q-mb-md">
               <q-toggle
@@ -216,8 +216,8 @@
           flat
           label="Download"
           color="primary"
-          @click="onSubmit"
           :disable="!isFormValid"
+          @click="onSubmit"
         />
       </q-card-actions>
     </q-card>
@@ -225,31 +225,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, reactive } from "vue";
-import { invoke } from "@tauri-apps/api/core";
-import { sep } from "@tauri-apps/api/path";
-
-// Engine availability tracking
-const engineAvailability = reactive({
-  psychCount: 0,
-  vanillaCount: 0,
-  fpsPlusCount: 0,
-  codenameCount: 0,
-});
-
-interface EngineMod {
-  id: string;
-  name: string;
-  path: string;
-  icon_data?: string;
-  engine?: {
-    engine_type: string;
-    mods_folder_path?: string;
-    mods_folder?: boolean;
-  };
-  engine_type?: string;
-  executable_path?: string;
-}
+import { ref, computed, watch, onMounted, reactive } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
+import { sep } from '@tauri-apps/api/path'
 
 const props = defineProps({
   modelValue: {
@@ -260,201 +238,223 @@ const props = defineProps({
     type: Object,
     required: true,
   },
-});
+})
 
-const emit = defineEmits(["update:modelValue", "submit", "back", "cancel"]);
+const emit = defineEmits(['update:modelValue', 'submit', 'back', 'cancel'])
+
+// Engine availability tracking
+const engineAvailability = reactive({
+  psychCount: 0,
+  vanillaCount: 0,
+  fpsPlusCount: 0,
+  codenameCount: 0,
+})
+
+interface EngineMod {
+  id: string
+  name: string
+  path: string
+  icon_data?: string
+  engine?: {
+    engine_type: string
+    mods_folder_path?: string
+    mods_folder?: boolean
+  }
+  engine_type?: string
+  executable_path?: string
+}
 
 // Dialog state
-const isOpen = ref(props.modelValue);
+const isOpen = ref(props.modelValue)
 
 // Selection state
-const selectedType = ref("executable");
-const selectedEngine = ref<EngineMod | null>(null);
-const compatibleEngines = ref<EngineMod[]>([]);
-const allEngines = ref<EngineMod[]>([]);
-const isAddon = ref(false);
+const selectedType = ref('executable')
+const selectedEngine = ref<EngineMod | null>(null)
+const compatibleEngines = ref<EngineMod[]>([])
+const allEngines = ref<EngineMod[]>([])
+const isAddon = ref(false)
 
 // Computed property to check if selected type is Codename Engine
 const isCodename = computed(() => {
-  return selectedType.value === "codename";
-});
+  return selectedType.value === 'codename'
+})
 
 // Computed property to check if form is valid
 const isFormValid = computed(() => {
-  if (selectedType.value === "executable") {
-    return true;
+  if (selectedType.value === 'executable') {
+    return true
   }
-  return !!selectedEngine.value;
-});
+  return !!selectedEngine.value
+})
 
 // Watch for changes in props
 watch(
   () => props.modelValue,
-  (val) => {
-    isOpen.value = val;
+  val => {
+    isOpen.value = val
 
     // When dialog opens, load all engines to check availability and reset state
     if (val) {
-      loadAllEngines();
-      isAddon.value = false;
+      loadAllEngines()
+      isAddon.value = false
     }
   }
-);
+)
 
 // Watch for changes in isOpen
-watch(isOpen, (val) => {
-  emit("update:modelValue", val);
-});
+watch(isOpen, val => {
+  emit('update:modelValue', val)
+})
 
 // Watch for changes in selectedType
-watch(selectedType, async (newType) => {
-  if (newType !== "executable") {
-    await loadCompatibleEngines(newType);
+watch(selectedType, async newType => {
+  if (newType !== 'executable') {
+    await loadCompatibleEngines(newType)
   } else {
     // Clear selection when switching to executable type
-    selectedEngine.value = null;
-    compatibleEngines.value = [];
+    selectedEngine.value = null
+    compatibleEngines.value = []
   }
 
   // Reset addon flag when changing type
-  if (newType !== "codename") {
-    isAddon.value = false;
+  if (newType !== 'codename') {
+    isAddon.value = false
   }
-});
+})
 
 // Load all engines on component mount to check availability
 onMounted(() => {
-  loadAllEngines();
-});
+  loadAllEngines()
+})
 
 // Load all engines to determine which engine types are available
 const loadAllEngines = async () => {
   try {
     // Reset counts
-    engineAvailability.psychCount = 0;
-    engineAvailability.vanillaCount = 0;
-    engineAvailability.fpsPlusCount = 0;
-    engineAvailability.codenameCount = 0;
+    engineAvailability.psychCount = 0
+    engineAvailability.vanillaCount = 0
+    engineAvailability.fpsPlusCount = 0
+    engineAvailability.codenameCount = 0
 
     // Fetch all mods
     if (window.db && window.db.service) {
-      allEngines.value = await window.db.service.getAllMods();
+      allEngines.value = await window.db.service.getAllMods()
     } else {
-      allEngines.value = await invoke<EngineMod[]>("get_mods");
+      allEngines.value = await invoke<EngineMod[]>('get_mods')
     }
 
     // Count engines of each type
-    allEngines.value.forEach((mod) => {
-      const engineType = getEngineType(mod).toLowerCase();
+    allEngines.value.forEach(mod => {
+      const engineType = getEngineType(mod).toLowerCase()
       switch (engineType) {
-        case "psych":
-          engineAvailability.psychCount++;
-          break;
-        case "vanilla":
-          engineAvailability.vanillaCount++;
-          break;
-        case "fps-plus":
-          engineAvailability.fpsPlusCount++;
-          break;
-        case "codename":
-          engineAvailability.codenameCount++;
-          break;
+        case 'psych':
+          engineAvailability.psychCount++
+          break
+        case 'vanilla':
+          engineAvailability.vanillaCount++
+          break
+        case 'fps-plus':
+          engineAvailability.fpsPlusCount++
+          break
+        case 'codename':
+          engineAvailability.codenameCount++
+          break
       }
-    });
+    })
 
-    console.log("Engine availability:", engineAvailability);
+    console.log('Engine availability:', engineAvailability)
   } catch (error) {
-    console.error("Failed to load all engines:", error);
-    allEngines.value = [];
+    console.error('Failed to load all engines:', error)
+    allEngines.value = []
   }
-};
+}
 
 // Get engine type from mod object
 const getEngineType = (mod: EngineMod): string => {
   // Check engine structure
   if (mod.engine && mod.engine.engine_type) {
-    return mod.engine.engine_type;
+    return mod.engine.engine_type
   }
 
   // If no engine type found, return unknown
-  return "unknown";
-};
+  return 'unknown'
+}
 
 // Load compatible engines based on the selected type
 const loadCompatibleEngines = async (engineType: string) => {
   try {
     // Filter allEngines if we've already loaded them
     if (allEngines.value.length > 0) {
-      compatibleEngines.value = allEngines.value.filter((mod) => {
-        const modEngineType = getEngineType(mod).toLowerCase();
-        return modEngineType === engineType.toLowerCase();
-      });
+      compatibleEngines.value = allEngines.value.filter(mod => {
+        const modEngineType = getEngineType(mod).toLowerCase()
+        return modEngineType === engineType.toLowerCase()
+      })
     } else {
       // Fetch all mods if not already loaded
-      let mods: EngineMod[] = [];
+      let mods: EngineMod[] = []
       if (window.db && window.db.service) {
-        mods = await window.db.service.getAllMods();
+        mods = await window.db.service.getAllMods()
       } else {
-        mods = await invoke<EngineMod[]>("get_mods");
+        mods = await invoke<EngineMod[]>('get_mods')
       }
 
       // Filter mods by engine type
-      compatibleEngines.value = mods.filter((mod) => {
-        const modEngineType = getEngineType(mod).toLowerCase();
-        return modEngineType === engineType.toLowerCase();
-      });
+      compatibleEngines.value = mods.filter(mod => {
+        const modEngineType = getEngineType(mod).toLowerCase()
+        return modEngineType === engineType.toLowerCase()
+      })
     }
 
     // Reset selected engine if not compatible
     if (compatibleEngines.value.length > 0) {
-      selectedEngine.value = compatibleEngines.value[0];
+      selectedEngine.value = compatibleEngines.value[0]
     } else {
-      selectedEngine.value = null;
+      selectedEngine.value = null
     }
   } catch (error) {
-    console.error("Failed to get compatible engine mods:", error);
-    compatibleEngines.value = [];
-    selectedEngine.value = null;
+    console.error('Failed to get compatible engine mods:', error)
+    compatibleEngines.value = []
+    selectedEngine.value = null
   }
-};
+}
 
 // Format engine type for display
 const formatEngineType = (engineType: string | null): string => {
-  if (!engineType) return "Unknown";
+  if (!engineType) return 'Unknown'
 
   switch (engineType.toLowerCase()) {
-    case "psych":
-      return "Psych Engine";
-    case "vanilla":
-      return "V-Slice";
-    case "fps-plus":
-      return "FPS Plus";
-    case "codename":
-      return "Codename Engine";
+    case 'psych':
+      return 'Psych Engine'
+    case 'vanilla':
+      return 'V-Slice'
+    case 'fps-plus':
+      return 'FPS Plus'
+    case 'codename':
+      return 'Codename Engine'
     default:
-      return engineType.charAt(0).toUpperCase() + engineType.slice(1);
+      return engineType.charAt(0).toUpperCase() + engineType.slice(1)
   }
-};
+}
 
 // Function to get the mods folder path for an engine mod
 const getModsFolderPath = (engineMod: EngineMod): string => {
   // Get base directory first in all cases
-  const basePath = engineMod.path;
-  const executablePath = engineMod.executable_path || "";
+  const basePath = engineMod.path
+  const executablePath = engineMod.executable_path || ''
 
-  if (!basePath) return "Unknown path";
+  if (!basePath) return 'Unknown path'
 
   // Get parent directory of executable if it exists
-  let baseDir = basePath;
+  let baseDir = basePath
   if (executablePath) {
     // Extract the directory from the executable path
-    const lastSlashIndex = executablePath.lastIndexOf("/");
+    const lastSlashIndex = executablePath.lastIndexOf('/')
     if (lastSlashIndex > 0) {
-      baseDir = executablePath.substring(0, lastSlashIndex);
+      baseDir = executablePath.substring(0, lastSlashIndex)
     } else {
-      const lastBackslashIndex = executablePath.lastIndexOf("\\");
+      const lastBackslashIndex = executablePath.lastIndexOf('\\')
       if (lastBackslashIndex > 0) {
-        baseDir = executablePath.substring(0, lastBackslashIndex);
+        baseDir = executablePath.substring(0, lastBackslashIndex)
       }
     }
   }
@@ -466,86 +466,86 @@ const getModsFolderPath = (engineMod: EngineMod): string => {
     engineMod.engine.mods_folder_path
   ) {
     // Combine the base directory with the custom mods folder path
-    return `${baseDir}${sep()}${engineMod.engine.mods_folder_path}`;
+    return `${baseDir}${sep()}${engineMod.engine.mods_folder_path}`
   }
 
   // If no custom path specified, use default mods folder
-  return `${baseDir}${sep()}mods`;
-};
+  return `${baseDir}${sep()}mods`
+}
 
 // Get the installation path based on engine type and addon setting
 const getInstallPath = (): string => {
-  if (!selectedEngine.value) return "Unknown path";
+  if (!selectedEngine.value) return 'Unknown path'
 
   // If it's a Codename Engine addon, use addons folder instead of mods
   if (isCodename.value && isAddon.value) {
-    const basePath = selectedEngine.value.path;
-    const executablePath = selectedEngine.value.executable_path || "";
+    const basePath = selectedEngine.value.path
+    const executablePath = selectedEngine.value.executable_path || ''
 
-    if (!basePath) return "Unknown path";
+    if (!basePath) return 'Unknown path'
 
     // Get parent directory of executable if it exists
-    let baseDir = basePath;
+    let baseDir = basePath
     if (executablePath) {
       // Extract the directory from the executable path
-      const lastSlashIndex = executablePath.lastIndexOf("/");
+      const lastSlashIndex = executablePath.lastIndexOf('/')
       if (lastSlashIndex > 0) {
-        baseDir = executablePath.substring(0, lastSlashIndex);
+        baseDir = executablePath.substring(0, lastSlashIndex)
       } else {
-        const lastBackslashIndex = executablePath.lastIndexOf("\\");
+        const lastBackslashIndex = executablePath.lastIndexOf('\\')
         if (lastBackslashIndex > 0) {
-          baseDir = executablePath.substring(0, lastBackslashIndex);
+          baseDir = executablePath.substring(0, lastBackslashIndex)
         }
       }
     }
 
-    return `${baseDir}${sep()}addons`;
+    return `${baseDir}${sep()}addons`
   }
 
   // Otherwise use the regular mods folder path
-  return getModsFolderPath(selectedEngine.value);
-};
+  return getModsFolderPath(selectedEngine.value)
+}
 
 // Form submission
 const onSubmit = () => {
   if (isFormValid.value) {
-    emit("submit", {
+    emit('submit', {
       modType: selectedType.value,
       engineMod: selectedEngine.value,
       isAddon: isCodename.value ? isAddon.value : false,
-    });
+    })
   }
-};
+}
 
 // Go back to the previous modal
 const back = () => {
-  emit("back");
-};
+  emit('back')
+}
 
 // Cancel form
 const cancel = () => {
-  emit("cancel");
-};
+  emit('cancel')
+}
 
 // Type declaration for window.db
 declare global {
   interface Window {
-    db: any;
+    db: any
   }
 }
 
 // Watch for modData changes to populate with mod information
 watch(
   () => props.modData,
-  (newModData) => {
+  newModData => {
     if (newModData && Object.keys(newModData).length > 0) {
-      console.log("Received mod data in ModTypeSelectionModal:", newModData);
-      currentModName.value = newModData.name || "Unknown Mod";
+      console.log('Received mod data in ModTypeSelectionModal:', newModData)
+      currentModName.value = newModData.name || 'Unknown Mod'
     }
   }
-);
+)
 
-const currentModName = ref<string>("Unknown Mod");
+const currentModName = ref<string>('Unknown Mod')
 </script>
 
 <style scoped>

@@ -9,7 +9,7 @@
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6 phantom-font-difficulty">Select Download File</div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup @click="cancel" />
+        <q-btn v-close-popup icon="close" flat round dense @click="cancel" />
       </q-card-section>
 
       <q-card-section>
@@ -22,12 +22,12 @@
           <q-item
             v-for="(file, index) in files"
             :key="index"
-            clickable
             v-ripple
-            @click="selectFile(file)"
+            clickable
             :active="selectedFile && selectedFile._idRow === file._idRow"
             active-class="selected-file"
             class="selected-file-inactive"
+            @click="selectFile(file)"
           >
             <q-item-section>
               <q-item-label
@@ -48,8 +48,8 @@
                 />
               </q-item-label>
               <q-item-label
-                caption
                 v-if="file._sDescription"
+                caption
                 class="file-description"
               >
                 {{ file._sDescription }}
@@ -81,8 +81,8 @@
             <q-item
               v-for="(source, index) in alternateFileSources"
               :key="`alt-${index}`"
-              clickable
               v-ripple
+              clickable
               tag="a"
               :href="source.url"
               target="_blank"
@@ -103,10 +103,10 @@
       </q-card-section>
       <q-card-actions align="right">
         <q-btn
+          v-close-popup
           flat
           label="Cancel"
           color="primary"
-          v-close-popup
           @click="cancel"
         />
         <q-btn
@@ -122,29 +122,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch } from 'vue'
 
 // Define interface for files
 interface DownloadFile {
-  _idRow: number;
-  _sFile: string;
-  _nFilesize: number;
-  _sDescription: string;
-  _tsDateAdded: number;
-  _nDownloadCount: number;
-  _sAnalysisState: string;
-  _sAnalysisResultCode: string;
-  _sAnalysisResult: string;
-  _bContainsExe: boolean;
-  _sDownloadUrl: string;
-  _sMd5Checksum: string;
-  _sClamAvResult: string;
-  _sAvastAvResult: string;
+  _idRow: number
+  _sFile: string
+  _nFilesize: number
+  _sDescription: string
+  _tsDateAdded: number
+  _nDownloadCount: number
+  _sAnalysisState: string
+  _sAnalysisResultCode: string
+  _sAnalysisResult: string
+  _bContainsExe: boolean
+  _sDownloadUrl: string
+  _sMd5Checksum: string
+  _sClamAvResult: string
+  _sAvastAvResult: string
 }
 
 interface AlternateSource {
-  url: string;
-  description: string;
+  url: string
+  description: string
 }
 
 const props = defineProps({
@@ -158,75 +158,75 @@ const props = defineProps({
   },
   modName: {
     type: String,
-    default: "Unknown Mod",
+    default: 'Unknown Mod',
   },
   alternateFileSources: {
     type: Array as () => AlternateSource[],
     default: () => [],
   },
-});
+})
 
-const emit = defineEmits(["update:modelValue", "select", "cancel"]);
+const emit = defineEmits(['update:modelValue', 'select', 'cancel'])
 
-const isOpen = ref(props.modelValue);
-const selectedFile = ref<DownloadFile | null>(null);
+const isOpen = ref(props.modelValue)
+const selectedFile = ref<DownloadFile | null>(null)
 
 // Set the default selected file to the first file with the most downloads
 watch(
   () => props.files,
-  (newFiles) => {
+  newFiles => {
     if (newFiles && newFiles.length > 0) {
       // Sort by download count and set the most downloaded as default
       const sortedFiles = [...newFiles].sort(
         (a, b) => b._nDownloadCount - a._nDownloadCount
-      );
-      selectedFile.value = sortedFiles[0];
+      )
+      selectedFile.value = sortedFiles[0]
     }
   },
   { immediate: true }
-);
+)
 
 watch(
   () => props.modelValue,
-  (val) => {
-    isOpen.value = val;
+  val => {
+    isOpen.value = val
   }
-);
+)
 
-watch(isOpen, (val) => {
-  emit("update:modelValue", val);
-});
+watch(isOpen, val => {
+  emit('update:modelValue', val)
+})
 
 const selectFile = (file: DownloadFile) => {
-  selectedFile.value = file;
-};
+  selectedFile.value = file
+}
 
 const confirm = () => {
   if (selectedFile.value) {
-    emit("select", selectedFile.value);
-    isOpen.value = false;
+    emit('select', selectedFile.value)
+    isOpen.value = false
   }
-};
+}
 
 const cancel = () => {
-  emit("cancel");
-  isOpen.value = false;
-};
+  emit('cancel')
+  isOpen.value = false
+}
 
 const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return "0 Bytes";
+  if (bytes === 0) return '0 Bytes'
 
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
 
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-};
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
 
 const formatDate = (timestamp: number): string => {
-  const date = new Date(timestamp * 1000);
-  return date.toLocaleDateString();
-};
+  const date = new Date(timestamp * 1000)
+  return date.toLocaleDateString()
+}
 </script>
 
 <style scoped>

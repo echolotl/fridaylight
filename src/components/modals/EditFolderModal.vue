@@ -4,17 +4,17 @@
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6 phantom-font-difficulty">Edit Folder</div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup />
+        <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
 
       <q-card-section>
         <q-input
+          ref="nameInput"
           v-model="folderName"
           label="Folder Name"
           outlined
           class="q-mb-md"
-          :rules="[(val) => !!val || 'Folder name is required']"
-          ref="nameInput"
+          :rules="[val => !!val || 'Folder name is required']"
         />
         <div class="text-subtitle2 q-mb-sm">Folder Color</div>
         <div class="color-row q-mb-md">
@@ -41,9 +41,9 @@
             @click="openColorPicker"
           />
           <input
-            type="color"
             ref="colorPickerInput"
             v-model="customColor"
+            type="color"
             class="hidden-color-picker"
             @change="selectCustomColor"
           />
@@ -52,18 +52,18 @@
 
       <q-card-actions align="right">
         <q-btn
+          v-close-popup
           flat
           label="Cancel"
           color="primary"
-          v-close-popup
           @click="cancel"
         />
         <q-btn
           flat
           label="Save"
           color="primary"
-          @click="saveFolder"
           :disabled="!isValid"
+          @click="saveFolder"
         />
       </q-card-actions>
     </q-card>
@@ -71,8 +71,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, watch } from "vue";
-import { Folder } from "@main-types";
+import { ref, computed, nextTick, watch } from 'vue'
+import { Folder } from '@main-types'
 
 const props = defineProps({
   modelValue: {
@@ -83,37 +83,37 @@ const props = defineProps({
     type: Object as () => Folder | null,
     default: null,
   },
-});
+})
 
-const emit = defineEmits(["update:modelValue", "save-folder"]);
+const emit = defineEmits(['update:modelValue', 'save-folder'])
 
 const showModal = computed({
   get: () => props.modelValue,
-  set: (value) => emit("update:modelValue", value),
-});
+  set: value => emit('update:modelValue', value),
+})
 
-const folderName = ref("");
-const selectedColor = ref("#DB2955"); // Default color
-const customColor = ref("#DB2955");
-const isCustomColor = ref(false);
-const nameInput = ref<HTMLInputElement | null>(null);
-const colorPickerInput = ref<HTMLInputElement | null>(null);
+const folderName = ref('')
+const selectedColor = ref('#DB2955') // Default color
+const customColor = ref('#DB2955')
+const isCustomColor = ref(false)
+const nameInput = ref<HTMLInputElement | null>(null)
+const colorPickerInput = ref<HTMLInputElement | null>(null)
 
 const folderColors = [
-  { label: "Pink", value: "#DB2955" },
-  { label: "Blue", value: "#235789" },
-  { label: "Green", value: "#35CE8D" },
-  { label: "Purple", value: "#C490D1" },
-  { label: "Orange", value: "#FE621D" },
-  { label: "Yellow", value: "#f7c548" },
-  { label: "Red", value: "#C03221" },
-  { label: "Cyan", value: "#39A9DB" },
-];
+  { label: 'Pink', value: '#DB2955' },
+  { label: 'Blue', value: '#235789' },
+  { label: 'Green', value: '#35CE8D' },
+  { label: 'Purple', value: '#C490D1' },
+  { label: 'Orange', value: '#FE621D' },
+  { label: 'Yellow', value: '#f7c548' },
+  { label: 'Red', value: '#C03221' },
+  { label: 'Cyan', value: '#39A9DB' },
+]
 
 // Validate input
 const isValid = computed(() => {
-  return folderName.value.trim() !== "";
-});
+  return folderName.value.trim() !== ''
+})
 
 // Load folder data when the modal opens and folder prop changes
 watch(
@@ -122,55 +122,55 @@ watch(
     if (isOpen && folder) {
       nextTick(() => {
         // Initialize values with the current folder data
-        folderName.value = folder.name;
-        selectedColor.value = folder.color;
-        customColor.value = folder.color;
+        folderName.value = folder.name
+        selectedColor.value = folder.color
+        customColor.value = folder.color
 
         // Check if it's a preset color or custom
         isCustomColor.value = !folderColors.some(
-          (color) => color.value === folder.color
-        );
+          color => color.value === folder.color
+        )
 
         // Focus the input
         if (nameInput.value) {
-          nameInput.value.focus();
+          nameInput.value.focus()
         }
-      });
+      })
     }
   },
   { immediate: true }
-);
+)
 
 const saveFolder = () => {
   if (isValid.value && props.folder) {
-    emit("save-folder", {
+    emit('save-folder', {
       id: props.folder.id,
       name: folderName.value.trim(),
       color: selectedColor.value,
-    });
-    showModal.value = false;
+    })
+    showModal.value = false
   }
-};
+}
 
 const openColorPicker = () => {
   if (colorPickerInput.value) {
-    colorPickerInput.value.click();
+    colorPickerInput.value.click()
   }
-};
+}
 
 const selectCustomColor = () => {
-  selectedColor.value = customColor.value;
-  isCustomColor.value = true;
-};
+  selectedColor.value = customColor.value
+  isCustomColor.value = true
+}
 
 const selectPresetColor = (color: string) => {
-  selectedColor.value = color;
-  isCustomColor.value = false;
-};
+  selectedColor.value = color
+  isCustomColor.value = false
+}
 
 const cancel = () => {
-  showModal.value = false;
-};
+  showModal.value = false
+}
 </script>
 
 <style scoped>

@@ -1,37 +1,37 @@
 <template>
   <q-item
     :key="mod.id"
-    clickable
     v-ripple
-    @click="$emit('select-mod', mod)"
-    @contextmenu.prevent="showContextMenu"
+    clickable
     :active="isActive"
     active-class="active-mod"
     class="draggable-item cursor-move"
     :class="{ 'compact-mode': compactMode }"
+    @click="$emit('select-mod', mod)"
+    @contextmenu.prevent="showContextMenu"
   >
-    <q-item-section avatar v-if="mod.icon_data">
+    <q-item-section v-if="mod.icon_data" avatar>
       <q-avatar size="32px" square>
         <img :src="mod.icon_data" alt="mod icon" />
       </q-avatar>
     </q-item-section>
-    <q-item-section avatar v-else>
+    <q-item-section v-else avatar>
       <q-avatar size="32px" icon="folder" square class="default-icon" />
     </q-item-section>
     <q-item-section v-if="!compactMode">
       <q-item-label>{{ mod.name }}</q-item-label>
-      <q-item-label caption class="version-text" v-if="mod.version"
+      <q-item-label v-if="mod.version" caption class="version-text"
         >v{{ mod.version }}</q-item-label
       >
     </q-item-section>
     <q-tooltip v-if="compactMode" class="phantom-font">
-      {{ mod.name }}{{ mod.version ? ` (v${mod.version})` : "" }}
+      {{ mod.name }}{{ mod.version ? ` (v${mod.version})` : '' }}
     </q-tooltip>
   </q-item>
 </template>
 
 <script setup lang="ts">
-import { Mod } from "@main-types";
+import { Mod } from '@main-types'
 
 const props = defineProps({
   mod: {
@@ -46,75 +46,75 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-});
+})
 
 const emit = defineEmits([
-  "select-mod",
-  "delete-mod",
-  "open-mod-settings",
-  "launch-mod",
-  "super-delete-mod",
-  "open-mod-folder",
-]);
+  'select-mod',
+  'delete-mod',
+  'open-mod-settings',
+  'launch-mod',
+  'super-delete-mod',
+  'open-mod-folder',
+])
 
 // Context menu handler
 const showContextMenu = (event: MouseEvent) => {
-  event.preventDefault();
-  event.stopPropagation();
+  event.preventDefault()
+  event.stopPropagation()
 
   // Create context menu options
   const contextMenuOptions = [
     {
-      icon: "play_arrow",
-      label: "Launch Mod",
+      icon: 'play_arrow',
+      label: 'Launch Mod',
       action: () => {
         // Directly emit the launch-mod event with the mod's ID
-        emit("launch-mod", props.mod.id);
+        emit('launch-mod', props.mod.id)
       },
     },
     {
-      icon: "settings",
-      label: "Edit Settings",
-      action: () => emit("open-mod-settings", props.mod),
+      icon: 'settings',
+      label: 'Edit Settings',
+      action: () => emit('open-mod-settings', props.mod),
     },
     {
-      icon: "folder_open",
-      label: "Open Mod Folder",
-      action: () => emit("open-mod-folder", props.mod),
+      icon: 'folder_open',
+      label: 'Open Mod Folder',
+      action: () => emit('open-mod-folder', props.mod),
     },
 
     { separator: true },
     {
-      icon: "close",
-      label: "Remove Mod",
-      action: () => emit("delete-mod", props.mod),
+      icon: 'close',
+      label: 'Remove Mod',
+      action: () => emit('delete-mod', props.mod),
       danger: true,
     },
     {
-      icon: "delete_forever",
-      label: "Delete Mod",
-      action: () => emit("super-delete-mod", props.mod),
+      icon: 'delete_forever',
+      label: 'Delete Mod',
+      action: () => emit('super-delete-mod', props.mod),
       danger: true,
     },
-  ];
+  ]
 
   // Create and dispatch custom event to show context menu
-  const customEvent = new CustomEvent("show-context-menu", {
+  const customEvent = new CustomEvent('show-context-menu', {
     detail: {
       position: { x: event.clientX, y: event.clientY },
       options: contextMenuOptions,
     },
     bubbles: true,
-  });
+  })
 
   // Safely handle the case where event.target could be null
   if (event.target) {
-    event.target.dispatchEvent(customEvent);
+    event.target.dispatchEvent(customEvent)
   } else {
     // Fallback to document if target is null
-    document.dispatchEvent(customEvent);
+    document.dispatchEvent(customEvent)
   }
-};
+}
 </script>
 
 <style scoped>

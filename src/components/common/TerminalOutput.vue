@@ -1,5 +1,5 @@
 <template>
-  <div class="terminal-output-container" v-if="isVisible">
+  <div v-if="isVisible" class="terminal-output-container">
     <div class="terminal-header">
       <div class="terminal-title phantom-font-difficulty">Terminal Output</div>
       <div class="terminal-actions">
@@ -15,14 +15,14 @@
       </div>
     </div>
 
-    <q-scroll-area class="terminal-content" ref="terminalContent">
-      <pre v-if="logs.length > 0">{{ logs.join("\n") }}</pre>
+    <q-scroll-area ref="terminalContent" class="terminal-content">
+      <pre v-if="logs.length > 0">{{ logs.join('\n') }}</pre>
       <div v-else class="terminal-empty-message">Getting latest output...</div>
     </q-scroll-area>
 
     <div class="terminal-status-bar">
       <div class="terminal-info">
-        {{ logs.length > 0 ? `${logs.length} lines` : "Ready" }}
+        {{ logs.length > 0 ? `${logs.length} lines` : 'Ready' }}
       </div>
       <div class="auto-scroll-toggle">
         <q-toggle
@@ -38,128 +38,128 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
-import { useQuasar } from "quasar";
-import { invoke } from "@tauri-apps/api/core";
+import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useQuasar } from 'quasar'
+import { invoke } from '@tauri-apps/api/core'
 
 const props = defineProps({
   modId: {
     type: String,
-    default: "",
+    default: '',
   },
   isVisible: {
     type: Boolean,
     default: false,
   },
-});
+})
 
-const emit = defineEmits(["close", "clear"]);
+const emit = defineEmits(['close', 'clear'])
 
-const $q = useQuasar();
-const logs = ref<string[]>([]);
-import type { QScrollArea } from "quasar";
-const terminalContent = ref<InstanceType<typeof QScrollArea> | null>(null);
-const autoScroll = ref(true);
-const refreshInterval = ref<number | null>(null);
+const $q = useQuasar()
+const logs = ref<string[]>([])
+import type { QScrollArea } from 'quasar'
+const terminalContent = ref<InstanceType<typeof QScrollArea> | null>(null)
+const autoScroll = ref(true)
+const refreshInterval = ref<number | null>(null)
 
 // Function to fetch logs from the backend
 const fetchLogs = async () => {
-  if (!props.modId || !props.isVisible) return;
+  if (!props.modId || !props.isVisible) return
 
   try {
-    console.log(`Fetching logs for mod ${props.modId}`);
-    const newLogs = await invoke<string[]>("get_mod_logs", {
+    console.log(`Fetching logs for mod ${props.modId}`)
+    const newLogs = await invoke<string[]>('get_mod_logs', {
       id: props.modId,
-    });
+    })
 
-    console.log(`Received logs for mod ${props.modId}:`, newLogs);
+    console.log(`Received logs for mod ${props.modId}:`, newLogs)
 
     if (Array.isArray(newLogs) && newLogs.length > 0) {
       // Only update if there are new logs to avoid unnecessary renders
       if (JSON.stringify(newLogs) !== JSON.stringify(logs.value)) {
         console.log(
           `Updating logs for mod ${props.modId} (${newLogs.length} entries)`
-        );
-        logs.value = newLogs;
+        )
+        logs.value = newLogs
 
         // Scroll to bottom if auto-scroll is enabled
         if (autoScroll.value) {
-          await nextTick();
-          scrollToBottom();
+          await nextTick()
+          scrollToBottom()
         }
       }
     } else {
-      console.log(`No logs found for mod ${props.modId}`);
+      console.log(`No logs found for mod ${props.modId}`)
     }
   } catch (error) {
-    console.error("Failed to fetch mod logs:", error);
+    console.error('Failed to fetch mod logs:', error)
   }
-};
+}
 
 // Scroll to the bottom of the terminal
 const scrollToBottom = () => {
-  terminalContent.value?.setScrollPercentage("vertical", 1, 0);
-};
+  terminalContent.value?.setScrollPercentage('vertical', 1, 0)
+}
 
 // Copy terminal content to clipboard
 const copyToClipboard = async () => {
   try {
-    await navigator.clipboard.writeText(logs.value.join("\n"));
+    await navigator.clipboard.writeText(logs.value.join('\n'))
     $q.notify({
-      message: "Terminal output copied to clipboard",
-      color: "positive",
-      position: "bottom-right",
+      message: 'Terminal output copied to clipboard',
+      color: 'positive',
+      position: 'bottom-right',
       timeout: 2000,
-    });
+    })
   } catch (err) {
-    console.error("Failed to copy:", err);
+    console.error('Failed to copy:', err)
     $q.notify({
-      message: "Failed to copy to clipboard",
-      color: "negative",
-      position: "bottom-right",
+      message: 'Failed to copy to clipboard',
+      color: 'negative',
+      position: 'bottom-right',
       timeout: 2000,
-    });
+    })
   }
-};
+}
 
 // Clear terminal content
 const clearTerminal = () => {
-  logs.value = [];
-  emit("clear", props.modId);
-};
+  logs.value = []
+  emit('clear', props.modId)
+}
 
 // Watch for changes in visibility or modId
 watch(
   () => props.isVisible,
-  (newVal) => {
+  newVal => {
     if (newVal) {
-      fetchLogs(); // Fetch immediately when becoming visible
+      fetchLogs() // Fetch immediately when becoming visible
     }
   }
-);
+)
 
 watch(
   () => props.modId,
   (newVal, oldVal) => {
     if (newVal !== oldVal) {
-      logs.value = []; // Clear logs when switching mods
-      fetchLogs(); // Fetch new logs
+      logs.value = [] // Clear logs when switching mods
+      fetchLogs() // Fetch new logs
     }
   }
-);
+)
 
 // Start polling for logs when component is mounted
 onMounted(() => {
   // Set up interval to refresh logs
-  refreshInterval.value = window.setInterval(fetchLogs, 1000);
-});
+  refreshInterval.value = window.setInterval(fetchLogs, 1000)
+})
 
 // Clean up on component unmount
 onBeforeUnmount(() => {
   if (refreshInterval.value !== null) {
-    window.clearInterval(refreshInterval.value);
+    window.clearInterval(refreshInterval.value)
   }
-});
+})
 </script>
 
 <style scoped>
@@ -197,7 +197,7 @@ onBeforeUnmount(() => {
   flex: 1;
   overflow-y: auto;
   padding: 12px;
-  font-family: "Courier New", monospace;
+  font-family: 'Courier New', monospace;
   font-size: 0.9rem;
   white-space: pre-wrap;
   line-height: 1.4;

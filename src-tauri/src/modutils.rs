@@ -817,7 +817,7 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                                             .and_then(|v| v.as_str())
                                             .map(|s| s.to_string()),
                                         url: contributor
-                                            .get("website")
+                                            .get("url")
                                             .and_then(|v| v.as_str())
                                             .map(|s| s.to_string()),
                                     });
@@ -952,7 +952,7 @@ fn find_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>, String>
                                             .and_then(|v| v.as_str())
                                             .map(|s| s.to_string()),
                                         url: contributor
-                                            .get("website")
+                                            .get("url")
                                             .and_then(|v| v.as_str())
                                             .map(|s| s.to_string()),
                                     });
@@ -1177,7 +1177,7 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                                             .and_then(|v| v.as_str())
                                             .map(|s| s.to_string()),
                                         url: contributor
-                                            .get("website")
+                                            .get("url")
                                             .and_then(|v| v.as_str())
                                             .map(|s| s.to_string()),
                                     });
@@ -1314,7 +1314,7 @@ fn find_fpsplus_polymod_mods(mods_folder: &Path) -> Result<Vec<ModMetadataFile>,
                                             .and_then(|v| v.as_str())
                                             .map(|s| s.to_string()),
                                         url: contributor
-                                            .get("website")
+                                            .get("url")
                                             .and_then(|v| v.as_str())
                                             .map(|s| s.to_string()),
                                     });

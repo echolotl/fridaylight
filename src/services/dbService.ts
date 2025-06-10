@@ -1,87 +1,87 @@
-import Database from "@tauri-apps/plugin-sql";
-import { invoke } from "@tauri-apps/api/core";
-import { v4 as uuidv4 } from "uuid";
-import { Mod, Folder, DisplayItem, AppSettings } from "../types";
-import { StoreService } from "./storeService";
-import { formatEngineName } from "../utils";
+import Database from '@tauri-apps/plugin-sql'
+import { invoke } from '@tauri-apps/api/core'
+import { v4 as uuidv4 } from 'uuid'
+import { Mod, Folder, DisplayItem, AppSettings } from '../types'
+import { StoreService } from './storeService'
+import { formatEngineName } from '../utils'
 
 // Constants for database lock protection
-const MAX_RETRY_ATTEMPTS = 10; // Increased maximum retry attempts
-const INITIAL_RETRY_DELAY_MS = 50; // Start with a shorter delay
-const MAX_RETRY_DELAY_MS = 1000; // Cap the maximum delay
+const MAX_RETRY_ATTEMPTS = 10 // Increased maximum retry attempts
+const INITIAL_RETRY_DELAY_MS = 50 // Start with a shorter delay
+const MAX_RETRY_DELAY_MS = 1000 // Cap the maximum delay
 
 // Mutex for database operations
 class Mutex {
-  private mutex = Promise.resolve();
-  private owner: string | null = null;
+  private mutex = Promise.resolve()
+  private owner: string | null = null
 
-  async lock(operation: string = "unknown"): Promise<() => void> {
-    dbConsole.debug(`🔒 Mutex: Requesting lock for operation: ${operation}`);
+  async lock(operation: string = 'unknown'): Promise<() => void> {
+    dbConsole.debug(`🔒 Mutex: Requesting lock for operation: ${operation}`)
 
-    let resolve: () => void = () => {};
-    const unlock = new Promise<void>((res) => {
+    let resolve: () => void = () => {}
+    const unlock = new Promise<void>(res => {
       resolve = () => {
-        dbConsole.debug(`🔓 Mutex: Released lock for operation: ${operation}`);
-        this.owner = null;
-        res();
-      };
-    });
+        dbConsole.debug(`🔓 Mutex: Released lock for operation: ${operation}`)
+        this.owner = null
+        res()
+      }
+    })
 
-    const previous = this.mutex;
-    this.mutex = previous.then(() => unlock);
+    const previous = this.mutex
+    this.mutex = previous.then(() => unlock)
 
     try {
       dbConsole.debug(
         `⏳ Mutex: Waiting for previous operations to complete for: ${operation}`
-      );
-      await previous;
-      this.owner = operation;
-      dbConsole.debug(`✅ Mutex: Lock acquired for operation: ${operation}`);
-      return resolve;
+      )
+      await previous
+      this.owner = operation
+      dbConsole.debug(`✅ Mutex: Lock acquired for operation: ${operation}`)
+      return resolve
     } catch (error) {
       dbConsole.error(
         `❌ Mutex: Error waiting for lock for operation: ${operation}`,
         error
-      );
+      )
       // Make sure we still return a valid unlock function even if there was an error
-      return resolve;
+      return resolve
     }
   }
 
   getCurrentOwner(): string | null {
-    return this.owner;
+    return this.owner
   }
 }
 
 class dbConsole {
-  private static style = "color: #77f; font-weight: bold;";
-  private static errorStyle = "color: #f00; font-weight: bold;";
-  private static warnStyle = "color: #ff0; font-weight: bold;";
-  private static infoStyle = "color: #0ff;";
-  private static debugStyle = "color: #dff; font-weight: bold;";
+  private static style = 'color: #77f; font-weight: bold;'
+  private static errorStyle = 'color: #f00; font-weight: bold;'
+  private static warnStyle = 'color: #ff0; font-weight: bold;'
+  private static infoStyle = 'color: #0ff;'
+  private static debugStyle = 'color: #dff; font-weight: bold;'
 
   static log(message: string, ...args: any[]) {
-    console.log(`%c[DbService] ${message}`, this.style, ...args);
+    console.log(`%c[DbService] ${message}`, this.style, ...args)
   }
   static debug(message: string, ...args: any[]) {
-    console.debug(`%c[DbService] ${message}`, this.debugStyle, ...args);
+    console.debug(`%c[DbService] ${message}`, this.debugStyle, ...args)
   }
   static error(message: string, ...args: any[]) {
-    console.error(`%c[DbService] ${message}`, this.errorStyle, ...args);
+    console.error(`%c[DbService] ${message}`, this.errorStyle, ...args)
   }
   static warn(message: string, ...args: any[]) {
-    console.warn(`%c[DbService] ${message}`, this.warnStyle, ...args);
+    console.warn(`%c[DbService] ${message}`, this.warnStyle, ...args)
   }
   static info(message: string, ...args: any[]) {
-    console.info(`%c[DbService] ${message}`, this.infoStyle, ...args);
+    console.info(`%c[DbService] ${message}`, this.infoStyle, ...args)
   }
 }
 
 // Global mutex for database operations
-const dbMutex = new Mutex();
+const dbMutex = new Mutex()
 
 // Transaction state tracking to prevent nested transactions
-let transactionActive = false;
+let transactionActive = false
 
 /**
  * Utility function to handle database operations with retry logic for lock protection
@@ -93,152 +93,152 @@ let transactionActive = false;
 async function withDatabaseLock<T>(
   operation: (db?: any) => Promise<T>,
   useTransaction: boolean = false,
-  operationName: string = "unknown"
+  operationName: string = 'unknown'
 ): Promise<T> {
-  let attempts = 0;
+  let attempts = 0
   dbConsole.log(
     `withDatabaseLock - Starting '${operationName}' with useTransaction=${useTransaction}`
-  );
+  )
 
   // Acquire global mutex lock to prevent concurrent operations
-  const unlock = await dbMutex.lock(operationName);
+  const unlock = await dbMutex.lock(operationName)
 
   try {
     while (attempts < MAX_RETRY_ATTEMPTS) {
       try {
         // Get database instance from DatabaseService
-        const db = DatabaseService.getInstance().getDb();
+        const db = DatabaseService.getInstance().getDb()
 
         if (useTransaction && !transactionActive) {
           // Set flag before starting transaction
           dbConsole.log(
             `| withDatabaseLock - Starting new transaction for '${operationName}'`
-          );
-          transactionActive = true;
-          let transactionStarted = false;
+          )
+          transactionActive = true
+          let transactionStarted = false
 
           try {
             // Check if we're already in a transaction
             const inTransactionCheck = await db.select(
-              "PRAGMA transaction_status"
-            );
+              'PRAGMA transaction_status'
+            )
             const inTransaction =
               inTransactionCheck &&
               inTransactionCheck.length > 0 &&
-              inTransactionCheck[0].transaction_status !== "idle" &&
-              inTransactionCheck[0].transaction_status !== undefined;
+              inTransactionCheck[0].transaction_status !== 'idle' &&
+              inTransactionCheck[0].transaction_status !== undefined
 
             if (!inTransaction) {
               dbConsole.log(
                 `| withDatabaseLock - No existing transaction, starting new one for '${operationName}'`
-              );
-              await db.execute("BEGIN EXCLUSIVE TRANSACTION"); // Use EXCLUSIVE for better locking
-              transactionStarted = true;
-              dbConsole.log(`| Started new transaction for '${operationName}'`);
+              )
+              await db.execute('BEGIN EXCLUSIVE TRANSACTION') // Use EXCLUSIVE for better locking
+              transactionStarted = true
+              dbConsole.log(`| Started new transaction for '${operationName}'`)
             } else {
               dbConsole.log(
                 `| Transaction already active, using existing transaction for '${operationName}'`
-              );
+              )
             }
 
-            const result = await operation(db);
+            const result = await operation(db)
 
             // Only commit if we started the transaction
             if (transactionStarted) {
-              await db.execute("COMMIT");
+              await db.execute('COMMIT')
               dbConsole.log(
                 `| Transaction committed successfully for '${operationName}'`
-              );
+              )
             }
 
-            transactionActive = false;
-            return result;
+            transactionActive = false
+            return result
           } catch (error) {
             dbConsole.error(
               `| withDatabaseLock - Error in transaction for '${operationName}':`,
               error
-            );
+            )
             // Only try to rollback if we started a transaction
             if (transactionStarted) {
               try {
                 dbConsole.log(
                   `| Error in transaction, attempting rollback for '${operationName}'`
-                );
-                await db.execute("ROLLBACK");
+                )
+                await db.execute('ROLLBACK')
               } catch (rollbackError) {
                 dbConsole.error(
                   `| Rollback failed for '${operationName}':`,
                   rollbackError
-                );
+                )
                 // Continue with the original error
               }
             }
 
-            transactionActive = false;
-            throw error;
+            transactionActive = false
+            throw error
           }
         } else if (useTransaction && transactionActive) {
           // If a transaction is already active, just run the operation without starting a new one
           dbConsole.log(
             `| Using existing transaction for operation '${operationName}'`
-          );
-          const result = await operation(db);
-          return result;
+          )
+          const result = await operation(db)
+          return result
         } else {
           // No transaction needed
-          const result = await operation(db);
+          const result = await operation(db)
           dbConsole.log(
             `| withDatabaseLock - Operation completed successfully (no transaction) for '${operationName}'`
-          );
-          return result;
+          )
+          return result
         }
       } catch (error) {
-        attempts++;
+        attempts++
         dbConsole.error(
           `| withDatabaseLock - Attempt ${attempts} failed for '${operationName}':`,
           error
-        );
+        )
 
         // Check if error is SQLITE_BUSY or a database lock error
         const isLockError =
           error instanceof Error &&
-          (error.message.includes("database is locked") ||
-            error.message.includes("SQLITE_BUSY"));
+          (error.message.includes('database is locked') ||
+            error.message.includes('SQLITE_BUSY'))
 
         // If it's not a lock error or we've reached max attempts, throw the error
         if (!isLockError || attempts >= MAX_RETRY_ATTEMPTS) {
           dbConsole.error(
             `| Database operation '${operationName}' failed after ${attempts} attempts:`,
             error
-          );
-          throw error;
+          )
+          throw error
         }
 
         // Wait before retrying with exponential backoff capped at max delay
         const delay = Math.min(
           INITIAL_RETRY_DELAY_MS * Math.pow(2, attempts - 1),
           MAX_RETRY_DELAY_MS
-        );
+        )
         dbConsole.warn(
           `| Database locked, retrying operation '${operationName}' (attempt ${attempts}/${MAX_RETRY_ATTEMPTS}) after ${delay}ms...`
-        );
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        )
+        await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
 
     // This should never be reached due to the throw in the loop, but TypeScript requires a return
     dbConsole.error(
       `| withDatabaseLock - Reached maximum retry attempts without success or error for '${operationName}'`
-    );
+    )
     throw new Error(
       `| Failed to acquire database lock after maximum retry attempts for operation '${operationName}'`
-    );
+    )
   } finally {
     // Always release the mutex lock
     dbConsole.log(
       `| withDatabaseLock - Releasing mutex lock for '${operationName}'`
-    );
-    unlock();
+    )
+    unlock()
   }
 }
 
@@ -246,13 +246,13 @@ async function withDatabaseLock<T>(
  * DatabaseService class handles all database operations
  */
 export class DatabaseService {
-  private static instance: DatabaseService;
-  private db: any = null;
-  private initialized = false;
-  private storeService: StoreService;
+  private static instance: DatabaseService
+  private db: any = null
+  private initialized = false
+  private storeService: StoreService
 
   private constructor() {
-    this.storeService = StoreService.getInstance();
+    this.storeService = StoreService.getInstance()
   }
 
   /**
@@ -260,9 +260,9 @@ export class DatabaseService {
    */
   public static getInstance(): DatabaseService {
     if (!DatabaseService.instance) {
-      DatabaseService.instance = new DatabaseService();
+      DatabaseService.instance = new DatabaseService()
     }
-    return DatabaseService.instance;
+    return DatabaseService.instance
   }
 
   /**
@@ -270,9 +270,9 @@ export class DatabaseService {
    */
   public getDb(): any {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
-    return this.db;
+    return this.db
   }
   /**
    * Initialize the database
@@ -280,39 +280,39 @@ export class DatabaseService {
   public async initialize(): Promise<void> {
     if (this.initialized) {
       // Reinitialize the database
-      await this.db.close();
-      this.db = null;
-      this.initialized = false;
+      await this.db.close()
+      this.db = null
+      this.initialized = false
     }
 
     try {
       // Initialize the store service
-      await this.storeService.initialize();
+      await this.storeService.initialize()
 
-      this.db = await Database.load("sqlite:mods.db");
+      this.db = await Database.load('sqlite:mods.db')
 
       // Create or update tables with lock protection
       await withDatabaseLock(
         () => this.createModsTable(),
         false,
-        "createModsTable"
-      );
+        'createModsTable'
+      )
       await withDatabaseLock(
         () => this.createFoldersTable(),
         false,
-        "createFoldersTable"
-      );
+        'createFoldersTable'
+      )
 
       // Set initialized flag
-      this.initialized = true;
+      this.initialized = true
 
       // On initialization, we still need to sync with backend using the regular method
       // since we need to read from the database first
-      await this.syncModsWithBackend();
-      dbConsole.log("Database initialized successfully");
+      await this.syncModsWithBackend()
+      dbConsole.log('Database initialized successfully')
     } catch (error) {
-      dbConsole.error("Failed to initialize database:", error);
-      throw error;
+      dbConsole.error('Failed to initialize database:', error)
+      throw error
     }
   }
 
@@ -322,82 +322,84 @@ export class DatabaseService {
   private async createModsTable(): Promise<void> {
     try {
       // Check if the mods table exists
-      const tableInfo: any[] = await this.db.select(`PRAGMA table_info(mods)`);
+      const tableInfo: any[] = await this.db.select(`PRAGMA table_info(mods)`)
 
       if (tableInfo.length > 0) {
         // Table exists, check for missing columns
-        const columns = tableInfo.map((col: any) => col.name);
+        const columns = tableInfo.map((col: any) => col.name)
 
         // Add missing columns if they don't exist
-        if (!columns.includes("banner_data")) {
-          await this.db.execute(`ALTER TABLE mods ADD COLUMN banner_data TEXT`);
-          dbConsole.log("Added banner_data column to mods table");
+        if (!columns.includes('banner_data')) {
+          await this.db.execute(`ALTER TABLE mods ADD COLUMN banner_data TEXT`)
+          dbConsole.log('Added banner_data column to mods table')
         }
 
-        if (!columns.includes("logo_data")) {
-          await this.db.execute(`ALTER TABLE mods ADD COLUMN logo_data TEXT`);
-          dbConsole.log("Added logo_data column to mods table");
+        if (!columns.includes('logo_data')) {
+          await this.db.execute(`ALTER TABLE mods ADD COLUMN logo_data TEXT`)
+          dbConsole.log('Added logo_data column to mods table')
         }
 
-        if (!columns.includes("logo_position")) {
+        if (!columns.includes('logo_position')) {
           await this.db.execute(
             `ALTER TABLE mods ADD COLUMN logo_position TEXT`
-          );
-          dbConsole.log("Added logo_position column to mods table");
+          )
+          dbConsole.log('Added logo_position column to mods table')
         }
 
-        if (!columns.includes("version")) {
-          await this.db.execute(`ALTER TABLE mods ADD COLUMN version TEXT`);
-          dbConsole.log("Added version column to mods table");
+        if (!columns.includes('version')) {
+          await this.db.execute(`ALTER TABLE mods ADD COLUMN version TEXT`)
+          dbConsole.log('Added version column to mods table')
         }
 
-        if (!columns.includes("engine_type")) {
-          await this.db.execute(`ALTER TABLE mods ADD COLUMN engine_type TEXT`);
-          dbConsole.log("Added engine_type column to mods table");
+        if (!columns.includes('engine_type')) {
+          await this.db.execute(`ALTER TABLE mods ADD COLUMN engine_type TEXT`)
+          dbConsole.log('Added engine_type column to mods table')
         }
 
-        if (!columns.includes("display_order")) {
+        if (!columns.includes('display_order')) {
           await this.db.execute(
             `ALTER TABLE mods ADD COLUMN display_order INTEGER DEFAULT 9999`
-          );
-          dbConsole.log("Added display_order column to mods table");
+          )
+          dbConsole.log('Added display_order column to mods table')
         }
 
-        if (!columns.includes("description")) {
-          await this.db.execute(`ALTER TABLE mods ADD COLUMN description TEXT`);
-          dbConsole.log("Added description column to mods table");
+        if (!columns.includes('description')) {
+          await this.db.execute(`ALTER TABLE mods ADD COLUMN description TEXT`)
+          dbConsole.log('Added description column to mods table')
         }
-        if (!columns.includes("engine_data")) {
-          await this.db.execute(`ALTER TABLE mods ADD COLUMN engine_data TEXT`);
-          dbConsole.log("Added engine_data column to mods table");
+        if (!columns.includes('engine_data')) {
+          await this.db.execute(`ALTER TABLE mods ADD COLUMN engine_data TEXT`)
+          dbConsole.log('Added engine_data column to mods table')
         }
 
-        if (!columns.includes("display_order_in_folder")) {
+        if (!columns.includes('display_order_in_folder')) {
           await this.db.execute(
             `ALTER TABLE mods ADD COLUMN display_order_in_folder INTEGER DEFAULT 0`
-          );
-          dbConsole.log("Added display_order_in_folder column to mods table");
+          )
+          dbConsole.log('Added display_order_in_folder column to mods table')
         }
 
-        if (!columns.includes("folder_id")) {
-          await this.db.execute(`ALTER TABLE mods ADD COLUMN folder_id TEXT`);
-          dbConsole.log("Added folder_id column to mods table");
+        if (!columns.includes('folder_id')) {
+          await this.db.execute(`ALTER TABLE mods ADD COLUMN folder_id TEXT`)
+          dbConsole.log('Added folder_id column to mods table')
         }
 
         // Note: We no longer need to check for or add contributors_data column
         // as it's now parsed on-demand from metadata.json
 
         // Add our new timestamp fields if they don't exist
-        if (!columns.includes("last_played")) {
+        if (!columns.includes('last_played')) {
           await this.db.execute(
             `ALTER TABLE mods ADD COLUMN last_played INTEGER`
-          );
-          dbConsole.log("Added last_played column to mods table");
+          )
+          dbConsole.log('Added last_played column to mods table')
         }
 
-        if (!columns.includes("date_added")) {
-          await this.db.execute(`ALTER TABLE mods ADD COLUMN date_added INTEGER`);
-          dbConsole.log("Added date_added column to mods table");
+        if (!columns.includes('date_added')) {
+          await this.db.execute(
+            `ALTER TABLE mods ADD COLUMN date_added INTEGER`
+          )
+          dbConsole.log('Added date_added column to mods table')
         }
       } else {
         // Table doesn't exist, create it with all columns
@@ -420,12 +422,12 @@ export class DatabaseService {
             last_played INTEGER,
             date_added INTEGER
           )
-        `);
-        dbConsole.log("Created mods table with all columns");
+        `)
+        dbConsole.log('Created mods table with all columns')
       }
     } catch (error) {
-      dbConsole.error("Failed to create/update mods table:", error);
-      throw error;
+      dbConsole.error('Failed to create/update mods table:', error)
+      throw error
     }
   }
 
@@ -436,7 +438,7 @@ export class DatabaseService {
     try {
       const foldersTableInfo: any[] = await this.db.select(
         `PRAGMA table_info(folders)`
-      );
+      )
 
       if (foldersTableInfo.length === 0) {
         // Table doesn't exist, create it
@@ -447,21 +449,21 @@ export class DatabaseService {
             color TEXT NOT NULL,
             display_order INTEGER DEFAULT 0
           )
-        `);
-        dbConsole.log("Created folders table");
+        `)
+        dbConsole.log('Created folders table')
       } else {
         // Check if display_order column exists
-        const columns = foldersTableInfo.map((col: any) => col.name);
-        if (!columns.includes("display_order")) {
+        const columns = foldersTableInfo.map((col: any) => col.name)
+        if (!columns.includes('display_order')) {
           await this.db.execute(
             `ALTER TABLE folders ADD COLUMN display_order INTEGER DEFAULT 9999`
-          );
-          dbConsole.log("Added display_order column to folders table");
+          )
+          dbConsole.log('Added display_order column to folders table')
         }
       }
     } catch (error) {
-      dbConsole.error("Failed to initialize folders table:", error);
-      throw error;
+      dbConsole.error('Failed to initialize folders table:', error)
+      throw error
     }
   }
 
@@ -470,47 +472,51 @@ export class DatabaseService {
    */
   public async getAllMods(): Promise<Mod[]> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
 
-    return withDatabaseLock(async (db) => {
-      const mods = await db.select(
-        "SELECT * FROM mods ORDER BY display_order ASC"
-      );
-      return mods.map((mod: any) => {
-        // Parse engine data if it exists
-        let engine;
-        try {
-          engine = mod.engine_data
-            ? JSON.parse(mod.engine_data)
-            : {
-                engine_type: "unknown",
-                engine_name: "Unknown Engine",
-                engine_icon: "",
-                mods_folder: false,
-                mods_folder_path: "",
-              };
-        } catch (e) {
-          dbConsole.error("Failed to parse engine data for mod:", mod.id, e);
-          engine = {
-            engine_type: "unknown",
-            engine_name: "Unknown Engine",
-            engine_icon: "",
-            mods_folder: false,
-            mods_folder_path: "",
-          };
-        }
+    return withDatabaseLock(
+      async db => {
+        const mods = await db.select(
+          'SELECT * FROM mods ORDER BY display_order ASC'
+        )
+        return mods.map((mod: any) => {
+          // Parse engine data if it exists
+          let engine
+          try {
+            engine = mod.engine_data
+              ? JSON.parse(mod.engine_data)
+              : {
+                  engine_type: 'unknown',
+                  engine_name: 'Unknown Engine',
+                  engine_icon: '',
+                  mods_folder: false,
+                  mods_folder_path: '',
+                }
+          } catch (e) {
+            dbConsole.error('Failed to parse engine data for mod:', mod.id, e)
+            engine = {
+              engine_type: 'unknown',
+              engine_name: 'Unknown Engine',
+              engine_icon: '',
+              mods_folder: false,
+              mods_folder_path: '',
+            }
+          }
 
-        // Contributors data is no longer stored in database, component will load directly from metadata.json
-        return {
-          ...mod,
-          engine,
-        };
-      });
-    }, false, "getAllMods").catch((error) => {
-      dbConsole.error("Failed to get mods:", error);
-      throw error;
-    });
+          // Contributors data is no longer stored in database, component will load directly from metadata.json
+          return {
+            ...mod,
+            engine,
+          }
+        })
+      },
+      false,
+      'getAllMods'
+    ).catch(error => {
+      dbConsole.error('Failed to get mods:', error)
+      throw error
+    })
   }
   /**
    * Get all mods from the database using an existing database connection
@@ -518,43 +524,39 @@ export class DatabaseService {
    */
   private async _getAllModsWithDb(db: any): Promise<Mod[]> {
     const mods = await db.select(
-      "SELECT * FROM mods ORDER BY display_order ASC"
-    );
+      'SELECT * FROM mods ORDER BY display_order ASC'
+    )
     return mods.map((mod: any) => {
       // Parse engine data if it exists
-      let engine;
+      let engine
       try {
         engine = mod.engine_data
           ? JSON.parse(mod.engine_data)
           : {
-              engine_type: "unknown",
-              engine_name: "Unknown Engine",
-              engine_icon: "",
+              engine_type: 'unknown',
+              engine_name: 'Unknown Engine',
+              engine_icon: '',
               mods_folder: false,
-              mods_folder_path: "",
-            };
+              mods_folder_path: '',
+            }
       } catch (e) {
-        dbConsole.error("Failed to parse engine data for mod:", mod.id, e);
+        dbConsole.error('Failed to parse engine data for mod:', mod.id, e)
         engine = {
-          engine_type: "unknown",
-          engine_name: "Unknown Engine",
-          engine_icon: "",
+          engine_type: 'unknown',
+          engine_name: 'Unknown Engine',
+          engine_icon: '',
           mods_folder: false,
-          mods_folder_path: "",
-        };
+          mods_folder_path: '',
+        }
       }
-      let engine_mod;
+      let engine_mod
       try {
         engine_mod = mod.engine_mod_data
           ? JSON.parse(mod.engine_mod_data)
-          : undefined;
+          : undefined
       } catch (e) {
-        dbConsole.error(
-          "Failed to parse engine_mod data for mod:",
-          mod.id,
-          e
-        );
-        engine_mod = undefined;
+        dbConsole.error('Failed to parse engine_mod data for mod:', mod.id, e)
+        engine_mod = undefined
       }
 
       // Contributors data is not stored in the database
@@ -562,8 +564,8 @@ export class DatabaseService {
         ...mod,
         engine,
         engine_mod,
-      };
-    });
+      }
+    })
   }
 
   /**
@@ -571,86 +573,86 @@ export class DatabaseService {
    */
   public async getAllFolders(): Promise<Folder[]> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
 
     return withDatabaseLock(
-      async (db) => {
+      async db => {
         const folders = await db.select(`
         SELECT f.id, f.name, f.color, f.display_order, GROUP_CONCAT(m.id) as mod_ids
         FROM folders f
         LEFT JOIN mods m ON m.folder_id = f.id
         GROUP BY f.id
         ORDER BY f.display_order ASC
-      `);
+      `)
 
         return folders.map((folder: any) => ({
           id: folder.id,
           name: folder.name,
           color: folder.color,
           display_order: folder.display_order || 9999,
-          mods: folder.mod_ids ? folder.mod_ids.split(",") : [],
-        }));
+          mods: folder.mod_ids ? folder.mod_ids.split(',') : [],
+        }))
       },
       false,
-      "getAllFolders"
-    ).catch((error) => {
-      dbConsole.error("Failed to get folders:", error);
-      throw error;
-    });
+      'getAllFolders'
+    ).catch(error => {
+      dbConsole.error('Failed to get folders:', error)
+      throw error
+    })
   }
 
   // Helper to format engine name from engine type
   // Just wraps the utility function so I don't have to change stuff
   private formatEngineName(engineType: string): string {
-    return formatEngineName(engineType);
+    return formatEngineName(engineType)
   }
 
   // Helper to upsert mods in a single transaction with rollback
   private async _upsertMods(mods: Mod[], db?: any): Promise<void> {
-    dbConsole.log("_upsertMods - Starting to save mods to database...");
+    dbConsole.log('_upsertMods - Starting to save mods to database...')
 
     // If db is provided, we're already in a transaction with a lock, so use it directly
     if (db) {
       dbConsole.log(
-        "_upsertMods - Using provided database connection (already in transaction)"
-      );
+        '_upsertMods - Using provided database connection (already in transaction)'
+      )
 
       for (const mod of mods) {
-        dbConsole.log(`_upsertMods - Processing mod: ${mod.name} (${mod.id})`);
+        dbConsole.log(`_upsertMods - Processing mod: ${mod.name} (${mod.id})`)
 
         try {
           // Create engine object if it doesn't exist
           if (!mod.engine) {
-            dbConsole.log("_upsertMods - Creating missing engine object");
+            dbConsole.log('_upsertMods - Creating missing engine object')
             mod.engine = {
-              engine_type: "unknown",
-              engine_name: this.formatEngineName("unknown"),
-              engine_icon: "",
+              engine_type: 'unknown',
+              engine_name: this.formatEngineName('unknown'),
+              engine_icon: '',
               mods_folder: false,
-              mods_folder_path: "",
-            };
+              mods_folder_path: '',
+            }
           }
 
           // Generate fresh engine_data JSON
-          const engineData = JSON.stringify(mod.engine);
+          const engineData = JSON.stringify(mod.engine)
 
           // If date_added is not set, set it to the current timestamp
           if (!mod.date_added) {
-            mod.date_added = Math.floor(Date.now() / 1000);
+            mod.date_added = Math.floor(Date.now() / 1000)
             dbConsole.log(
               `_upsertMods - Setting date_added to ${mod.date_added} for new mod`
-            );
+            )
           }
 
           dbConsole.log(`_upsertMods - Final mod engine data:
             engine.engine_type: ${mod.engine?.engine_type}
             engine_data: ${engineData}
-            last_played: ${mod.last_played || "none"}
+            last_played: ${mod.last_played || 'none'}
             date_added: ${mod.date_added}
-          `);
-          
-          dbConsole.log("_upsertMods - Executing SQL to save mod...");
+          `)
+
+          dbConsole.log('_upsertMods - Executing SQL to save mod...')
           await db.execute(
             `
             INSERT OR REPLACE INTO mods (
@@ -679,44 +681,44 @@ export class DatabaseService {
               mod.last_played || null,
               mod.date_added || null,
             ]
-          );
-          dbConsole.log(`_upsertMods - Successfully saved mod: ${mod.name}`);
+          )
+          dbConsole.log(`_upsertMods - Successfully saved mod: ${mod.name}`)
         } catch (error) {
           dbConsole.error(
             `_upsertMods - Error processing mod ${mod.name}:`,
             error
-          );
-          throw error;
+          )
+          throw error
         }
       }
-      dbConsole.log("_upsertMods - All mods saved successfully");
-      return;
+      dbConsole.log('_upsertMods - All mods saved successfully')
+      return
     }
 
     // No db provided, we need to acquire our own lock
     try {
       return withDatabaseLock(
-        async (db) => {
-          dbConsole.log("_upsertMods - Got database lock, processing mods...");
+        async db => {
+          dbConsole.log('_upsertMods - Got database lock, processing mods...')
 
           for (const mod of mods) {
             // Create engine object if it doesn't exist
             if (!mod.engine) {
               mod.engine = {
-                engine_type: "unknown",
-                engine_name: this.formatEngineName("unknown"),
-                engine_icon: "",
+                engine_type: 'unknown',
+                engine_name: this.formatEngineName('unknown'),
+                engine_icon: '',
                 mods_folder: false,
-                mods_folder_path: "",
-              };
+                mods_folder_path: '',
+              }
             }
 
             // Generate fresh engine_data JSON
-            const engineData = JSON.stringify(mod.engine);
+            const engineData = JSON.stringify(mod.engine)
 
             // If date_added is not set, set it to the current timestamp
             if (!mod.date_added) {
-              mod.date_added = Math.floor(Date.now() / 1000);
+              mod.date_added = Math.floor(Date.now() / 1000)
             }
 
             await db.execute(
@@ -747,29 +749,32 @@ export class DatabaseService {
                 mod.last_played || null,
                 mod.date_added || null,
               ]
-            );
+            )
           }
         },
         true,
-        "_upsertMods"
-      );
+        '_upsertMods'
+      )
     } catch (error) {
-      dbConsole.error("_upsertMods - Error in transaction:", error);
-      throw error;
-    }  }
+      dbConsole.error('_upsertMods - Error in transaction:', error)
+      throw error
+    }
+  }
 
   // Helper to upsert folders in a single transaction with rollback
   private async _upsertFolders(folders: Folder[], db?: any): Promise<void> {
-    dbConsole.log("_upsertFolders - Starting to save folders to database...");
+    dbConsole.log('_upsertFolders - Starting to save folders to database...')
 
     // If db is provided, we're already in a transaction with a lock, so use it directly
     if (db) {
       dbConsole.log(
-        "_upsertFolders - Using provided database connection (already in transaction)"
-      );
+        '_upsertFolders - Using provided database connection (already in transaction)'
+      )
 
       for (const folder of folders) {
-        dbConsole.log(`_upsertFolders - Processing folder: ${folder.name} (${folder.id})`);
+        dbConsole.log(
+          `_upsertFolders - Processing folder: ${folder.name} (${folder.id})`
+        )
 
         try {
           dbConsole.log(`_upsertFolders - Final folder data:
@@ -777,51 +782,52 @@ export class DatabaseService {
             name: ${folder.name}
             color: ${folder.color}
             display_order: ${folder.display_order || 9999}
-          `);
-          dbConsole.log("_upsertFolders - Executing SQL to save folder...");
+          `)
+          dbConsole.log('_upsertFolders - Executing SQL to save folder...')
 
           await db.execute(
             `INSERT OR REPLACE INTO folders (id, name, color, display_order) 
              VALUES (?, ?, ?, ?)`,
-            [
-              folder.id,
-              folder.name,
-              folder.color,
-              folder.display_order || 9999
-            ]
-          );
+            [folder.id, folder.name, folder.color, folder.display_order || 9999]
+          )
 
           // Update the folder_id for all mods in this folder
           if (folder.mods && Array.isArray(folder.mods)) {
             for (const modId of folder.mods) {
-              await db.execute(
-                `UPDATE mods SET folder_id = ? WHERE id = ?`,
-                [folder.id, modId]
-              );
+              await db.execute(`UPDATE mods SET folder_id = ? WHERE id = ?`, [
+                folder.id,
+                modId,
+              ])
             }
           }
 
-          dbConsole.log(`_upsertFolders - Successfully saved folder: ${folder.name}`);
+          dbConsole.log(
+            `_upsertFolders - Successfully saved folder: ${folder.name}`
+          )
         } catch (error) {
           dbConsole.error(
             `_upsertFolders - Error processing folder ${folder.name}:`,
             error
-          );
-          throw error;
+          )
+          throw error
         }
       }
-      dbConsole.log("_upsertFolders - All folders saved successfully");
-      return;
+      dbConsole.log('_upsertFolders - All folders saved successfully')
+      return
     }
 
     // No db provided, we need to acquire our own lock
     try {
       return withDatabaseLock(
-        async (db) => {
-          dbConsole.log("_upsertFolders - Got database lock, processing folders...");
+        async db => {
+          dbConsole.log(
+            '_upsertFolders - Got database lock, processing folders...'
+          )
 
           for (const folder of folders) {
-            dbConsole.log(`_upsertFolders - Processing folder: ${folder.name} (${folder.id})`);
+            dbConsole.log(
+              `_upsertFolders - Processing folder: ${folder.name} (${folder.id})`
+            )
 
             try {
               await db.execute(
@@ -831,9 +837,9 @@ export class DatabaseService {
                   folder.id,
                   folder.name,
                   folder.color,
-                  folder.display_order || 9999
+                  folder.display_order || 9999,
                 ]
-              );
+              )
 
               // Update the folder_id for all mods in this folder
               if (folder.mods && Array.isArray(folder.mods)) {
@@ -841,96 +847,98 @@ export class DatabaseService {
                   await db.execute(
                     `UPDATE mods SET folder_id = ? WHERE id = ?`,
                     [folder.id, modId]
-                  );
+                  )
                 }
               }
 
-              dbConsole.log(`_upsertFolders - Successfully saved folder: ${folder.name}`);
+              dbConsole.log(
+                `_upsertFolders - Successfully saved folder: ${folder.name}`
+              )
             } catch (error) {
               dbConsole.error(
                 `_upsertFolders - Error processing folder ${folder.name}:`,
                 error
-              );
-              throw error;
+              )
+              throw error
             }
           }
         },
         true,
-        "_upsertFolders"
-      );
+        '_upsertFolders'
+      )
     } catch (error) {
-      dbConsole.error("_upsertFolders - Error in transaction:", error);
-      throw error;
+      dbConsole.error('_upsertFolders - Error in transaction:', error)
+      throw error
     }
   }
 
   // Helper to sync with backend first, then upsert mods to the database
   private async _saveAndSyncMods(mods: Mod[], existingDb?: any): Promise<void> {
     dbConsole.log(
-      "_saveAndSyncMods - About to save mods with engine data:",
-      mods.map((mod) => ({
+      '_saveAndSyncMods - About to save mods with engine data:',
+      mods.map(mod => ({
         id: mod.id,
         name: mod.name,
         engine: mod.engine ? JSON.stringify(mod.engine) : undefined,
       }))
-    );
+    )
 
     // First, sync directly with backend for faster UI updates
     dbConsole.log(
-      "_saveAndSyncMods - Syncing with backend first for faster UI updates"
-    );
-    await this.syncModsDirectly(mods);
+      '_saveAndSyncMods - Syncing with backend first for faster UI updates'
+    )
+    await this.syncModsDirectly(mods)
 
     // If we were passed a database connection, we're already in a transaction with a lock
     if (existingDb) {
       dbConsole.log(
-        "_saveAndSyncMods - Using provided database connection (already in transaction)"
-      );
+        '_saveAndSyncMods - Using provided database connection (already in transaction)'
+      )
 
       // Pass the existing db connection to _upsertMods to avoid nested locks
-      await this._upsertMods(mods, existingDb);
-      dbConsole.log("_saveAndSyncMods - Mods saved to database");
-      return;
+      await this._upsertMods(mods, existingDb)
+      dbConsole.log('_saveAndSyncMods - Mods saved to database')
+      return
     }
 
     // No existing db connection, we need to acquire our own lock
     // Use withDatabaseLock to handle the entire operation within a single lock
     await withDatabaseLock(
-      async (db) => {
+      async db => {
         // Pass the db connection to _upsertMods to avoid nested locks
-        await this._upsertMods(mods, db);
-        dbConsole.log("_saveAndSyncMods - Mods saved to database");
+        await this._upsertMods(mods, db)
+        dbConsole.log('_saveAndSyncMods - Mods saved to database')
       },
       true,
-      "_saveAndSyncMods"
-    );
-  }  
-  
+      '_saveAndSyncMods'
+    )
+  }
+
   // Helper to sync with backend first, then upsert folders to the database
   private async _saveAndSyncFolders(
     folders: Folder[],
     existingDb?: any
   ): Promise<void> {
-    dbConsole.log("_saveAndSyncFolders - About to save folders");
+    dbConsole.log('_saveAndSyncFolders - About to save folders')
 
     // First, we need to get all mods to sync with backend
-    let allMods: Mod[] = [];
+    let allMods: Mod[] = []
     try {
       // Get all mods from database to update folder associations
       // If we have an existing db connection, use it to avoid deadlock
       if (existingDb) {
-        allMods = await this._getAllModsWithDb(existingDb);
+        allMods = await this._getAllModsWithDb(existingDb)
       } else {
-        allMods = await this.getAllMods();
+        allMods = await this.getAllMods()
       }
 
       // Update the folder assignments in memory first
       for (const folder of folders) {
         if (folder.mods && Array.isArray(folder.mods)) {
           for (const modId of folder.mods) {
-            const modIndex = allMods.findIndex((m) => m.id === modId);
+            const modIndex = allMods.findIndex(m => m.id === modId)
             if (modIndex !== -1) {
-              allMods[modIndex].folder_id = folder.id;
+              allMods[modIndex].folder_id = folder.id
             }
           }
         }
@@ -938,34 +946,34 @@ export class DatabaseService {
 
       // First sync directly with backend for faster UI updates
       dbConsole.log(
-        "_saveAndSyncFolders - Syncing with backend first for faster UI updates"
-      );
-      await this.syncModsDirectly(allMods);
+        '_saveAndSyncFolders - Syncing with backend first for faster UI updates'
+      )
+      await this.syncModsDirectly(allMods)
     } catch (error) {
-      dbConsole.error("Failed to get mods for folder sync:", error);
-    }// If we were passed a database connection, we're already in a transaction with a lock
+      dbConsole.error('Failed to get mods for folder sync:', error)
+    } // If we were passed a database connection, we're already in a transaction with a lock
     if (existingDb) {
       dbConsole.log(
-        "_saveAndSyncFolders - Using provided database connection (already in transaction)"
-      );
+        '_saveAndSyncFolders - Using provided database connection (already in transaction)'
+      )
 
       // Pass the existing db connection to _upsertFolders to avoid nested locks
-      await this._upsertFolders(folders, existingDb);
-      dbConsole.log("_saveAndSyncFolders - Folders saved to database");
-      return;
+      await this._upsertFolders(folders, existingDb)
+      dbConsole.log('_saveAndSyncFolders - Folders saved to database')
+      return
     }
 
     // No existing db connection, we need to acquire our own lock
     // Use withDatabaseLock to handle the entire operation within a single lock
     await withDatabaseLock(
-      async (db) => {
+      async db => {
         // Pass the db connection to _upsertFolders to avoid nested locks
-        await this._upsertFolders(folders, db);
-        dbConsole.log("_saveAndSyncFolders - Folders saved to database");
+        await this._upsertFolders(folders, db)
+        dbConsole.log('_saveAndSyncFolders - Folders saved to database')
       },
       true,
-      "_saveAndSyncFolders"
-    );
+      '_saveAndSyncFolders'
+    )
   }
 
   /**
@@ -973,27 +981,27 @@ export class DatabaseService {
    */
   public async saveMod(mod: Mod): Promise<void> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
 
     // Log the mod's engine data before saving
-    dbConsole.log("DATABASE SERVICE - Received mod with engine data:", {
+    dbConsole.log('DATABASE SERVICE - Received mod with engine data:', {
       id: mod.id,
       name: mod.name,
       engine: mod.engine ? JSON.stringify(mod.engine) : undefined,
-    });
+    })
 
     return withDatabaseLock(
-      async (db) => {
+      async db => {
         // Pass the db connection to _saveAndSyncMods to avoid nested locks
-        await this._saveAndSyncMods([mod], db);
+        await this._saveAndSyncMods([mod], db)
       },
       true,
-      "saveMod"
-    ).catch((error) => {
-      dbConsole.error("Failed to save mod:", error);
-      throw error;
-    });
+      'saveMod'
+    ).catch(error => {
+      dbConsole.error('Failed to save mod:', error)
+      throw error
+    })
   }
 
   /**
@@ -1001,49 +1009,49 @@ export class DatabaseService {
    */
   public async saveMods(mods: Mod[]): Promise<void> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
 
     return withDatabaseLock(
-      async (db) => {
+      async db => {
         // Pass the db connection to _saveAndSyncMods to avoid nested locks
-        await this._saveAndSyncMods(mods, db);
+        await this._saveAndSyncMods(mods, db)
       },
       true,
-      "saveMods"
-    ).catch((error) => {
-      dbConsole.error("Failed to save mods:", error);
-      throw error;
-    });
+      'saveMods'
+    ).catch(error => {
+      dbConsole.error('Failed to save mods:', error)
+      throw error
+    })
   }
   /**
    * Delete a mod from the database
    */
   public async deleteMod(modId: string): Promise<void> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
 
     // First sync with backend directly (without the deleted mod) for faster UI updates
     try {
-      const allMods = await this.getAllMods();
-      const filteredMods = allMods.filter((mod) => mod.id !== modId);
-      await this.syncModsDirectly(filteredMods);
+      const allMods = await this.getAllMods()
+      const filteredMods = allMods.filter(mod => mod.id !== modId)
+      await this.syncModsDirectly(filteredMods)
     } catch (error) {
-      dbConsole.error("Failed to sync mods directly during deleteMod:", error);
+      dbConsole.error('Failed to sync mods directly during deleteMod:', error)
     }
 
     return withDatabaseLock(
-      async (db) => {
-        await db.execute("DELETE FROM mods WHERE id = ?", [modId]);
-        dbConsole.log(`Deleted mod ${modId} from database`);
+      async db => {
+        await db.execute('DELETE FROM mods WHERE id = ?', [modId])
+        dbConsole.log(`Deleted mod ${modId} from database`)
       },
       true,
-      "deleteMod"
-    ).catch((error) => {
-      dbConsole.error("Failed to delete mod:", error);
-      throw error;
-    });
+      'deleteMod'
+    ).catch(error => {
+      dbConsole.error('Failed to delete mod:', error)
+      throw error
+    })
   }
 
   /**
@@ -1051,19 +1059,19 @@ export class DatabaseService {
    */
   public async saveFolder(folder: Folder): Promise<void> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
     return withDatabaseLock(
-      async (db) => {
+      async db => {
         // Pass the database connection to _saveAndSyncFolders to avoid nested locks
-        await this._saveAndSyncFolders([folder], db);
+        await this._saveAndSyncFolders([folder], db)
       },
       true,
-      "saveFolder"
-    ).catch((error) => {
-      dbConsole.error("Failed to save folder:", error);
-      throw error;
-    });
+      'saveFolder'
+    ).catch(error => {
+      dbConsole.error('Failed to save folder:', error)
+      throw error
+    })
   }
 
   /**
@@ -1071,72 +1079,72 @@ export class DatabaseService {
    */
   public async saveFolders(folders: Folder[]): Promise<void> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
     return withDatabaseLock(
-      async (db) => {
+      async db => {
         // Pass the database connection to _saveAndSyncFolders to avoid nested locks
-        await this._saveAndSyncFolders(folders, db);
+        await this._saveAndSyncFolders(folders, db)
       },
       true,
-      "saveFolders"
-    ).catch((error) => {
-      dbConsole.error("Failed to save folders:", error);
-      throw error;
-    });
+      'saveFolders'
+    ).catch(error => {
+      dbConsole.error('Failed to save folders:', error)
+      throw error
+    })
   }
   /**
    * Delete a folder from the database
    */
   public async deleteFolder(folderId: string): Promise<void> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
 
     // First, sync with backend directly for faster UI updates
     try {
       // Get all mods
-      const allMods = await this.getAllMods();
+      const allMods = await this.getAllMods()
 
       // Remove folder_id from affected mods in memory
-      const updatedMods = allMods.map((mod) => {
+      const updatedMods = allMods.map(mod => {
         if (mod.folder_id === folderId) {
-          return { ...mod, folder_id: null };
+          return { ...mod, folder_id: null }
         }
-        return mod;
-      });
+        return mod
+      })
 
       // Sync the updated mods with backend directly
-      await this.syncModsDirectly(updatedMods);
+      await this.syncModsDirectly(updatedMods)
     } catch (error) {
       dbConsole.error(
-        "Failed to sync mods directly during deleteFolder:",
+        'Failed to sync mods directly during deleteFolder:',
         error
-      );
+      )
     }
 
     return withDatabaseLock(
-      async (db) => {
+      async db => {
         try {
           // Remove folder_id from all mods in this folder
           await db.execute(
             `UPDATE mods SET folder_id = NULL WHERE folder_id = ?`,
             [folderId]
-          );
+          )
 
           // Delete the folder
-          await db.execute("DELETE FROM folders WHERE id = ?", [folderId]);
-          dbConsole.log(`Deleted folder ${folderId} from database`);
+          await db.execute('DELETE FROM folders WHERE id = ?', [folderId])
+          dbConsole.log(`Deleted folder ${folderId} from database`)
         } catch (error) {
-          throw error;
+          throw error
         }
       },
       true,
-      "deleteFolder"
-    ).catch((error) => {
-      dbConsole.error("Failed to delete folder:", error);
-      throw error;
-    });
+      'deleteFolder'
+    ).catch(error => {
+      dbConsole.error('Failed to delete folder:', error)
+      throw error
+    })
   }
   /**
    * Move a mod to a folder
@@ -1146,37 +1154,37 @@ export class DatabaseService {
     folderId: string | null
   ): Promise<void> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
 
     // First sync with backend directly for faster UI updates
     try {
-      const allMods = await this.getAllMods();
+      const allMods = await this.getAllMods()
 
       // Update the mod's folder_id in memory
-      const updatedMods = allMods.map((mod) => {
+      const updatedMods = allMods.map(mod => {
         if (mod.id === modId) {
-          return { ...mod, folder_id: folderId };
+          return { ...mod, folder_id: folderId }
         }
-        return mod;
-      });
+        return mod
+      })
 
       // Sync the updated mods with backend directly
-      await this.syncModsDirectly(updatedMods);
+      await this.syncModsDirectly(updatedMods)
     } catch (error) {
       dbConsole.error(
-        "Failed to sync mods directly during moveModToFolder:",
+        'Failed to sync mods directly during moveModToFolder:',
         error
-      );
+      )
     }
 
     return withDatabaseLock(
-      async (db) => {
+      async db => {
         // Update the mod's folder_id
         await db.execute(`UPDATE mods SET folder_id = ? WHERE id = ?`, [
           folderId,
           modId,
-        ]);
+        ])
 
         // If we're adding to a folder (not removing), update the folder's mods list
         if (folderId) {
@@ -1184,99 +1192,99 @@ export class DatabaseService {
           const folderResult = await db.select(
             `SELECT * FROM folders WHERE id = ?`,
             [folderId]
-          );
+          )
 
           if (folderResult.length > 0) {
-            const folder = folderResult[0];
-            const folderMods = folder.mods ? JSON.parse(folder.mods) : [];
+            const folder = folderResult[0]
+            const folderMods = folder.mods ? JSON.parse(folder.mods) : []
 
             // Add the mod to the folder's mods list if not already there
             if (!folderMods.includes(modId)) {
-              folderMods.push(modId);
+              folderMods.push(modId)
 
               // Update the folder with the new mods list but preserve display_order
               await db.execute(`UPDATE folders SET mods = ? WHERE id = ?`, [
                 JSON.stringify(folderMods),
                 folderId,
-              ]);
+              ])
             }
           }
         }
 
         dbConsole.log(
-          `Moved mod ${modId} to folder ${folderId || "none"} in database`
-        );
+          `Moved mod ${modId} to folder ${folderId || 'none'} in database`
+        )
       },
       true,
-      "moveModToFolder"
-    ).catch((error) => {
-      dbConsole.error("Failed to move mod to folder:", error);
-      throw error;
-    });
+      'moveModToFolder'
+    ).catch(error => {
+      dbConsole.error('Failed to move mod to folder:', error)
+      throw error
+    })
   }
   /**
    * Update display order for mods and folders
    */
   public async updateDisplayOrder(items: DisplayItem[]): Promise<void> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
 
     // First, sync with backend directly for faster UI updates
     try {
       // Get all mods
-      const allMods = await this.getAllMods();
+      const allMods = await this.getAllMods()
 
       // Update display_order for each mod in memory
-      const updatedMods = allMods.map((mod) => {
+      const updatedMods = allMods.map(mod => {
         const item = items.find(
-          (item) => item.id === mod.id && item.type === "mod"
-        );
+          item => item.id === mod.id && item.type === 'mod'
+        )
         if (item) {
-          const index = items.indexOf(item);
-          return { ...mod, display_order: index };
+          const index = items.indexOf(item)
+          return { ...mod, display_order: index }
         }
-        return mod;
-      });
+        return mod
+      })
 
       // Sync the updated mods with backend directly
-      await this.syncModsDirectly(updatedMods);
+      await this.syncModsDirectly(updatedMods)
     } catch (error) {
       dbConsole.error(
-        "Failed to sync mods directly during updateDisplayOrder:",
+        'Failed to sync mods directly during updateDisplayOrder:',
         error
-      );
+      )
     }
 
     return withDatabaseLock(
-      async (db) => {
+      async db => {
         for (let i = 0; i < items.length; i++) {
-          const item = items[i];
-          const display_order = i;
+          const item = items[i]
+          const display_order = i
 
-          if (item.type === "folder") {
+          if (item.type === 'folder') {
             await db.execute(
               `UPDATE folders SET display_order = ? WHERE id = ?`,
               [display_order, item.id]
-            );
-          } else if (item.type === "mod") {
+            )
+          } else if (item.type === 'mod') {
             await db.execute(`UPDATE mods SET display_order = ? WHERE id = ?`, [
               display_order,
               item.id,
-            ]);
+            ])
           }
         }
 
         dbConsole.log(
           `Updated display order for ${items.length} items in database`
-        );
+        )
       },
       true,
-      "updateDisplayOrder"
-    ).catch((error) => {
-      dbConsole.error("Failed to update display order:", error);
-      throw error;
-    });
+      'updateDisplayOrder'
+    ).catch(error => {
+      dbConsole.error('Failed to update display order:', error)
+      throw error
+    })
   }
   /**
    * Update display order for mods within a folder
@@ -1288,57 +1296,57 @@ export class DatabaseService {
     mods: Mod[]
   ): Promise<void> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
 
     // First, sync with backend directly for faster UI updates
     try {
       // Get all mods
-      const allMods = await this.getAllMods();
+      const allMods = await this.getAllMods()
 
       // Update display_order_in_folder for each mod in memory
-      const updatedMods = allMods.map((mod) => {
+      const updatedMods = allMods.map(mod => {
         if (mod.folder_id === folderId) {
-          const index = mods.findIndex((m) => m.id === mod.id);
+          const index = mods.findIndex(m => m.id === mod.id)
           if (index !== -1) {
-            return { ...mod, display_order_in_folder: index };
+            return { ...mod, display_order_in_folder: index }
           }
         }
-        return mod;
-      });
+        return mod
+      })
 
       // Sync the updated mods with backend directly
-      await this.syncModsDirectly(updatedMods);
+      await this.syncModsDirectly(updatedMods)
     } catch (error) {
       dbConsole.error(
-        "Failed to sync mods directly during updateDisplayOrderInFolder:",
+        'Failed to sync mods directly during updateDisplayOrderInFolder:',
         error
-      );
+      )
     }
 
     return withDatabaseLock(
-      async (db) => {
+      async db => {
         // Begin a transaction for all updates
         for (let i = 0; i < mods.length; i++) {
-          const mod = mods[i];
-          const displayOrderInFolder = i;
+          const mod = mods[i]
+          const displayOrderInFolder = i
 
           await db.execute(
             `UPDATE mods SET display_order_in_folder = ? WHERE id = ? AND folder_id = ?`,
             [displayOrderInFolder, mod.id, folderId]
-          );
+          )
         }
 
         dbConsole.log(
           `Updated display order for ${mods.length} mods in folder ${folderId} in database`
-        );
+        )
       },
       true,
-      "updateDisplayOrderInFolder"
-    ).catch((error) => {
-      dbConsole.error("Failed to update display order in folder:", error);
-      throw error;
-    });
+      'updateDisplayOrderInFolder'
+    ).catch(error => {
+      dbConsole.error('Failed to update display order in folder:', error)
+      throw error
+    })
   }
 
   /**
@@ -1347,10 +1355,10 @@ export class DatabaseService {
    */
   public async getSetting(key: string): Promise<string | null> {
     dbConsole.warn(
-      "DatabaseService.getSetting is deprecated, use StoreService directly instead"
-    );
-    const value = await this.storeService.getSetting(key as keyof AppSettings);
-    return value !== null ? String(value) : null;
+      'DatabaseService.getSetting is deprecated, use StoreService directly instead'
+    )
+    const value = await this.storeService.getSetting(key as keyof AppSettings)
+    return value !== null ? String(value) : null
   }
 
   /**
@@ -1358,7 +1366,7 @@ export class DatabaseService {
    * Just a wrapper around StoreService.saveSetting
    */
   public async saveSetting(key: string, value: string): Promise<void> {
-    await this.storeService.saveSetting(key as keyof AppSettings, value as any);
+    await this.storeService.saveSetting(key as keyof AppSettings, value as any)
   }
   /**
    * Sync mods with the Rust backend
@@ -1366,47 +1374,47 @@ export class DatabaseService {
    */
   public async syncModsWithBackend(existingDb?: any): Promise<void> {
     try {
-      let mods: Mod[];
+      let mods: Mod[]
 
       // If we have an existing DB connection, use it directly
       if (existingDb) {
         dbConsole.log(
-          "syncModsWithBackend - Using provided database connection"
-        );
+          'syncModsWithBackend - Using provided database connection'
+        )
 
         // Query mods using the provided connection
         const result = await existingDb.select(
-          "SELECT * FROM mods ORDER BY display_order ASC"
-        );
+          'SELECT * FROM mods ORDER BY display_order ASC'
+        )
         mods = result.map((mod: any) => {
           // Parse engine data if it exists
-          let engine;
+          let engine
           try {
             engine = mod.engine_data
               ? JSON.parse(mod.engine_data)
               : {
-                  engine_type: "unknown",
-                  engine_name: "Unknown Engine",
-                  engine_icon: "",
+                  engine_type: 'unknown',
+                  engine_name: 'Unknown Engine',
+                  engine_icon: '',
                   mods_folder: false,
-                  mods_folder_path: "",
-                };
+                  mods_folder_path: '',
+                }
           } catch (e) {
-            dbConsole.error("Failed to parse engine data for mod:", mod.id, e);
+            dbConsole.error('Failed to parse engine data for mod:', mod.id, e)
             engine = {
-              engine_type: "unknown",
-              engine_name: "Unknown Engine",
-              engine_icon: "",
+              engine_type: 'unknown',
+              engine_name: 'Unknown Engine',
+              engine_icon: '',
               mods_folder: false,
-              mods_folder_path: "",
-            };
+              mods_folder_path: '',
+            }
           }
 
           return {
             ...mod,
             engine,
             // Add the group field required by the backend
-            group: mod.folder_id || "none",
+            group: mod.folder_id || 'none',
             // Convert timestamp fields to integers to avoid Rust type errors
             last_played: mod.last_played
               ? Math.floor(Number(mod.last_played))
@@ -1414,70 +1422,82 @@ export class DatabaseService {
             date_added: mod.date_added
               ? Math.floor(Number(mod.date_added))
               : null,
-          };
-        });
+          }
+        })
       } else {
         // No existing connection, acquire our own lock
         dbConsole.log(
-          "syncModsWithBackend - Getting mods with own database lock"
-        );
+          'syncModsWithBackend - Getting mods with own database lock'
+        )
 
         // Use a separate query to get mods without starting a new transaction
-        mods = await withDatabaseLock(async (db) => {
-          const result = await db.select(
-            "SELECT * FROM mods ORDER BY display_order ASC"
-          );
-          return result.map((mod: any) => {
-            // Parse engine data if it exists
-            let engine;
-            try {
-              engine = mod.engine_data
-                ? JSON.parse(mod.engine_data)
-                : {
-                    engine_type: "unknown",
-                    engine_name: "Unknown Engine",
-                    engine_icon: "",
-                    mods_folder: false,
-                    mods_folder_path: "",
-                  };
-            } catch (e) {
-              dbConsole.error("Failed to parse engine data for mod:", mod.id, e);
-              engine = {
-                engine_type: "unknown",
-                engine_name: "Unknown Engine",
-                engine_icon: "",
-                mods_folder: false,
-                mods_folder_path: "",
-              };
-            }
+        mods = await withDatabaseLock(
+          async db => {
+            const result = await db.select(
+              'SELECT * FROM mods ORDER BY display_order ASC'
+            )
+            return result.map((mod: any) => {
+              // Parse engine data if it exists
+              let engine
+              try {
+                engine = mod.engine_data
+                  ? JSON.parse(mod.engine_data)
+                  : {
+                      engine_type: 'unknown',
+                      engine_name: 'Unknown Engine',
+                      engine_icon: '',
+                      mods_folder: false,
+                      mods_folder_path: '',
+                    }
+              } catch (e) {
+                dbConsole.error(
+                  'Failed to parse engine data for mod:',
+                  mod.id,
+                  e
+                )
+                engine = {
+                  engine_type: 'unknown',
+                  engine_name: 'Unknown Engine',
+                  engine_icon: '',
+                  mods_folder: false,
+                  mods_folder_path: '',
+                }
+              }
 
-            return {
-              ...mod,
-              engine,
-              // Add the group field required by the backend
-              group: mod.folder_id || "none",
-              // Convert timestamp fields to integers to avoid Rust type errors
-              last_played: mod.last_played ? Math.floor(Number(mod.last_played)) : null,
-              date_added: mod.date_added ? Math.floor(Number(mod.date_added)) : null
-            };
-          });
-        }, false, "syncModsWithBackend");
-      }      // Add a small delay to ensure any active transaction has settled
-      await new Promise((resolve) => setTimeout(resolve, 50));
+              return {
+                ...mod,
+                engine,
+                // Add the group field required by the backend
+                group: mod.folder_id || 'none',
+                // Convert timestamp fields to integers to avoid Rust type errors
+                last_played: mod.last_played
+                  ? Math.floor(Number(mod.last_played))
+                  : null,
+                date_added: mod.date_added
+                  ? Math.floor(Number(mod.date_added))
+                  : null,
+              }
+            })
+          },
+          false,
+          'syncModsWithBackend'
+        )
+      } // Add a small delay to ensure any active transaction has settled
+      await new Promise(resolve => setTimeout(resolve, 50))
 
       // Ensure all mods have properly formatted timestamp values before sending to the backend
-      const sanitizedMods = mods.map((mod) => ({
+      const sanitizedMods = mods.map(mod => ({
         ...mod,
         last_played: mod.last_played
           ? Math.floor(Number(mod.last_played))
           : null,
         date_added: mod.date_added ? Math.floor(Number(mod.date_added)) : null,
-      }));
+      }))
 
-      await invoke("sync_mods_from_database", { modsData: sanitizedMods });
-      dbConsole.log("Successfully synced mods with backend");
+      await invoke('sync_mods_from_database', { modsData: sanitizedMods })
+      dbConsole.log('Successfully synced mods with backend')
     } catch (error) {
-      dbConsole.error("Failed to sync mods with backend:", error);
+      dbConsole.error('Failed to sync mods with backend:', error)
       // Don't throw to avoid disrupting the transaction flow
       // but still log the error
     }
@@ -1490,25 +1510,25 @@ export class DatabaseService {
    */
   public async syncModsDirectly(mods: Mod[]): Promise<void> {
     try {
-      dbConsole.log("syncModsDirectly - Syncing mods directly with backend...");
+      dbConsole.log('syncModsDirectly - Syncing mods directly with backend...')
 
       // Format the mods for the backend
-      const formattedMods = mods.map((mod) => ({
+      const formattedMods = mods.map(mod => ({
         ...mod,
         // Add the group field required by the backend
-        group: mod.folder_id || "none",
+        group: mod.folder_id || 'none',
         // Ensure timestamps are properly formatted
         last_played: mod.last_played
           ? Math.floor(Number(mod.last_played))
           : null,
         date_added: mod.date_added ? Math.floor(Number(mod.date_added)) : null,
-      }));
+      }))
 
       // Send mods to the backend
-      await invoke("sync_mods_from_database", { modsData: formattedMods });
-      dbConsole.log("Successfully synced mods directly with backend");
+      await invoke('sync_mods_from_database', { modsData: formattedMods })
+      dbConsole.log('Successfully synced mods directly with backend')
     } catch (error) {
-      dbConsole.error("Failed to sync mods directly with backend:", error);
+      dbConsole.error('Failed to sync mods directly with backend:', error)
       // Don't throw to avoid disrupting the flow
     }
   }
@@ -1519,36 +1539,36 @@ export class DatabaseService {
    */
   public async clearDatabase(): Promise<void> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
 
     return withDatabaseLock(
-      async (db) => {
+      async db => {
         try {
           // Delete all mods
-          await db.execute("DELETE FROM mods");
-          dbConsole.log("Deleted all mods from database");
+          await db.execute('DELETE FROM mods')
+          dbConsole.log('Deleted all mods from database')
 
           // Delete all folders
-          await db.execute("DELETE FROM folders");
-          dbConsole.log("Deleted all folders from database");
+          await db.execute('DELETE FROM folders')
+          dbConsole.log('Deleted all folders from database')
 
           // Delete all mod folder mappings (for backward compatibility)
-          await db.execute("DELETE FROM mod_folders");
-          dbConsole.log("Deleted all mod folder mappings from database");
+          await db.execute('DELETE FROM mod_folders')
+          dbConsole.log('Deleted all mod folder mappings from database')
 
           // Sync with backend to reflect the cleared state
-          await this.syncModsWithBackend(db);
+          await this.syncModsWithBackend(db)
 
-          dbConsole.log("Database cleared successfully");
+          dbConsole.log('Database cleared successfully')
         } catch (error) {
-          dbConsole.error("Failed to clear database:", error);
-          throw error;
+          dbConsole.error('Failed to clear database:', error)
+          throw error
         }
       },
       true,
-      "clearDatabase"
-    );
+      'clearDatabase'
+    )
   }
 
   /**
@@ -1557,17 +1577,17 @@ export class DatabaseService {
   public createEmptyMod(): Mod {
     return {
       id: uuidv4(),
-      name: "",
-      path: "",
+      name: '',
+      path: '',
       display_order: 9999,
       engine: {
-        engine_type: "unknown",
-        engine_name: "Unknown Engine",
-        engine_icon: "",
+        engine_type: 'unknown',
+        engine_name: 'Unknown Engine',
+        engine_icon: '',
         mods_folder: false,
-        mods_folder_path: "",
+        mods_folder_path: '',
       },
-    };
+    }
   }
 
   /**
@@ -1576,11 +1596,11 @@ export class DatabaseService {
   public createEmptyFolder(): Folder {
     return {
       id: uuidv4(),
-      name: "New Folder",
-      color: "#FF0088",
+      name: 'New Folder',
+      color: '#FF0088',
       mods: [],
       display_order: 9999,
-    };
+    }
   }
 
   /**
@@ -1590,48 +1610,54 @@ export class DatabaseService {
    */
   public async getModByPath(path: string): Promise<Mod | null> {
     if (!this.db) {
-      throw new Error("Database not initialized");
+      throw new Error('Database not initialized')
     }
 
-    return withDatabaseLock(async (db) => {
-      const results = await db.select("SELECT * FROM mods WHERE path = ?", [path]);
-      
-      if (results.length === 0) {
-        return null;
-      }
-      
-      const mod = results[0];
-      
-      // Parse engine data if it exists
-      let engine;
-      try {
-        engine = mod.engine_data
-          ? JSON.parse(mod.engine_data)
-          : {
-              engine_type: "unknown",
-              engine_name: "Unknown Engine",
-              engine_icon: "",
-              mods_folder: false,
-              mods_folder_path: "",
-            };
-      } catch (e) {
-        dbConsole.error("Failed to parse engine data for mod:", mod.id, e);
-        engine = {
-          engine_type: "unknown",
-          engine_name: "Unknown Engine",
-          engine_icon: "",
-          mods_folder: false,
-          mods_folder_path: "",
-        };
-      }
+    return withDatabaseLock(
+      async db => {
+        const results = await db.select('SELECT * FROM mods WHERE path = ?', [
+          path,
+        ])
 
-      return {
-        ...mod,
-        engine,
-      };
-    }, false, "getModByPath").catch((error) => {
-      dbConsole.error("Failed to get mod by path:", error);
-      throw error;
-    });
+        if (results.length === 0) {
+          return null
+        }
+
+        const mod = results[0]
+
+        // Parse engine data if it exists
+        let engine
+        try {
+          engine = mod.engine_data
+            ? JSON.parse(mod.engine_data)
+            : {
+                engine_type: 'unknown',
+                engine_name: 'Unknown Engine',
+                engine_icon: '',
+                mods_folder: false,
+                mods_folder_path: '',
+              }
+        } catch (e) {
+          dbConsole.error('Failed to parse engine data for mod:', mod.id, e)
+          engine = {
+            engine_type: 'unknown',
+            engine_name: 'Unknown Engine',
+            engine_icon: '',
+            mods_folder: false,
+            mods_folder_path: '',
+          }
+        }
+
+        return {
+          ...mod,
+          engine,
+        }
+      },
+      false,
+      'getModByPath'
+    ).catch(error => {
+      dbConsole.error('Failed to get mod by path:', error)
+      throw error
+    })
   }
 }

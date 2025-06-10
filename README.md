@@ -8,7 +8,6 @@ A mod manager for Friday Night Funkin mods!<br /><br />
 <a href="https://www.rust-lang.org/"><img alt="Rust badge" src="https://img.shields.io/badge/rust-000000?style=for-the-badge&logo=rust&logoColor=FFFFFF" /></a>
 <a href="https://github.com/echolotl/fridaylight/actions/workflows/release.yml"><img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/echolotl/fridaylight/release.yml?style=for-the-badge&logo=github&logoColor=FFFFFF"></a>
 
-
 </p>
 
 ![Screenshot of main app layout](/docs/screenshot1.png)
@@ -25,7 +24,9 @@ A mod manager for Friday Night Funkin mods!<br /><br />
 - Easy migration with batch importing!
 
 ## Compiling
+
 See [COMPILING.md](/docs/COMPILING.md) on how to compile it locally.
 
 ## Mod Metadata
+
 See [METADATA.md](/docs/METADATA.md) for a complete breakdown on metadata mod creators can use to display cosmetic / functional graphics. Always looking for more suggestions from mod creators!

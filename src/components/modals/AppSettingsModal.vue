@@ -4,7 +4,7 @@
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6 phantom-font-difficulty">App Settings</div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup />
+        <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
 
       <div class="settings-layout">
@@ -16,8 +16,8 @@
               :key="section.id"
               clickable
               :active="activeSection === section.id"
-              @click="activeSection = section.id"
               active-class="settings-active-item"
+              @click="activeSection = section.id"
             >
               <q-item-section avatar>
                 <q-icon :name="section.icon" />
@@ -197,7 +197,7 @@
               readonly
               class="q-mb-md"
             >
-              <template v-slot:append>
+              <template #append>
                 <div class="icon">
                   <q-btn
                     round
@@ -380,19 +380,20 @@
                 mod information will be lost, but files will not be deleted.
               </div>
             </div>
+
           </q-card-section>
         </q-scroll-area>
       </div>
 
       <q-card-actions align="right">
         <q-btn
+          v-close-popup
           flat
           label="Cancel"
           color="primary"
-          v-close-popup
           @click="cancel"
         />
-        <q-btn flat label="Save" color="primary" @click="save" v-close-popup />
+        <q-btn v-close-popup flat label="Save" color="primary" @click="save" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -441,21 +442,24 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-});
+})
 
-const emit = defineEmits(["update:modelValue", "save"]);
+const emit = defineEmits(['update:modelValue', 'save'])
 
-const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS });
+// Use the singleton directly instead of through a ref
+const storeService = StoreService.getInstance()
+
+const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS })
 
 // Sidebar navigation sections
 const settingsSections = [
-  { id: "appearance", label: "Appearance", icon: "palette" },
-  { id: "installation", label: "Installation", icon: "folder" },
-  { id: "about", label: "About", icon: "info" },
-];
+  { id: 'appearance', label: 'Appearance', icon: 'palette' },
+  { id: 'installation', label: 'Installation', icon: 'folder' },
+  { id: 'about', label: 'About', icon: 'info' },
+]
 
 // Track the active section
-const activeSection = ref("appearance");
+const activeSection = ref('appearance')
 
 // Theme options - dynamically loaded from theme service
 const hasUnlockedExtraThemes = ref(false);
@@ -485,32 +489,33 @@ const customThemes = computed(() => {
   return themeOptions.value.filter((theme) => theme.isCustom);
 });
 
+
 const accentColorOptions = [
-  { label: "Pink", value: "#DB2955" },
-  { label: "Blue", value: "#235789" },
-  { label: "Green", value: "#35CE8D" },
-  { label: "Purple", value: "#C490D1" },
-  { label: "Orange", value: "#FE621D" },
-  { label: "Yellow", value: "#f7c548" },
-  { label: "Red", value: "#C03221" },
-  { label: "Cyan", value: "#39dbce" },
-];
+  { label: 'Pink', value: '#DB2955' },
+  { label: 'Blue', value: '#235789' },
+  { label: 'Green', value: '#35CE8D' },
+  { label: 'Purple', value: '#C490D1' },
+  { label: 'Orange', value: '#FE621D' },
+  { label: 'Yellow', value: '#f7c548' },
+  { label: 'Red', value: '#C03221' },
+  { label: 'Cyan', value: '#39dbce' },
+]
 
 // Helper function to get current accent color
 const getAccentColor = () => {
-  if (typeof settings.value.accentColor === "string") {
-    return settings.value.accentColor;
+  if (typeof settings.value.accentColor === 'string') {
+    return settings.value.accentColor
   }
-  return settings.value.accentColor?.value || "#DB2955";
-};
+  return settings.value.accentColor?.value || '#DB2955'
+}
 
 const showModal = computed({
   get: () => props.modelValue,
-  set: (value) => emit("update:modelValue", value),
-});
+  set: value => emit('update:modelValue', value),
+})
 
-const showResetSettingsDialog = ref(false);
-const showResetAppDataDialog = ref(false);
+const showResetSettingsDialog = ref(false)
+const showResetAppDataDialog = ref(false)
 
 // Custom accent color variables
 const customAccentColor = ref("#DB2955");
@@ -520,18 +525,18 @@ const accentColorPickerInput = ref<HTMLInputElement | null>(null);
 // Load saved settings when modal is opened
 watch(
   () => props.modelValue,
-  async (newVal) => {
+  async newVal => {
     if (newVal) {
-      await loadSettings();
+      await loadSettings()
     }
   }
-);
+)
 
 const loadSettings = async () => {
   try {
     if (!storeService) {
-      console.warn("Store service not initialized yet, using default settings");
-      return;
+      console.warn('Store service not initialized yet, using default settings')
+      return
     }
 
     // Get all settings from StoreService
@@ -556,48 +561,49 @@ const loadSettings = async () => {
 
     console.log("Settings loaded from store service:", settings.value);
 
+
     // Apply theme immediately upon loading
-    await updateTheme();
+    await updateTheme()
   } catch (error) {
-    console.error("Failed to load settings:", error);
+    console.error('Failed to load settings:', error)
   }
-};
+}
 
 const selectInstallLocation = async () => {
   try {
     // Use the Rust backend to select a folder
-    const folderPath = await invoke<string>("select_settings_folder");
+    const folderPath = await invoke<string>('select_settings_folder')
     if (folderPath) {
-      settings.value.installLocation = folderPath;
+      settings.value.installLocation = folderPath
     }
   } catch (error) {
-    console.error("Failed to select install location:", error);
+    console.error('Failed to select install location:', error)
   }
-};
+}
 
 // Get the current system theme (light or dark)
 const getSystemTheme = (): { label: string; value: string } => {
   return window.matchMedia &&
-    window.matchMedia("(prefers-color-scheme: light)").matches
-    ? { label: "Light", value: "light" }
-    : { label: "Dark", value: "dark" };
-};
+    window.matchMedia('(prefers-color-scheme: light)').matches
+    ? { label: 'Light', value: 'light' }
+    : { label: 'Dark', value: 'dark' }
+}
 
 // Apply theme function
 const updateTheme = async () => {
   // Determine which theme to use based on settings
-  let activeThemeValue: string;
+  let activeThemeValue: string
 
   // If using system theme, override with the system preference
   if (settings.value.useSystemTheme) {
-    activeThemeValue = getSystemTheme().value;
+    activeThemeValue = getSystemTheme().value
   } else {
     // Handle both string and object theme values
     activeThemeValue =
-      typeof settings.value.theme === "string"
+      typeof settings.value.theme === 'string'
         ? settings.value.theme
         : (settings.value.theme as unknown as { value: string })?.value ||
-          "dark";
+          'dark'
   }
 
   console.log("Applying theme via themeService:", activeThemeValue);
@@ -627,20 +633,22 @@ const updateTheme = async () => {
         );
       }
 
+
       // Remove transparent background styles
       document.documentElement.style.setProperty(
-        "--transparent-bg-override",
-        "none"
-      );
+        '--transparent-bg-override',
+        'none'
+      )
 
       // Set background to solid color based on the theme
       const bgColor = `var(--theme-bg)`;
 
       document.body.style.removeProperty("background");
       document.body.style.backgroundColor = bgColor;
+
       document
-        .querySelector(".q-layout")
-        ?.setAttribute("style", "background: " + bgColor + " !important");
+        .querySelector('.q-layout')
+        ?.setAttribute('style', 'background: ' + bgColor + ' !important')
     } else {
       // On Windows 11, handle Mica effect for light and dark themes
       if (themeService.supportsWindowsMica(activeThemeValue)) {
@@ -713,85 +721,85 @@ const updateTheme = async () => {
 const save = async () => {
   try {
     if (!storeService) {
-      console.warn("Store service not initialized yet, cannot save settings");
-      return;
+      console.warn('Store service not initialized yet, cannot save settings')
+      return
     }
 
     // Process the accent color for storage - ensure it's stored as a string
     // For accent color, we need to handle both string and object values
-    if (typeof settings.value.accentColor !== "string") {
+    if (typeof settings.value.accentColor !== 'string') {
       // If it's an object with a value property
       if (settings.value.accentColor?.value) {
         console.log(
-          "Converting accent color object to string value:",
+          'Converting accent color object to string value:',
           settings.value.accentColor
-        );
-        settings.value.accentColor = settings.value.accentColor.value;
+        )
+        settings.value.accentColor = settings.value.accentColor.value
       }
       // If it's null or undefined or another non-string type
       else {
-        console.log("Using default accent color");
-        settings.value.accentColor = "#DB2955"; // Default
+        console.log('Using default accent color')
+        settings.value.accentColor = '#DB2955' // Default
       }
     }
 
     // Ensure accentColor is a valid CSS color value (starts with #)
     if (
-      typeof settings.value.accentColor !== "string" ||
-      !settings.value.accentColor.startsWith("#")
+      typeof settings.value.accentColor !== 'string' ||
+      !settings.value.accentColor.startsWith('#')
     ) {
-      console.log("Fixing invalid accent color format");
-      settings.value.accentColor = "#DB2955"; // Default
+      console.log('Fixing invalid accent color format')
+      settings.value.accentColor = '#DB2955' // Default
     }
 
     // Process the theme value to ensure it's a string
     if (
-      typeof settings.value.theme === "object" &&
+      typeof settings.value.theme === 'object' &&
       settings.value.theme !== null &&
-      "value" in settings.value.theme
+      'value' in settings.value.theme
     ) {
-      console.log("Converting theme object to string value");
-      settings.value.theme = (settings.value.theme as { value: string }).value;
+      console.log('Converting theme object to string value')
+      settings.value.theme = (settings.value.theme as { value: string }).value
     }
 
     console.log(
-      "Saving settings with accent color:",
+      'Saving settings with accent color:',
       settings.value.accentColor
-    );
+    )
 
     // Save all settings at once using the StoreService
-    await storeService.saveSettings(settings.value);
-    console.log("Settings saved via StoreService:", settings.value);
+    await storeService.saveSettings(settings.value)
+    console.log('Settings saved via StoreService:', settings.value)
 
     // Apply the accent color to CSS custom properties
     document.documentElement.style.setProperty(
-      "--q-primary",
+      '--q-primary',
       settings.value.accentColor
-    );
+    )
 
     // Apply theme
-    await updateTheme();
+    await updateTheme()
 
     // Dispatch compact mode changed event
     window.dispatchEvent(
-      new CustomEvent("compact-mode-changed", {
+      new CustomEvent('compact-mode-changed', {
         detail: {
           compactMode: settings.value.compactMode,
         },
       })
-    );
+    )
 
     // Emit save event
-    emit("save", settings.value);
+    emit('save', settings.value)
   } catch (error) {
-    console.error("Failed to save settings:", error);
+    console.error('Failed to save settings:', error)
   }
-};
+}
 
 const cancel = () => {
   // Reset any unsaved changes by reloading from DB
-  loadSettings();
-};
+  loadSettings()
+}
 
 // Theme management functions
 const customThemesPath = ref("");
@@ -858,36 +866,36 @@ const selectTheme = (themeId: string) => {
 
 const resetSettings = () => {
   // Reset all settings to default values
-  settings.value = { ...DEFAULT_SETTINGS };
-  console.log("Settings have been reset to default values.");
-};
+  settings.value = { ...DEFAULT_SETTINGS }
+  console.log('Settings have been reset to default values.')
+}
 
 const resetAppData = async () => {
   try {
-    console.log("Resetting application data...");
+    console.log('Resetting application data...')
 
     // Get instances of our services
-    const dbService = DatabaseService.getInstance();
+    const dbService = DatabaseService.getInstance()
 
     // First, reset settings to default values
-    await storeService.clearSettings();
-    console.log("Settings have been cleared successfully");
+    await storeService.clearSettings()
+    console.log('Settings have been cleared successfully')
 
     // Then clear the database (delete all data from tables)
-    await dbService.clearDatabase();
-    console.log("Database has been cleared successfully");
+    await dbService.clearDatabase()
+    console.log('Database has been cleared successfully')
 
     // Reload the application to apply changes
-    window.location.reload();
+    window.location.reload()
   } catch (error) {
-    console.error("Failed to reset app data:", error);
-    window.alert(`Failed to reset app data: ${error}`);
+    console.error('Failed to reset app data:', error)
+    window.alert(`Failed to reset app data: ${error}`)
   }
-};
+}
 
 onMounted(async () => {
   // Initialize StoreService
-  await storeService.initialize();
+  await storeService.initialize()
 
   // Initialize theme service first
   try {
@@ -925,7 +933,7 @@ onMounted(async () => {
 });
 
 // Initialize settings on component creation
-loadSettings();
+loadSettings()
 </script>
 
 <style scoped>

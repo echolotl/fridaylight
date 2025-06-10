@@ -4,10 +4,10 @@
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6 phantom-font-difficulty">Mod Settings</div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup />
+        <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
 
-      <div class="settings-layout" v-if="mod">
+      <div v-if="mod" class="settings-layout">
         <!-- Sidebar Navigation -->
         <div class="settings-sidebar">
           <q-list padding>
@@ -16,8 +16,8 @@
               :key="section.id"
               clickable
               :active="activeSection === section.id"
-              @click="activeSection = section.id"
               active-class="settings-active-item"
+              @click="activeSection = section.id"
             >
               <q-item-section avatar>
                 <q-icon :name="section.icon" />
@@ -68,8 +68,8 @@
                 icon="delete"
                 label="Remove Mod"
                 class="full-width"
-                @click="showRemoveDialog = true"
                 outline
+                @click="showRemoveDialog = true"
               />
               <div
                 class="text-caption q-mt-sm"
@@ -84,8 +84,8 @@
                 icon="delete_forever"
                 label="Delete Mod Files"
                 class="full-width q-mt-md"
-                @click="showSuperDeleteDialog = true"
                 outline
+                @click="showSuperDeleteDialog = true"
               />
               <div
                 class="text-caption q-mt-sm"
@@ -110,8 +110,8 @@
               readonly
               class="q-mb-md"
             >
-              <template v-slot:append>
-                <div class="icon" v-if="form.path">
+              <template #append>
+                <div v-if="form.path" class="icon">
                   <q-btn
                     icon="open_in_new"
                     round
@@ -135,7 +135,7 @@
               readonly
               class="q-mb-md"
             >
-              <template v-slot:append v-if="form.executable_path">
+              <template v-if="form.executable_path" #append>
                 <div class="icon">
                   <q-btn
                     icon="open_in_new"
@@ -182,15 +182,15 @@
             <div class="q-mb-md">
               <div class="text-subtitle2 q-mb-sm">Engine Icon</div>
               <div
-                class="engine-icon-preview"
                 v-if="engineIconPreview || form.engine?.engine_icon"
+                class="engine-icon-preview"
               >
                 <img
                   :src="engineIconPreview || form.engine?.engine_icon"
                   alt="Engine Icon"
                 />
               </div>
-              <div class="icon-placeholder" v-else>
+              <div v-else class="icon-placeholder">
                 <q-icon name="block" size="48px" />
               </div>
 
@@ -199,10 +199,10 @@
                 label="Set Engine Icon"
                 outlined
                 accept=".jpg, .jpeg, .png, .webp, .ico"
-                @update:model-value="handleEngineIconFileChange"
                 class="q-mt-sm"
+                @update:model-value="handleEngineIconFileChange"
               >
-                <template v-slot:prepend>
+                <template #prepend>
                   <div class="icon">
                     <q-icon name="image" />
                   </div>
@@ -247,10 +247,10 @@
 
             <div class="icon-upload q-mb-md">
               <div class="text-subtitle2 q-mb-sm">Mod Icon</div>
-              <div class="icon-preview" v-if="iconPreview || form.icon_data">
+              <div v-if="iconPreview || form.icon_data" class="icon-preview">
                 <img :src="iconPreview || form.icon_data" alt="Mod Icon" />
               </div>
-              <div class="icon-placeholder" v-else>
+              <div v-else class="icon-placeholder">
                 <q-icon name="image" size="48px" />
               </div>
               <q-file
@@ -258,10 +258,10 @@
                 label="Set Mod Icon"
                 outlined
                 accept=".jpg, .jpeg, .png, .webp, .ico"
-                @update:model-value="handleIconFileChange"
                 class="q-mt-sm"
+                @update:model-value="handleIconFileChange"
               >
-                <template v-slot:prepend>
+                <template #prepend>
                   <div class="icon">
                     <q-icon name="image" />
                   </div>
@@ -280,15 +280,15 @@
             <div class="banner-upload q-mb-md">
               <div class="text-subtitle2 q-mb-sm">Banner Image</div>
               <div
-                class="banner-preview"
                 v-if="bannerPreview || form.banner_data"
+                class="banner-preview"
               >
                 <img
                   :src="bannerPreview || form.banner_data"
                   alt="Banner Preview"
                 />
               </div>
-              <div class="banner-placeholder" v-else>
+              <div v-else class="banner-placeholder">
                 <q-icon name="image" size="48px" />
                 <div>No banner image</div>
               </div>
@@ -297,10 +297,10 @@
                 label="Set Banner Image"
                 outlined
                 accept=".jpg, .jpeg, .png"
-                @update:model-value="handleBannerFileChange"
                 class="q-mt-sm"
+                @update:model-value="handleBannerFileChange"
               >
-                <template v-slot:prepend>
+                <template #prepend>
                   <div class="icon">
                     <q-icon name="panorama" />
                   </div>
@@ -320,13 +320,13 @@
               <div class="text-subtitle2 q-mb-sm">
                 Logo Image (Replaces Title)
               </div>
-              <div class="logo-preview" v-if="logoPreview || form.logo_data">
+              <div v-if="logoPreview || form.logo_data" class="logo-preview">
                 <img
                   :src="logoPreview || form.logo_data || ''"
                   alt="Logo Preview"
                 />
               </div>
-              <div class="logo-placeholder" v-else>
+              <div v-else class="logo-placeholder">
                 <q-icon name="image" size="48px" />
                 <div>No logo image</div>
               </div>
@@ -335,10 +335,10 @@
                 label="Set Logo Image"
                 outlined
                 accept=".jpg, .jpeg, .png"
-                @update:model-value="handleLogoFileChange"
                 class="q-mt-sm"
+                @update:model-value="handleLogoFileChange"
               >
-                <template v-slot:prepend>
+                <template #prepend>
                   <div class="icon">
                     <q-icon name="image" />
                   </div>
@@ -371,13 +371,13 @@
 
       <q-card-actions align="right">
         <q-btn
+          v-close-popup
           flat
           label="Cancel"
           color="primary"
-          v-close-popup
           @click="cancel"
         />
-        <q-btn flat label="Save" color="primary" @click="save" v-close-popup />
+        <q-btn v-close-popup flat label="Save" color="primary" @click="save" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -420,11 +420,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from "vue";
-import { Mod } from "@main-types";
-import { formatEngineName } from "../../utils";
-import MessageDialog from "./MessageDialog.vue";
-import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { ref, watch, computed, onMounted } from 'vue'
+import { Mod } from '@main-types'
+import { formatEngineName } from '../../utils'
+import MessageDialog from './MessageDialog.vue'
+import { revealItemInDir } from '@tauri-apps/plugin-opener'
 
 const props = defineProps({
   modelValue: {
@@ -435,313 +435,300 @@ const props = defineProps({
     type: Object as () => Mod | null,
     default: null,
   },
-});
+})
 
 const emit = defineEmits([
-  "update:modelValue",
-  "save",
-  "change-folder",
-  "select-executable",
-  "delete-mod",
-  "super-delete-mod",
-]);
+  'update:modelValue',
+  'save',
+  'change-folder',
+  'select-executable',
+  'delete-mod',
+  'super-delete-mod',
+])
 
 const form = ref<Mod>({
-  id: "",
-  name: "",
-  path: "",
-  executable_path: "",
-  icon_data: "",
+  id: '',
+  name: '',
+  path: '',
+  executable_path: '',
+  icon_data: '',
   display_order: 0,
-  banner_data: "",
-  logo_data: "",
-  version: "",
+  banner_data: '',
+  logo_data: '',
+  version: '',
   engine: {
-    engine_type: "",
-    engine_name: "",
-    engine_icon: "",
+    engine_type: '',
+    engine_name: '',
+    engine_icon: '',
     mods_folder: true,
-    mods_folder_path: "",
+    mods_folder_path: '',
   },
-});
+})
 
-const bannerFile = ref<File | null>(null);
-const bannerPreview = ref<string | null>(null);
-const logoFile = ref<File | null>(null);
-const logoPreview = ref<string | null>(null);
-const engineIconFile = ref<File | null>(null);
-const engineIconPreview = ref<string | null>(null);
-const iconFile = ref<File | null>(null);
-const iconPreview = ref<string | null>(null);
+const bannerFile = ref<File | null>(null)
+const bannerPreview = ref<string | null>(null)
+const logoFile = ref<File | null>(null)
+const logoPreview = ref<string | null>(null)
+const engineIconFile = ref<File | null>(null)
+const engineIconPreview = ref<string | null>(null)
+const iconFile = ref<File | null>(null)
+const iconPreview = ref<string | null>(null)
 
 const engineTypes = [
-  { label: "Vanilla", value: "vanilla" },
-  { label: "Psych Engine", value: "psych" },
-  { label: "Codename Engine", value: "codename" },
-  { label: "FPS Plus", value: "fps-plus" },
-  { label: "Kade Engine", value: "kade" },
-  { label: "Pre-VSlice", value: "pre-vslice" },
-  { label: "Other", value: "other" },
-];
+  { label: 'Vanilla', value: 'vanilla' },
+  { label: 'Psych Engine', value: 'psych' },
+  { label: 'Codename Engine', value: 'codename' },
+  { label: 'FPS Plus', value: 'fps-plus' },
+  { label: 'Kade Engine', value: 'kade' },
+  { label: 'Pre-VSlice', value: 'pre-vslice' },
+  { label: 'Other', value: 'other' },
+]
 
 const logoPositionOptions = [
-  { label: "Bottom Left", value: "left_bottom" },
-  { label: "Middle Left", value: "left_middle" },
-  { label: "Middle", value: "middle" },
-];
+  { label: 'Bottom Left', value: 'left_bottom' },
+  { label: 'Middle Left', value: 'left_middle' },
+  { label: 'Middle', value: 'middle' },
+]
 
 const showModal = computed({
   get: () => props.modelValue,
-  set: (value) => emit("update:modelValue", value),
-});
+  set: value => emit('update:modelValue', value),
+})
 
 const modSettingsSections = [
-  { id: "general", label: "General", icon: "info" },
-  { id: "location", label: "Location", icon: "folder" },
-  { id: "engine", label: "Engine", icon: "code" },
-  { id: "visuals", label: "Appearance", icon: "palette" },
-];
+  { id: 'general', label: 'General', icon: 'info' },
+  { id: 'location', label: 'Location', icon: 'folder' },
+  { id: 'engine', label: 'Engine', icon: 'code' },
+  { id: 'visuals', label: 'Appearance', icon: 'palette' },
+]
 
-const activeSection = ref("general");
-const showRemoveDialog = ref(false);
-const showSuperDeleteDialog = ref(false);
+const activeSection = ref('general')
+const showRemoveDialog = ref(false)
+const showSuperDeleteDialog = ref(false)
 
 // Reset form when modal is opened
 watch(
   () => props.modelValue,
-  (newVal) => {
+  newVal => {
     if (newVal && props.mod) {
       // Clone the mod object to form
-      form.value = JSON.parse(JSON.stringify(props.mod));
+      form.value = JSON.parse(JSON.stringify(props.mod))
       // Ensure engine object exists in the cloned form
       if (!form.value.engine) {
         form.value.engine = {
-          engine_type: "unknown",
-          engine_name: "Unknown Engine",
-          engine_icon: "",
+          engine_type: 'unknown',
+          engine_name: 'Unknown Engine',
+          engine_icon: '',
           mods_folder: false,
-          mods_folder_path: "",
-        };
+          mods_folder_path: '',
+        }
       }
       // Initialize preview values with existing data
-      bannerPreview.value = form.value.banner_data || null;
-      logoPreview.value = form.value.logo_data || null;
-      engineIconPreview.value = form.value.engine?.engine_icon || null;
-      iconPreview.value = form.value.icon_data || null;
+      bannerPreview.value = form.value.banner_data || null
+      logoPreview.value = form.value.logo_data || null
+      engineIconPreview.value = form.value.engine?.engine_icon || null
+      iconPreview.value = form.value.icon_data || null
 
-      bannerFile.value = null; // Clear file input ref
-      logoFile.value = null; // Clear file input ref
-      engineIconFile.value = null; // Clear file input ref
-      iconFile.value = null; // Clear file input ref
-      activeSection.value = "general"; // Reset to general tab
+      bannerFile.value = null // Clear file input ref
+      logoFile.value = null // Clear file input ref
+      engineIconFile.value = null // Clear file input ref
+      iconFile.value = null // Clear file input ref
+      activeSection.value = 'general' // Reset to general tab
     }
   }
-);
+)
 
-// Add a watcher to keep engine.engine_type and engine_type in sync
-watch(
-  () => form.value.engine?.engine_type,
-  (newEngineType) => {
-    if (newEngineType && form.value.engine) {
-      // When engine.engine_type changes, update engine_type to match
-      console.log("Engine type changed to:", newEngineType);
-    }
-  }
-);
 
 const handleBannerFileChange = (file: File | null) => {
-  bannerFile.value = file; // Store the file reference
+  bannerFile.value = file // Store the file reference
   if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      bannerPreview.value = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    const reader = new FileReader()
+    reader.onload = e => {
+      bannerPreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
   } else {
-    bannerPreview.value = null;
+    bannerPreview.value = null
     // If file is cleared, explicitly set form data to undefined for save logic
-    form.value.banner_data = undefined;
+    form.value.banner_data = undefined
   }
-};
+}
 
 const handleLogoFileChange = (file: File | null) => {
-  logoFile.value = file; // Store the file reference
+  logoFile.value = file // Store the file reference
   if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      logoPreview.value = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    const reader = new FileReader()
+    reader.onload = e => {
+      logoPreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
   } else {
-    logoPreview.value = null;
+    logoPreview.value = null
   }
-};
+}
 
 const handleEngineIconFileChange = (file: File | null) => {
-  engineIconFile.value = file; // Store the file reference
+  engineIconFile.value = file // Store the file reference
   if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      engineIconPreview.value = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    const reader = new FileReader()
+    reader.onload = e => {
+      engineIconPreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
   } else {
-    engineIconPreview.value = null;
+    engineIconPreview.value = null
     // Don't clear form.value.engine.engine_icon here, handle removal in removeEngineIcon or save()
   }
-};
+}
 
 const handleIconFileChange = (file: File | null) => {
-  iconFile.value = file; // Store the file reference
+  iconFile.value = file // Store the file reference
   if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      iconPreview.value = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+    const reader = new FileReader()
+    reader.onload = e => {
+      iconPreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
   } else {
-    iconPreview.value = null;
+    iconPreview.value = null
     // If file is cleared, explicitly set form data to undefined for save logic
-    form.value.icon_data = undefined;
+    form.value.icon_data = undefined
   }
-};
+}
 
 const removeLogo = () => {
-  form.value.logo_data = null;
-  logoPreview.value = null;
-  logoFile.value = null; // Clear the file input ref
-};
+  form.value.logo_data = null
+  logoPreview.value = null
+  logoFile.value = null // Clear the file input ref
+}
 
 const removeBanner = () => {
-  form.value.banner_data = undefined;
-  bannerPreview.value = null;
-  bannerFile.value = null; // Clear the file input ref
-};
+  form.value.banner_data = undefined
+  bannerPreview.value = null
+  bannerFile.value = null // Clear the file input ref
+}
 
 const removeEngineIcon = () => {
   if (form.value.engine) {
-    form.value.engine.engine_icon = "";
+    form.value.engine.engine_icon = ''
   }
-  engineIconPreview.value = null;
-  engineIconFile.value = null; // Clear the file input ref
-};
+  engineIconPreview.value = null
+  engineIconFile.value = null // Clear the file input ref
+}
 
 const removeIcon = () => {
-  form.value.icon_data = undefined;
-  iconPreview.value = null;
-  iconFile.value = null; // Clear the file input ref
-};
+  form.value.icon_data = undefined
+  iconPreview.value = null
+  iconFile.value = null // Clear the file input ref
+}
 
 const removeMod = () => {
-  console.log("Removing mod:", form.value.name);
+  console.log('Removing mod:', form.value.name)
   // Close the dialog
-  showRemoveDialog.value = false;
+  showRemoveDialog.value = false
   // Close the settings modal
-  showModal.value = false;
+  showModal.value = false
   // Emit the event to the parent component to handle the actual deletion
-  emit("delete-mod", props.mod);
-};
+  emit('delete-mod', props.mod?.id)
+}
 
 const superDeleteMod = () => {
-  console.log("Super deleting mod:", form.value.name);
+  console.log('Super deleting mod:', form.value.name)
   // Close the dialog
-  showSuperDeleteDialog.value = false;
+  showSuperDeleteDialog.value = false
   // Close the settings modal
-  showModal.value = false;
+  showModal.value = false
   // Emit the event to the parent component to handle the actual deletion
-  emit("super-delete-mod", props.mod);
-};
+  emit('super-delete-mod', props.mod?.id)
+}
 
 const save = async () => {
-  const updatedMod = { ...form.value };
+  const updatedMod = { ...form.value }
 
   // Handle Banner Image
   if (bannerPreview.value) {
-    updatedMod.banner_data = bannerPreview.value;
+    updatedMod.banner_data = bannerPreview.value
   }
 
   // Handle Logo Image
   if (logoPreview.value) {
-    updatedMod.logo_data = logoPreview.value;
+    updatedMod.logo_data = logoPreview.value
   } else if (logoFile.value === null && form.value.logo_data === null) {
-    updatedMod.logo_data = undefined;
+    updatedMod.logo_data = undefined
   }
   // Otherwise preserve existing logo_data
 
   // Handle Engine Icon Image
   if (engineIconPreview.value && updatedMod.engine) {
-    updatedMod.engine.engine_icon = engineIconPreview.value;
+    updatedMod.engine.engine_icon = engineIconPreview.value
   } else if (
     engineIconFile.value === null &&
     updatedMod.engine &&
-    form.value.engine?.engine_icon === ""
+    form.value.engine?.engine_icon === ''
   ) {
-    updatedMod.engine.engine_icon = "";
+    updatedMod.engine.engine_icon = ''
   }
 
   // Handle Mod Icon Image
   if (iconPreview.value) {
-    updatedMod.icon_data = iconPreview.value;
+    updatedMod.icon_data = iconPreview.value
   } else if (iconFile.value === null && form.value.icon_data === null) {
-    updatedMod.icon_data = undefined;
+    updatedMod.icon_data = undefined
   }
   // Otherwise preserve existing icon_data
 
   // First, make sure engine object exists
   if (!updatedMod.engine) {
     updatedMod.engine = {
-      engine_type: "unknown",
-      engine_name: formatEngineName("unknown"),
-      engine_icon: "",
+      engine_type: 'unknown',
+      engine_name: formatEngineName('unknown'),
+      engine_icon: '',
       mods_folder: false,
-      mods_folder_path: "",
-    };
+      mods_folder_path: '',
+    }
   } else {
-    const defaultName = formatEngineName(updatedMod.engine.engine_type);
+    const defaultName = formatEngineName(updatedMod.engine.engine_type)
     const originalDefaultName = formatEngineName(
-      props.mod?.engine?.engine_type || "unknown"
-    );
+      props.mod?.engine?.engine_type || 'unknown'
+    )
     if (
       !updatedMod.engine.engine_name ||
       updatedMod.engine.engine_name === originalDefaultName
     ) {
-      updatedMod.engine.engine_name = defaultName;
+      updatedMod.engine.engine_name = defaultName
     }
   }
 
-  console.log(
-    "MODAL: Emitting save with mod data:",
-    JSON.stringify(updatedMod)
-  );
+  console.log('MODAL: Emitting save with mod data:', JSON.stringify(updatedMod))
 
-  emit("save", updatedMod);
-};
+  emit('save', updatedMod)
+}
 const cancel = () => {
-  bannerPreview.value = null;
-  logoPreview.value = null;
-  bannerFile.value = null;
-  logoFile.value = null;
-  engineIconPreview.value = null;
-  engineIconFile.value = null;
-  iconPreview.value = null;
-  iconFile.value = null;
-};
+  bannerPreview.value = null
+  logoPreview.value = null
+  bannerFile.value = null
+  logoFile.value = null
+  engineIconPreview.value = null
+  engineIconFile.value = null
+  iconPreview.value = null
+  iconFile.value = null
+}
 
 const handleChangeFolderClick = () => {
-  emit("change-folder", (newPath: string) => {
-    form.value.path = newPath;
-  });
-};
+  emit('change-folder', (newPath: string) => {
+    form.value.path = newPath
+  })
+}
 
 const handleSelectExecutableClick = () => {
-  emit("select-executable", (newExecutablePath: string) => {
-    form.value.executable_path = newExecutablePath;
-  });
-};
+  emit('select-executable', (newExecutablePath: string) => {
+    form.value.executable_path = newExecutablePath
+  })
+}
 
 const handleOpenFileLocationClick = async (path: string) => {
-  await revealItemInDir(path);
-};
+  await revealItemInDir(path)
+}
 </script>
 
 <style scoped>
