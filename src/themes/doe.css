@@ -1,6 +1,6 @@
 /* Doe Theme */
 :root {
-  --theme-bg: linear-gradient(to top, #FFFFFF 20%, #9cedfc 50%, #7ba2f5);
+  --theme-bg: linear-gradient(to top, #ffffff 20%, #9cedfc 50%, #7ba2f5);
   --theme-card: rgba(0, 0, 0, 0.35);
   --theme-surface: rgba(255, 255, 255, 0.5);
   --theme-text: #2c1d07;

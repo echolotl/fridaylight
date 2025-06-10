@@ -107,9 +107,8 @@
           :active="activePage === 'home'"
           active-class="active-home"
           :class="{
-            'compact-mode': compactMode
+            'compact-mode': compactMode,
           }"
-
         >
           <q-item-section avatar>
             <q-icon name="home" style="margin-left: 4px" />
@@ -1097,7 +1096,6 @@ const editFolder = (folder: Folder) => {
 }
 
 .home-button.compact-mode {
-  
 }
 
 .active-home {

@@ -7,7 +7,7 @@
   --theme-text-secondary: rgba(213, 196, 240, 0.7);
   --theme-border: rgba(213, 196, 240, 0.25);
   --theme-solid: #2f2e50;
-  
+
   /* Solid colors for non-Windows 11 platforms */
   --theme-bg-solid: #23282e;
   --theme-card-solid: #2e2d3b;

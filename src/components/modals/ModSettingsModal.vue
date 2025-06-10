@@ -538,7 +538,6 @@ watch(
   }
 )
 
-
 const handleBannerFileChange = (file: File | null) => {
   bannerFile.value = file // Store the file reference
   if (file) {

@@ -1061,12 +1061,11 @@ const saveAppSettings = async (settings: any) => {
     colorValue = '#DB2955' // Fallback to default if invalid
   }
 
-  document.documentElement.style.setProperty("--q-primary", colorValue);
-  console.log("Applied accent color from settings:", colorValue);
+  document.documentElement.style.setProperty('--q-primary', colorValue)
+  console.log('Applied accent color from settings:', colorValue)
 
-  window.dispatchEvent(new CustomEvent("settings-saved", { detail: settings }));
-};
-
+  window.dispatchEvent(new CustomEvent('settings-saved', { detail: settings }))
+}
 
 // Function that loads and applies app settings
 const loadAppSettings = async () => {
@@ -1142,11 +1141,11 @@ const loadAppSettings = async () => {
     }
 
     // Ensure colorValue is always a valid CSS color string
-    if (typeof colorValue !== "string" || !colorValue.startsWith("#")) {
-      colorValue = "#DB2955"; // Fallback to default if invalid
-    }    document.documentElement.style.setProperty("--q-primary", colorValue);
-    console.log("Applied accent color from settings:", colorValue);
-
+    if (typeof colorValue !== 'string' || !colorValue.startsWith('#')) {
+      colorValue = '#DB2955' // Fallback to default if invalid
+    }
+    document.documentElement.style.setProperty('--q-primary', colorValue)
+    console.log('Applied accent color from settings:', colorValue)
   } catch (error) {
     console.error('Failed to load and apply app settings:', error)
   }
