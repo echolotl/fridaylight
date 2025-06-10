@@ -730,6 +730,13 @@ onMounted(async () => {
     });
   }
 });
+
+// Show the window when DOM content is loaded
+document.addEventListener("DOMContentLoaded", () => {
+  const currentWindow = getCurrentWindow();
+  console.log("Current window:", currentWindow);
+  currentWindow.show();
+});
 </script>
 
 <style>

@@ -18,10 +18,9 @@
         "minWidth": 800,
         "height": 600,
         "minHeight": 450,
+        "visible": false,
         "windowEffects": {
-          "effects": [
-            "mica"
-          ]
+          "effects": ["mica"]
         },
         "transparent": true,
         "userAgent": "Fridaylight/0.10.1"
@@ -69,6 +68,5 @@
         "https://github.com/echolotl/fridaylight/releases/latest/download/latest.json"
       ]
     }
-
   }
 }
