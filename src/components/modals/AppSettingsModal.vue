@@ -49,7 +49,7 @@
                 </q-item-section>
               </q-item>
             </div>
-            <div class="theme-selector q-mb-md" v-if="!settings.useSystemTheme">
+            <div v-if="!settings.useSystemTheme" class="theme-selector q-mb-md">
               <!-- Built-in Themes Section -->
               <div class="theme-section">
                 <div class="text-subtitle2 q-mb-sm">Built-in Themes</div>
@@ -61,11 +61,11 @@
                     @click="selectTheme(theme.value)"
                   >
                     <ThemePreview
-                      :themeName="theme.value"
-                      :themeDisplayName="theme.label"
-                      :accentColor="getAccentColor()"
-                      :compactMode="settings.compactMode"
-                      :curSelected="getSelectedTheme() === theme.value"
+                      :theme-name="theme.value"
+                      :theme-display-name="theme.label"
+                      :accent-color="getAccentColor()"
+                      :compact-mode="settings.compactMode"
+                      :cur-selected="getSelectedTheme() === theme.value"
                     />
                   </div>
                 </div>
@@ -84,16 +84,16 @@
                       color="primary"
                       icon="folder_open"
                       label="Reveal Themes Folder"
-                      @click="openThemesFolder"
                       class="phantom-font q-mr-sm"
+                      @click="openThemesFolder"
                     />
                     <q-btn
                       flat
                       color="primary"
                       icon="refresh"
                       label="Refresh Themes"
-                      @click="refreshThemes"
                       class="phantom-font"
+                      @click="refreshThemes"
                     />
                   </div>
                 </div>
@@ -105,11 +105,11 @@
                     @click="selectTheme(theme.value)"
                   >
                     <ThemePreview
-                      :themeName="theme.value"
-                      :themeDisplayName="theme.label"
-                      :accentColor="getAccentColor()"
-                      :compactMode="settings.compactMode"
-                      :curSelected="getSelectedTheme() === theme.value"
+                      :theme-name="theme.value"
+                      :theme-display-name="theme.label"
+                      :accent-color="getAccentColor()"
+                      :compact-mode="settings.compactMode"
+                      :cur-selected="getSelectedTheme() === theme.value"
                     />
                   </div>
                 </div>
@@ -119,8 +119,8 @@
                   <div>
                     Want to add custom themes? Place them in the
                     <a
-                      @click="revealItemInDir(customThemesPath)"
                       class="text-primary"
+                      @click="revealItemInDir(customThemesPath)"
                       >/themes</a
                     >
                     folder, then click the refresh button to load them.
@@ -130,8 +130,8 @@
                     color="primary"
                     icon="refresh"
                     label="Refresh Themes"
-                    @click="refreshThemes"
                     class="phantom-font"
+                    @click="refreshThemes"
                   />
                 </div>
               </div>
@@ -165,9 +165,9 @@
                 @click="openAccentColorPicker"
               />
               <input
-                type="color"
                 ref="accentColorPickerInput"
                 v-model="customAccentColor"
+                type="color"
                 class="hidden-color-picker"
                 @change="selectCustomAccentColor"
               />
@@ -250,9 +250,9 @@
                 <div class="text-subtitle2 q-mb-sm flex align-center">
                   Created by
                   <img
-                    @click="openUrl('https://www.echolotl.lol/')"
                     src="/images/echolotlGB.png"
                     class="q-ml-xs cursor-pointer"
+                    @click="openUrl('https://www.echolotl.lol/')"
                   />
                 </div>
                 <div class="q-mb-sm">
@@ -262,10 +262,10 @@
                 <div class="flex items-center q-mb-sm">
                   <q-icon name="bug_report" size="sm" color="primary" />
                   <a
+                    class="q-ml-xs"
                     @click="
                       openUrl('https://github.com/echolotl/fridaylight/issues')
                     "
-                    class="q-ml-xs"
                     >Found a bug, or have a suggestion? Report it on GitHub!</a
                   >
                 </div>
@@ -359,8 +359,8 @@
                 icon="restart_alt"
                 label="Reset to Default Settings"
                 class="full-width"
-                @click="showResetSettingsDialog = true"
                 outline
+                @click="showResetSettingsDialog = true"
               />
               <div class="text-caption q-mt-sm">
                 This will reset all app settings to their default values. You'll
@@ -372,15 +372,14 @@
                 icon="delete_forever"
                 label="Reset App Data"
                 class="full-width q-mt-md"
-                @click="showResetAppDataDialog = true"
                 outline
+                @click="showResetAppDataDialog = true"
               />
               <div class="text-caption q-mt-sm">
                 This will wipe the database and reset all application data. All
                 mod information will be lost, but files will not be deleted.
               </div>
             </div>
-
           </q-card-section>
         </q-scroll-area>
       </div>
@@ -424,18 +423,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from "vue";
-import { invoke } from "@tauri-apps/api/core";
-import { openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
-import { AppSettings } from "@main-types";
-import ThemePreview from "../common/ThemePreview.vue";
-import MessageDialog from "./MessageDialog.vue";
-import { StoreService, DEFAULT_SETTINGS } from "../../services/storeService";
-import { DatabaseService } from "../../services/dbService";
-import { themeService } from "../../services/themeService";
-
-// Use the singleton directly instead of through a ref
-const storeService = StoreService.getInstance();
+import { ref, watch, computed, onMounted } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
+import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener'
+import { AppSettings } from '@main-types'
+import ThemePreview from '../common/ThemePreview.vue'
+import MessageDialog from './MessageDialog.vue'
+import { StoreService, DEFAULT_SETTINGS } from '../../services/storeService'
+import { DatabaseService } from '../../services/dbService'
+import { themeService } from '../../services/themeService'
 
 const props = defineProps({
   modelValue: {
@@ -462,33 +458,32 @@ const settingsSections = [
 const activeSection = ref('appearance')
 
 // Theme options - dynamically loaded from theme service
-const hasUnlockedExtraThemes = ref(false);
-const availableThemes = ref<any[]>([]);
+const hasUnlockedExtraThemes = ref(false)
+const availableThemes = ref<any[]>([])
 
 const themeOptions = computed(() => {
-  const options = availableThemes.value.map((theme) => ({
+  const options = availableThemes.value.map(theme => ({
     label: theme.displayName,
     value: theme.id,
     isCustom: theme.isCustom,
-  }));
+  }))
   // Filter out "doe" theme unless extra themes are unlocked
-  return options.filter((option) => {
-    if (option.value === "doe" && !hasUnlockedExtraThemes.value) {
-      return false;
+  return options.filter(option => {
+    if (option.value === 'doe' && !hasUnlockedExtraThemes.value) {
+      return false
     }
-    return true;
-  });
-});
+    return true
+  })
+})
 
 // Separate computed properties for built-in and custom themes
 const builtInThemes = computed(() => {
-  return themeOptions.value.filter((theme) => !theme.isCustom);
-});
+  return themeOptions.value.filter(theme => !theme.isCustom)
+})
 
 const customThemes = computed(() => {
-  return themeOptions.value.filter((theme) => theme.isCustom);
-});
-
+  return themeOptions.value.filter(theme => theme.isCustom)
+})
 
 const accentColorOptions = [
   { label: 'Pink', value: '#DB2955' },
@@ -518,9 +513,9 @@ const showResetSettingsDialog = ref(false)
 const showResetAppDataDialog = ref(false)
 
 // Custom accent color variables
-const customAccentColor = ref("#DB2955");
-const isCustomAccentColor = ref(false);
-const accentColorPickerInput = ref<HTMLInputElement | null>(null);
+const customAccentColor = ref('#DB2955')
+const isCustomAccentColor = ref(false)
+const accentColorPickerInput = ref<HTMLInputElement | null>(null)
 
 // Load saved settings when modal is opened
 watch(
@@ -540,27 +535,26 @@ const loadSettings = async () => {
     }
 
     // Get all settings from StoreService
-    const storedSettings = await storeService.getAllSettings(); // Apply stored settings to our local settings ref
-    settings.value = { ...settings.value, ...storedSettings };
+    const storedSettings = await storeService.getAllSettings() // Apply stored settings to our local settings ref
+    settings.value = { ...settings.value, ...storedSettings }
 
     // Initialize custom accent color state
-    const currentAccentColor = getAccentColor();
+    const currentAccentColor = getAccentColor()
     const isPresetColor = accentColorOptions.some(
-      (option) => option.value === currentAccentColor
-    );
+      option => option.value === currentAccentColor
+    )
 
     if (!isPresetColor) {
       // Current color is custom
-      isCustomAccentColor.value = true;
-      customAccentColor.value = currentAccentColor;
+      isCustomAccentColor.value = true
+      customAccentColor.value = currentAccentColor
     } else {
       // Current color is a preset
-      isCustomAccentColor.value = false;
-      customAccentColor.value = "#DB2955"; // Reset to default
+      isCustomAccentColor.value = false
+      customAccentColor.value = '#DB2955' // Reset to default
     }
 
-    console.log("Settings loaded from store service:", settings.value);
-
+    console.log('Settings loaded from store service:', settings.value)
 
     // Apply theme immediately upon loading
     await updateTheme()
@@ -606,33 +600,32 @@ const updateTheme = async () => {
           'dark'
   }
 
-  console.log("Applying theme via themeService:", activeThemeValue);
+  console.log('Applying theme via themeService:', activeThemeValue)
 
   try {
     // Use the theme service to apply the theme
-    await themeService.applyTheme(activeThemeValue);
+    await themeService.applyTheme(activeThemeValue)
 
     // Check if we're running on Windows 11 for additional styling
-    const isWindows11 = await invoke<boolean>("is_windows_11");
-    console.log("Is Windows 11:", isWindows11, "Theme:", activeThemeValue);
+    const isWindows11 = await invoke<boolean>('is_windows_11')
+    console.log('Is Windows 11:', isWindows11, 'Theme:', activeThemeValue)
 
     // Apply platform-specific styling
     if (!isWindows11) {
       // Apply solid theme styling for non-Windows 11
-      if (activeThemeValue === "light" || activeThemeValue === "dark") {
-        document.body.classList.add("solid-theme");
+      if (activeThemeValue === 'light' || activeThemeValue === 'dark') {
+        document.body.classList.add('solid-theme')
         console.log(
-          "Using solid background for non-Windows 11 theme:",
+          'Using solid background for non-Windows 11 theme:',
           activeThemeValue
-        );
+        )
       } else {
-        document.body.classList.remove("solid-theme");
+        document.body.classList.remove('solid-theme')
         console.log(
-          "Using theme background for non-Windows 11 theme:",
+          'Using theme background for non-Windows 11 theme:',
           activeThemeValue
-        );
+        )
       }
-
 
       // Remove transparent background styles
       document.documentElement.style.setProperty(
@@ -641,10 +634,10 @@ const updateTheme = async () => {
       )
 
       // Set background to solid color based on the theme
-      const bgColor = `var(--theme-bg)`;
+      const bgColor = `var(--theme-bg)`
 
-      document.body.style.removeProperty("background");
-      document.body.style.backgroundColor = bgColor;
+      document.body.style.removeProperty('background')
+      document.body.style.backgroundColor = bgColor
 
       document
         .querySelector('.q-layout')
@@ -652,71 +645,71 @@ const updateTheme = async () => {
     } else {
       // On Windows 11, handle Mica effect for light and dark themes
       if (themeService.supportsWindowsMica(activeThemeValue)) {
-        document.body.classList.remove("solid-theme");
+        document.body.classList.remove('solid-theme')
         document.documentElement.style.setProperty(
-          "--transparent-bg-override",
-          "transparent"
-        );
+          '--transparent-bg-override',
+          'transparent'
+        )
 
         // Make background transparent for Mica
-        document.body.style.removeProperty("background");
+        document.body.style.removeProperty('background')
         document.body.setAttribute(
-          "style",
-          "background: transparent !important"
-        );
+          'style',
+          'background: transparent !important'
+        )
 
         // Make sure q-layout is also transparent for Mica to work properly
-        const qLayout = document.querySelector(".q-layout");
+        const qLayout = document.querySelector('.q-layout')
         if (qLayout) {
-          qLayout.removeAttribute("style");
-          qLayout.setAttribute("style", "background: transparent !important");
+          qLayout.removeAttribute('style')
+          qLayout.setAttribute('style', 'background: transparent !important')
         }
 
         // Apply Mica effect via Rust backend
         try {
-          const isDarkMica = activeThemeValue !== "light";
-          await invoke("change_mica_theme", {
-            window: "main",
+          const isDarkMica = activeThemeValue !== 'light'
+          await invoke('change_mica_theme', {
+            window: 'main',
             dark: isDarkMica,
-          });
+          })
           console.log(
-            "Applied Mica theme effect:",
-            isDarkMica ? "dark" : "light"
-          );
+            'Applied Mica theme effect:',
+            isDarkMica ? 'dark' : 'light'
+          )
         } catch (error) {
-          console.error("Failed to apply Mica effect:", error);
+          console.error('Failed to apply Mica effect:', error)
         }
       } else {
         // For other themes on Windows 11, use solid background
-        document.body.classList.remove("solid-theme");
+        document.body.classList.remove('solid-theme')
         document.documentElement.style.setProperty(
-          "--transparent-bg-override",
-          "none"
-        );
+          '--transparent-bg-override',
+          'none'
+        )
 
-        const bgColor = `var(--theme-bg)`;
+        const bgColor = `var(--theme-bg)`
 
-        document.body.style.removeProperty("background");
-        document.body.style.backgroundColor = bgColor;
+        document.body.style.removeProperty('background')
+        document.body.style.backgroundColor = bgColor
         document
-          .querySelector(".q-layout")
-          ?.setAttribute("style", "background: " + bgColor + " !important");
+          .querySelector('.q-layout')
+          ?.setAttribute('style', 'background: ' + bgColor + ' !important')
       }
     }
 
     // Dispatch an event so other components can know about theme changes
     window.dispatchEvent(
-      new CustomEvent("theme-changed", {
+      new CustomEvent('theme-changed', {
         detail: {
           theme: activeThemeValue,
           useSystemTheme: settings.value.useSystemTheme,
         },
       })
-    );
+    )
   } catch (error) {
-    console.error("Failed to apply theme:", error);
+    console.error('Failed to apply theme:', error)
   }
-};
+}
 
 const save = async () => {
   try {
@@ -802,67 +795,67 @@ const cancel = () => {
 }
 
 // Theme management functions
-const customThemesPath = ref("");
+const customThemesPath = ref('')
 
 const refreshThemes = async () => {
   try {
     // Make sure theme service is initialized
-    await themeService.initialize();
+    await themeService.initialize()
 
-    await themeService.refreshThemes();
-    const themes = themeService.getThemes();
-    availableThemes.value = themes;
-    console.log("Refreshed themes:", themes);
+    await themeService.refreshThemes()
+    const themes = themeService.getThemes()
+    availableThemes.value = themes
+    console.log('Refreshed themes:', themes)
   } catch (error) {
-    console.error("Failed to refresh themes:", error);
+    console.error('Failed to refresh themes:', error)
   }
-};
+}
 
 const openThemesFolder = async () => {
   try {
-    const themesDir = themeService.getCustomThemesDirectory();
-    await revealItemInDir(themesDir);
+    const themesDir = themeService.getCustomThemesDirectory()
+    await revealItemInDir(themesDir)
   } catch (error) {
-    console.error("Failed to open themes folder:", error);
+    console.error('Failed to open themes folder:', error)
   }
-};
+}
 
 // Accent color management functions
 const openAccentColorPicker = () => {
   if (accentColorPickerInput.value) {
-    accentColorPickerInput.value.click();
+    accentColorPickerInput.value.click()
   }
-};
+}
 
 const selectCustomAccentColor = () => {
-  settings.value.accentColor = customAccentColor.value;
-  isCustomAccentColor.value = true;
-};
+  settings.value.accentColor = customAccentColor.value
+  isCustomAccentColor.value = true
+}
 
 const selectPresetAccentColor = (color: string) => {
-  settings.value.accentColor = color;
-  isCustomAccentColor.value = false;
-};
+  settings.value.accentColor = color
+  isCustomAccentColor.value = false
+}
 
 // Theme selection functions
 const getSelectedTheme = (): string => {
   if (settings.value.useSystemTheme) {
-    return getSystemTheme().value;
+    return getSystemTheme().value
   }
 
   // Handle both string and object theme values
-  if (typeof settings.value.theme === "string") {
-    return settings.value.theme;
+  if (typeof settings.value.theme === 'string') {
+    return settings.value.theme
   } else {
     // Handle case where theme is an object
-    const themeObj = settings.value.theme as unknown as { value: string };
-    return themeObj?.value || "dark";
+    const themeObj = settings.value.theme as unknown as { value: string }
+    return themeObj?.value || 'dark'
   }
-};
+}
 
 const selectTheme = (themeId: string) => {
-  settings.value.theme = themeId;
-};
+  settings.value.theme = themeId
+}
 
 const resetSettings = () => {
   // Reset all settings to default values
@@ -899,38 +892,38 @@ onMounted(async () => {
 
   // Initialize theme service first
   try {
-    await themeService.initialize();
+    await themeService.initialize()
   } catch (error) {
-    console.error("Failed to initialize theme service:", error);
+    console.error('Failed to initialize theme service:', error)
   }
 
   // Load available themes from theme service
   try {
-    const themes = themeService.getThemes();
-    availableThemes.value = themes;
-    customThemesPath.value = themeService.getCustomThemesDirectory();
-    console.log("Loaded themes for settings:", themes);
+    const themes = themeService.getThemes()
+    availableThemes.value = themes
+    customThemesPath.value = themeService.getCustomThemesDirectory()
+    console.log('Loaded themes for settings:', themes)
   } catch (error) {
-    console.error("Failed to load themes:", error);
+    console.error('Failed to load themes:', error)
     // Fallback to basic themes if service fails
     availableThemes.value = [
       {
-        id: "light",
-        name: "light",
-        displayName: "Light",
+        id: 'light',
+        name: 'light',
+        displayName: 'Light',
         isBuiltIn: true,
         isCustom: false,
       },
       {
-        id: "dark",
-        name: "dark",
-        displayName: "Dark",
+        id: 'dark',
+        name: 'dark',
+        displayName: 'Dark',
         isBuiltIn: true,
         isCustom: false,
       },
-    ];
+    ]
   }
-});
+})
 
 // Initialize settings on component creation
 loadSettings()
