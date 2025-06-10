@@ -109,6 +109,7 @@
           :class="{
             'compact-mode': compactMode,
           }"
+          @click="$emit('go-home')"
         >
           <q-item-section avatar>
             <q-icon name="home" style="margin-left: 4px" />

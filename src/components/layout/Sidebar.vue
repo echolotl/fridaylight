@@ -597,6 +597,10 @@ const selectMod = (mod: ModInfo) => {
 
 const setActivePage = (page: string) => {
   activePage.value = page
+  // Deselect all mods when going to home page or GameBanana
+  if (page === 'home' || page === 'gamebanana') {
+    selectedMod.value = null
+  }
 }
 
 // Function to handle saving changes to an existing mod (
@@ -1332,6 +1336,10 @@ onUnmounted(() => {
   width: 100%;
   transition: background-color 0.2s ease;
   border-radius: 0.5rem;
+}
+
+.active-gamebanana {
+  background-color: var(--theme-surface);
 }
 
 .main-content-area {
