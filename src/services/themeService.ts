@@ -127,7 +127,8 @@ class ThemeService {
 
   getTheme(id: string): Theme | undefined {
     return this.themes.find((theme) => theme.id === id);
-  }  async loadThemeCSS(themeId: string): Promise<string> {
+  }
+  async loadThemeCSS(themeId: string): Promise<string> {
     const theme = this.getTheme(themeId);
     if (!theme) {
       throw new Error(`Theme '${themeId}' not found`);
@@ -225,9 +226,6 @@ class ThemeService {
       body {
         background-color: #ffffff;
         color: #000000;
-      }
-      * {
-        font-family: system-ui, -apple-system, sans-serif;
       }
     `;
 

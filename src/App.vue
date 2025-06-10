@@ -276,7 +276,8 @@ const loadAppSettings = async () => {
     if (installLocation) appSettings.installLocation = installLocation;
 
     const theme = await storeService.getSetting("theme");
-    if (theme) appSettings.theme = theme;    const useSystemTheme = await storeService.getSetting("useSystemTheme");
+    if (theme) appSettings.theme = theme;
+    const useSystemTheme = await storeService.getSetting("useSystemTheme");
     if (useSystemTheme !== undefined)
       appSettings.useSystemTheme = useSystemTheme === true;
 
@@ -284,9 +285,8 @@ const loadAppSettings = async () => {
     if (validateFnfMods !== undefined)
       appSettings.validateFnfMods = validateFnfMods === true;
 
-    const showTerminalOutput = await storeService.getSetting(
-      "showTerminalOutput"
-    );
+    const showTerminalOutput =
+      await storeService.getSetting("showTerminalOutput");
     if (showTerminalOutput !== undefined)
       appSettings.showTerminalOutput = showTerminalOutput === true;
 
@@ -348,7 +348,7 @@ const handleNonWindows11Styling = (themeValue: string) => {
 
   // Set background to solid color instead of transparent
   const bgColor = `var(--theme-bg)`;
-  document.documentElement.style.setProperty("background", bgColor);
+
   document.body.style.removeProperty("background");
   document.body.style.backgroundColor = bgColor;
   document
@@ -398,7 +398,7 @@ const handleWindows11Styling = async (themeValue: string) => {
 
     // Set background to solid color based on the theme
     const bgColor = `var(--theme-bg)`;
-    document.documentElement.style.setProperty("background", bgColor);
+
     document.body.style.removeProperty("background");
     document.body.style.backgroundColor = bgColor;
     document
@@ -420,10 +420,10 @@ const handleWindows11Styling = async (themeValue: string) => {
 // Fallback theme application without theme service
 const fallbackThemeApplication = (themeValue: string) => {
   console.warn("Using fallback theme application for:", themeValue);
-  
+
   // Remove all theme classes
-  document.body.classList.forEach(className => {
-    if (className.endsWith('-theme')) {
+  document.body.classList.forEach((className) => {
+    if (className.endsWith("-theme")) {
       document.body.classList.remove(className);
     }
   });
@@ -491,7 +491,7 @@ const processDeepLinkModDownload = async (
       downloadUrl,
       modId,
       archiveExt,
-      modelType
+      modelType,
     });
 
     // Use the gamebananaService to handle the deep link download
@@ -577,12 +577,7 @@ onMounted(async () => {
               archiveExt,
             });
 
-            processDeepLinkModDownload(
-              downloadUrl,
-              modId,
-              archiveExt,
-              modType
-            );
+            processDeepLinkModDownload(downloadUrl, modId, archiveExt, modType);
           } else {
             console.error("Invalid deep link format, missing required parts");
           }
@@ -626,7 +621,7 @@ onMounted(async () => {
       // No need to sync with backend as the dbService handles this internally
     } else {
       console.log("No mods found in database");
-    }    // Update progress bar - Step 4: Initialize theme service
+    } // Update progress bar - Step 4: Initialize theme service
     initStatusText.value = "Initializing theme service...";
     initProgress.value = 0.5;
 
@@ -647,7 +642,7 @@ onMounted(async () => {
       // If using custom theme, apply the saved theme directly
       const themeValue = await getThemePreference();
       await applyTheme(themeValue);
-    }    // Update progress bar - Step 6: Load settings
+    } // Update progress bar - Step 6: Load settings
     initStatusText.value = "Loading settings...";
     initProgress.value = 0.8;
 

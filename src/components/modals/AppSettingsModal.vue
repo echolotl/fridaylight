@@ -36,12 +36,6 @@
             <div class="text-subtitle1 q-mb-md">Appearance</div>
 
             <div class="theme-toggle-container row q-mb-md">
-              <!-- Use our ThemePreview component -->
-              <ThemePreview
-                :themeName="getThemeName()"
-                :accentColor="getAccentColor()"
-                :compactMode="settings.compactMode"
-              />
               <q-item tag="label" class="full-width">
                 <q-item-section>
                   <q-item-label>Use System Theme</q-item-label>
@@ -56,48 +50,93 @@
               </q-item>
             </div>
             <div class="theme-selector q-mb-md" v-if="!settings.useSystemTheme">
-              <q-select
-                v-model="settings.theme"
-                :options="themeOptions"
-                label="Theme"
-                outlined
-                class="q-mb-md selector"
-              >
-                <template v-slot:option="scope">
-                  <q-item
-                    v-bind="scope.itemProps"
-                    class="phantom-font list-item"
+              <!-- Built-in Themes Section -->
+              <div class="theme-section">
+                <div class="text-subtitle2 q-mb-sm">Built-in Themes</div>
+                <div class="theme-grid">
+                  <div
+                    v-for="theme in builtInThemes"
+                    :key="theme.value"
+                    class="theme-grid-item"
+                    @click="selectTheme(theme.value)"
                   >
-                    <q-item-section>
-                      <q-item-label text-color="var(--theme-text)">{{
-                        scope.opt.label
-                      }}</q-item-label>
-                      <q-item-label v-if="scope.opt.isCustom" caption>
-                        Custom Theme
-                      </q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </template>
-              </q-select>
+                    <ThemePreview
+                      :themeName="theme.value"
+                      :themeDisplayName="theme.label"
+                      :accentColor="getAccentColor()"
+                      :compactMode="settings.compactMode"
+                      :curSelected="getSelectedTheme() === theme.value"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Custom Themes Section (only if there are custom themes) -->
+              <div
+                v-if="customThemes.length > 0"
+                class="theme-section custom-themes-section"
+              >
+                <div class="row items-center justify-between q-mb-sm">
+                  <div class="text-subtitle2">Custom Themes</div>
+                  <div class="row items-center">
+                    <q-btn
+                      flat
+                      color="primary"
+                      icon="folder_open"
+                      label="Reveal Themes Folder"
+                      @click="openThemesFolder"
+                      class="phantom-font q-mr-sm"
+                    />
+                    <q-btn
+                      flat
+                      color="primary"
+                      icon="refresh"
+                      label="Refresh Themes"
+                      @click="refreshThemes"
+                      class="phantom-font"
+                    />
+                  </div>
+                </div>
+                <div class="theme-grid">
+                  <div
+                    v-for="theme in customThemes"
+                    :key="theme.value"
+                    class="theme-grid-item"
+                    @click="selectTheme(theme.value)"
+                  >
+                    <ThemePreview
+                      :themeName="theme.value"
+                      :themeDisplayName="theme.label"
+                      :accentColor="getAccentColor()"
+                      :compactMode="settings.compactMode"
+                      :curSelected="getSelectedTheme() === theme.value"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div v-else class="text-caption q-mt-sm">
+                <div class="row items-center justify-between">
+                  <div>
+                    Want to add custom themes? Place them in the
+                    <a
+                      @click="revealItemInDir(customThemesPath)"
+                      class="text-primary"
+                      >/themes</a
+                    >
+                    folder, then click the refresh button to load them.
+                  </div>
+                  <q-btn
+                    flat
+                    color="primary"
+                    icon="refresh"
+                    label="Refresh Themes"
+                    @click="refreshThemes"
+                    class="phantom-font"
+                  />
+                </div>
+              </div>
             </div>
-            <div class="row q-gutter-sm q-mb-md">
-              <q-btn
-              flat
-                color="primary"
-                icon="folder_open"
-                label="Open Themes Folder"
-                @click="openThemesFolder"
-                class="phantom-font"
-              />
-              <q-btn
-                flat
-                color="primary"
-                icon="refresh"
-                label="Refresh Themes"
-                @click="refreshThemes"
-                class="phantom-font"
-              />
-            </div>            <div class="text-subtitle2 q-mb-sm">Accent Color</div>
+            <div class="text-subtitle2 q-mb-sm">Accent Color</div>
             <div class="color-row q-mb-md">
               <q-btn
                 v-for="color in accentColorOptions"
@@ -106,7 +145,10 @@
                 flat
                 :style="{ backgroundColor: color.value }"
                 class="color-button"
-                :class="{ 'color-selected': getAccentColor() === color.value && !isCustomAccentColor }"
+                :class="{
+                  'color-selected':
+                    getAccentColor() === color.value && !isCustomAccentColor,
+                }"
                 @click="selectPresetAccentColor(color.value)"
               />
               <q-btn
@@ -197,43 +239,43 @@
 
           <!-- About Section -->
           <q-card-section v-show="activeSection === 'about'">
-            <div class="text-subtitle1 q-mb-md">About</div>
+            <div class="text-subtitle1">About</div>
 
-            <div class="text-body2 q-mb-sm">
-              Fridaylight v0.10.1
-              <br />
-              A mod manager for Friday Night Funkin'.
-              <br />
-              <br />
-
-              <div class="text-subtitle1 q-mb-md">Credits</div>
-              <div class="acknowledgements q-mb-md">
-                <ul style="background-color: transparent">
-                  <li>
-                    <a @click="openUrl('https://www.echolotl.lol')">echolotl</a>
-                    - Coder, Designer, Director, Creator of Fridaylight
-                  </li>
-                </ul>
-                <div class="text-subtitle2 q-mb-sm q-mt-sm">Special Thanks</div>
-                <ul>
-                  <li>
-                    <a
-                      @click="openUrl('https://gamebanana.com/members/1844732')"
-                      >Cracsthor</a
-                    >
-                    - Creator of PhantomMuff Full + Difficulty fonts
-                  </li>
-                  <li>
-                    <a
-                      @click="openUrl('https://gamebanana.com/members/3083321')"
-                      >NoizDynamic</a
-                    >
-                    - Creator of Tardling font
-                  </li>
-                </ul>
+            <div class="about-content">
+              <div class="about-content-left">
+                <img
+                  src="/images/fridaylight-colored.svg"
+                  class="fridaylight-logo"
+                />
+                <div class="text-subtitle2 q-mb-sm flex align-center">
+                  Created by
+                  <img
+                    @click="openUrl('https://www.echolotl.lol/')"
+                    src="/images/echolotlGB.png"
+                    class="q-ml-xs cursor-pointer"
+                  />
+                </div>
+                <div class="q-mb-sm">
+                  Version: 0.10.1
+                  <span class="text-caption">(Windows, 64 bit)</span>
+                </div>
+                <div class="flex items-center q-mb-sm">
+                  <q-icon name="bug_report" size="sm" color="primary" />
+                  <a
+                    @click="
+                      openUrl('https://github.com/echolotl/fridaylight/issues')
+                    "
+                    class="q-ml-xs"
+                    >Found a bug, or have a suggestion? Report it on GitHub!</a
+                  >
+                </div>
+                <div class="text-caption">
+                  This is pre-release software, so things might be unstable, and
+                  you should expect to lose data.
+                </div>
               </div>
-              <div class="text-subtitle1 q-mb-md">Created with</div>
-              <div class="center-credits">
+              <div class="about-content-right">
+                <div class="text-subtitle2 q-mb-sm">Created with</div>
                 <div class="logo-grid">
                   <img
                     src="/images/vue.svg"
@@ -260,46 +302,84 @@
                     @click="openUrl('https://quasar.dev/')"
                   />
                 </div>
-              </div>
-
-              <div class="settings-reset-section q-mt-lg">
-                <q-separator class="q-my-md" />
-                <div class="text-subtitle1 q-mb-md">Danger Zone</div>
-                <q-btn
-                  color="negative"
-                  icon="restart_alt"
-                  label="Reset to Default Settings"
-                  class="full-width"
-                  @click="showResetSettingsDialog = true"
-                  outline
-                />
-                <div class="text-caption q-mt-sm">
-                  This will reset all app settings to their default values.
-                  You'll need to save for changes to take effect.
+                <div class="text-subtitle2 q-mt-md">
+                  Acknowledgements and Special Thanks
                 </div>
-
-                <q-btn
-                  color="negative"
-                  icon="delete_forever"
-                  label="Reset App Data"
-                  class="full-width q-mt-md"
-                  @click="showResetAppDataDialog = true"
-                  outline
-                />
-                <div class="text-caption q-mt-sm">
-                  This will wipe the database and reset all application data.
-                  All mod information will be lost, but files will not be
-                  deleted.
-                </div>
+                <q-scroll-area class="acknowledgements">
+                  <ul style="list-style-type: none; padding-left: 0">
+                    <li>
+                      <a @click="openUrl('https://gamebanana.com/games/8694')">
+                        Gamebanana
+                      </a>
+                      <div class="text-caption">
+                        For providing a stable platform for Friday Night Funkin'
+                        mods!
+                      </div>
+                    </li>
+                    <li>
+                      <a
+                        @click="
+                          openUrl('https://gamebanana.com/members/1844732')
+                        "
+                      >
+                        Cracsthor
+                      </a>
+                      <div class="text-caption">
+                        Created the original PhantomMuff font family files
+                      </div>
+                    </li>
+                    <li>
+                      <a
+                        @click="
+                          openUrl('https://gamebanana.com/members/1844732')
+                        "
+                      >
+                        NoizDynamic
+                      </a>
+                      <div class="text-caption">
+                        Created the Tardling font file used in-app
+                      </div>
+                    </li>
+                    <li>
+                      <span> Funkin' Launcher Dev Team </span>
+                      <div class="text-caption">
+                        For providing inspiration and ideas for this app
+                      </div>
+                    </li>
+                  </ul>
+                </q-scroll-area>
               </div>
             </div>
 
-            <AnimationPlayer
-              jsonPath="/images/animations/characters/bf-holding-gf.json"
-              :width="500"
-              :height="500"
-              :scale="1"
-            />
+            <div class="settings-reset-section q-mt-lg">
+              <q-separator class="q-my-md" />
+              <div class="text-subtitle1 q-mb-md">Danger Zone</div>
+              <q-btn
+                color="negative"
+                icon="restart_alt"
+                label="Reset to Default Settings"
+                class="full-width"
+                @click="showResetSettingsDialog = true"
+                outline
+              />
+              <div class="text-caption q-mt-sm">
+                This will reset all app settings to their default values. You'll
+                need to save for changes to take effect.
+              </div>
+
+              <q-btn
+                color="negative"
+                icon="delete_forever"
+                label="Reset App Data"
+                class="full-width q-mt-md"
+                @click="showResetAppDataDialog = true"
+                outline
+              />
+              <div class="text-caption q-mt-sm">
+                This will wipe the database and reset all application data. All
+                mod information will be lost, but files will not be deleted.
+              </div>
+            </div>
           </q-card-section>
         </q-scroll-area>
       </div>
@@ -396,6 +476,15 @@ const themeOptions = computed(() => {
   });
 });
 
+// Separate computed properties for built-in and custom themes
+const builtInThemes = computed(() => {
+  return themeOptions.value.filter((theme) => !theme.isCustom);
+});
+
+const customThemes = computed(() => {
+  return themeOptions.value.filter((theme) => theme.isCustom);
+});
+
 const accentColorOptions = [
   { label: "Pink", value: "#DB2955" },
   { label: "Blue", value: "#235789" },
@@ -406,27 +495,6 @@ const accentColorOptions = [
   { label: "Red", value: "#C03221" },
   { label: "Cyan", value: "#39dbce" },
 ];
-
-// Helper function to get current theme name
-const getThemeName = () => {
-  if (settings.value.useSystemTheme) {
-    let value = getSystemTheme();
-    return value.value;
-  }
-  // Ensure we're working with a string value
-  let themeId = "";
-  if (typeof settings.value.theme === "string") {
-    themeId = settings.value.theme;
-  } else {
-    // Handle case where theme is an object
-    let value = settings.value.theme as unknown as {
-      label: string;
-      value: string;
-    };
-    themeId = value.value;
-  }
-  return themeId;
-};
 
 // Helper function to get current accent color
 const getAccentColor = () => {
@@ -467,13 +535,15 @@ const loadSettings = async () => {
     }
 
     // Get all settings from StoreService
-    const storedSettings = await storeService.getAllSettings();    // Apply stored settings to our local settings ref
+    const storedSettings = await storeService.getAllSettings(); // Apply stored settings to our local settings ref
     settings.value = { ...settings.value, ...storedSettings };
 
     // Initialize custom accent color state
     const currentAccentColor = getAccentColor();
-    const isPresetColor = accentColorOptions.some(option => option.value === currentAccentColor);
-    
+    const isPresetColor = accentColorOptions.some(
+      (option) => option.value === currentAccentColor
+    );
+
     if (!isPresetColor) {
       // Current color is custom
       isCustomAccentColor.value = true;
@@ -565,7 +635,7 @@ const updateTheme = async () => {
 
       // Set background to solid color based on the theme
       const bgColor = `var(--theme-bg)`;
-      document.documentElement.style.setProperty("background", bgColor);
+
       document.body.style.removeProperty("background");
       document.body.style.backgroundColor = bgColor;
       document
@@ -617,7 +687,7 @@ const updateTheme = async () => {
         );
 
         const bgColor = `var(--theme-bg)`;
-        document.documentElement.style.setProperty("background", bgColor);
+
         document.body.style.removeProperty("background");
         document.body.style.backgroundColor = bgColor;
         document
@@ -766,6 +836,26 @@ const selectPresetAccentColor = (color: string) => {
   isCustomAccentColor.value = false;
 };
 
+// Theme selection functions
+const getSelectedTheme = (): string => {
+  if (settings.value.useSystemTheme) {
+    return getSystemTheme().value;
+  }
+
+  // Handle both string and object theme values
+  if (typeof settings.value.theme === "string") {
+    return settings.value.theme;
+  } else {
+    // Handle case where theme is an object
+    const themeObj = settings.value.theme as unknown as { value: string };
+    return themeObj?.value || "dark";
+  }
+};
+
+const selectTheme = (themeId: string) => {
+  settings.value.theme = themeId;
+};
+
 const resetSettings = () => {
   // Reset all settings to default values
   settings.value = { ...DEFAULT_SETTINGS };
@@ -893,6 +983,7 @@ loadSettings();
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  padding: 1rem;
 }
 
 .color-button {
@@ -938,9 +1029,9 @@ loadSettings();
 }
 
 .acknowledgements {
-  max-height: 200px;
-  overflow-y: auto;
+  height: 200px;
   line-height: 1.5;
+  padding: 1rem;
 }
 
 a {
@@ -960,7 +1051,7 @@ a {
 }
 
 .logo-grid {
-  display: flex;
+  display: inline-flex;
   gap: 8px;
 }
 
@@ -992,5 +1083,50 @@ a {
 
 :deep(.q-field__native::placeholder) {
   color: var(--theme-text-secondary);
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.theme-grid-item {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.theme-grid-item:hover {
+  transform: scale(1.02);
+}
+
+.theme-section {
+  margin-bottom: 24px;
+}
+
+.theme-section:last-child {
+  margin-bottom: 0;
+}
+
+.custom-themes-section {
+  padding-top: 16px;
+  border-top: 1px solid var(--theme-border);
+}
+
+.about-content {
+  display: flex;
+  justify-content: space-between;
+}
+.about-content-left {
+  flex: 1;
+}
+.about-content-right {
+  flex: 1;
+  text-align: right;
+}
+.fridaylight-logo {
+  max-height: 125px;
+  width: auto;
 }
 </style>

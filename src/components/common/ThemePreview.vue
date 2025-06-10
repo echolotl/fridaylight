@@ -1,11 +1,13 @@
 <template>
   <div class="theme-preview-container">
-    <div 
+    <div
       class="theme-preview"
       :style="{
         background: computedThemeStyles.backgroundColor,
         color: computedThemeStyles.color,
-        border: computedThemeStyles.border,
+        border: curSelected
+          ? `2px solid ${accentColor}`
+          : computedThemeStyles.border,
       }"
     >
       <div class="titlebar">
@@ -49,7 +51,9 @@
             <div
               class="sidebar-item active"
               :class="compactMode ? 'compact' : ''"
-              :style="{ backgroundColor: computedThemeStyles.sidebarActiveColor }"
+              :style="{
+                backgroundColor: computedThemeStyles.sidebarActiveColor,
+              }"
             >
               <div
                 class="sidebar-icon"
@@ -64,8 +68,8 @@
             </div>
           </div>
         </div>
-        <div 
-          class="main-content" 
+        <div
+          class="main-content"
           :class="compactMode ? 'compact' : ''"
           :style="{ backgroundColor: computedThemeStyles.mainContentColor }"
         >
@@ -83,6 +87,9 @@
         </div>
       </div>
     </div>
+    <div class="theme-name">
+      {{ themeDisplayName }}
+    </div>
   </div>
 </template>
 
@@ -94,13 +101,20 @@ const props = defineProps({
   themeName: {
     type: String,
     default: "dark",
-    // Remove hardcoded validator - accept any theme name
+  },
+  themeDisplayName: {
+    type: String,
+    default: "Dark",
   },
   accentColor: {
     type: String,
     default: "#DB2955",
   },
   compactMode: {
+    type: Boolean,
+    default: false,
+  },
+  curSelected: {
     type: Boolean,
     default: false,
   },
@@ -181,7 +195,8 @@ const themeColorMap: Record<string, any> = {
     mainContentColor: "#d8c395",
   },
   doe: {
-    backgroundColor: "linear-gradient(to top, #ffffff 20%, #9cedfc 50%, #7ba2f5)",
+    backgroundColor:
+      "linear-gradient(to top, #ffffff 20%, #9cedfc 50%, #7ba2f5)",
     color: "#2c1d07",
     border: "2px solid rgba(44, 29, 7, 0.25)",
     sidebarActiveColor: "rgba(255, 255, 255, 0.5)",
@@ -206,7 +221,9 @@ const generateThemeStyles = async () => {
   try {
     const theme = themeService.getTheme(props.themeName);
     if (!theme) {
-      console.warn(`Theme '${props.themeName}' not found, using default dark theme`);
+      console.warn(
+        `Theme '${props.themeName}' not found, using default dark theme`
+      );
       themeStyles.value = themeColorMap.dark;
       return;
     }
@@ -229,7 +246,7 @@ const generateThemeStyles = async () => {
       themeStyles.value = themeColorMap.dark;
     }
   } catch (error) {
-    console.warn('Failed to generate theme styles:', error);
+    console.warn("Failed to generate theme styles:", error);
     themeStyles.value = themeColorMap.dark;
   }
 };
@@ -249,7 +266,9 @@ const extractCSSVariables = (cssContent: string): any | null => {
 
     const backgroundColor = bgMatch[1].trim();
     const color = textMatch[1].trim();
-    const borderColor = borderMatch ? borderMatch[1].trim() : 'rgba(128, 128, 128, 0.3)';
+    const borderColor = borderMatch
+      ? borderMatch[1].trim()
+      : "rgba(128, 128, 128, 0.3)";
     const surfaceColor = cardMatch ? cardMatch[1].trim() : backgroundColor;
 
     return {
@@ -260,7 +279,7 @@ const extractCSSVariables = (cssContent: string): any | null => {
       mainContentColor: surfaceColor,
     };
   } catch (error) {
-    console.warn('Failed to extract CSS variables:', error);
+    console.warn("Failed to extract CSS variables:", error);
     return null;
   }
 };
@@ -275,25 +294,29 @@ onMounted(() => {
 });
 
 // Watch for theme name changes
-watch(() => props.themeName, () => {
-  loadThemeStyles();
-}, { immediate: true });
+watch(
+  () => props.themeName,
+  () => {
+    loadThemeStyles();
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
 .theme-preview-container {
-  width: 100%;
-  height: 30vh;
-  margin-bottom: 2rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  width: 100%;
+  margin: 10px;
+  gap: 0.25rem;
 }
-
 .theme-preview {
   border-radius: 4px;
-  height: 100%;
-  width: calc(100vw * 0.3);
+  height: 175px;
+  width: 100%;
+  max-width: 250px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 }
@@ -351,7 +374,7 @@ watch(() => props.themeName, () => {
 
 .main-content {
   width: 70%;
-  height: calc(100% - 18px);
+  height: calc(100%);
   margin: 10px;
   margin-bottom: 0;
   border-radius: 4px 4px 0 0;
@@ -363,7 +386,7 @@ watch(() => props.themeName, () => {
 
 .main-content.compact {
   width: 100%;
-  height: calc(100% - 18px);
+  height: calc(100%);
   margin: 10px;
   margin-bottom: 0;
   border-radius: 4px 4px 0 0;
@@ -371,15 +394,6 @@ watch(() => props.themeName, () => {
   flex-direction: column;
   gap: 2px;
   padding: 4px;
-}
-
-.titlebar {
-  width: 100%;
-  height: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: right;
-  background-color: white;
 }
 
 .close-button {
