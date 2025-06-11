@@ -9,110 +9,116 @@
           <q-space />
           <q-btn icon="close" flat round dense @click="handleCancel" />
         </q-card-section>
-        <q-card-section>
-          <q-input
-            v-model="localProfileName"
-            label="Profile Name"
-            class="q-mb-md"
-          />
-          <div class="text-subtitle2 q-mb-sm">Icon</div>
-          <div class="preset-icons-container">
-            <div class="preset-icons">
-              <q-btn
-                v-for="icon in presetIcons"
-                :key="icon"
-                flat
-                round
-                :icon="icon"
-                :class="[
-                  'preset-icon-button',
-                  {
-                    'selected-icon': selectedIcon === icon && !showCustomInput,
-                  },
-                ]"
-                @click="selectPresetIcon(icon)"
-              />
-              <q-btn
-                flat
-                :class="[
-                  'preset-icon-button custom-button',
-                  { 'selected-icon': showCustomInput },
-                ]"
-                @click="toggleCustomInput"
-              >
-                Custom...
-              </q-btn>
-            </div>
-          </div>
-
-          <div v-if="showCustomInput" class="custom-icon-input q-mb-md">
+        <q-scroll-area class="profile-content-scroll">
+          <q-card-section>
             <q-input
-              v-model="customIconText"
-              label="Custom Icon Name"
-              bottom-slots
-              @update:model-value="updateCustomIcon"
-            >
-              <template #hint>
-                <div
-                  class="text-caption"
-                  style="color: var(--theme-text-secondary)"
+              v-model="localProfileName"
+              label="Profile Name"
+              class="q-mb-md"
+            />
+            <div class="text-subtitle2 q-mb-sm">Icon</div>
+            <div class="preset-icons-container">
+              <div class="preset-icons">
+                <q-btn
+                  v-for="icon in presetIcons"
+                  :key="icon"
+                  flat
+                  round
+                  :icon="icon"
+                  :class="[
+                    'preset-icon-button',
+                    {
+                      'selected-icon':
+                        selectedIcon === icon && !showCustomInput,
+                    },
+                  ]"
+                  @click="selectPresetIcon(icon)"
+                />
+                <q-btn
+                  flat
+                  :class="[
+                    'preset-icon-button custom-button',
+                    { 'selected-icon': showCustomInput },
+                  ]"
+                  @click="toggleCustomInput"
                 >
-                  Enter a
-                  <a
-                    class="link"
-                    @click="
-                      openUrl(
-                        'https://fonts.google.com/icons?icon.set=Material+Icons&icon.style=Filled'
-                      )
-                    "
-                    >Material Icons</a
-                  >
-                  name (e.g., 'star', 'favorite', 'home')
-                </div>
-              </template>
-              <template #prepend>
-                <q-icon
-                  :name="customIconText"
-                  style="color: var(--theme-text)"
-                  class="q-ml-sm"
-                  size="md"
-                ></q-icon>
-              </template>
-            </q-input>
-          </div>
-
-          <div class="text-subtitle2 q-mb-sm">Select Mods</div>
-          <div class="mod-states-list">
-            <div
-              v-for="(enabled, folderPath) in localModStates"
-              :key="folderPath"
-              class="mod-state-item"
-            >
-              <div class="mod-info">
-                <div class="mod-icon">
-                  <q-img
-                    v-if="getModByPath(folderPath)?.icon_data"
-                    :src="getModByPath(folderPath)?.icon_data"
-                    spinner-color="primary"
-                    style="height: 32px; width: 32px"
-                  />
-                  <div v-else class="fallback-icon">
-                    <q-icon name="image_not_supported" size="20px" />
-                  </div>
-                </div>
-                <div class="mod-details">
-                  <div class="mod-name">
-                    {{ getModByPath(folderPath)?.name || 'Unknown Mod' }}
-                  </div>
-                  <div class="mod-path text-caption">
-                    {{ folderPath.split('/').pop() }}
-                  </div>
-                </div>
+                  Custom...
+                </q-btn>
               </div>
-              <q-toggle v-model="localModStates[folderPath]" color="primary" />
             </div>
-          </div>
-        </q-card-section>
+
+            <div v-if="showCustomInput" class="custom-icon-input q-mb-md">
+              <q-input
+                v-model="customIconText"
+                label="Custom Icon Name"
+                bottom-slots
+                @update:model-value="updateCustomIcon"
+              >
+                <template #hint>
+                  <div
+                    class="text-caption"
+                    style="color: var(--theme-text-secondary)"
+                  >
+                    Enter a
+                    <a
+                      class="link"
+                      @click="
+                        openUrl(
+                          'https://fonts.google.com/icons?icon.set=Material+Icons&icon.style=Filled'
+                        )
+                      "
+                      >Material Icons</a
+                    >
+                    icon name (e.g., 'star', 'favorite', 'home')
+                  </div>
+                </template>
+                <template #prepend>
+                  <q-icon
+                    :name="customIconText"
+                    style="color: var(--theme-text)"
+                    class="q-ml-sm"
+                    size="md"
+                  ></q-icon>
+                </template>
+              </q-input>
+            </div>
+
+            <div class="text-subtitle2 q-mb-sm">Select Mods</div>
+            <div class="mod-states-list">
+              <div
+                v-for="(enabled, folderPath) in localModStates"
+                :key="folderPath"
+                class="mod-state-item"
+              >
+                <div class="mod-info">
+                  <div class="mod-icon">
+                    <q-img
+                      v-if="getModByPath(folderPath)?.icon_data"
+                      :src="getModByPath(folderPath)?.icon_data"
+                      spinner-color="primary"
+                      style="height: 32px; width: 32px"
+                    />
+                    <div v-else class="fallback-icon">
+                      <q-icon name="image_not_supported" size="20px" />
+                    </div>
+                  </div>
+                  <div class="mod-details">
+                    <div class="mod-name">
+                      {{ getModByPath(folderPath)?.name || 'Unknown Mod' }}
+                    </div>
+                    <div class="mod-path text-caption">
+                      {{ folderPath.split('/').pop() }}
+                    </div>
+                  </div>
+                </div>
+                <q-toggle
+                  v-model="localModStates[folderPath]"
+                  color="primary"
+                />
+              </div>
+            </div>
+          </q-card-section>
+        </q-scroll-area>
         <q-card-actions align="right">
           <q-btn
             v-if="!props.isCreate"
@@ -254,26 +260,58 @@ const handleCancel = () => {
 
 <style scoped>
 .profile-create-dialog {
-  width: fit-content;
-  background-color: var(--solid);
+  width: 532px;
+  max-width: 90vw;
+  background-color: var(--theme-solid);
   color: var(--theme-text);
   border: var(--theme-border) 2px solid;
   backdrop-filter: blur(30px);
+  overflow: hidden;
+  height: 100%;
+  max-height: 90vh;
+}
+
+.profile-content-scroll {
+  height: calc(90vh - 120px);
+  width: 100%;
+  flex: 1;
+}
+
+.profile-content-scroll :deep(.q-scrollarea__content) {
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.profile-content-scroll :deep(.q-card__section) {
+  padding: 16px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   overflow-x: hidden;
 }
 
 .profile-create {
-  max-width: 50vw;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .mod-states-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .preset-icons-container {
   width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .preset-icons {
@@ -281,6 +319,9 @@ const handleCancel = () => {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .preset-icon-button {
@@ -317,6 +358,9 @@ const handleCancel = () => {
   background: var(--theme-card);
   border-radius: 6px;
   border: 1px solid var(--theme-border);
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .mod-info {
@@ -324,6 +368,8 @@ const handleCancel = () => {
   align-items: center;
   flex: 1;
   gap: 12px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .mod-icon {
@@ -332,6 +378,7 @@ const handleCancel = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .fallback-icon {
@@ -348,16 +395,37 @@ const handleCancel = () => {
 
 .mod-details {
   flex: 1;
+  min-width: 0; /* Allow flex item to shrink */
+  overflow: hidden;
 }
 
 .mod-name {
   font-weight: 500;
   color: var(--theme-text);
   margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mod-path {
   color: var(--theme-text-secondary);
   font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.q-field :deep(.q-field__label) {
+  color: var(--theme-text) !important;
+}
+
+.q-field.q-field--outlined :deep(.q-field__control) {
+  color: var(--theme-text);
+}
+:deep(.q-field__native) {
+  color: var(--theme-text);
+}
+:deep(.q-field__messages) {
+  color: var(--theme-text-secondary);
 }
 </style>

@@ -358,8 +358,10 @@
                 v-model="form.logo_position"
                 :options="logoPositionOptions"
                 label="Logo Position"
+                popup-content-class="phantom-font"
+                popup-content-style="background-color: var(--theme-solid); color: var(--theme-text);"
                 outlined
-                class="q-mt-md"
+                class="q-mt-md phantom-font selector"
                 emit-value
                 map-options
                 hint="Position of the logo in the banner"

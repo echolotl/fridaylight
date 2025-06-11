@@ -6,5 +6,6 @@
   "engine_logo": "logo_fpsplus.png",
   "engine_icon": "Fps-plus.webp",
   "engine_description": "Friday Night Funkin' FPS Plus is an engine mod of Friday Night Funkin' that aims to improve gameplay and add quality of life features.",
-  "engine_version": "7.1.0"
+  "engine_version": "7.1.0",
+  "primary": true
 }

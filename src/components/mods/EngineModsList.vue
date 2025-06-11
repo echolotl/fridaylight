@@ -25,7 +25,11 @@
             </div>
             <span v-else>Profiles</span>
           </template>
-          <q-list dense class="phantom-font q-pa-none">
+          <q-list
+            dense
+            class="phantom-font q-pa-none"
+            style="background: var(--theme-solid)"
+          >
             <q-item
               v-for="profile in profiles"
               :key="profile.id"
@@ -60,6 +64,33 @@
               </q-item-section>
             </q-item>
             <q-separator v-if="profiles.length > 0" />
+
+            <!-- Enable/Disable All Mods (only when no profile is active) -->
+            <q-item
+              v-if="!currentActiveProfile && mods.length > 0"
+              clickable
+              @click="enableAllMods"
+            >
+              <q-item-section>
+                <div class="row items-center">
+                  <q-item-label>Enable All Mods</q-item-label>
+                </div>
+              </q-item-section>
+            </q-item>
+
+            <q-item
+              v-if="!currentActiveProfile && mods.length > 0"
+              clickable
+              @click="disableAllMods"
+            >
+              <q-item-section>
+                <div class="row items-center">
+                  <q-item-label>Disable All Mods</q-item-label>
+                </div>
+              </q-item-section>
+            </q-item>
+
+            <q-separator v-if="!currentActiveProfile && mods.length > 0" />
 
             <!-- Clear active profile -->
             <q-item
@@ -354,7 +385,11 @@ import { getEngineModsFolderPath } from '@utils/index'
 import MessageDialog from '@components/modals/MessageDialog.vue'
 import ProfileCreateDialog from '@components/modals/ProfileCreateDialog.vue'
 import { DatabaseService } from '@services/dbService'
-import type { ModMetadataFile, EngineModsResponse } from '@main-types'
+import type {
+  ModMetadataFile,
+  EngineModsResponse,
+  EngineModProfile,
+} from '@main-types'
 
 const props = defineProps({
   executablePath: {
@@ -757,6 +792,32 @@ const applyProfile = async (profile: EngineModProfile) => {
 
 const clearActiveProfile = () => {
   currentActiveProfile.value = null
+}
+
+const enableAllMods = async () => {
+  if (props.engineType === 'codename') {
+    console.warn('Mod enabling/disabling not supported for Codename Engine')
+    return
+  }
+
+  for (const mod of mods.value) {
+    if (!mod.enabled) {
+      await toggleModEnabled(mod, true)
+    }
+  }
+}
+
+const disableAllMods = async () => {
+  if (props.engineType === 'codename') {
+    console.warn('Mod enabling/disabling not supported for Codename Engine')
+    return
+  }
+
+  for (const mod of mods.value) {
+    if (mod.enabled) {
+      await toggleModEnabled(mod, false)
+    }
+  }
 }
 
 const saveProfileChanges = async (updatedProfile: EngineModProfile) => {

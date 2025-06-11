@@ -6,5 +6,6 @@
   "engine_logo": "logo_psych.png",
   "engine_icon": "Psych.webp",
   "engine_description": "Engine originally used on Mind Games Mod, intended to be a fix for the vanilla version's many issues while keeping the casual play aspect of it. Also aiming to be an easier alternative to newbie coders.",
-  "engine_version": "1.0.4"
+  "engine_version": "1.0.4",
+  "primary": true
 }
