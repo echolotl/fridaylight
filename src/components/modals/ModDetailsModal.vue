@@ -13,7 +13,7 @@
         indeterminate
         color="primary"
       ></q-linear-progress>
-      <q-card-section class="row items-center q-pb-none">
+      <q-card-section class="row items-center q-pb-sm">
         <div
           v-if="!loading"
           class="text-h6 phantom-font-difficulty header-text"
@@ -22,14 +22,21 @@
           {{ modInfo?._sName }}
         </div>
         <div v-else class="text-h6 phantom-font-difficulty header-text">
+          <q-spinner size="40px" color="primary" class="mod-details-icon" />
           Loading...
         </div>
         <q-space />
         <q-btn flat round icon="close" class="close-btn" @click="closeModal" />
       </q-card-section>
-
       <q-scroll-area class="mod-details-scroll-area">
         <q-card-section v-if="loading" class="flex flex-center">
+          <div v-if="isSlowRequest" class="text-center phantom-font">
+            <q-icon name="hourglass_empty" size="2em" color="orange" />
+            <div class="q-mt-sm" style="color: var(--theme-text-secondary)">
+              This is taking a really long time. Something might have gone wrong
+              on our end, or GameBanana's. Maybe try again later?
+            </div>
+          </div>
         </q-card-section>
 
         <q-card-section v-else-if="error" class="text-center text-negative">
@@ -345,10 +352,17 @@
                   label="Download"
                   size="lg"
                   class="action-button"
-                  :disabled="!modInfo._aFiles"
+                  :disabled="!modInfo._aFiles || !modInfo._aFiles.length"
                   @click="downloadMod"
                 />
-                <div v-if="modInfo._aFiles[0]._bContainsExe" class="q-mt-sm">
+                <div
+                  v-if="
+                    modInfo._aFiles &&
+                    modInfo._aFiles.length > 0 &&
+                    modInfo._aFiles[0]._bContainsExe
+                  "
+                  class="q-mt-sm"
+                >
                   <q-badge
                     v-if="modInfo._aFiles[0]._sClamAvResult === 'clean'"
                     label="CLAMAV"
@@ -519,6 +533,7 @@ const modComments = ref<any>(null)
 const loading = ref(true)
 const error = ref('')
 const currentSlide = ref(0)
+const isSlowRequest = ref(false)
 
 // Determine if there are credits to display
 const hasCredits = computed(() => {
@@ -536,7 +551,8 @@ function clearData() {
   modComments.value = null
   error.value = ''
   currentSlide.value = 0
-  loading.value = true // Reset loading state for next time
+  loading.value = false // Clear loading state when closing modal
+  isSlowRequest.value = false
 }
 
 // Fetch mod details when component is mounted and isOpen changes to true
@@ -566,6 +582,14 @@ onUnmounted(() => {
 async function fetchModInfo() {
   loading.value = true
   error.value = ''
+  isSlowRequest.value = false
+
+  // Set up a timeout to show slow request message after 15 seconds
+  const slowRequestTimeout = setTimeout(() => {
+    if (loading.value) {
+      isSlowRequest.value = true
+    }
+  }, 15000)
 
   try {
     const infoResult = await invoke<any>('get_mod_info_command', {
@@ -603,7 +627,9 @@ async function fetchModInfo() {
     error.value = err.message || 'Failed to fetch mod information'
     console.error('Error fetching mod info:', err)
   } finally {
+    clearTimeout(slowRequestTimeout)
     loading.value = false
+    isSlowRequest.value = false
   }
 }
 
