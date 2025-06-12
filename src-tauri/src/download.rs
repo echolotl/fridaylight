@@ -45,6 +45,7 @@ pub async fn download_gamebanana_mod(
   mod_id: i64,
   install_location: Option<String>,
   model_type: Option<String>,
+  update_existing: Option<bool>,
   app: tauri::AppHandle
 ) -> Result<String, String> {
   info!("Starting download process for mod: {} (ID: {})", name, mod_id);
@@ -264,7 +265,6 @@ pub async fn download_gamebanana_mod(
 
   // Get the content length for progress tracking
   let total_size = response.content_length().unwrap_or(0) as usize;
-
   // Update the download started event with actual content length
   app
     .emit("download-started", DownloadStarted {
@@ -439,23 +439,34 @@ pub async fn download_gamebanana_mod(
   // Create unique folder for this mod
   let mod_folder = install_dir.join(&sanitized_name);
   if mod_folder.exists() {
-    debug!("Mod folder already exists, removing it: {}", mod_folder.display());
-    if let Err(e) = fs::remove_dir_all(&mod_folder) {
-      let error_msg = format!("Failed to remove existing mod folder: {}", e);
-      error!("{}", error_msg);
+    if update_existing.unwrap_or(false) {
+      debug!(
+        "Mod folder already exists, updating in place: {}",
+        mod_folder.display()
+      );
+      // When updating, we keep the existing folder and just extract over it
+    } else {
+      debug!(
+        "Mod folder already exists, removing it: {}",
+        mod_folder.display()
+      );
+      if let Err(e) = fs::remove_dir_all(&mod_folder) {
+        let error_msg = format!("Failed to remove existing mod folder: {}", e);
+        error!("{}", error_msg);
 
-      // Emit error event
-      app
-        .emit("download-error", DownloadError {
-          mod_id,
-          name: name.clone(),
-          error: error_msg.clone(),
-        })
-        .unwrap_or_else(|e|
-          error!("Failed to emit download-error event: {}", e)
-        );
+        // Emit error event
+        app
+          .emit("download-error", DownloadError {
+            mod_id,
+            name: name.clone(),
+            error: error_msg.clone(),
+          })
+          .unwrap_or_else(|e|
+            error!("Failed to emit download-error event: {}", e)
+          );
 
-      return Err(error_msg);
+        return Err(error_msg);
+      }
     }
   }
 
@@ -662,6 +673,7 @@ pub async fn download_custom_mod(
   thumbnail_url: Option<String>,
   description: Option<String>,
   version: Option<String>,
+  update_existing: Option<bool>,
   app: tauri::AppHandle
 ) -> Result<String, String> {
   info!("Starting download process for custom mod: {} from URL: {}", name, url);
@@ -978,23 +990,34 @@ pub async fn download_custom_mod(
   // Create unique folder for this mod
   let mod_folder = install_dir.join(&sanitized_name);
   if mod_folder.exists() {
-    debug!("Mod folder already exists, removing it: {}", mod_folder.display());
-    if let Err(e) = fs::remove_dir_all(&mod_folder) {
-      let error_msg = format!("Failed to remove existing mod folder: {}", e);
-      error!("{}", error_msg);
+    if update_existing.unwrap_or(false) {
+      debug!(
+        "Mod folder already exists, updating in place: {}",
+        mod_folder.display()
+      );
+      // When updating, we keep the existing folder and just extract over it
+    } else {
+      debug!(
+        "Mod folder already exists, removing it: {}",
+        mod_folder.display()
+      );
+      if let Err(e) = fs::remove_dir_all(&mod_folder) {
+        let error_msg = format!("Failed to remove existing mod folder: {}", e);
+        error!("{}", error_msg);
 
-      // Emit error event
-      app
-        .emit("download-error", DownloadError {
-          mod_id,
-          name: name.clone(),
-          error: error_msg.clone(),
-        })
-        .unwrap_or_else(|e|
-          error!("Failed to emit download-error event: {}", e)
-        );
+        // Emit error event
+        app
+          .emit("download-error", DownloadError {
+            mod_id,
+            name: name.clone(),
+            error: error_msg.clone(),
+          })
+          .unwrap_or_else(|e|
+            error!("Failed to emit download-error event: {}", e)
+          );
 
-      return Err(error_msg);
+        return Err(error_msg);
+      }
     }
   }
 

@@ -607,6 +607,7 @@ pub async fn download_gamebanana_mod_command(
     mod_id,
     install_location,
     model_type,
+    Some(false),
     app
   ).await
 }
@@ -635,6 +636,29 @@ pub async fn download_custom_mod_command(
     thumbnail_url,
     description,
     version,
+    Some(false),
+    app
+  ).await
+}
+
+// Command to update a mod (same as downloading a mod)
+#[tauri::command]
+pub async fn update_mod_command(
+  url: String,
+  name: String,
+  mod_id: i64,
+  install_location: Option<String>,
+  model_type: Option<String>,
+  app: tauri::AppHandle
+) -> Result<String, String> {
+  info!("Starting mod update process for {} with ID: {}", name, mod_id);
+  download_gamebanana_mod(
+    url,
+    name,
+    mod_id,
+    install_location,
+    model_type,
+    Some(true), // Indicate this is an update
     app
   ).await
 }
