@@ -263,6 +263,7 @@ const showContextMenu = (event: MouseEvent) => {
     transform 0.2s,
     box-shadow 0.2s;
   border-bottom: 2px solid var(--theme-border);
+  border-top: 2px solid var(--theme-surface);
 }
 
 .mod-card:hover {
