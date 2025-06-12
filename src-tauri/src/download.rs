@@ -1712,7 +1712,7 @@ pub async fn download_engine(
     metadata_version: Some(CURRENT_METADATA_VERSION),
     date_added: Some(chrono::Utc::now().timestamp()), // Set current timestamp as date added
     last_played: None, // Initialize with None since mod is not played yet
-    gamebanana_url: None, // No GameBanana data for engines
+    gamebanana: None, // No GameBanana data for custom engines
   };
 
   // Add the mod to our state

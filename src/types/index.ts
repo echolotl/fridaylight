@@ -115,6 +115,13 @@ export interface EngineModsResponse {
   engine_type: string
   executable_path: string
   mods: ModMetadataFile[]
+  gamebanana?: ModInfoGBData // GameBanana mod data
+}
+
+export interface ModInfoGBData {
+  id: number
+  url: string
+  model_type: string
 }
 
 /**
