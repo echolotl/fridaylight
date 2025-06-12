@@ -608,92 +608,60 @@ const onFileSelected = async (selectedFile: any) => {
   if (!currentDownloadMod.value) return
 
   try {
-    // Hide the dialog immediately to provide feedback to the user
-    showFileSelector.value = false // If selected file contains an executable, download it as normal mod
-    if (selectedFile._bContainsExe) {
-      const result = await gamebananaService.downloadModFile(
-        currentDownloadMod.value,
-        selectedFile
-      )
+    // Hide the file selector dialog immediately to provide user feedback
+    showFileSelector.value = false
 
-      if ('success' in result && !result.success) {
-        const $q = useQuasar()
-        $q.notify({
-          type: 'negative',
-          message: `Failed to download "${currentDownloadMod.value.name}"`,
-          caption: String('error' in result ? result.error : 'Unknown error'),
-          position: 'bottom-right',
-          timeout: 5000,
-        })
-      }
+    // Use the centralized gamebananaService to handle file download with folder existence check
+    const result = await gamebananaService.downloadModFile(
+      currentDownloadMod.value,
+      selectedFile
+    )
 
-      // Trigger the refresh event to update the mod list
-      const refreshEvent = new CustomEvent('refresh-mods')
-      window.dispatchEvent(refreshEvent)
-
-      // Reset current download mod
-      currentDownloadMod.value = null
+    // Handle different scenarios based on the result
+    if ('showFileSelector' in result) {
+      // If we need to show file selector again (shouldn't happen in this context)
+      downloadFiles.value = result.files
+      alternateFileSources.value = result.alternateFileSources || []
+      showFileSelector.value = true
       return
     }
 
-    // If file doesn't contain an executable, check if this is a modpack
-    const isModpack = gamebananaService.determineIfModpack(
-      currentDownloadMod.value
-    )
-    const modpackType = gamebananaService.determineModpackType(
-      currentDownloadMod.value
-    )
-
-    if (isModpack) {
-      // Handle modpack download logic for selected file
-      const engineMods =
-        await gamebananaService.getCompatibleEngineMods(modpackType)
-
-      if (engineMods.length === 0) {
-        // No compatible engine found, show error
-        const $q = useQuasar()
-        $q.notify({
-          type: 'negative',
-          message: `Cannot download ${modpackType} modpack`,
-          caption: `You don't have ${await formatEngineName(
-            modpackType || 'whatever engine this mod needs'
-          )} installed. Please install it.`,
-          position: 'bottom-right',
-          timeout: 5000,
-        })
-
-        currentDownloadMod.value = null
-        return
-      }
-
-      // Show engine selection dialog
-      currentModpackInfo.value = {
-        mod: {
-          ...currentDownloadMod.value,
-          download_url: selectedFile._sDownloadUrl,
-        }, // Override with selected URL
-        type: modpackType,
-        compatibleEngines: engineMods,
-      }
+    if ('showEngineSelectDialog' in result) {
+      // If we need to show engine selection dialog
+      currentModpackInfo.value = result.modpackInfo
       showEngineSelectDialog.value = true
-    } else {
-      // If not a modpack, download normally
-      const result = await gamebananaService.downloadModFile(
-        currentDownloadMod.value,
-        selectedFile
-      )
-
-      if ('success' in result && !result.success) {
-        const $q = useQuasar()
-        $q.notify({
-          type: 'negative',
-          message: `Failed to download "${currentDownloadMod.value.name}"`,
-          caption: String('error' in result ? result.error : 'Unknown error'),
-          position: 'bottom-right',
-          timeout: 5000,
-        })
-      }
+      return
     }
+
+    if ('showModTypeModal' in result) {
+      // If we need to show mod type selection
+      customModData.value = result.customModData
+      showModTypeModal.value = true
+      return
+    }
+
+    if ('showFolderExistsDialog' in result) {
+      // If the mod folder already exists, show confirmation dialog
+      folderExistsModName.value = result.modName
+      folderExistsDownloadContinueFunction.value = result.continueDownload
+      showFolderExistsDialog.value = true
+      return
+    }
+
+    if ('success' in result && !result.success) {
+      const $q = useQuasar()
+      $q.notify({
+        type: 'negative',
+        message: `Failed to download "${currentDownloadMod.value.name}"`,
+        caption: String('error' in result ? result.error : 'Unknown error'),
+        position: 'bottom-right',
+        timeout: 5000,
+      })
+    }
+
+    // Trigger the refresh event to update the mod list
+    const refreshEvent = new CustomEvent('refresh-mods')
+    window.dispatchEvent(refreshEvent)
 
     // Reset current download mod
     currentDownloadMod.value = null

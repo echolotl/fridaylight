@@ -777,246 +777,55 @@ const onFileSelected = async (selectedFile: any) => {
   if (!currentDownloadMod.value) return
 
   try {
-    // Create a new notification for the download process
-    pendingDownloadNotification = $q.notify({
-      type: 'ongoing',
-      message: `Preparing "${currentDownloadMod.value.name}"...`,
-      position: 'bottom-right',
-      timeout: 0,
-    })
+    // Hide the file selector dialog immediately to provide user feedback
+    showFileSelector.value = false
 
-    // Use the specific download URL from the selected file
-    const mod = currentDownloadMod.value
+    // Use the centralized gamebananaService to handle file download with folder existence check
+    const result = await gamebananaService.downloadModFile(
+      currentDownloadMod.value,
+      selectedFile
+    )
 
-    // Clear any existing pending modpack path
-    localStorage.removeItem('pendingModpackInstallPath')
-
-    // Check if the selected file contains an executable
-    // If it does, treat it as an executable mod regardless of other factors
-    if (selectedFile._bContainsExe) {
-      console.log(
-        'Selected file contains an executable, treating as standard mod'
-      )
-
-      // Update notification to downloading
-      if (pendingDownloadNotification) {
-        pendingDownloadNotification()
-      }
-      pendingDownloadNotification = $q.notify({
-        type: 'ongoing',
-        message: `Downloading "${mod.name}"...`,
-        position: 'bottom-right',
-        timeout: 0,
-      })
-
-      // Get the install location from settings
-      let installLocation: string | null = null
-      try {
-        installLocation = await getInstallLocation()
-      } catch (error) {
-        console.warn('Could not get install location from settings:', error)
-      }
-
-      console.log('Using selected file URL:', selectedFile._sDownloadUrl)
-      console.log('Using installation location:', installLocation)
-
-      // Call backend to download using the specific file URL
-      const result = await invoke<string>('download_gamebanana_mod_command', {
-        url: selectedFile._sDownloadUrl,
-        name: mod.name,
-        modId: mod.id,
-        modelType: mod._sModelName,
-        installLocation,
-      })
-
-      // Process the result
-      let modInfo: any
-      let modPath: string
-
-      try {
-        // Try to parse as JSON first
-        const parsed = JSON.parse(result)
-        modPath = parsed.path
-        modInfo = parsed.mod_info
-      } catch {
-        // If parsing fails, assume it's just the path string
-        modPath = result
-        // Get mod info directly from the backend
-        const allMods = await invoke<any[]>('get_mods')
-        modInfo = allMods.find(m => m.path === modPath)
-
-        // If we still don't have mod info, create a basic one
-        if (!modInfo) {
-          modInfo = {
-            id: crypto.randomUUID(),
-            name: mod.name,
-            path: modPath,
-            executable_path: null,
-            icon_data: null,
-            banner_data: mod.thumbnailUrl,
-            version: mod.version || null,
-            engine_type: null,
-          }
-        }
-      }
-
-      // Save the mod to the database
-      if (modInfo) {
-        await saveModToDatabase(modInfo)
-      }
-
-      // Dismiss loading notification
-      if (pendingDownloadNotification) {
-        pendingDownloadNotification()
-        pendingDownloadNotification = null
-      }
-
-      // Show success notification
-      $q.notify({
-        type: 'positive',
-        message: `"${mod.name}" downloaded and installed successfully!`,
-        caption: `Ready to play from the mods list`,
-        position: 'bottom-right',
-        timeout: 5000,
-      })
-
-      // Trigger the refresh event to update the mod list
-      const refreshEvent = new CustomEvent('refresh-mods')
-      window.dispatchEvent(refreshEvent)
-
-      // Reset current download mod
-      currentDownloadMod.value = null
+    // Handle different scenarios based on the result
+    if ('showFileSelector' in result) {
+      // If we need to show file selector again (shouldn't happen in this context)
+      downloadFiles.value = result.files
+      alternateFileSources.value = result.alternateFileSources || []
+      showFileSelector.value = true
       return
     }
 
-    // If file doesn't contain an executable, check if this is a modpack
-    const isModpack = determineIfModpack(mod)
-    const modpackType = determineModpackType(mod)
-
-    if (isModpack) {
-      // Handle modpack download logic for selected file
-      const engineMods = await getCompatibleEngineMods(modpackType)
-
-      if (engineMods.length === 0) {
-        // No compatible engine found, show error
-        if (pendingDownloadNotification) {
-          pendingDownloadNotification()
-          pendingDownloadNotification = null
-        }
-
-        $q.notify({
-          type: 'negative',
-          message: `Cannot download ${modpackType} modpack`,
-          caption: `You don't have ${formatEngineType(
-            modpackType
-          )} installed. Please install it.`,
-          position: 'bottom-right',
-          timeout: 5000,
-        })
-
-        return
-      } else {
-        // Compatible engine found, store the selected file URL for later use
-        currentModpackInfo.value = {
-          mod: { ...mod, downloadUrl: selectedFile._sDownloadUrl }, // Override with selected URL
-          type: modpackType,
-          compatibleEngines: engineMods,
-        }
-
-        // Show engine selection dialog
-        showEngineSelectDialog.value = true
-
-        // Dismiss the loading notification
-        if (pendingDownloadNotification) {
-          pendingDownloadNotification()
-          pendingDownloadNotification = null
-        }
-
-        return // Wait for user selection of an engine
-      }
+    if ('showEngineSelectDialog' in result) {
+      // If we need to show engine selection dialog
+      currentModpackInfo.value = result.modpackInfo
+      showEngineSelectDialog.value = true
+      return
     }
 
-    // If not a modpack and doesn't contain an executable, proceed with standard download
-    // Update notification to downloading
-    if (pendingDownloadNotification) {
-      pendingDownloadNotification()
-    }
-    pendingDownloadNotification = $q.notify({
-      type: 'ongoing',
-      message: `Downloading "${mod.name}"...`,
-      position: 'bottom-right',
-      timeout: 0,
-    })
-
-    // Get the install location from settings
-    let installLocation: string | null = null
-    try {
-      installLocation = await getInstallLocation()
-    } catch (error) {
-      console.warn('Could not get install location from settings:', error)
+    if ('showModTypeModal' in result) {
+      // If we need to show mod type selection
+      customModData.value = result.customModData
+      showModTypeModal.value = true
+      return
     }
 
-    console.log('Using selected file URL:', selectedFile._sDownloadUrl)
-    console.log('Using installation location:', installLocation)
-
-    // Call backend to download using the specific file URL
-    const result = await invoke<string>('download_gamebanana_mod_command', {
-      url: selectedFile._sDownloadUrl,
-      name: mod.name,
-      modId: mod.id,
-      modelType: mod._sModelName,
-      installLocation,
-    })
-    // Process the result
-    let modInfo: any
-    let modPath: string
-
-    try {
-      // Try to parse as JSON first
-      const parsed = JSON.parse(result)
-      modPath = parsed.path
-      modInfo = parsed.mod_info
-    } catch {
-      // If parsing fails, assume it's just the path string
-      modPath = result
-      // Get mod info directly from the backend
-      const allMods = await invoke<any[]>('get_mods')
-      modInfo = allMods.find(m => m.path === modPath)
-
-      // If we still don't have mod info, create a basic one
-      if (!modInfo) {
-        modInfo = {
-          id: crypto.randomUUID(),
-          name: mod.name,
-          path: modPath,
-          executable_path: null,
-          icon_data: null,
-          banner_data: mod.thumbnailUrl,
-          version: mod.version || null,
-          engine_type: null,
-        }
-      }
+    if ('showFolderExistsDialog' in result) {
+      // If the mod folder already exists, show confirmation dialog
+      folderExistsModName.value = result.modName
+      folderExistsDownloadContinueFunction.value = result.continueDownload
+      showFolderExistsDialog.value = true
+      return
     }
 
-    // Save the mod to the database
-    if (modInfo) {
-      await saveModToDatabase(modInfo)
+    if ('success' in result && !result.success) {
+      $q.notify({
+        type: 'negative',
+        message: `Failed to download "${currentDownloadMod.value.name}"`,
+        caption: String('error' in result ? result.error : 'Unknown error'),
+        position: 'bottom-right',
+        timeout: 5000,
+      })
     }
-
-    // Dismiss loading notification
-    if (pendingDownloadNotification) {
-      pendingDownloadNotification()
-      pendingDownloadNotification = null
-    }
-
-    // Show success notification
-    $q.notify({
-      type: 'positive',
-      message: `"${mod.name}" downloaded and installed successfully!`,
-      caption: `Ready to play from the mods list`,
-      position: 'bottom-right',
-      timeout: 5000,
-    })
 
     // Trigger the refresh event to update the mod list
     const refreshEvent = new CustomEvent('refresh-mods')
@@ -1025,26 +834,15 @@ const onFileSelected = async (selectedFile: any) => {
     // Reset current download mod
     currentDownloadMod.value = null
   } catch (error) {
-    // Show error notification
     $q.notify({
       type: 'negative',
-      message: `Failed to download "${
-        currentDownloadMod.value?.name || 'Mod'
-      }"`,
+      message: `Failed to download mod`,
       caption: String(error),
       position: 'bottom-right',
       timeout: 5000,
     })
 
-    // Dismiss any pending notification
-    if (pendingDownloadNotification) {
-      pendingDownloadNotification()
-      pendingDownloadNotification = null
-    }
-
-    console.error('Failed to download mod:', error)
-
-    // Reset current download mod
+    console.error('Failed to download mod file:', error)
     currentDownloadMod.value = null
   }
 }
@@ -1101,60 +899,6 @@ const saveModToDatabase = async (mod: any) => {
   } catch (error) {
     console.error('Failed to save mod to database:', error)
     return false
-  }
-}
-
-// Determine if a mod is a modpack based on the current tab or mod properties
-const determineIfModpack = (mod: any): boolean => {
-  // Check mod category if available
-  if (mod.categoryName) {
-    const lowerCaseCategoryName = mod.categoryName.toLowerCase()
-    if (lowerCaseCategoryName.includes('executables')) return false
-    if (lowerCaseCategoryName.includes('psych')) return true
-    if (lowerCaseCategoryName.includes('v-slice')) return true
-    if (lowerCaseCategoryName.includes('codename')) return true
-  }
-
-  return false
-}
-
-// Determine modpack type (psych, vslice, codename, or null if not a modpack)
-const determineModpackType = (mod: any): string | null => {
-  if (mod.categoryName) {
-    const lowerCaseCategoryName = mod.categoryName.toLowerCase()
-    if (lowerCaseCategoryName.includes('psych')) return 'psych'
-    if (lowerCaseCategoryName.includes('v-slice')) return 'vanilla'
-    if (lowerCaseCategoryName.includes('codename')) return 'codename'
-  }
-  return null
-}
-
-// Get a list of compatible engine mods
-const getCompatibleEngineMods = async (
-  engineType: string | null
-): Promise<any[]> => {
-  if (!engineType) return []
-
-  try {
-    // Fetch all mods
-    let allMods: any[] = []
-    if (window.db && window.db.service) {
-      allMods = await window.db.service.getAllMods()
-    } else {
-      allMods = await invoke<any[]>('get_mods')
-    }
-
-    // Filter mods by engine type
-    return allMods.filter((mod: { engine: { engine_type: string } }) => {
-      // Check engine.engine_type
-      if (mod.engine && mod.engine.engine_type) {
-        return mod.engine.engine_type.toLowerCase() === engineType.toLowerCase()
-      }
-      return false
-    })
-  } catch (error) {
-    console.error('Failed to get compatible engine mods:', error)
-    return []
   }
 }
 

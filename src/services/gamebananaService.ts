@@ -437,6 +437,10 @@ export class GameBananaService {
       // Check if the mod folder already exists before downloading
       const folderExists = await this.checkModFolderExists(mod.name)
 
+      GbConsole.log(
+        `Checking if folder exists for mod "${mod.name}": ${folderExists}`
+      )
+
       if (folderExists) {
         // Return a folder exists result with a function to continue the download
         return {
@@ -540,7 +544,7 @@ export class GameBananaService {
         const parsed = JSON.parse(result)
         modPath = parsed.path
         modInfo = parsed.mod_info
-      } catch (e) {
+      } catch {
         // If parsing fails, assume it's just the path string
         modPath = result
         // Get mod info directly from the backend
@@ -595,13 +599,74 @@ export class GameBananaService {
       return { success: false, error: String(error) }
     }
   }
-
   /**
    * Download a specific file from a mod
    */
   public async downloadModFile(
     mod: GameBananaMod,
     selectedFile: any
+  ): Promise<DownloadModResult> {
+    try {
+      // Create a new notification for the download process
+      this.pendingDownloadNotification = Notify.create({
+        type: 'ongoing',
+        message: `Preparing "${mod.name}"...`,
+        position: 'bottom-right',
+        timeout: 0,
+      })
+
+      // Check if the mod folder already exists before downloading
+      const folderExists = await this.checkModFolderExists(mod.name)
+
+      GbConsole.log(
+        `Checking if folder exists for mod "${mod.name}": ${folderExists}`
+      )
+
+      if (folderExists) {
+        // Dismiss the current notification
+        this.dismissNotification()
+
+        // Return a folder exists result with a function to continue the download
+        return {
+          showFolderExistsDialog: true,
+          modName: mod.name,
+          continueDownload: async () => {
+            // Continue with the actual download using the selected file
+            return this.proceedWithSpecificFileDownload(mod, selectedFile, true)
+          },
+        }
+      }
+
+      // No folder exists, proceed with the download directly
+      return await this.proceedWithSpecificFileDownload(
+        mod,
+        selectedFile,
+        false
+      )
+    } catch (error) {
+      // Show error notification
+      Notify.create({
+        type: 'negative',
+        message: `Failed to download "${mod.name}"`,
+        caption: String(error),
+        position: 'bottom-right',
+        timeout: 5000,
+      })
+
+      this.dismissNotification()
+      GbConsole.error('Failed to download mod:', error)
+
+      return { success: false, error: String(error) }
+    }
+  }
+
+  /**
+   * Proceed with downloading a specific file after folder existence checks
+   */
+  private async proceedWithSpecificFileDownload(
+    mod: GameBananaMod,
+    selectedFile: any,
+    isRetry: boolean = false
   ): Promise<DownloadModResult> {
     try {
       // Create a new notification for the download process
@@ -632,23 +697,31 @@ export class GameBananaService {
         GbConsole.log('Using selected file URL:', selectedFile._sDownloadUrl)
         GbConsole.log('Using installation location:', installLocation)
 
+        // If this is a retry (folder exists case), append a timestamp to make the folder unique
+        let modName = mod.name
+        if (isRetry) {
+          modName = `${modName} (${mod.id.toString(16).slice(0, 4)})`
+          GbConsole.log(`Folder already exists, using unique name: ${modName}`)
+        }
+
         // Ensure no duplicate download entries exist
-        this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnail_url)
+        this.ensureUniqueDownload(mod.id, modName, mod.thumbnail_url)
 
         // Call backend to download using the specific file URL
         const result = await invoke<string>('download_gamebanana_mod_command', {
           url: selectedFile._sDownloadUrl,
-          name: mod.name,
+          name: modName,
           modId: mod.id,
           modelType: mod.model_name || 'Mod',
           installLocation,
         })
 
         // Process the result
-        return await this.processDownloadResult(result, mod)
-      }
-
-      // If file doesn't contain an executable, check if this is a modpack
+        return await this.processDownloadResult(result, {
+          ...mod,
+          name: modName,
+        })
+      } // If file doesn't contain an executable, check if this is a modpack
       const isModpack = this.determineIfModpack(mod)
       const modpackType = this.determineModpackType(mod)
 
@@ -700,20 +773,27 @@ export class GameBananaService {
       GbConsole.log('Using selected file URL:', selectedFile._sDownloadUrl)
       GbConsole.log('Using installation location:', installLocation)
 
+      // If this is a retry (folder exists case), append a timestamp to make the folder unique
+      let modName = mod.name
+      if (isRetry) {
+        modName = `${modName} (${mod.id.toString(16).slice(0, 4)})`
+        GbConsole.log(`Folder already exists, using unique name: ${modName}`)
+      }
+
       // Ensure no duplicate download entries exist
-      this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnail_url)
+      this.ensureUniqueDownload(mod.id, modName, mod.thumbnail_url)
 
       // Call backend to download using the specific file URL
       const result = await invoke<string>('download_gamebanana_mod_command', {
         url: selectedFile._sDownloadUrl,
-        name: mod.name,
+        name: modName,
         modId: mod.id,
         modelType: mod.model_name || 'Mod',
         installLocation,
       })
 
       // Process the result
-      return await this.processDownloadResult(result, mod)
+      return await this.processDownloadResult(result, { ...mod, name: modName })
     } catch (error) {
       // Show error notification
       Notify.create({
@@ -927,7 +1007,7 @@ export class GameBananaService {
         // Try to parse as JSON
         const parsed = JSON.parse(result)
         modInfo = parsed.mod_info
-      } catch (e) {
+      } catch {
         // If parsing fails, assume it's just the path string
         const modPath = result
         // Get mod info directly from the backend
@@ -1119,7 +1199,7 @@ export class GameBananaService {
         // Try to parse as JSON
         const parsed = JSON.parse(result)
         modInfoResult = parsed.mod_info
-      } catch (e) {
+      } catch {
         // If parsing fails, assume it's just the path string
         const modPath = result
         // Get mod info directly from the backend
