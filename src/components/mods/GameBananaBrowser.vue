@@ -394,8 +394,8 @@ onMounted(() => {
       props.openModDetailsOnMount.modId,
       props.openModDetailsOnMount.modelType
     )
-    emit('resetModDetailsOnMount')
   }
+  emit('resetModDetailsOnMount')
 })
 
 // Clean up event listeners when component is unmounted

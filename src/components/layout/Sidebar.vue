@@ -162,7 +162,7 @@
             @open-mod-settings="openModSettings"
             @gamebanana-browser="openGamebananaBrowser"
             @open-gamebanana-mod="openGamebananaMod"
-            @update:open-mod-details-on-mount="resetOpenModDetailsOnMount"
+            @reset-mod-details-on-mount="resetOpenModDetailsOnMount"
           />
         </div>
       </Transition>
