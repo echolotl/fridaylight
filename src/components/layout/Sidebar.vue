@@ -154,12 +154,15 @@
             "
             :mod="selectedMod"
             :error="launchError || ''"
+            :open-mod-details-on-mount="openModDetailsOnMount"
             @update:mod="handleSaveMod"
             @launch-mod="launchMod"
             @open-settings="openSettingsModal"
             @select-mod="selectMod"
             @open-mod-settings="openModSettings"
             @gamebanana-browser="openGamebananaBrowser"
+            @open-gamebanana-mod="openGamebananaMod"
+            @update:open-mod-details-on-mount="resetOpenModDetailsOnMount"
           />
         </div>
       </Transition>
@@ -271,6 +274,9 @@ const showSettingsModal = ref(false)
 const activePage = ref('home') // Default to showing home page
 const showAppSettingsModal = ref(false)
 
+// Gamebanana browser state
+const openModDetailsOnMount = ref({ open: false, modId: 0, modelType: '' })
+
 // Add compact mode state
 const isCompactMode = ref(false)
 
@@ -308,6 +314,10 @@ onMounted(async () => {
     console.error('Error loading mods:', error)
   }
 })
+
+const resetOpenModDetailsOnMount = () => {
+  openModDetailsOnMount.value = { open: false, modId: 0, modelType: '' }
+}
 
 // Load mods from the database
 const loadModsFromDatabase = async () => {
@@ -1241,6 +1251,23 @@ const openModFolder = async (mod: ModInfo) => {
 
 const openGamebananaBrowser = () => {
   setActivePage('gamebanana')
+}
+
+// Open a specific GameBanana mod page
+const openGamebananaMod = (modId: number | string, modelType: string) => {
+  setActivePage('gamebanana')
+  // Ensure we're always working with proper types
+  const numericId = Number(modId) || 0
+  const typeString = String(modelType || 'Mod')
+
+  console.info(
+    `Opening GameBanana mod ${numericId} with model type ${typeString}`
+  )
+  openModDetailsOnMount.value = {
+    open: true,
+    modId: numericId,
+    modelType: typeString,
+  }
 }
 
 // Clean up event listeners

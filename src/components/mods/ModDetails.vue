@@ -87,7 +87,11 @@
 
       <!-- Right column: Contributor information -->
       <div class="mod-sidebar">
-        <ContributorInfobox :folder-path="mod.path" :version="mod.version" />
+        <ContributorInfobox
+          :folder-path="mod.path"
+          :version="mod.version"
+          @open-gamebanana="handleOpenGamebanana"
+        />
       </div>
     </div>
   </q-scroll-area>
@@ -127,6 +131,7 @@ const emit = defineEmits([
   'launch-mod',
   'open-settings',
   'stop-mod',
+  'open-gamebanana-mod',
 ])
 
 const appSettings = StoreService.getInstance()
@@ -265,6 +270,17 @@ const checkModRunningStatus = async (modId: string) => {
     console.error('Error checking mod running status:', error)
     return false
   }
+}
+
+const handleOpenGamebanana = (id: number, model_type: string) => {
+  // Ensure we're always passing valid values to the parent
+  const numericId = Number(id) || 0
+  const modelType = String(model_type || 'Mod')
+
+  console.info(
+    `Opening GameBanana mod with ID: ${numericId}, model type: ${modelType}`
+  )
+  emit('open-gamebanana-mod', numericId, modelType)
 }
 
 // Watch for changes to props.mod.id

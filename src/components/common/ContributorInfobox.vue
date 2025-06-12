@@ -4,7 +4,9 @@
       flat
       label="Open in Gamebanana"
       icon="M24,6v10.5h-1.5v3h-1.5v1.5h-1.5v1.5h-3v1.5H6v-1.5h-3v-1.5h-1.5v-1.5H0v-4.5h9v-1.5h4.5v-1.5h1.5v-4.5h1.5V3h-1.5V0h4.5v3h1.5v1.5h1.5v1.5h1.5Z"
-      @click="openUrl(gameBananaInfo.url)"
+      @click="
+        emit('open-gamebanana', gameBananaInfo.id, gameBananaInfo.model_type)
+      "
     ></q-btn>
     <div
       v-if="
@@ -82,7 +84,6 @@ import { computed, ref, onMounted, watch, reactive } from 'vue'
 import { Contributor, ContributorGroup, ModInfoGBData } from '@main-types'
 import { sep } from '@tauri-apps/api/path'
 import { invoke } from '@tauri-apps/api/core'
-import { openUrl } from '@tauri-apps/plugin-opener'
 
 const props = defineProps({
   contributors: {
@@ -98,6 +99,8 @@ const props = defineProps({
     default: '',
   },
 })
+
+const emit = defineEmits(['open-gamebanana'])
 
 // Local state to store contributor data from metadata.json
 const contributorsData = ref<ContributorGroup[]>([])

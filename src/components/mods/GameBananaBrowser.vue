@@ -245,6 +245,12 @@ declare global {
   }
 }
 
+const props = defineProps<{
+  openModDetailsOnMount?: { open: boolean; modId: number; modelType: string }
+}>()
+
+const emit = defineEmits(['resetModDetailsOnMount'])
+
 // Ensure Notify is properly registered
 Notify.create = Notify.create || (() => {})
 
@@ -393,6 +399,15 @@ onMounted(() => {
 
   // Set up event listeners using the centralized function
   eventListenerCleanup = setupGameBananaEventListeners()
+
+  // Handle initial mod details if provided
+  if (props.openModDetailsOnMount && props.openModDetailsOnMount.open) {
+    openModDetails(
+      props.openModDetailsOnMount.modId,
+      props.openModDetailsOnMount.modelType
+    )
+    emit('resetModDetailsOnMount')
+  }
 })
 
 // Clean up event listeners when component is unmounted
@@ -545,11 +560,20 @@ const clearSearch = () => {
 }
 
 // Function to open mod details modal
-const openModDetails = (modId: number, modelType: string) => {
+const openModDetails = (
+  modId: string | number | true,
+  modelType: string | number | true
+) => {
   console.log('Opening mod details for ID:', modId)
-  selectedModId.value = modId ? modId : 0
-  currentModelType.value = modelType
-  console.log('Selected mod ID:', selectedModId.value, 'Model Type:', modelType)
+  // Convert modId to number to ensure type compatibility
+  selectedModId.value = modId ? Number(modId) : 0
+  currentModelType.value = modelType ? String(modelType) : 'Mod'
+  console.log(
+    'Selected mod ID:',
+    selectedModId.value,
+    'Model Type:',
+    currentModelType.value
+  )
   isModDetailsModalOpen.value = true
   console.log('Mod details modal opened')
 }

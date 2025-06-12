@@ -387,7 +387,7 @@
 
                 <q-btn
                   icon="launch"
-                  label="View on GameBanana"
+                  label="View in browser"
                   class="action-button-secondary"
                   flat
                   @click="openUrl(modInfo._sProfileUrl)"
