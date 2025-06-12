@@ -1445,6 +1445,7 @@ dependencies = [
  "image",
  "lazy_static",
  "log",
+ "regex",
  "reqwest",
  "roxmltree",
  "serde",

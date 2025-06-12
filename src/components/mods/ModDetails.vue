@@ -87,7 +87,7 @@
 
       <!-- Right column: Contributor information -->
       <div class="mod-sidebar">
-        <ContributorInfobox :folder-path="mod.path" />
+        <ContributorInfobox :folder-path="mod.path" :version="mod.version" />
       </div>
     </div>
   </q-scroll-area>

@@ -17,7 +17,6 @@ use crate::models::{
   GameBananaResponse,
   ModDisableResult,
   ModInfo,
-  ModInfoGBData,
   ModsState,
 };
 use log::{ debug, error, info, warn };
@@ -1029,6 +1028,49 @@ pub fn clear_mod_logs(id: String) -> Result<(), String> {
   Ok(())
 }
 
+#[tauri::command]
+pub fn compare_update_semver(
+  current_version: String,
+  latest_version: String
+) -> bool {
+  info!(
+    "Comparing current version '{}' with latest version '{}'",
+    current_version,
+    latest_version
+  );
+
+  // Use the new semver comparison function
+  match crate::modutils::compare_semver(&current_version, &latest_version) {
+    Ok(result) => {
+      // Return false if we need to update (current_version < latest_version)
+      if result < 0 {
+        info!(
+          "Current version '{}' is less than latest version '{}', update needed",
+          current_version,
+          latest_version
+        );
+        false // Indicates we need to update
+      } else {
+        info!(
+          "Current version '{}' is up-to-date with latest version '{}'",
+          current_version,
+          latest_version
+        );
+        true // Indicates no update needed
+      }
+    }
+    Err(e) => {
+      warn!("Failed to compare semver versions: {}", e);
+      // Fall back to the old method if semver parsing fails
+      let latest_version_format = format!(">={}", latest_version);
+      crate::modutils::is_version_compatible(
+        &current_version,
+        &latest_version_format
+      )
+    }
+  }
+}
+
 // Command to delete a mod by deleting its containing folder
 #[tauri::command]
 pub async fn super_delete_mod(
@@ -1221,7 +1263,8 @@ pub fn run() {
         get_mod_posts_command,
         get_mod_updates_command,
         check_mod_dependency,
-        check_gamebanana_mod_version
+        check_gamebanana_mod_version,
+        compare_update_semver
       ]
     )
     .run(tauri::generate_context!())

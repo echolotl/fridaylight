@@ -3,13 +3,41 @@
     <q-btn
       flat
       label="Open in Gamebanana"
-      icon="open_in_new"
+      icon="M24,6v10.5h-1.5v3h-1.5v1.5h-1.5v1.5h-3v1.5H6v-1.5h-3v-1.5h-1.5v-1.5H0v-4.5h9v-1.5h4.5v-1.5h1.5v-4.5h1.5V3h-1.5V0h4.5v3h1.5v1.5h1.5v1.5h1.5Z"
       @click="openUrl(gameBananaInfo.url)"
     ></q-btn>
-    <div v-if="actualVersion" class="ml-2">
-      <span class="text-caption text-secondary"
-        >Version: {{ actualVersion }}</span
-      >
+    <div
+      v-if="
+        actualVersion &&
+        versionStatus &&
+        versionStatus.is_update_available &&
+        versionStatus.completely_sure
+      "
+      class="text-caption update-available-text q-mt-md"
+    >
+      There is an update available! <br />
+      <div class="text-primary text-center">
+        {{ versionStatus.latest_version }}
+      </div>
+    </div>
+    <div
+      v-else-if="
+        actualVersion &&
+        versionStatus &&
+        versionStatus.is_update_available &&
+        !versionStatus.completely_sure
+      "
+    >
+      <div class="text-caption">
+        There might be an update available: <br />
+        <div class="text-primary text-center">
+          {{ versionStatus.latest_version }}
+        </div>
+      </div>
+    </div>
+    <!-- Show loading while checking version -->
+    <div v-else-if="!versionStatus" class="text-caption">
+      <q-spinner size="16px" /> Checking for updates...
     </div>
   </div>
   <div v-if="hasContributors" class="contributor-infobox">
@@ -65,6 +93,10 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  version: {
+    type: String,
+    default: '',
+  },
 })
 
 // Local state to store contributor data from metadata.json
@@ -73,6 +105,7 @@ const gameBananaInfo = ref<ModInfoGBData | null>(null)
 const actualVersion = ref<string>('')
 const metadataLoaded = ref(false)
 const metadataData = ref<any>(null)
+const versionStatus = ref<VersionResponse | null>(null)
 
 // Map to store processed icon data
 const iconCache = reactive(new Map<string, string>())
@@ -174,6 +207,11 @@ const checkGamebananaVersion = async () => {
     })
 
     actualVersion.value = version as string
+
+    // Check for updates after getting the latest version
+    if (props.version && actualVersion.value) {
+      versionStatus.value = await checkVersions()
+    }
   } catch (error) {
     console.warn('Failed to check GameBanana version:', error)
   }
@@ -237,9 +275,63 @@ const getIconSrc = (contributor: Contributor): string => {
   return contributor.icon
 }
 
+interface VersionResponse {
+  is_update_available: boolean
+  latest_version: string
+  current_version: string
+  completely_sure: boolean
+}
+
+// Helper function to check current version vs GameBanana version
+const checkVersions = async (): Promise<VersionResponse | null> => {
+  if (!props.version || !actualVersion.value) return null
+
+  // If this is formatted as a semver version, compare it
+  if (isSemver(props.version) && isSemver(actualVersion.value)) {
+    const result = (await invoke('compare_update_semver', {
+      currentVersion: props.version,
+      latestVersion: actualVersion.value,
+    })) as boolean
+    console.log(
+      `Comparing versions: current=${props.version}, latest=${actualVersion.value}, result=${result}`
+    )
+    return {
+      is_update_available: !result,
+      latest_version: actualVersion.value,
+      current_version: props.version,
+      completely_sure: true,
+    }
+  } else {
+    // If not semver, just compare as strings
+    const result = props.version !== actualVersion.value
+    return {
+      is_update_available: result,
+      latest_version: actualVersion.value,
+      current_version: props.version,
+      completely_sure: false,
+    }
+  }
+}
+
+const isSemver = (version: string): boolean => {
+  const semverRegex =
+    /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/
+  return semverRegex.test(version)
+}
+
 // Load contributors data when component mounts or folderPath changes
 onMounted(loadMetadataData)
 watch(() => props.folderPath, loadContributorsFromMetadata)
+
+// Watch for version prop changes to re-validate
+watch(
+  () => props.version,
+  async newVersion => {
+    if (newVersion && actualVersion.value) {
+      versionStatus.value = await checkVersions()
+    }
+  }
+)
 </script>
 
 <style scoped>
@@ -324,5 +416,18 @@ h6 {
   margin: 0;
   color: var(--theme-text);
   margin-right: 6rem;
+}
+
+.update-available-text {
+  animation: colorFade 1s ease-in-out infinite alternate;
+}
+
+@keyframes colorFade {
+  0% {
+    color: var(--theme-text);
+  }
+  100% {
+    color: var(--q-primary);
+  }
 }
 </style>
