@@ -182,27 +182,14 @@
       "
       @cancel="handleModTypeCancel"
     />
-
     <!-- Folder Exists Confirmation Dialog -->
-    <MessageDialog
+    <FolderExistsDialog
       v-model="showFolderExistsDialog"
-      title="Folder Already Exists"
-      icon="warning"
-      icon-color="warning"
-      confirm-label="Download Anyway"
-      confirm-color="primary"
-      @confirm="continueFolderExistsDownload"
+      :mod-name="folderExistsModName"
+      @update="updateFolderExistsMod"
+      @download-anyway="continueFolderExistsDownload"
       @cancel="cancelDownload"
-    >
-      <div class="text-h6">{{ folderExistsModName }}</div>
-      <p class="text-body1 q-mt-sm">
-        The mod folder already exists in your mods directory.
-      </p>
-      <p class="text-body2 q-mt-sm">
-        This mod has already been downloaded with Fridaylight. Downloading again
-        will download it into a separate instance. Would you like to continue?
-      </p>
-    </MessageDialog>
+    />
 
     <!-- Mod Details Modal -->
     <ModDetailsModal
@@ -234,7 +221,7 @@ import DownloadFileSelector from '@modals/DownloadFileSelector.vue'
 import EngineSelectionDialog from '@modals/EngineSelectionDialog.vue'
 import CustomUrlDownloadModal from '@modals/CustomUrlDownloadModal.vue'
 import ModTypeSelectionModal from '@modals/ModTypeSelectionModal.vue'
-import MessageDialog from '@modals/MessageDialog.vue'
+import FolderExistsDialog from '@modals/FolderExistsDialog.vue'
 import ModDetailsModal from '@modals/ModDetailsModal.vue'
 import { StoreService } from '../../services/storeService'
 
@@ -319,6 +306,7 @@ const isModDetailsModalOpen = ref<boolean>(false)
 const folderExistsDownloadContinueFunction = ref<(() => Promise<any>) | null>(
   null
 )
+const folderExistsUpdateFunction = ref<(() => Promise<any>) | null>(null)
 
 watch(selectedModType, async newType => {
   console.log('Tab changed to:', newType)
@@ -705,7 +693,6 @@ const downloadMod = async (mod: any) => {
       showEngineSelectDialog.value = true
       return
     }
-
     if ('showModTypeModal' in result) {
       // If we need to show mod type selection
       customModData.value = result.customModData
@@ -717,6 +704,7 @@ const downloadMod = async (mod: any) => {
       // If the mod folder already exists, show confirmation dialog
       folderExistsModName.value = result.modName
       folderExistsDownloadContinueFunction.value = result.continueDownload
+      folderExistsUpdateFunction.value = result.updateMod || null
       showFolderExistsDialog.value = true
       return
     }
@@ -808,11 +796,11 @@ const onFileSelected = async (selectedFile: any) => {
       showModTypeModal.value = true
       return
     }
-
     if ('showFolderExistsDialog' in result) {
       // If the mod folder already exists, show confirmation dialog
       folderExistsModName.value = result.modName
       folderExistsDownloadContinueFunction.value = result.continueDownload
+      folderExistsUpdateFunction.value = result.updateMod || null
       showFolderExistsDialog.value = true
       return
     }
@@ -958,13 +946,12 @@ const getModsFolderPath = (engineMod: any): string => {
 const downloadEngine = async (engineType: string) => {
   try {
     // Use the centralized gamebananaService to download the engine
-    const result = await gamebananaService.downloadEngine(engineType)
-
-    // Check if we need to show the folder exists dialog
+    const result = await gamebananaService.downloadEngine(engineType) // Check if we need to show the folder exists dialog
     if ('showFolderExistsDialog' in result) {
       // If the engine folder already exists, show confirmation dialog
       folderExistsModName.value = result.modName
       folderExistsDownloadContinueFunction.value = result.continueDownload
+      folderExistsUpdateFunction.value = result.updateMod || null
       showFolderExistsDialog.value = true
       return
     }
@@ -1280,12 +1267,96 @@ const continueFolderExistsDownload = async () => {
       pendingDownloadNotification()
       pendingDownloadNotification = null
     }
-
     console.error('Failed to download mod:', error)
   } finally {
     // Reset state
     folderExistsModName.value = ''
     folderExistsDownloadContinueFunction.value = null
+    folderExistsUpdateFunction.value = null
+  }
+}
+
+// Function to update mod when folder exists
+const updateFolderExistsMod = async () => {
+  showFolderExistsDialog.value = false
+
+  try {
+    // Show updating notification
+    pendingDownloadNotification = $q.notify({
+      type: 'ongoing',
+      message: `Updating "${folderExistsModName.value}"...`,
+      position: 'bottom-right',
+      timeout: 0,
+    })
+
+    // Call the update function that was stored
+    if (folderExistsUpdateFunction.value) {
+      const result = await folderExistsUpdateFunction.value()
+
+      // Handle the result based on its type
+      if ('success' in result) {
+        // If it's a direct update result
+        if (pendingDownloadNotification) {
+          pendingDownloadNotification()
+          pendingDownloadNotification = null
+        }
+
+        if (result.success) {
+          // Show success notification
+          $q.notify({
+            type: 'positive',
+            message: `"${folderExistsModName.value}" updated successfully!`,
+            caption: `Ready to play from the mods list`,
+            position: 'bottom-right',
+            timeout: 5000,
+          })
+
+          // Trigger the refresh event to update the mod list
+          const refreshEvent = new CustomEvent('refresh-mods')
+          window.dispatchEvent(refreshEvent)
+        } else {
+          // Show error notification
+          $q.notify({
+            type: 'negative',
+            message: `Failed to update "${folderExistsModName.value}"`,
+            caption: result.error || 'Unknown error',
+            position: 'bottom-right',
+            timeout: 5000,
+          })
+        }
+      }
+    } else {
+      // No update function available
+      $q.notify({
+        type: 'warning',
+        message: 'Update not available',
+        caption: 'This mod cannot be updated',
+        position: 'bottom-right',
+        timeout: 3000,
+      })
+    }
+  } catch (error) {
+    // Show error notification
+    $q.notify({
+      type: 'negative',
+      message: `Failed to update "${folderExistsModName.value}"`,
+      caption: String(error),
+      position: 'bottom-right',
+      timeout: 5000,
+    })
+
+    // Dismiss any pending notification
+    if (pendingDownloadNotification) {
+      pendingDownloadNotification()
+      pendingDownloadNotification = null
+    }
+
+    console.error('Failed to update mod:', error)
+  } finally {
+    // Reset state
+    folderExistsModName.value = ''
+    folderExistsDownloadContinueFunction.value = null
+    folderExistsUpdateFunction.value = null
   }
 }
 </script>

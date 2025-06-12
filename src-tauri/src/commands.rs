@@ -642,7 +642,7 @@ pub async fn download_custom_mod_command(
 
 // Command to update a mod (same as downloading a mod)
 #[tauri::command]
-pub async fn update_mod_command(
+pub async fn update_gamebanana_mod_command(
   url: String,
   name: String,
   mod_id: i64,
@@ -1264,7 +1264,8 @@ pub fn run() {
         get_mod_updates_command,
         check_mod_dependency,
         check_gamebanana_mod_version,
-        compare_update_semver
+        compare_update_semver,
+        update_gamebanana_mod_command
       ]
     )
     .run(tauri::generate_context!())

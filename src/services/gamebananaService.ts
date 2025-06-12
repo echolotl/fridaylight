@@ -13,6 +13,7 @@ export interface FolderExistsResult {
   showFolderExistsDialog: boolean
   modName: string
   continueDownload: () => Promise<OperationResult | DownloadModResult>
+  updateMod?: () => Promise<OperationResult | DownloadModResult>
 }
 
 export interface ModpackInfo {
@@ -440,7 +441,6 @@ export class GameBananaService {
       GbConsole.log(
         `Checking if folder exists for mod "${mod.name}": ${folderExists}`
       )
-
       if (folderExists) {
         // Return a folder exists result with a function to continue the download
         return {
@@ -449,6 +449,10 @@ export class GameBananaService {
           continueDownload: async () => {
             // Continue with the actual download
             return this.proceedWithDownload(mod, true)
+          },
+          updateMod: async () => {
+            // Update the existing mod
+            return this.proceedWithUpdate(mod)
           },
         }
       }
@@ -599,6 +603,108 @@ export class GameBananaService {
       return { success: false, error: String(error) }
     }
   }
+
+  /**
+   * Process the update result and update database entry with new version
+   */
+  private async processUpdateResult(
+    result: string,
+    mod: GameBananaMod
+  ): Promise<OperationResult> {
+    try {
+      let modInfo: any
+      let modPath: string
+
+      try {
+        // Try to parse as JSON first
+        const parsed = JSON.parse(result)
+        modPath = parsed.path
+        modInfo = parsed.mod_info
+      } catch {
+        // If parsing fails, assume it's just the path string
+        modPath = result
+        // Get mod info directly from the backend
+        const allMods = await invoke<any[]>('get_mods')
+        modInfo = allMods.find(m => m.path === modPath)
+
+        // If we still don't have mod info, create a basic one
+        if (!modInfo) {
+          modInfo = {
+            id: crypto.randomUUID(),
+            name: mod.name,
+            path: modPath,
+            executable_path: null,
+            icon_data: null,
+            banner_data: mod.thumbnail_url,
+            version: mod.version || null,
+            engine_type: null,
+          }
+        }
+      }
+
+      // For updates, fetch the latest mod information from GameBanana to get new version
+      try {
+        GbConsole.log(
+          `Fetching updated mod info for ${mod.name} (ID: ${mod.id})`
+        )
+        const updatedModInfo = await invoke<any>('get_mod_info_command', {
+          modId: mod.id,
+          modelType: mod.model_name || 'Mod',
+        })
+
+        if (updatedModInfo && modInfo) {
+          // Update the mod info with new version and other updated details
+          modInfo.version =
+            updatedModInfo._sVersion ||
+            updatedModInfo.version ||
+            modInfo.version
+
+          // Update last modified timestamp
+          modInfo.date_modified = Date.now()
+
+          GbConsole.log(`Updated mod info - New version: ${modInfo.version}`)
+        }
+      } catch (error) {
+        GbConsole.warn(
+          'Failed to fetch updated mod info from GameBanana, using existing info:',
+          error
+        )
+      }
+
+      // Save the updated mod to the database
+      if (modInfo) {
+        await this.saveModToDatabase(modInfo)
+      }
+
+      // Show success notification
+      Notify.create({
+        type: 'positive',
+        message: `"${mod.name}" updated successfully!`,
+        caption: `Ready to play from the mods list`,
+        position: 'bottom-right',
+        timeout: 5000,
+      })
+
+      // Trigger the refresh event to update the mod list
+      const refreshEvent = new CustomEvent('refresh-mods')
+      window.dispatchEvent(refreshEvent)
+
+      return { success: true, modInfo }
+    } catch (error) {
+      // Show error notification
+      Notify.create({
+        type: 'negative',
+        message: `Failed to process update for "${mod.name}"`,
+        caption: String(error),
+        position: 'bottom-right',
+        timeout: 5000,
+      })
+
+      GbConsole.error('Failed to process update result:', error)
+      return { success: false, error: String(error) }
+    }
+  }
+
   /**
    * Download a specific file from a mod
    */
@@ -624,15 +730,17 @@ export class GameBananaService {
 
       if (folderExists) {
         // Dismiss the current notification
-        this.dismissNotification()
-
-        // Return a folder exists result with a function to continue the download
+        this.dismissNotification() // Return a folder exists result with a function to continue the download
         return {
           showFolderExistsDialog: true,
           modName: mod.name,
           continueDownload: async () => {
             // Continue with the actual download using the selected file
             return this.proceedWithSpecificFileDownload(mod, selectedFile, true)
+          },
+          updateMod: async () => {
+            // Update the existing mod using the selected file
+            return this.proceedWithSpecificFileUpdate(mod, selectedFile)
           },
         }
       }
@@ -807,6 +915,110 @@ export class GameBananaService {
       this.dismissNotification()
       GbConsole.error('Failed to download mod:', error)
 
+      return { success: false, error: String(error) }
+    }
+  }
+
+  /**
+   * Proceed with updating an existing mod
+   */
+  private async proceedWithUpdate(
+    mod: GameBananaMod
+  ): Promise<OperationResult> {
+    try {
+      // Show notification for updating
+      Notify.create({
+        type: 'info',
+        message: `Updating "${mod.name}"...`,
+        position: 'bottom-right',
+        timeout: 2000,
+      })
+
+      // Get the install location from settings
+      let installLocation: string | null = null
+      try {
+        installLocation = await this.getInstallLocation()
+      } catch (error) {
+        GbConsole.warn('Could not get install location from settings:', error)
+      }
+
+      GbConsole.log(`Updating mod "${mod.name}" in place`)
+
+      // Ensure no duplicate download entries exist
+      this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnail_url) // Call backend to update the mod using the update command
+      const result = await invoke<string>('update_gamebanana_mod_command', {
+        url: mod.download_url,
+        name: mod.name,
+        modId: mod.id,
+        modelType: mod.model_name || 'Mod',
+        installLocation,
+      })
+
+      // Process the update result with database entry update
+      return await this.processUpdateResult(result, mod)
+    } catch (error) {
+      Notify.create({
+        type: 'negative',
+        message: `Failed to update "${mod.name}"`,
+        caption: String(error),
+        position: 'bottom-right',
+        timeout: 5000,
+      })
+
+      GbConsole.error('Failed to update mod:', error)
+      return { success: false, error: String(error) }
+    }
+  }
+
+  /**
+   * Proceed with updating an existing mod using a specific file
+   */
+  private async proceedWithSpecificFileUpdate(
+    mod: GameBananaMod,
+    selectedFile: any
+  ): Promise<OperationResult> {
+    try {
+      // Show notification for updating
+      Notify.create({
+        type: 'info',
+        message: `Updating "${mod.name}"...`,
+        position: 'bottom-right',
+        timeout: 2000,
+      })
+
+      // Get the install location from settings
+      let installLocation: string | null = null
+      try {
+        installLocation = await this.getInstallLocation()
+      } catch (error) {
+        GbConsole.warn('Could not get install location from settings:', error)
+      }
+
+      GbConsole.log(`Updating mod "${mod.name}" in place using selected file`)
+      GbConsole.log('Using selected file URL:', selectedFile._sDownloadUrl)
+
+      // Ensure no duplicate download entries exist
+      this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnail_url) // Call backend to update the mod using the update command with specific file
+      const result = await invoke<string>('update_gamebanana_mod_command', {
+        url: selectedFile._sDownloadUrl,
+        name: mod.name,
+        modId: mod.id,
+        modelType: mod.model_name || 'Mod',
+        installLocation,
+      })
+
+      // Process the update result with database entry update
+      return await this.processUpdateResult(result, mod)
+    } catch (error) {
+      Notify.create({
+        type: 'negative',
+        message: `Failed to update "${mod.name}"`,
+        caption: String(error),
+        position: 'bottom-right',
+        timeout: 5000,
+      })
+
+      GbConsole.error('Failed to update mod:', error)
       return { success: false, error: String(error) }
     }
   }
