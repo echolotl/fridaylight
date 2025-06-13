@@ -256,7 +256,7 @@
                   />
                 </div>
                 <div class="q-mb-sm">
-                  Version: 0.11.0
+                  Version: 0.11.1
                   <span class="text-caption">(Windows, 64 bit)</span>
                 </div>
                 <div class="flex items-center q-mb-sm">
