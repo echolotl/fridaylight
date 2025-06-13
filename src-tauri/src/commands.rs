@@ -678,7 +678,7 @@ pub async fn download_engine_command(
   ).await
 }
 
-// Command to sync mods from database
+// Command to sync/update mods from database
 #[tauri::command]
 pub async fn sync_mods_from_database(
   mods_data: Vec<ModInfo>,
@@ -686,29 +686,48 @@ pub async fn sync_mods_from_database(
 ) -> Result<(), String> {
   info!("Syncing {} mods from database to ModsState", mods_data.len());
 
-  // First, capture the process_id from existing mods
-  let process_ids: HashMap<String, Option<u32>> = {
-    let current_mods = mods_state.0.lock().unwrap();
-    current_mods
-      .iter()
-      .map(|(id, mod_info)| (id.clone(), mod_info.process_id))
-      .collect()
-  };
-
-  // Clear current mods and add all the ones from the database
   let mut mods = mods_state.0.lock().unwrap();
-  mods.clear(); // Remove existing mods
+  let mut updated_count = 0;
+  let mut added_count = 0;
 
-  // Insert all mods from the database, preserving process_id values
-  for mut mod_info in mods_data {
-    // If this mod was running, preserve its process_id
-    if let Some(pid) = process_ids.get(&mod_info.id).and_then(|&pid| pid) {
-      info!("Preserving process_id {} for mod {}", pid, mod_info.name);
-      mod_info.process_id = Some(pid);
+  // For each mod in the database, check if it exists in the state
+  for mut new_mod_info in mods_data {
+    match mods.get(&new_mod_info.id) {
+      Some(existing_mod) => {
+        // Check if the mod has actually changed (excluding process_id)
+        let mut existing_mod_copy = existing_mod.clone();
+        existing_mod_copy.process_id = None; // Ignore process_id for comparison
+        let mut new_mod_copy = new_mod_info.clone();
+        new_mod_copy.process_id = None; // Ignore process_id for comparison
+
+        if existing_mod_copy != new_mod_copy {
+          // Mod has changed, preserve the process_id and update
+          new_mod_info.process_id = existing_mod.process_id;
+
+          if let Some(pid) = new_mod_info.process_id {
+            info!(
+              "Updating mod {} (preserving process_id {})",
+              new_mod_info.name,
+              pid
+            );
+          } else {
+            info!("Updating mod {}", new_mod_info.name);
+          }
+
+          mods.insert(new_mod_info.id.clone(), new_mod_info);
+          updated_count += 1;
+        } else {
+          // Mod hasn't changed, keep the existing one (which preserves process_id)
+          debug!("Mod {} unchanged, keeping existing", existing_mod.name);
+        }
+      }
+      None => {
+        // This is a new mod, add it
+        info!("Adding new mod from database: {}", new_mod_info.name);
+        mods.insert(new_mod_info.id.clone(), new_mod_info);
+        added_count += 1;
+      }
     }
-
-    debug!("Syncing mod from database: {} ({})", mod_info.name, mod_info.id);
-    mods.insert(mod_info.id.clone(), mod_info);
   }
 
   // Also sync with the global state
@@ -718,7 +737,12 @@ pub async fn sync_mods_from_database(
     info!("Updated global mods state with {} mods", global_mods.len());
   }
 
-  info!("Successfully synced {} mods from database", mods.len());
+  info!(
+    "Successfully synced mods from database: {} total, {} added, {} updated",
+    mods.len(),
+    added_count,
+    updated_count
+  );
   Ok(())
 }
 

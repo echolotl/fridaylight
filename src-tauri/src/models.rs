@@ -94,7 +94,7 @@ pub struct GameBananaModImage {
   pub width800: Option<i64>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Engine {
   pub engine_type: Option<String>,
   pub engine_name: Option<String>,
@@ -103,20 +103,20 @@ pub struct Engine {
   pub mods_folder_path: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Contributor {
   pub name: String,
   pub icon: Option<String>, // Path to contributor icon or base64 data
   pub role: Option<String>, // Role description of the contributor
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ContributorGroup {
   pub group: String,
   pub members: Vec<Contributor>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ModInfo {
   pub id: String,
   pub name: String,
@@ -137,7 +137,7 @@ pub struct ModInfo {
   pub date_added: Option<i64>, // Unix timestamp when mod was added
   pub gamebanana: Option<ModInfoGBData>, // GameBanana mod data
 }
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ModInfoGBData {
   pub url: String,
   pub id: i64,
