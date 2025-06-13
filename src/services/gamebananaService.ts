@@ -868,58 +868,31 @@ export class GameBananaService {
     mod: GameBananaMod
   ): Promise<OperationResult> {
     try {
+      // Check if this is a modpack - if so, disable updating
+      const isModpack = this.determineIfModpack(mod)
+      if (isModpack) {
+        GbConsole.log(`Mod "${mod.name}" is a modpack - updates not supported`)
+        return {
+          success: false,
+          error: 'Updates not available for modpacks... yet',
+        }
+      }
+
       // Show notification for updating
       this.pendingDownloadNotification?.dismiss()
       this.pendingDownloadNotification = notificationService.updateProgress(
         mod.name
       )
 
-      // Check if this is a modpack that should be updated in an engine's mods folder
-      const isModpack = this.determineIfModpack(mod)
-      const modpackType = this.determineModpackType(mod)
-
+      // Get the install location from settings
       let installLocation: string | null = null
-
-      if (isModpack && modpackType) {
-        // This is a modpack update - we need to find the engine it belongs to
-        GbConsole.log(
-          `Detected modpack update for "${mod.name}" (type: ${modpackType})`
-        )
-
-        const engineMods = await this.getCompatibleEngineMods(modpackType)
-
-        if (engineMods.length === 0) {
-          // No compatible engine found
-          this.dismissNotification()
-          notificationService.updateError(
-            mod.name,
-            `No compatible ${await formatEngineName(modpackType)} installation found for this modpack update`
-          )
-          return {
-            success: false,
-            error: `No compatible engine found for ${modpackType} modpack`,
-          }
-        }
-
-        // TODO
-        // For now, use the first compatible engine
-        const targetEngine = engineMods[0]
-        installLocation = this.getModsFolderPath(targetEngine)
-
-        GbConsole.log(
-          `Updating modpack to engine mods folder: ${installLocation}`
-        )
-      } else {
-        // Regular mod update - use general install location
-        try {
-          installLocation = await this.getInstallLocation()
-        } catch (error) {
-          GbConsole.warn('Could not get install location from settings:', error)
-        }
+      try {
+        installLocation = await this.getInstallLocation()
+      } catch (error) {
+        GbConsole.warn('Could not get install location from settings:', error)
       }
 
       GbConsole.log(`Updating mod "${mod.name}" in place`)
-      GbConsole.log('Using install location:', installLocation)
 
       // Ensure no duplicate download entries exist
       this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnail_url) // Call backend to update the mod using the update command
@@ -950,59 +923,30 @@ export class GameBananaService {
     selectedFile: any
   ): Promise<OperationResult> {
     try {
+      // Check if this is a modpack - if so, disable updating
+      const isModpack = this.determineIfModpack(mod)
+      if (isModpack) {
+        GbConsole.log(`Mod "${mod.name}" is a modpack - updates not supported`)
+        notificationService.updateNotAvailable(mod.name)
+        return { success: false, error: 'Updates not available for modpacks' }
+      }
+
       // Show notification for updating
       this.pendingDownloadNotification?.dismiss()
       this.pendingDownloadNotification = notificationService.updatePreparing(
         mod.name
       )
 
-      // Check if this is a modpack that should be updated in an engine's mods folder
-      const isModpack = this.determineIfModpack(mod)
-      const modpackType = this.determineModpackType(mod)
-
+      // Get the install location from settings
       let installLocation: string | null = null
-
-      if (isModpack && modpackType && !selectedFile._bContainsExe) {
-        // This is a modpack update - we need to find the engine it belongs to
-        GbConsole.log(
-          `Detected modpack update for "${mod.name}" (type: ${modpackType})`
-        )
-
-        const engineMods = await this.getCompatibleEngineMods(modpackType)
-
-        if (engineMods.length === 0) {
-          // No compatible engine found
-          this.dismissNotification()
-          notificationService.updateError(
-            mod.name,
-            `No compatible ${await formatEngineName(modpackType)} installation found for this modpack update`
-          )
-          return {
-            success: false,
-            error: `No compatible engine found for ${modpackType} modpack`,
-          }
-        }
-
-        // TODO
-        // For now, use the first compatible engine
-        const targetEngine = engineMods[0]
-        installLocation = this.getModsFolderPath(targetEngine)
-
-        GbConsole.log(
-          `Updating modpack to engine mods folder: ${installLocation}`
-        )
-      } else {
-        // Regular mod update - use general install location
-        try {
-          installLocation = await this.getInstallLocation()
-        } catch (error) {
-          GbConsole.warn('Could not get install location from settings:', error)
-        }
+      try {
+        installLocation = await this.getInstallLocation()
+      } catch (error) {
+        GbConsole.warn('Could not get install location from settings:', error)
       }
 
       GbConsole.log(`Updating mod "${mod.name}" in place using selected file`)
       GbConsole.log('Using selected file URL:', selectedFile._sDownloadUrl)
-      GbConsole.log('Using install location:', installLocation)
 
       // Ensure no duplicate download entries exist
       this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnail_url) // Call backend to update the mod using the update command with specific file
