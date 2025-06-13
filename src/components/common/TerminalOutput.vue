@@ -39,8 +39,9 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { useQuasar } from 'quasar'
 import { invoke } from '@tauri-apps/api/core'
+import type { QScrollArea } from 'quasar'
+import { notificationService } from '@services/notificationService'
 
 const props = defineProps({
   modId: {
@@ -55,9 +56,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'clear'])
 
-const $q = useQuasar()
 const logs = ref<string[]>([])
-import type { QScrollArea } from 'quasar'
 const terminalContent = ref<InstanceType<typeof QScrollArea> | null>(null)
 const autoScroll = ref(true)
 const refreshInterval = ref<number | null>(null)
@@ -105,19 +104,13 @@ const scrollToBottom = () => {
 const copyToClipboard = async () => {
   try {
     await navigator.clipboard.writeText(logs.value.join('\n'))
-    $q.notify({
-      message: 'Terminal output copied to clipboard',
-      color: 'positive',
-      position: 'bottom-right',
-      timeout: 2000,
+    notificationService.info({
+      message: 'Logs copied to clipboard',
     })
   } catch (err) {
     console.error('Failed to copy:', err)
-    $q.notify({
-      message: 'Failed to copy to clipboard',
-      color: 'negative',
-      position: 'bottom-right',
-      timeout: 2000,
+    notificationService.error({
+      message: 'Failed to copy logs to clipboard',
     })
   }
 }

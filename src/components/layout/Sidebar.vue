@@ -195,12 +195,12 @@ import AppSettingsModal from '@modals/AppSettingsModal.vue'
 import GameBananaBrowser from '@mods/GameBananaBrowser.vue'
 import HomePage from '@mods/HomePage.vue'
 import { Mod, Folder, DisplayItem } from '@main-types'
-import { useQuasar } from 'quasar'
 import { StoreService } from '../../services/storeService'
 import { DatabaseService } from '@services/dbService'
 import { formatEngineName } from '@utils/index'
 import { revealItemInDir } from '@tauri-apps/plugin-opener'
 import { sep } from '@tauri-apps/api/path'
+import { notificationService } from '@services/notificationService'
 
 // Use the props without storing in a variable to avoid the unused variable warning
 defineProps<{
@@ -238,8 +238,6 @@ const startResize = (_e: MouseEvent) => {
   document.addEventListener('mouseup', stopResize)
   document.body.style.userSelect = 'none'
 }
-
-const $q = useQuasar()
 
 const handleResize = (e: MouseEvent) => {
   if (!isResizing) return
@@ -437,13 +435,11 @@ const saveModToDatabase = async (mod: ModInfo) => {
     await loadFoldersFromDatabase() // Reload folders from DB
   } catch (error) {
     console.error('Failed to save mod:', error)
-    $q.notify({
-      type: 'negative',
-      message: 'Failed to save mod',
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 3000,
-    })
+    notificationService.modError(
+      mod.name,
+      'save',
+      error instanceof Error ? error.message : 'Unknown error'
+    )
   }
 }
 
@@ -489,20 +485,14 @@ const selectModFolder = async () => {
         await saveModToDatabase(modInfo)
 
         // Show success notification
-        $q.notify({
-          type: 'positive',
-          message: `"${modInfo.name}" added successfully!`,
-          position: 'bottom-right',
-          timeout: 3000,
-        })
+        notificationService.operationSuccess(
+          `Mod "${modInfo.name}" added successfully!`
+        )
       } catch (error) {
         // This likely means the folder failed validation
-        $q.notify({
-          type: 'negative',
-          message: 'Invalid FNF Mod',
-          caption: String(error),
-          position: 'bottom-right',
-          timeout: 5000,
+        notificationService.error({
+          message: 'Failed to add mod',
+          caption: error instanceof Error ? error.message : 'Unknown error',
         })
         console.error('Failed to add mod:', error)
       }
@@ -530,13 +520,9 @@ const selectModsParentFolder = async () => {
     }
 
     // Show loading notification
-    const loadingNotif = $q.notify({
-      type: 'ongoing',
-      message: 'Scanning for mods...',
-      caption: 'This may take a while for large folders',
-      position: 'bottom-right',
-      timeout: 0,
-      spinner: true,
+    const loadingNotif = notificationService.ongoing({
+      message: 'Searching for mods...',
+      caption: 'This might take a while.',
     })
 
     // Call the Rust command to select a folder containing multiple mods
@@ -545,7 +531,7 @@ const selectModsParentFolder = async () => {
     })
 
     // Dismiss loading notification
-    loadingNotif()
+    loadingNotif.dismiss()
 
     if (addedMods && addedMods.length > 0) {
       // Add each mod to the mods array
@@ -568,30 +554,21 @@ const selectModsParentFolder = async () => {
       selectMod(addedMods[0])
 
       // Show a success message
-      $q.notify({
-        type: 'positive',
-        message: `Successfully added ${addedMods.length} mods`,
-        position: 'bottom-right',
-        timeout: 3000,
-      })
+      notificationService.operationSuccess(
+        `${addedMods.length} mods added successfully!`
+      )
     } else {
       // Show a message when no mods were found
-      $q.notify({
-        type: 'info',
+      notificationService.info({
         message: 'No compatible mods found',
         caption: 'Make sure the folder contains valid FNF mods',
-        position: 'bottom-right',
-        timeout: 3000,
       })
     }
   } catch (error) {
     // This will catch validation errors or other issues
-    $q.notify({
-      type: 'negative',
+    notificationService.error({
       message: 'Failed to import mods',
       caption: String(error),
-      position: 'bottom-right',
-      timeout: 5000,
     })
     console.error('Failed to select mods parent folder:', error)
   }
@@ -671,13 +648,10 @@ const handleSaveMod = async (updatedMod: Mod) => {
     }
   } catch (error) {
     console.error('Failed to update mod details:', error)
-    $q.notify({
-      type: 'negative',
-      message: `Failed to update "${updatedMod.name}".`,
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 3000,
-    })
+    notificationService.operationError(
+      `Failed to update mod details for ${updatedMod.name}`,
+      error instanceof Error ? error.message : 'Unknown error'
+    )
   }
 }
 
@@ -702,24 +676,13 @@ const handleSelectModFolder = async (callback?: (newPath: string) => void) => {
 
       // Save the updated mod
       await handleSaveMod(updatedMod)
-
-      // Show success notification
-      $q.notify({
-        type: 'positive',
-        message: 'Mod folder updated',
-        position: 'bottom-right',
-        timeout: 3000,
-      })
     }
   } catch (error) {
     console.error('Error selecting mod folder:', error)
-    $q.notify({
-      type: 'negative',
-      message: 'Error changing mod folder.',
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 3000,
-    })
+    notificationService.operationError(
+      'Error selecting mod folder',
+      error instanceof Error ? error.message : 'Unknown error'
+    )
   }
 }
 
@@ -750,24 +713,13 @@ const handleSelectExecutable = async (
 
       // Save the updated mod
       await handleSaveMod(updatedMod)
-
-      // Show success notification
-      $q.notify({
-        type: 'positive',
-        message: 'Executable path updated',
-        position: 'bottom-right',
-        timeout: 3000,
-      })
     }
   } catch (error) {
     console.error('Error selecting executable:', error)
-    $q.notify({
-      type: 'negative',
-      message: 'Error selecting executable.',
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 3000,
-    })
+    notificationService.operationError(
+      'Error selecting executable.',
+      error instanceof Error ? error.message : 'Unknown error'
+    )
   }
 }
 
@@ -842,19 +794,16 @@ const deleteMod = async (modId: string) => {
 const superDeleteMod = async (modId: string) => {
   try {
     // Show a loading notification
-    const loadingNotif = $q.notify({
-      type: 'ongoing',
-      message: 'Super deleting mod...',
-      position: 'bottom-right',
-      timeout: 0,
-      spinner: true,
+    const loadingNotif = notificationService.ongoing({
+      message: 'Deleting mod files...',
+      caption: 'This may take a while depending on the mod size.',
     })
 
     // Call the Rust backend to perform super delete
     await invoke('super_delete_mod', { id: modId })
 
     // Dismiss loading notification
-    loadingNotif()
+    loadingNotif.dismiss()
 
     // Remove mod from the mods array
     mods.value = mods.value.filter(mod => mod.id !== modId)
@@ -868,13 +817,7 @@ const superDeleteMod = async (modId: string) => {
     await dbService.deleteMod(modId)
 
     // Show success notification
-    $q.notify({
-      type: 'positive',
-      message: 'Mod completely deleted',
-      caption: 'The mod folder and all its contents have been deleted',
-      position: 'bottom-right',
-      timeout: 3000,
-    })
+    notificationService.operationSuccess('Mod files deleted successfully!')
 
     // Force a refresh of the UI to ensure the mod is removed from displayItems
     const refreshEvent = new CustomEvent('refresh-mods')
@@ -883,13 +826,10 @@ const superDeleteMod = async (modId: string) => {
     console.error('Failed to super delete mod:', error)
 
     // Show error notification
-    $q.notify({
-      type: 'negative',
-      message: 'Failed to delete mod files',
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 5000,
-    })
+    notificationService.operationError(
+      'Failed to delete mod files',
+      error instanceof Error ? error.message : 'Unknown error'
+    )
   }
 }
 

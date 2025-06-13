@@ -1,5 +1,8 @@
 import { invoke } from '@tauri-apps/api/core'
-import { Notify } from 'quasar'
+import {
+  notificationService,
+  OngoingNotificationResult,
+} from '@services/notificationService'
 import { StoreService } from './storeService'
 import { downloadState, downloadingMods } from '../stores/downloadState'
 import { GameBananaMod } from '../types'
@@ -99,7 +102,7 @@ class GbConsole {
 }
 export class GameBananaService {
   private static instance: GameBananaService
-  private pendingDownloadNotification: any = null
+  private pendingDownloadNotification: OngoingNotificationResult | null = null
 
   private constructor() {}
 
@@ -318,12 +321,9 @@ export class GameBananaService {
   ): Promise<DownloadModResult> {
     try {
       // Show loading notification
-      this.pendingDownloadNotification = Notify.create({
-        type: 'ongoing',
-        message: `Preparing to download "${mod.name}"...`,
-        position: 'bottom-right',
-        timeout: 0,
-      })
+      this.pendingDownloadNotification = notificationService.downloadPreparing(
+        mod.name
+      )
 
       // First check if this mod has multiple download options
       const downloadInfo = await invoke<any>('get_mod_download_files_command', {
@@ -364,15 +364,12 @@ export class GameBananaService {
           // No compatible engine found, show error
           this.dismissNotification()
 
-          Notify.create({
-            type: 'negative',
-            message: `Cannot download ${modpackType} modpack`,
-            caption: `You don't have ${await formatEngineName(
+          notificationService.modpackNoEngineError(
+            mod.name,
+            await formatEngineName(
               modpackType || 'whatever engine this mod needs'
-            )} installed. Please install it.`,
-            position: 'bottom-right',
-            timeout: 5000,
-          })
+            )
+          )
 
           return {
             success: false,
@@ -412,13 +409,7 @@ export class GameBananaService {
       }
     } catch (error) {
       // Show error notification
-      Notify.create({
-        type: 'negative',
-        message: `Failed to prepare download for "${mod.name}"`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadError(mod.name, String(error))
 
       this.dismissNotification()
       GbConsole.error('Failed to prepare mod download:', error)
@@ -462,13 +453,8 @@ export class GameBananaService {
       // No folder exists, proceed with the download directly
       return await this.proceedWithDownload(mod)
     } catch (error) {
-      Notify.create({
-        type: 'negative',
-        message: `Failed to download "${mod.name}"`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      // Show error notification
+      notificationService.downloadError(mod.name, String(error))
 
       GbConsole.error('Failed to download mod:', error)
       return { success: false, error: String(error) }
@@ -484,12 +470,10 @@ export class GameBananaService {
   ): Promise<OperationResult> {
     try {
       // First notification for downloading
-      Notify.create({
-        type: 'info',
-        message: `Starting download of "${mod.name}"`,
-        position: 'bottom-right',
-        timeout: 2000,
-      })
+      this.pendingDownloadNotification?.dismiss()
+      this.pendingDownloadNotification = notificationService.downloadProgress(
+        mod.name
+      )
 
       // Get the install location from settings
       let installLocation: string | null = null
@@ -502,7 +486,7 @@ export class GameBananaService {
       // If this is a retry (folder exists case), append a timestamp to make the folder unique
       let modName = mod.name
       if (isRetry) {
-        modName = `${modName} (${mod.id.toString(16).slice(0, 4)})`
+        modName = `${modName} (${Math.random().toString(16).slice(2, 6)})`
         GbConsole.log(`Folder already exists, using unique name: ${modName}`)
       }
 
@@ -521,13 +505,8 @@ export class GameBananaService {
       // Process the result
       return await this.processDownloadResult(result, { ...mod, name: modName })
     } catch (error) {
-      Notify.create({
-        type: 'negative',
-        message: `Failed to download "${mod.name}"`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadError(mod.name, String(error))
+      this.dismissNotification()
 
       GbConsole.error('Failed to download mod:', error)
       return { success: false, error: String(error) }
@@ -578,13 +557,8 @@ export class GameBananaService {
       }
 
       // Show success notification
-      Notify.create({
-        type: 'positive',
-        message: `"${mod.name}" downloaded and installed successfully!`,
-        caption: `Ready to play from the mods list`,
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadSuccess(mod.name)
+      this.dismissNotification()
 
       // Trigger the refresh event to update the mod list
       const refreshEvent = new CustomEvent('refresh-mods')
@@ -593,14 +567,8 @@ export class GameBananaService {
       return { success: true, modInfo }
     } catch (error) {
       // Show error notification
-      Notify.create({
-        type: 'negative',
-        message: `Failed to process download for "${mod.name}"`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
-
+      notificationService.downloadError(mod.name, String(error))
+      this.dismissNotification()
       GbConsole.error('Failed to process download result:', error)
       return { success: false, error: String(error) }
     }
@@ -679,13 +647,11 @@ export class GameBananaService {
       }
 
       // Show success notification
-      Notify.create({
-        type: 'positive',
-        message: `"${mod.name}" updated successfully!`,
-        caption: `Ready to play from the mods list`,
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.updateSuccess(
+        mod.name,
+        'Updated to version ' + modInfo.version
+      )
+      this.dismissNotification()
 
       // Trigger the refresh event to update the mod list
       const refreshEvent = new CustomEvent('refresh-mods')
@@ -694,14 +660,8 @@ export class GameBananaService {
       return { success: true, modInfo }
     } catch (error) {
       // Show error notification
-      Notify.create({
-        type: 'negative',
-        message: `Failed to process update for "${mod.name}"`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
-
+      notificationService.updateError(mod.name, String(error))
+      this.dismissNotification()
       GbConsole.error('Failed to process update result:', error)
       return { success: false, error: String(error) }
     }
@@ -716,12 +676,10 @@ export class GameBananaService {
   ): Promise<DownloadModResult> {
     try {
       // Create a new notification for the download process
-      this.pendingDownloadNotification = Notify.create({
-        type: 'ongoing',
-        message: `Preparing "${mod.name}"...`,
-        position: 'bottom-right',
-        timeout: 0,
-      })
+      this.pendingDownloadNotification?.dismiss()
+      this.pendingDownloadNotification = notificationService.downloadProgress(
+        mod.name
+      )
 
       // Check if the mod folder already exists before downloading
       const folderExists = await this.checkModFolderExists(mod.name)
@@ -755,13 +713,7 @@ export class GameBananaService {
       )
     } catch (error) {
       // Show error notification
-      Notify.create({
-        type: 'negative',
-        message: `Failed to download "${mod.name}"`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadError(mod.name, String(error))
 
       this.dismissNotification()
       GbConsole.error('Failed to download mod:', error)
@@ -780,12 +732,9 @@ export class GameBananaService {
   ): Promise<DownloadModResult> {
     try {
       // Create a new notification for the download process
-      this.pendingDownloadNotification = Notify.create({
-        type: 'ongoing',
-        message: `Preparing "${mod.name}"...`,
-        position: 'bottom-right',
-        timeout: 0,
-      })
+      this.pendingDownloadNotification = notificationService.downloadProgress(
+        mod.name
+      )
 
       // Check if the selected file contains an executable
       if (selectedFile._bContainsExe) {
@@ -810,7 +759,7 @@ export class GameBananaService {
         // If this is a retry (folder exists case), append a timestamp to make the folder unique
         let modName = mod.name
         if (isRetry) {
-          modName = `${modName} (${mod.id.toString(16).slice(0, 4)})`
+          modName = `${modName} (${Math.random().toString(16).slice(2, 6)})`
           GbConsole.log(`Folder already exists, using unique name: ${modName}`)
         }
 
@@ -843,15 +792,13 @@ export class GameBananaService {
           // No compatible engine found, show error
           this.dismissNotification()
 
-          Notify.create({
-            type: 'negative',
-            message: `Cannot download ${modpackType} modpack`,
-            caption: `You don't have ${await formatEngineName(
+          // Show error notification
+          notificationService.modpackNoEngineError(
+            mod.name,
+            await formatEngineName(
               modpackType || 'whatever engine this mod needs'
-            )} installed. Please install it.`,
-            position: 'bottom-right',
-            timeout: 5000,
-          })
+            )
+          )
 
           return { success: false, error: 'No compatible engine found' }
         } else {
@@ -906,13 +853,7 @@ export class GameBananaService {
       return await this.processDownloadResult(result, { ...mod, name: modName })
     } catch (error) {
       // Show error notification
-      Notify.create({
-        type: 'negative',
-        message: `Failed to download "${mod.name}"`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadError(mod.name, String(error))
 
       this.dismissNotification()
       GbConsole.error('Failed to download mod:', error)
@@ -920,7 +861,6 @@ export class GameBananaService {
       return { success: false, error: String(error) }
     }
   }
-
   /**
    * Proceed with updating an existing mod
    */
@@ -929,22 +869,57 @@ export class GameBananaService {
   ): Promise<OperationResult> {
     try {
       // Show notification for updating
-      Notify.create({
-        type: 'info',
-        message: `Updating "${mod.name}"...`,
-        position: 'bottom-right',
-        timeout: 2000,
-      })
+      this.pendingDownloadNotification?.dismiss()
+      this.pendingDownloadNotification = notificationService.updateProgress(
+        mod.name
+      )
 
-      // Get the install location from settings
+      // Check if this is a modpack that should be updated in an engine's mods folder
+      const isModpack = this.determineIfModpack(mod)
+      const modpackType = this.determineModpackType(mod)
+
       let installLocation: string | null = null
-      try {
-        installLocation = await this.getInstallLocation()
-      } catch (error) {
-        GbConsole.warn('Could not get install location from settings:', error)
+
+      if (isModpack && modpackType) {
+        // This is a modpack update - we need to find the engine it belongs to
+        GbConsole.log(
+          `Detected modpack update for "${mod.name}" (type: ${modpackType})`
+        )
+
+        const engineMods = await this.getCompatibleEngineMods(modpackType)
+
+        if (engineMods.length === 0) {
+          // No compatible engine found
+          this.dismissNotification()
+          notificationService.updateError(
+            mod.name,
+            `No compatible ${await formatEngineName(modpackType)} installation found for this modpack update`
+          )
+          return {
+            success: false,
+            error: `No compatible engine found for ${modpackType} modpack`,
+          }
+        }
+
+        // TODO
+        // For now, use the first compatible engine
+        const targetEngine = engineMods[0]
+        installLocation = this.getModsFolderPath(targetEngine)
+
+        GbConsole.log(
+          `Updating modpack to engine mods folder: ${installLocation}`
+        )
+      } else {
+        // Regular mod update - use general install location
+        try {
+          installLocation = await this.getInstallLocation()
+        } catch (error) {
+          GbConsole.warn('Could not get install location from settings:', error)
+        }
       }
 
       GbConsole.log(`Updating mod "${mod.name}" in place`)
+      GbConsole.log('Using install location:', installLocation)
 
       // Ensure no duplicate download entries exist
       this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnail_url) // Call backend to update the mod using the update command
@@ -959,19 +934,14 @@ export class GameBananaService {
       // Process the update result with database entry update
       return await this.processUpdateResult(result, mod)
     } catch (error) {
-      Notify.create({
-        type: 'negative',
-        message: `Failed to update "${mod.name}"`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      // Show error notification
+      this.dismissNotification()
+      notificationService.updateError(mod.name, String(error))
 
       GbConsole.error('Failed to update mod:', error)
       return { success: false, error: String(error) }
     }
   }
-
   /**
    * Proceed with updating an existing mod using a specific file
    */
@@ -981,23 +951,58 @@ export class GameBananaService {
   ): Promise<OperationResult> {
     try {
       // Show notification for updating
-      Notify.create({
-        type: 'info',
-        message: `Updating "${mod.name}"...`,
-        position: 'bottom-right',
-        timeout: 2000,
-      })
+      this.pendingDownloadNotification?.dismiss()
+      this.pendingDownloadNotification = notificationService.updatePreparing(
+        mod.name
+      )
 
-      // Get the install location from settings
+      // Check if this is a modpack that should be updated in an engine's mods folder
+      const isModpack = this.determineIfModpack(mod)
+      const modpackType = this.determineModpackType(mod)
+
       let installLocation: string | null = null
-      try {
-        installLocation = await this.getInstallLocation()
-      } catch (error) {
-        GbConsole.warn('Could not get install location from settings:', error)
+
+      if (isModpack && modpackType && !selectedFile._bContainsExe) {
+        // This is a modpack update - we need to find the engine it belongs to
+        GbConsole.log(
+          `Detected modpack update for "${mod.name}" (type: ${modpackType})`
+        )
+
+        const engineMods = await this.getCompatibleEngineMods(modpackType)
+
+        if (engineMods.length === 0) {
+          // No compatible engine found
+          this.dismissNotification()
+          notificationService.updateError(
+            mod.name,
+            `No compatible ${await formatEngineName(modpackType)} installation found for this modpack update`
+          )
+          return {
+            success: false,
+            error: `No compatible engine found for ${modpackType} modpack`,
+          }
+        }
+
+        // TODO
+        // For now, use the first compatible engine
+        const targetEngine = engineMods[0]
+        installLocation = this.getModsFolderPath(targetEngine)
+
+        GbConsole.log(
+          `Updating modpack to engine mods folder: ${installLocation}`
+        )
+      } else {
+        // Regular mod update - use general install location
+        try {
+          installLocation = await this.getInstallLocation()
+        } catch (error) {
+          GbConsole.warn('Could not get install location from settings:', error)
+        }
       }
 
       GbConsole.log(`Updating mod "${mod.name}" in place using selected file`)
       GbConsole.log('Using selected file URL:', selectedFile._sDownloadUrl)
+      GbConsole.log('Using install location:', installLocation)
 
       // Ensure no duplicate download entries exist
       this.ensureUniqueDownload(mod.id, mod.name, mod.thumbnail_url) // Call backend to update the mod using the update command with specific file
@@ -1012,13 +1017,9 @@ export class GameBananaService {
       // Process the update result with database entry update
       return await this.processUpdateResult(result, mod)
     } catch (error) {
-      Notify.create({
-        type: 'negative',
-        message: `Failed to update "${mod.name}"`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      // Show error notification
+      notificationService.updateError(mod.name, String(error))
+      this.dismissNotification()
 
       GbConsole.error('Failed to update mod:', error)
       return { success: false, error: String(error) }
@@ -1038,12 +1039,9 @@ export class GameBananaService {
 
     try {
       // Create a new notification for the download process
-      this.pendingDownloadNotification = Notify.create({
-        type: 'ongoing',
-        message: `Downloading "${modpackInfo.mod.name}"...`,
-        position: 'bottom-right',
-        timeout: 0,
-      })
+      this.pendingDownloadNotification = notificationService.downloadProgress(
+        modpackInfo.mod.name
+      )
 
       const mod = modpackInfo.mod
       // Store mod ID to ensure we can cleanup tracking afterward
@@ -1092,13 +1090,8 @@ export class GameBananaService {
       this.dismissNotification()
 
       // Show success notification
-      Notify.create({
-        type: 'positive',
-        message: `"${mod.name}" installed successfully!`,
-        caption: `Ready to play in ${await formatEngineName(modpackInfo.type || '')}`,
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadSuccess(mod.name)
+      this.dismissNotification()
 
       // Manual cleanup of download tracking entry
       downloadState.completeDownload(downloadId)
@@ -1110,13 +1103,7 @@ export class GameBananaService {
       return { success: true }
     } catch (error) {
       // Show error notification
-      Notify.create({
-        type: 'negative',
-        message: `Failed to install modpack`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadError(modpackInfo.mod.name, String(error))
 
       this.dismissNotification()
       GbConsole.error('Failed to install modpack:', error)
@@ -1153,13 +1140,10 @@ export class GameBananaService {
       return await this.proceedWithEngineDownload(engineType)
     } catch (error) {
       // Show error notification
-      Notify.create({
-        type: 'negative',
-        message: `Failed to download ${await formatEngineName(engineType)}`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadError(
+        await formatEngineName(engineType),
+        String(error)
+      )
 
       GbConsole.error(`Failed to download ${engineType} engine:`, error)
       return { success: false, error: String(error) }
@@ -1176,12 +1160,9 @@ export class GameBananaService {
     try {
       let engineName = await formatEngineName(engineType)
       // Show loading notification
-      this.pendingDownloadNotification = Notify.create({
-        type: 'ongoing',
-        message: `Preparing to download ${engineName}...`,
-        position: 'bottom-right',
-        timeout: 0,
-      })
+      this.pendingDownloadNotification?.dismiss()
+      this.pendingDownloadNotification =
+        notificationService.downloadPreparing(engineName)
 
       // Get the install location from settings
       let installLocation: string | null = null
@@ -1238,13 +1219,8 @@ export class GameBananaService {
       this.dismissNotification()
 
       // Show success notification
-      Notify.create({
-        type: 'positive',
-        message: `${await formatEngineName(engineType)} installed successfully!`,
-        caption: `Ready to play from the mods list`,
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadSuccess(engineName)
+      this.dismissNotification()
 
       // Trigger the refresh event to update the mod list
       const refreshEvent = new CustomEvent('refresh-mods')
@@ -1253,13 +1229,10 @@ export class GameBananaService {
       return { success: true, modInfo }
     } catch (error) {
       // Show error notification
-      Notify.create({
-        type: 'negative',
-        message: `Failed to download ${await formatEngineName(engineType)}`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadError(
+        await formatEngineName(engineType),
+        String(error)
+      )
 
       // Dismiss any pending notification
       this.dismissNotification()
@@ -1279,12 +1252,9 @@ export class GameBananaService {
   ): Promise<OperationResult | DeepLinkEngineSelectionResult> {
     try {
       // Show notification that download is being prepared
-      this.pendingDownloadNotification = Notify.create({
-        type: 'ongoing',
-        message: `Preparing to download mod...`,
-        position: 'bottom-right',
-        timeout: 0,
-      })
+      this.pendingDownloadNotification?.dismiss()
+      this.pendingDownloadNotification =
+        notificationService.downloadPreparing('mod')
 
       // Get the mod info from GameBanana API to get the name and other details
       const modInfo = await invoke<any>('get_mod_info_command', {
@@ -1315,16 +1285,12 @@ export class GameBananaService {
         if (engineMods.length === 0) {
           // No compatible engine found
           this.dismissNotification()
-
-          Notify.create({
-            type: 'negative',
-            message: `Cannot download ${modpackType} modpack`,
-            caption: `You don't have "${await formatEngineName(
-              modpackType
-            )}" engines installed. Please install it from the GameBanana browser first.`,
-            position: 'bottom-right',
-            timeout: 5000,
-          })
+          notificationService.modpackNoEngineError(
+            modName,
+            await formatEngineName(
+              modpackType || 'whatever engine this mod needs'
+            )
+          )
 
           return { success: false, error: 'No compatible engine found' }
         } else {
@@ -1469,13 +1435,8 @@ export class GameBananaService {
       this.dismissNotification()
 
       // Show success notification
-      Notify.create({
-        type: 'positive',
-        message: `"${modName}" downloaded and installed successfully!`,
-        caption: `Ready to play from the mods list`,
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadSuccess(modName)
+      this.dismissNotification()
 
       // Trigger refresh event to update mod list
       const refreshEvent = new CustomEvent('refresh-mods')
@@ -1487,13 +1448,7 @@ export class GameBananaService {
       this.dismissNotification()
 
       // Show error notification
-      Notify.create({
-        type: 'negative',
-        message: 'Failed to download mod',
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadError('mod', String(error))
 
       GbConsole.error('Failed to download mod from deep link:', error)
       return { success: false, error: String(error) }
@@ -1512,15 +1467,8 @@ export class GameBananaService {
   ): Promise<OperationResult> {
     try {
       // Show loading notification
-      this.pendingDownloadNotification = Notify.create({
-        type: 'ongoing',
-        message: `Downloading "${modName}" to ${await formatEngineName(
-          engine.engine?.engine_type
-        )}...`,
-        position: 'bottom-right',
-        timeout: 0,
-      })
-
+      this.pendingDownloadNotification =
+        notificationService.downloadPreparing(modName)
       // Get the installation path for the selected engine's mods folder
       const modsFolderPath = this.getModsFolderPath(engine)
       if (!modsFolderPath) {
@@ -1562,13 +1510,8 @@ export class GameBananaService {
       this.dismissNotification()
 
       // Show success notification
-      Notify.create({
-        type: 'positive',
-        message: `"${modName}" installed successfully!`,
-        caption: `Ready to play in ${await formatEngineName(engine.engine?.engine_type || '')}`,
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadSuccess(modName)
+      this.dismissNotification()
 
       // Manual cleanup of download tracking entry
       if (downloadId) {
@@ -1588,13 +1531,8 @@ export class GameBananaService {
       this.dismissNotification()
 
       // Show error notification
-      Notify.create({
-        type: 'negative',
-        message: `Failed to download modpack "${modName}"`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadError(modName, String(error))
+      this.dismissNotification()
 
       GbConsole.error('Failed to download modpack:', error)
       return { success: false, error: String(error) }
@@ -1676,40 +1614,19 @@ export class GameBananaService {
     }
 
     return null
-  }
-  // Helper methods for notification management
+  } // Helper methods for notification management
   private dismissNotification(): void {
     if (this.pendingDownloadNotification) {
-      try {
-        // Call the notification function to dismiss it
-        this.pendingDownloadNotification()
-      } catch (e) {
-        GbConsole.warn('Error dismissing notification:', e)
-      }
-      // Always clear the reference regardless of whether the dismiss operation succeeded
+      this.pendingDownloadNotification.dismiss()
       this.pendingDownloadNotification = null
     }
   }
   private updateNotification(message: string): void {
-    // First dismiss any existing notification
     if (this.pendingDownloadNotification) {
-      try {
-        // Call the notification function to dismiss it
-        this.pendingDownloadNotification()
-      } catch (e) {
-        GbConsole.warn('Error dismissing notification:', e)
-      }
-      // Always clear the reference
-      this.pendingDownloadNotification = null
+      this.pendingDownloadNotification.update({
+        message: message,
+      })
     }
-
-    // Then create a new notification
-    this.pendingDownloadNotification = Notify.create({
-      type: 'ongoing',
-      message,
-      position: 'bottom-right',
-      timeout: 0,
-    })
   }
 
   /**

@@ -205,7 +205,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { useQuasar, Notify } from 'quasar'
 import {
   gamebananaService,
   setupGameBananaEventListeners,
@@ -224,6 +223,10 @@ import ModTypeSelectionModal from '@modals/ModTypeSelectionModal.vue'
 import FolderExistsDialog from '@modals/FolderExistsDialog.vue'
 import ModDetailsModal from '@modals/ModDetailsModal.vue'
 import { StoreService } from '../../services/storeService'
+import {
+  NotificationService,
+  OngoingNotificationResult,
+} from '@services/notificationService'
 
 // Declare db for TypeScript
 declare global {
@@ -238,11 +241,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['resetModDetailsOnMount'])
 
-// Ensure Notify is properly registered
-Notify.create = Notify.create || (() => {})
-
-// Create a quasar instance at the top level of the script setup
-const $q = useQuasar()
+const notificationService = NotificationService.getInstance()
 
 // Event listener cleanup
 let eventListenerCleanup: (() => void) | undefined
@@ -281,7 +280,7 @@ const showFileSelector = ref(false)
 const downloadFiles = ref<any[]>([])
 const alternateFileSources = ref<any[]>([])
 const currentDownloadMod = ref<any | null>(null)
-let pendingDownloadNotification: any = null
+let pendingDownloadNotification: OngoingNotificationResult | null = null
 
 // For modpack handling
 const showEngineSelectDialog = ref(false)
@@ -710,14 +709,7 @@ const downloadMod = async (mod: any) => {
     }
   } catch (error) {
     // Show error notification
-    $q.notify({
-      type: 'negative',
-      message: `Failed to prepare download for "${mod.name}"`,
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 5000,
-    })
-
+    notificationService.downloadError(mod.name, String(error))
     console.error('Failed to prepare mod download:', error)
   }
 }
@@ -737,22 +729,16 @@ const onEngineSelected = async (engine: any) => {
     )
 
     if (!result.success) {
-      $q.notify({
-        type: 'negative',
-        message: `Failed to install modpack`,
-        caption: String(result.error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.installationFailed(
+        currentModpackInfo.value.mod.name,
+        result.error || 'Unknown error'
+      )
     }
   } catch (error) {
-    $q.notify({
-      type: 'negative',
-      message: `Failed to install modpack`,
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 5000,
-    })
+    notificationService.installationFailed(
+      currentModpackInfo.value.mod.name,
+      String(error)
+    )
   } finally {
     // Reset state
     currentModpackInfo.value = null
@@ -806,13 +792,10 @@ const onFileSelected = async (selectedFile: any) => {
     }
 
     if ('success' in result && !result.success) {
-      $q.notify({
-        type: 'negative',
-        message: `Failed to download "${currentDownloadMod.value.name}"`,
-        caption: String('error' in result ? result.error : 'Unknown error'),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadError(
+        currentDownloadMod.value.name,
+        String('error' in result ? result.error : 'Unknown error')
+      )
     }
 
     // Trigger the refresh event to update the mod list
@@ -822,13 +805,10 @@ const onFileSelected = async (selectedFile: any) => {
     // Reset current download mod
     currentDownloadMod.value = null
   } catch (error) {
-    $q.notify({
-      type: 'negative',
-      message: `Failed to download mod`,
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 5000,
-    })
+    notificationService.downloadError(
+      currentDownloadMod.value.name,
+      String(error)
+    )
 
     console.error('Failed to download mod file:', error)
     currentDownloadMod.value = null
@@ -838,19 +818,11 @@ const onFileSelected = async (selectedFile: any) => {
 // Function to cancel the download
 const cancelDownload = () => {
   // Dismiss any pending notification
-  if (pendingDownloadNotification) {
-    pendingDownloadNotification()
-    pendingDownloadNotification = null
-  }
+  pendingDownloadNotification?.dismiss()
 
   // Show cancellation notification
   if (currentDownloadMod.value) {
-    $q.notify({
-      type: 'info',
-      message: `Download of "${currentDownloadMod.value.name}" cancelled`,
-      position: 'bottom-right',
-      timeout: 3000,
-    })
+    notificationService.downloadCancelled(currentDownloadMod.value.name)
   }
 
   // Reset current download mod
@@ -958,23 +930,17 @@ const downloadEngine = async (engineType: string) => {
 
     // Otherwise, the download was successful or failed without folder conflict
     if ('success' in result && !result.success) {
-      $q.notify({
-        type: 'negative',
-        message: `Failed to download ${formatEngineType(engineType)}`,
-        caption: result.error || 'Unknown error',
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadError(
+        formatEngineType(engineType),
+        String(result.error || 'Unknown error')
+      )
     }
   } catch (error) {
     // Show error notification
-    $q.notify({
-      type: 'negative',
-      message: `Failed to download ${formatEngineType(engineType)}`,
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 5000,
-    })
+    notificationService.downloadError(
+      formatEngineType(engineType),
+      String(error)
+    )
 
     console.error(`Failed to download ${engineType} engine:`, error)
   }
@@ -1009,12 +975,9 @@ const onModTypeSubmit = async (typeData: any) => {
 
   try {
     // Show loading notification
-    pendingDownloadNotification = $q.notify({
-      type: 'ongoing',
-      message: `Preparing to download "${customModData.value.name}"...`,
-      position: 'bottom-right',
-      timeout: 0,
-    })
+    pendingDownloadNotification = notificationService.downloadPreparing(
+      customModData.value.name
+    )
 
     // Determine install location based on mod type
     let installLocation: string | null = null
@@ -1122,19 +1085,13 @@ const onModTypeSubmit = async (typeData: any) => {
     }
 
     // Dismiss loading notification
-    if (pendingDownloadNotification) {
-      pendingDownloadNotification()
-      pendingDownloadNotification = null
-    }
+    pendingDownloadNotification.dismiss()
 
     // Show success notification
-    $q.notify({
-      type: 'positive',
-      message: `"${customModData.value.name}" downloaded and installed successfully!`,
-      caption: `Ready to play from the mods list`,
-      position: 'bottom-right',
-      timeout: 5000,
-    })
+    notificationService.downloadSuccess(
+      customModData.value.name,
+      'Ready to play from the mods list'
+    )
 
     // Trigger the refresh event to update the mod list
     const refreshEvent = new CustomEvent('refresh-mods')
@@ -1145,19 +1102,10 @@ const onModTypeSubmit = async (typeData: any) => {
     customModData.value = null
   } catch (error) {
     // Show error notification
-    $q.notify({
-      type: 'negative',
-      message: `Failed to download "${customModData.value.name}"`,
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 5000,
-    })
+    notificationService.downloadError(customModData.value.name, String(error))
 
     // Dismiss any pending notification
-    if (pendingDownloadNotification) {
-      pendingDownloadNotification()
-      pendingDownloadNotification = null
-    }
+    pendingDownloadNotification?.dismiss()
 
     console.error('Failed to download custom mod:', error)
 
@@ -1180,12 +1128,7 @@ const handleModTypeCancel = () => {
     customModData.value = null
 
     // Show cancellation notification
-    $q.notify({
-      type: 'info',
-      message: 'Download cancelled',
-      position: 'bottom-right',
-      timeout: 3000,
-    })
+    notificationService.downloadCancelled(customModData.value?.name)
   }
 }
 
@@ -1194,14 +1137,6 @@ const continueFolderExistsDownload = async () => {
   showFolderExistsDialog.value = false
 
   try {
-    // Show downloading notification
-    pendingDownloadNotification = $q.notify({
-      type: 'ongoing',
-      message: `Downloading "${folderExistsModName.value}"...`,
-      position: 'bottom-right',
-      timeout: 0,
-    })
-
     // Call the continue download function that was stored
     if (folderExistsDownloadContinueFunction.value) {
       const result = await folderExistsDownloadContinueFunction.value()
@@ -1222,51 +1157,33 @@ const continueFolderExistsDownload = async () => {
         showModTypeModal.value = true
       } else if ('success' in result) {
         // If it's a direct download result
-        if (pendingDownloadNotification) {
-          pendingDownloadNotification()
-          pendingDownloadNotification = null
-        }
+        pendingDownloadNotification?.dismiss()
 
         if (result.success) {
           // Show success notification
-          $q.notify({
-            type: 'positive',
-            message: `"${folderExistsModName.value}" downloaded and installed successfully!`,
-            caption: `Ready to play from the mods list`,
-            position: 'bottom-right',
-            timeout: 5000,
-          })
+          notificationService.downloadSuccess(
+            folderExistsModName.value,
+            'Ready to play from the mods list'
+          )
 
           // Trigger the refresh event to update the mod list
           const refreshEvent = new CustomEvent('refresh-mods')
           window.dispatchEvent(refreshEvent)
         } else {
           // Show error notification
-          $q.notify({
-            type: 'negative',
-            message: `Failed to download "${folderExistsModName.value}"`,
-            caption: result.error || 'Unknown error',
-            position: 'bottom-right',
-            timeout: 5000,
-          })
+          notificationService.downloadError(
+            folderExistsModName.value,
+            result.error || 'Unknown error'
+          )
         }
       }
     }
   } catch (error) {
     // Show error notification
-    $q.notify({
-      type: 'negative',
-      message: `Failed to download "${folderExistsModName.value}"`,
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 5000,
-    })
+    notificationService.downloadError(folderExistsModName.value, String(error))
 
     // Dismiss any pending notification
-    if (pendingDownloadNotification) {
-      pendingDownloadNotification()
-      pendingDownloadNotification = null
-    }
+    pendingDownloadNotification?.dismiss()
     console.error('Failed to download mod:', error)
   } finally {
     // Reset state
@@ -1281,14 +1198,6 @@ const updateFolderExistsMod = async () => {
   showFolderExistsDialog.value = false
 
   try {
-    // Show updating notification
-    pendingDownloadNotification = $q.notify({
-      type: 'ongoing',
-      message: `Updating "${folderExistsModName.value}"...`,
-      position: 'bottom-right',
-      timeout: 0,
-    })
-
     // Call the update function that was stored
     if (folderExistsUpdateFunction.value) {
       const result = await folderExistsUpdateFunction.value()
@@ -1296,60 +1205,38 @@ const updateFolderExistsMod = async () => {
       // Handle the result based on its type
       if ('success' in result) {
         // If it's a direct update result
-        if (pendingDownloadNotification) {
-          pendingDownloadNotification()
-          pendingDownloadNotification = null
-        }
+        pendingDownloadNotification?.dismiss()
 
         if (result.success) {
           // Show success notification
-          $q.notify({
-            type: 'positive',
-            message: `"${folderExistsModName.value}" updated successfully!`,
-            caption: `Ready to play from the mods list`,
-            position: 'bottom-right',
-            timeout: 5000,
-          })
+          notificationService.updateSuccess(
+            folderExistsModName.value,
+            'Ready to play from the mods list'
+          )
 
           // Trigger the refresh event to update the mod list
           const refreshEvent = new CustomEvent('refresh-mods')
           window.dispatchEvent(refreshEvent)
         } else {
           // Show error notification
-          $q.notify({
-            type: 'negative',
-            message: `Failed to update "${folderExistsModName.value}"`,
-            caption: result.error || 'Unknown error',
-            position: 'bottom-right',
-            timeout: 5000,
-          })
+          notificationService.updateError(
+            folderExistsModName.value,
+            result.error || 'Unknown error'
+          )
         }
       }
     } else {
       // No update function available
-      $q.notify({
-        type: 'warning',
-        message: 'Update not available',
-        caption: 'This mod cannot be updated',
-        position: 'bottom-right',
-        timeout: 3000,
-      })
+      notificationService.updateNotAvailable(folderExistsModName.value)
+      pendingDownloadNotification?.dismiss()
+      return
     }
   } catch (error) {
     // Show error notification
-    $q.notify({
-      type: 'negative',
-      message: `Failed to update "${folderExistsModName.value}"`,
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 5000,
-    })
+    notificationService.updateError(folderExistsModName.value, String(error))
 
     // Dismiss any pending notification
-    if (pendingDownloadNotification) {
-      pendingDownloadNotification()
-      pendingDownloadNotification = null
-    }
+    pendingDownloadNotification?.dismiss()
 
     console.error('Failed to update mod:', error)
   } finally {

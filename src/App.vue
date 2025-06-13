@@ -62,7 +62,6 @@ import { invoke } from '@tauri-apps/api/core'
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { listen } from '@tauri-apps/api/event'
-import { useQuasar, Notify } from 'quasar'
 import { check } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
 import Sidebar from './components/layout/Sidebar.vue'
@@ -77,6 +76,7 @@ import {
 } from '@services/gamebananaService'
 import { themeService } from '@services/themeService'
 import { AppSettings } from './types'
+import { notificationService } from '@services/notificationService'
 
 // Define window.db
 declare global {
@@ -84,12 +84,6 @@ declare global {
     db: any
   }
 }
-
-// Initialize Quasar
-const $q = useQuasar()
-
-// Ensure Notify is properly registered
-Notify.create = Notify.create || (() => {})
 
 // Initialization state variables
 const isInitializing = ref(true)
@@ -114,12 +108,7 @@ const cancelDownload = () => {
   showEngineSelectDialog.value = false
 
   // Show cancellation notification
-  $q.notify({
-    type: 'info',
-    message: 'Download cancelled',
-    position: 'bottom-right',
-    timeout: 3000,
-  })
+  notificationService.downloadCancelledGeneric()
 }
 
 const onEngineSelected = async (engine: any) => {
@@ -142,25 +131,19 @@ const onEngineSelected = async (engine: any) => {
 
     // Show an error if there was one
     if (!result.success) {
-      $q.notify({
-        type: 'negative',
-        message: 'Failed to download modpack',
-        caption: String(result.error),
-        position: 'bottom-right',
-        timeout: 5000,
-      })
+      notificationService.downloadError(
+        `Failed to download ${currentModName.value}`,
+        result.error || 'Unknown error'
+      )
     }
   } catch (error) {
     console.error('Failed to download modpack:', error)
 
-    $q.notify({
-      type: 'negative',
-      message: 'Failed to download modpack',
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 5000,
-    })
-
+    notificationService.downloadError(
+      'Failed to download modpack',
+      error instanceof Error ? error.message : 'Unknown error'
+    )
+  } finally {
     // Close the dialog
     showEngineSelectDialog.value = false
   }
@@ -186,11 +169,8 @@ const removeMissingMod = async () => {
       await dbService.deleteMod(mod.id)
 
       // Show success notification
-      $q.notify({
-        type: 'positive',
-        message: `Removed missing mod from library`,
-        position: 'bottom-right',
-        timeout: 3000,
+      notificationService.success({
+        message: 'Mod removed successfully!',
       })
 
       // Refresh the mods list by dispatching an event
@@ -201,12 +181,9 @@ const removeMissingMod = async () => {
     }
   } catch (error) {
     console.error('Error removing missing mod:', error)
-    $q.notify({
-      type: 'negative',
+    notificationService.error({
       message: 'Failed to remove mod',
       caption: String(error),
-      position: 'bottom-right',
-      timeout: 3000,
     })
   } finally {
     // Reset state
@@ -515,26 +492,20 @@ const processDeepLinkModDownload = async (
     } else if ('success' in result) {
       // Handle regular operation result
       if (!result.success && result.error) {
-        $q.notify({
-          type: 'negative',
-          message: 'Failed to download mod',
-          caption: result.error,
-          position: 'bottom-right',
-          timeout: 5000,
-        })
+        notificationService.downloadError(
+          'Failed to download mod',
+          result.error
+        )
       }
     }
   } catch (error) {
     console.error('Failed to download mod from deep link:', error)
 
     // Show error notification
-    $q.notify({
-      type: 'negative',
-      message: 'Failed to download mod',
-      caption: String(error),
-      position: 'bottom-right',
-      timeout: 5000,
-    })
+    notificationService.downloadError(
+      'Failed to download mod',
+      error instanceof Error ? error.message : 'Unknown error'
+    )
   }
 }
 
@@ -677,12 +648,14 @@ onMounted(async () => {
         initStatusText.value = 'Installing update...'
 
         // Install the update if there is one
+        let contentLength = 0
         await updateResult.downloadAndInstall(event => {
           switch (event.event) {
-            case 'Started':
-              const contentLength = event.data.contentLength
+            case 'Started': {
+              contentLength = event.data.contentLength ?? 0
               break
-            case 'Progress':
+            }
+            case 'Progress': {
               let downloaded = 0
               downloaded += event.data.chunkLength
               const percent = contentLength
@@ -690,6 +663,7 @@ onMounted(async () => {
                 : 0
               initProgress.value = 0.8 + percent / 1000
               break
+            }
             case 'Finished':
               initProgress.value = 1.0
               break
