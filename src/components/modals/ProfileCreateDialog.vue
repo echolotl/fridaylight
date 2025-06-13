@@ -86,7 +86,7 @@
             <div class="text-subtitle2 q-mb-sm">Select Mods</div>
             <div class="mod-states-list">
               <div
-                v-for="(enabled, folderPath) in localModStates"
+                v-for="(_, folderPath) in localModStates"
                 :key="folderPath"
                 class="mod-state-item"
               >
