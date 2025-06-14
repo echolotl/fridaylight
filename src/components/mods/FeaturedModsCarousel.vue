@@ -17,8 +17,8 @@
           transition-prev="slide-right"
           transition-next="slide-left"
           class="featured-carousel-inner"
-          height="75vh"
           control-color="primary"
+          height="calc(85vh - 152px)"
           navigation-icon="circle"
         >
           <q-carousel-slide
@@ -29,7 +29,6 @@
           >
             <div
               class="featured-mod-card"
-              @click="$emit('showDetails', mod.id, mod.model_name)"
               @contextmenu.prevent="showContextMenu($event, mod)"
             >
               <q-img
@@ -91,9 +90,9 @@
                   <div class="featured-stats-container">
                     <q-btn
                       color="primary"
-                      label="Download"
+                      label="View Details"
                       class="featured-btn q-mt-sm"
-                      @click.stop="$emit('download', mod)"
+                      @click.stop="$emit('showDetails', mod.id, mod.model_name)"
                     />
                     <div class="featured-stats">
                       <span v-if="mod.initial_visibility == 'warn'">
@@ -218,6 +217,21 @@ const shortenDescription = (description: string): string => {
 </script>
 
 <style scoped>
+.carousel-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at bottom left,
+    transparent 0%,
+    var(--theme-border) 10%,
+    transparent 50%,
+    var(--theme-border) 75%,
+    transparent 100%
+  );
+  border-radius: 1rem;
+  border: 1px solid var(--theme-border);
+}
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -283,6 +297,16 @@ const shortenDescription = (description: string): string => {
   margin-top: 8px;
   border: 2px solid var(--theme-border);
   border-radius: 0.25rem;
+}
+
+.featured-carousel-inner {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    white 2%,
+    white 98%,
+    transparent 100%
+  );
 }
 
 .featured-period {

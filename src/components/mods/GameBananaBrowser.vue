@@ -37,7 +37,6 @@
     <q-scroll-area v-else class="scroll-container">
       <div class="main-browser">
         <div class="featured-header">
-          <h6 class="phantom-font-difficulty q-mb-xs">Featured Mods</h6>
           <div class="mods-section">
             <FeaturedModsCarousel
               :mods="featuredMods"
@@ -50,7 +49,7 @@
 
         <!-- Latest Mods Section -->
         <div class="mods-section">
-          <h6 class="phantom-font-difficulty q-mb-md">
+          <h6 class="phantom-font-difficulty q-mb-md q-mt-md">
             Latest Mods
             <hr />
           </h6>
@@ -1031,25 +1030,12 @@ const updateFolderExistsMod = async () => {
   width: 100%;
 }
 
-.mods-section {
-  margin-bottom: 24px;
-}
-
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
   width: 100%;
-}
-
-.featured-header {
-  background: linear-gradient(to bottom, var(--theme-card), transparent);
-  padding: 16px;
-  border-radius: 0.5rem;
-  h6 {
-    margin: 0;
-  }
 }
 
 .text-subtitle1 {

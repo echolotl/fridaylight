@@ -195,13 +195,6 @@
     @cancel="cancelDownload"
   />
 
-  <!-- Custom URL Download Modal -->
-  <CustomUrlDownloadModal
-    v-model="showCustomUrlModal"
-    @submit="onCustomUrlSubmit"
-    @cancel="showCustomUrlModal = false"
-  />
-
   <!-- Mod Type Selection Modal -->
   <ModTypeSelectionModal
     v-model="showModTypeModal"
@@ -240,7 +233,6 @@ import InstalledModCard from '../common/InstalledModCard.vue'
 import ModDetailsModal from '@modals/ModDetailsModal.vue'
 import DownloadFileSelector from '@modals/DownloadFileSelector.vue'
 import EngineSelectionDialog from '@modals/EngineSelectionDialog.vue'
-import CustomUrlDownloadModal from '@modals/CustomUrlDownloadModal.vue'
 import ModTypeSelectionModal from '@modals/ModTypeSelectionModal.vue'
 import FolderExistsDialog from '@modals/FolderExistsDialog.vue'
 import { StoreService } from '../../services/storeService'
@@ -927,13 +919,14 @@ const updateFolderExistsMod = async () => {
   height: 100%;
 }
 .best-of-today {
-  border-radius: 0.5rem 0.5rem 0 0;
-  background: linear-gradient(
-    to bottom,
-    var(--theme-card) 0%,
-    transparent 100%
+  border-radius: 1rem;
+  background: radial-gradient(
+    circle at top left,
+    var(--theme-border) 0%,
+    transparent 50%,
+    var(--theme-border) 100%
   );
-  border-top: 2px solid var(--theme-border);
+  border: 1px solid var(--theme-border);
 }
 .bot-header {
   display: flex;
@@ -956,6 +949,13 @@ const updateFolderExistsMod = async () => {
     }
   }
 }
+.card-loading-skeleton {
+  width: 100%;
+  height: 321px;
+  border-radius: 0.75rem;
+  background-color: var(--theme-border);
+  padding: 0;
+}
 .gb-logo1 {
   fill: var(--theme-text);
 }
@@ -964,13 +964,19 @@ const updateFolderExistsMod = async () => {
 }
 .featured-mods-section {
   padding: 16px;
+  padding-top: 0;
+}
+
+.featured-mods-section .mod-card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
 }
 
 .mod-card-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
-  padding: 0 1rem;
 }
 
 .loading-state {
