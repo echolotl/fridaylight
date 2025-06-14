@@ -234,8 +234,8 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  modData: {
-    type: Object,
+  modName: {
+    type: String,
     required: false,
   },
 })
@@ -534,13 +534,13 @@ declare global {
   }
 }
 
-// Watch for modData changes to populate with mod information
+// Watch for modName changes to populate with mod information
 watch(
-  () => props.modData,
-  newModData => {
-    if (newModData && Object.keys(newModData).length > 0) {
-      console.log('Received mod data in ModTypeSelectionModal:', newModData)
-      currentModName.value = newModData.name || 'Unknown Mod'
+  () => props.modName,
+  newModName => {
+    if (newModName) {
+      console.log('Received mod name in ModTypeSelectionModal:', newModName)
+      currentModName.value = newModName
     }
   }
 )

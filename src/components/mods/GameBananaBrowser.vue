@@ -168,6 +168,14 @@
       @download-anyway="continueFolderExistsDownload"
       @cancel="cancelDownload"
     />
+    <!-- Mod Type Selection Modal -->
+    <ModTypeSelectionModal
+      v-model="showModTypeSelectionModal"
+      :mod-name="currentDownloadMod?.name"
+      @submit="onModTypeSelected"
+      @back="onModTypeBack"
+      @cancel="cancelDownload"
+    />
 
     <!-- Mod Details Modal -->
     <ModDetailsModal
@@ -197,6 +205,7 @@ import EngineDownloadButtons from '@mods/EngineDownloadButtons.vue'
 import DownloadFileSelector from '@modals/DownloadFileSelector.vue'
 import EngineSelectionDialog from '@modals/EngineSelectionDialog.vue'
 import FolderExistsDialog from '@modals/FolderExistsDialog.vue'
+import ModTypeSelectionModal from '@modals/ModTypeSelectionModal.vue'
 import ModDetailsModal from '@modals/ModDetailsModal.vue'
 import { NotificationService } from '@services/notificationService'
 import { formatEngineName } from '@utils/index'
@@ -253,6 +262,8 @@ const showFileSelector = ref(false)
 const downloadFiles = ref<any[]>([])
 const alternateFileSources = ref<any[]>([])
 const currentDownloadMod = ref<any | null>(null)
+// Store the selected file for future use
+const selectedFile = ref<any | null>(null)
 
 // For modpack handling
 const showEngineSelectDialog = ref(false)
@@ -267,6 +278,8 @@ const folderExistsModName = ref('')
 const selectedModId = ref<number>(0)
 const currentModelType = ref<string>('')
 const isModDetailsModalOpen = ref<boolean>(false)
+
+const showModTypeSelectionModal = ref(false)
 
 // Variables for handling folder existence check
 const folderExistsDownloadContinueFunction = ref<(() => Promise<any>) | null>(
@@ -638,11 +651,11 @@ const changePage = async (page: number) => {
 }
 
 // Download handling
-const downloadMod = async (mod: any) => {
+const downloadMod = async (mod: any, mod_type?: string) => {
   try {
     currentDownloadMod.value = mod
 
-    const result = await gamebananaService.downloadMod(mod)
+    const result = await gamebananaService.downloadMod(mod, mod_type)
 
     // Handle different scenarios based on the result
     if ('showFileSelector' in result) {
@@ -652,6 +665,13 @@ const downloadMod = async (mod: any) => {
       showFileSelector.value = true
       return
     }
+
+    if ('showModTypeModal' in result) {
+      // If we need to show mod type selection modal
+      showModTypeSelectionModal.value = true
+      return
+    }
+
     if ('showEngineSelectDialog' in result) {
       // If we need to show engine selection dialog
       currentModpackInfo.value = result.modpackInfo
@@ -706,18 +726,102 @@ const onEngineSelected = async (engine: any) => {
   }
 }
 
-// Function called when a file is selected from the dialog
-const onFileSelected = async (selectedFile: any) => {
+// Function called when mod type is selected from the modal
+const onModTypeSelected = async (selection: {
+  modType: string
+  engineMod: any
+  isAddon?: boolean
+}) => {
   if (!currentDownloadMod.value) return
 
   try {
-    // Hide the file selector dialog immediately to provide user feedback
-    showFileSelector.value = false
+    // Hide the modal immediately to provide feedback to the user
+    showModTypeSelectionModal.value = false
 
-    // Use the centralized gamebananaService to handle file download with folder existence check
+    if (selection.modType === 'executable') {
+      // For executables, just proceed with normal download
+      const result = await gamebananaService.startDownload(
+        currentDownloadMod.value
+      )
+
+      // Handle folder exists dialog if needed
+      if ('showFolderExistsDialog' in result) {
+        folderExistsModName.value = result.modName
+        folderExistsDownloadContinueFunction.value = result.continueDownload
+        folderExistsUpdateFunction.value = result.updateMod || null
+        showFolderExistsDialog.value = true
+        return
+      }
+    } else {
+      // For modpacks, create modpack info and use engine selection
+      const modpackInfo: ModpackInfo = {
+        mod: currentDownloadMod.value,
+        type: selection.modType,
+        compatibleEngines: [selection.engineMod],
+      }
+
+      // For Codename Engine addons, we need to modify the installation path
+      if (selection.modType === 'codename' && selection.isAddon) {
+        // We'll handle this in the downloadModpackForEngine method
+        const result = await gamebananaService.downloadModpackForEngine(
+          modpackInfo,
+          {
+            ...selection.engineMod,
+            isAddon: true,
+          }
+        )
+
+        if (!result.success) {
+          notificationService.installationFailed(
+            currentDownloadMod.value.name,
+            result.error || 'Unknown error'
+          )
+        }
+      } else {
+        // Regular modpack installation
+        const result = await gamebananaService.downloadModpackForEngine(
+          modpackInfo,
+          selection.engineMod
+        )
+
+        if (!result.success) {
+          notificationService.installationFailed(
+            currentDownloadMod.value.name,
+            result.error || 'Unknown error'
+          )
+        }
+      }
+    }
+  } catch (error) {
+    notificationService.installationFailed(
+      currentDownloadMod.value.name,
+      String(error)
+    )
+  } finally {
+    // Reset state
+    currentDownloadMod.value = null
+  }
+}
+
+// Function called when user goes back from mod type selection modal
+const onModTypeBack = () => {
+  // For now, just close the modal since there's no previous step
+  showModTypeSelectionModal.value = false
+}
+
+// Function called when a file is selected from the dialog
+const onFileSelected = async (file: any) => {
+  if (!currentDownloadMod.value) return
+
+  try {
+    // Save the selected file to the ref for future use
+    selectedFile.value = file
+
+    // Hide the file selector dialog immediately to provide user feedback
+    showFileSelector.value = false // Use the centralized gamebananaService to handle file download with folder existence check
     const result = await gamebananaService.downloadModFile(
       currentDownloadMod.value,
-      selectedFile
+      file
     )
 
     // Handle different scenarios based on the result
@@ -749,14 +853,13 @@ const onFileSelected = async (selectedFile: any) => {
         currentDownloadMod.value.name,
         String('error' in result ? result.error : 'Unknown error')
       )
-    }
-
-    // Trigger the refresh event to update the mod list
+    } // Trigger the refresh event to update the mod list
     const refreshEvent = new CustomEvent('refresh-mods')
     window.dispatchEvent(refreshEvent)
 
-    // Reset current download mod
+    // Reset current download mod and selected file
     currentDownloadMod.value = null
+    selectedFile.value = null
   } catch (error) {
     notificationService.downloadError(
       currentDownloadMod.value.name,
@@ -765,6 +868,7 @@ const onFileSelected = async (selectedFile: any) => {
 
     console.error('Failed to download mod file:', error)
     currentDownloadMod.value = null
+    selectedFile.value = null
   }
 }
 
@@ -806,8 +910,9 @@ const cancelDownload = () => {
     notificationService.downloadCancelled(currentDownloadMod.value.name)
   }
 
-  // Reset current download mod
+  // Reset current download mod and selected file
   currentDownloadMod.value = null
+  selectedFile.value = null
 }
 
 // Function to continue download when folder exists

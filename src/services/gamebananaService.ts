@@ -40,14 +40,7 @@ export interface EngineSelectionResult {
 
 export interface ModTypeSelectionResult {
   showModTypeModal: boolean
-  customModData: {
-    name: string
-    url: string
-    modId: number
-    bannerData: string
-    description?: string
-    version?: string
-  }
+  mod: GameBananaMod
 }
 
 export interface OperationResult {
@@ -204,11 +197,10 @@ export class GameBananaService {
 
     return null
   }
-
   /**
    * Get mods folder path for an engine mod
    */
-  public getModsFolderPath(engineMod: any): string {
+  public getModsFolderPath(engineMod: any, isAddon: boolean = false): string {
     // Get base directory first in all cases
     const basePath = engineMod.path
     const executablePath = engineMod.executable_path || ''
@@ -228,6 +220,11 @@ export class GameBananaService {
           baseDir = executablePath.substring(0, lastBackslashIndex)
         }
       }
+    }
+
+    // For Codename Engine addons, use addons folder instead of mods
+    if (isAddon) {
+      return `${baseDir}/addons`
     }
 
     // Then check if the engine has a specified custom mods folder path
@@ -348,12 +345,12 @@ export class GameBananaService {
 
       // If there's only one file or no file selection needed, continue
       // Determine if this is a modpack
-      const isModpack = this.determineIfModpack(mod, selectedModType)
-      const modpackType = this.determineModpackType(mod, selectedModType)
+      const isModpack = selectedModType ? true : this.determineIfModpack(mod)
+      const modpackType = selectedModType || this.determineModpackType(mod)
       const modDownloadFile = downloadInfo._aFiles[0]
       const hasExecutable =
         modDownloadFile._bContainsExe ||
-        modDownloadFile._aAnalysisWarnings.contains_exe
+        modDownloadFile._aAnalysisWarnings?.contains_exe
 
       if (isModpack && modpackType && !hasExecutable) {
         // Handle modpack download logic
@@ -394,14 +391,7 @@ export class GameBananaService {
 
         return {
           showModTypeModal: true,
-          customModData: {
-            name: mod.name,
-            url: mod.download_url,
-            modId: mod.id,
-            bannerData: mod.thumbnail_url,
-            description: mod.description,
-            version: mod.version,
-          },
+          mod,
         }
       } else {
         // If it's only a modpack, proceed with normal download
@@ -969,7 +959,6 @@ export class GameBananaService {
       return { success: false, error: String(error) }
     }
   }
-
   /**
    * Download a modpack for a selected engine
    */
@@ -991,8 +980,11 @@ export class GameBananaService {
       // Store mod ID to ensure we can cleanup tracking afterward
       const modId = mod.id
 
+      // Check if this is a Codename Engine addon installation
+      const isAddon = engineMod.isAddon || false
+
       // Get the installation path for the selected engine's mods folder
-      const modsFolderPath = this.getModsFolderPath(engineMod)
+      const modsFolderPath = this.getModsFolderPath(engineMod, isAddon)
       if (!modsFolderPath) {
         throw new Error('Could not determine mods folder path')
       }
@@ -1002,7 +994,7 @@ export class GameBananaService {
       let downloadUrl = mod.download_url
 
       GbConsole.log(
-        `Starting download for "${mod.name}" modpack to ${modsFolderPath}`
+        `Starting download for "${mod.name}" modpack to ${modsFolderPath}${isAddon ? ' (as addon)' : ''}`
       )
 
       // Fix URL if needed

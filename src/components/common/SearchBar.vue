@@ -87,14 +87,6 @@
           />
         </template>
       </q-input>
-
-      <q-btn
-        round
-        flat
-        icon="file_download"
-        class="custom-download-btn"
-        @click="openCustomDownload"
-      />
     </div>
   </div>
 </template>
@@ -128,10 +120,6 @@ const search = () => {
 
 const clear = () => {
   emit('clear')
-}
-
-const openCustomDownload = () => {
-  emit('custom-download')
 }
 </script>
 

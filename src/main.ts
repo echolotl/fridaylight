@@ -26,6 +26,9 @@ app.use(Quasar, {
       textColor: 'white',
       classes: 'phantom-font',
       badgeStyle: 'border: 2px solid var(--theme-border);',
+      attrs: {
+        style: 'border: 2px solid var(--theme-border);',
+      },
     },
   },
 })
