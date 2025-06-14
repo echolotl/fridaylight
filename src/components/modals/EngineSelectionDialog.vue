@@ -47,9 +47,12 @@
 
             <q-item-section>
               <q-item-label>{{ engine.name }}</q-item-label>
-              <q-item-label caption class="engine-path-caption">{{
-                engine.path
-              }}</q-item-label>
+              <q-item-label
+                caption
+                class="engine-path-caption"
+                style="color: var(--theme-text-secondary)"
+                >{{ engine.path }}</q-item-label
+              >
             </q-item-section>
           </q-item>
         </q-list>

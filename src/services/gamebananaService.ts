@@ -347,10 +347,13 @@ export class GameBananaService {
       // Determine if this is a modpack
       const isModpack = selectedModType ? true : this.determineIfModpack(mod)
       const modpackType = selectedModType || this.determineModpackType(mod)
+      GbConsole.log(
+        `Mod "${mod.name}" is ${
+          isModpack ? 'a modpack' : 'not a modpack'
+        }, type: ${modpackType || 'unknown'}`
+      )
       const modDownloadFile = downloadInfo._aFiles[0]
-      const hasExecutable =
-        modDownloadFile._bContainsExe ||
-        modDownloadFile._aAnalysisWarnings?.contains_exe
+      const hasExecutable = modDownloadFile._bContainsExe
 
       if (isModpack && modpackType && !hasExecutable) {
         // Handle modpack download logic
