@@ -5,7 +5,6 @@
       @update:search-query="searchQuery = $event"
       @search="searchMods"
       @clear="clearSearch"
-      @custom-download="showCustomUrlModal = true"
     />
 
     <!-- Search Results View -->
@@ -161,27 +160,6 @@
       @select="onEngineSelected"
       @cancel="cancelDownload"
     />
-
-    <!-- Custom URL Download Modal -->
-    <CustomUrlDownloadModal
-      v-model="showCustomUrlModal"
-      @submit="onCustomUrlSubmit"
-      @cancel="showCustomUrlModal = false"
-    />
-
-    <!-- Mod Type Selection Modal -->
-    <ModTypeSelectionModal
-      v-model="showModTypeModal"
-      :mod-data="customModData"
-      @submit="onModTypeSubmit"
-      @back="
-        showModTypeModal =
-          false && customModData?.isCustomUrl
-            ? (showCustomUrlModal = true)
-            : false
-      "
-      @cancel="handleModTypeCancel"
-    />
     <!-- Folder Exists Confirmation Dialog -->
     <FolderExistsDialog
       v-model="showFolderExistsDialog"
@@ -218,15 +196,10 @@ import FeaturedModsCarousel from '@mods/FeaturedModsCarousel.vue'
 import EngineDownloadButtons from '@mods/EngineDownloadButtons.vue'
 import DownloadFileSelector from '@modals/DownloadFileSelector.vue'
 import EngineSelectionDialog from '@modals/EngineSelectionDialog.vue'
-import CustomUrlDownloadModal from '@modals/CustomUrlDownloadModal.vue'
-import ModTypeSelectionModal from '@modals/ModTypeSelectionModal.vue'
 import FolderExistsDialog from '@modals/FolderExistsDialog.vue'
 import ModDetailsModal from '@modals/ModDetailsModal.vue'
-import { StoreService } from '../../services/storeService'
-import {
-  NotificationService,
-  OngoingNotificationResult,
-} from '@services/notificationService'
+import { NotificationService } from '@services/notificationService'
+import { formatEngineName } from '@utils/index'
 
 // Declare db for TypeScript
 declare global {
@@ -280,17 +253,11 @@ const showFileSelector = ref(false)
 const downloadFiles = ref<any[]>([])
 const alternateFileSources = ref<any[]>([])
 const currentDownloadMod = ref<any | null>(null)
-let pendingDownloadNotification: OngoingNotificationResult | null = null
 
 // For modpack handling
 const showEngineSelectDialog = ref(false)
 const currentModpackInfo = ref<ModpackInfo | null>(null)
 const selectedEngineMod = ref<any>(null)
-
-// For custom URL download
-const showCustomUrlModal = ref(false)
-const showModTypeModal = ref(false)
-const customModData = ref<any>(null)
 
 // For folder existence confirmation
 const showFolderExistsDialog = ref(false)
@@ -685,17 +652,10 @@ const downloadMod = async (mod: any) => {
       showFileSelector.value = true
       return
     }
-
     if ('showEngineSelectDialog' in result) {
       // If we need to show engine selection dialog
       currentModpackInfo.value = result.modpackInfo
       showEngineSelectDialog.value = true
-      return
-    }
-    if ('showModTypeModal' in result) {
-      // If we need to show mod type selection
-      customModData.value = result.customModData
-      showModTypeModal.value = true
       return
     }
 
@@ -768,7 +728,6 @@ const onFileSelected = async (selectedFile: any) => {
       showFileSelector.value = true
       return
     }
-
     if ('showEngineSelectDialog' in result) {
       // If we need to show engine selection dialog
       currentModpackInfo.value = result.modpackInfo
@@ -776,12 +735,6 @@ const onFileSelected = async (selectedFile: any) => {
       return
     }
 
-    if ('showModTypeModal' in result) {
-      // If we need to show mod type selection
-      customModData.value = result.customModData
-      showModTypeModal.value = true
-      return
-    }
     if ('showFolderExistsDialog' in result) {
       // If the mod folder already exists, show confirmation dialog
       folderExistsModName.value = result.modName
@@ -815,106 +768,6 @@ const onFileSelected = async (selectedFile: any) => {
   }
 }
 
-// Function to cancel the download
-const cancelDownload = () => {
-  // Dismiss any pending notification
-  pendingDownloadNotification?.dismiss()
-
-  // Show cancellation notification
-  if (currentDownloadMod.value) {
-    notificationService.downloadCancelled(currentDownloadMod.value.name)
-  }
-
-  // Reset current download mod
-  currentDownloadMod.value = null
-}
-
-// Save a mod to the database
-const saveModToDatabase = async (mod: any) => {
-  try {
-    // Check if DatabaseService is initialized
-    if (!window.db || !window.db.service) {
-      console.warn('Database service not initialized yet, cannot save mod')
-      return false
-    }
-
-    console.log('Saving mod to database using DatabaseService:', mod)
-
-    // Make sure the mod has an engine field required by the type
-    if (!mod.engine) {
-      mod.engine = {
-        engine_type: 'unknown',
-        engine_name: '',
-        engine_icon: '',
-        mods_folder: false,
-        mods_folder_path: '',
-      }
-    }
-
-    // Use the DatabaseService to save the mod
-    await window.db.service.saveMod(mod)
-
-    console.log('Mod saved successfully to database:', mod.name)
-    return true
-  } catch (error) {
-    console.error('Failed to save mod to database:', error)
-    return false
-  }
-}
-
-const formatEngineType = (engineType: string | null): string => {
-  if (!engineType) return 'Unknown'
-
-  switch (engineType.toLowerCase()) {
-    case 'psych':
-      return 'Psych Engine'
-    case 'vanilla':
-      return 'V-Slice'
-    case 'codename':
-      return 'Codename Engine'
-    default:
-      return engineType.charAt(0).toUpperCase() + engineType.slice(1)
-  }
-}
-
-// Function to get the mods folder path for an engine mod
-const getModsFolderPath = (engineMod: any): string => {
-  // Get base directory first in all cases
-  const basePath = engineMod.path
-  const executablePath = engineMod.executable_path || ''
-
-  if (!basePath) return 'Unknown path'
-
-  // Get parent directory of executable if it exists
-  let baseDir = basePath
-  if (executablePath) {
-    // Extract the directory from the executable path
-    const lastSlashIndex = executablePath.lastIndexOf('/')
-    if (lastSlashIndex > 0) {
-      baseDir = executablePath.substring(0, lastSlashIndex)
-    } else {
-      const lastBackslashIndex = executablePath.lastIndexOf('\\')
-      if (lastBackslashIndex > 0) {
-        baseDir = executablePath.substring(0, lastBackslashIndex)
-      }
-    }
-  }
-
-  // Then check if the engine has a specified custom mods folder path
-  if (
-    engineMod.engine &&
-    engineMod.engine.mods_folder &&
-    engineMod.engine.mods_folder_path
-  ) {
-    // Combine the base directory with the custom mods folder path
-    return `${baseDir}/${engineMod.engine.mods_folder_path}`
-  }
-
-  // If no custom path specified, use default mods folder
-  return `${baseDir}/mods`
-}
-
-// Add new method to handle direct engine downloads
 const downloadEngine = async (engineType: string) => {
   try {
     // Use the centralized gamebananaService to download the engine
@@ -931,14 +784,14 @@ const downloadEngine = async (engineType: string) => {
     // Otherwise, the download was successful or failed without folder conflict
     if ('success' in result && !result.success) {
       notificationService.downloadError(
-        formatEngineType(engineType),
+        await formatEngineName(engineType),
         String(result.error || 'Unknown error')
       )
     }
   } catch (error) {
     // Show error notification
     notificationService.downloadError(
-      formatEngineType(engineType),
+      await formatEngineName(engineType),
       String(error)
     )
 
@@ -946,190 +799,15 @@ const downloadEngine = async (engineType: string) => {
   }
 }
 
-// Get the install location from settings
-const getInstallLocation = async (): Promise<string | null> => {
-  try {
-    const storeService = StoreService.getInstance()
-    return await storeService.getSetting('installLocation')
-  } catch (error) {
-    console.warn('Could not get install location from settings:', error)
-    return null
+// Function to cancel the download
+const cancelDownload = () => {
+  // Show cancellation notification
+  if (currentDownloadMod.value) {
+    notificationService.downloadCancelled(currentDownloadMod.value.name)
   }
-}
 
-// Custom URL download flow
-const onCustomUrlSubmit = (formData: any) => {
-  console.log('Custom URL form submitted:', formData)
-  // Add isCustomUrl flag to identify the source of this mod data
-  customModData.value = {
-    ...formData,
-    isCustomUrl: true,
-  }
-  showCustomUrlModal.value = false
-  showModTypeModal.value = true
-}
-
-const onModTypeSubmit = async (typeData: any) => {
-  console.log('Mod type selected:', typeData)
-  if (!customModData.value) return
-
-  try {
-    // Show loading notification
-    pendingDownloadNotification = notificationService.downloadPreparing(
-      customModData.value.name
-    )
-
-    // Determine install location based on mod type
-    let installLocation: string | null = null
-
-    if (typeData.modType === 'executable') {
-      // For standalone mods, use the standard install location
-      installLocation = await getInstallLocation()
-    } else {
-      // For modpacks, use the engine's mods folder
-      if (typeData.engineMod) {
-        installLocation = getModsFolderPath(typeData.engineMod)
-      } else {
-        throw new Error(
-          `No ${formatEngineType(typeData.modType)} installation found`
-        )
-      }
-    }
-
-    console.log(
-      `Downloading ${customModData.value.name} to ${
-        installLocation || 'default location'
-      }`
-    )
-
-    // Generate a random modId for tracking the download
-    const modId = Math.floor(Math.random() * 1000000)
-
-    // Call backend to download using the custom mod command instead
-    const result = await invoke<string>('download_custom_mod_command', {
-      url: customModData.value.url,
-      name: customModData.value.name,
-      modId,
-      installLocation,
-      thumbnailUrl: customModData.value.bannerData,
-      description: customModData.value.description,
-      version: customModData.value.version,
-    })
-
-    // Process the result
-    let modInfo: any
-    let modPath: string
-
-    try {
-      // Try to parse as JSON
-      const parsed = JSON.parse(result)
-      modPath = parsed.path
-      modInfo = parsed.mod_info
-    } catch {
-      // If parsing fails, assume it's just the path string
-      modPath = result
-      // Get mod info directly from the backend
-      const allMods = await invoke<any[]>('get_mods')
-      modInfo = allMods.find(m => m.path === modPath)
-    }
-
-    // If we still don't have mod info, create one with custom data
-    if (!modInfo) {
-      modInfo = {
-        id: crypto.randomUUID(),
-        name: customModData.value.name,
-        path: modPath,
-        executable_path: null,
-        icon_data: null,
-        banner_data: customModData.value.bannerData,
-        logo_data: customModData.value.logoData,
-        description: customModData.value.description,
-        version: customModData.value.version || null,
-        engine_type:
-          typeData.modType !== 'executable' ? typeData.modType : null,
-        engine:
-          typeData.modType !== 'executable'
-            ? {
-                engine_type: typeData.modType,
-                engine_name: formatEngineType(typeData.modType),
-                mods_folder: true,
-                mods_folder_path: 'mods',
-              }
-            : null,
-      }
-    } else {
-      // Update the mod info with custom data
-      modInfo.name = customModData.value.name
-      modInfo.banner_data =
-        customModData.value.bannerData || modInfo.banner_data
-      modInfo.logo_data = customModData.value.logoData || modInfo.logo_data
-      modInfo.description =
-        customModData.value.description || modInfo.description
-      modInfo.version = customModData.value.version || modInfo.version
-
-      if (typeData.modType !== 'executable') {
-        modInfo.engine_type = typeData.modType
-        modInfo.engine = {
-          ...(modInfo.engine || {}),
-          engine_type: typeData.modType,
-          engine_name: formatEngineType(typeData.modType),
-          mods_folder: true,
-          mods_folder_path: 'mods',
-        }
-      }
-    }
-
-    // Save the mod to the database
-    if (modInfo) {
-      await saveModToDatabase(modInfo)
-    }
-
-    // Dismiss loading notification
-    pendingDownloadNotification.dismiss()
-
-    // Show success notification
-    notificationService.downloadSuccess(
-      customModData.value.name,
-      'Ready to play from the mods list'
-    )
-
-    // Trigger the refresh event to update the mod list
-    const refreshEvent = new CustomEvent('refresh-mods')
-    window.dispatchEvent(refreshEvent)
-
-    // Reset state
-    showModTypeModal.value = false
-    customModData.value = null
-  } catch (error) {
-    // Show error notification
-    notificationService.downloadError(customModData.value.name, String(error))
-
-    // Dismiss any pending notification
-    pendingDownloadNotification?.dismiss()
-
-    console.error('Failed to download custom mod:', error)
-
-    // Reset state but keep the modal open to allow for corrections
-    showModTypeModal.value = false
-    showCustomUrlModal.value = true
-  }
-}
-
-// Handle cancel from mod type selection modal
-const handleModTypeCancel = () => {
-  // Check the source of the mod type modal - custom URL or regular download
-  if (customModData.value?.isCustomUrl) {
-    // If from custom URL, go back to custom URL modal
-    showModTypeModal.value = false
-    showCustomUrlModal.value = true
-  } else {
-    // If from regular mod download, just close the modal and clean up
-    showModTypeModal.value = false
-    customModData.value = null
-
-    // Show cancellation notification
-    notificationService.downloadCancelled(customModData.value?.name)
-  }
+  // Reset current download mod
+  currentDownloadMod.value = null
 }
 
 // Function to continue download when folder exists
@@ -1151,14 +829,7 @@ const continueFolderExistsDownload = async () => {
         // If we need to show engine selection dialog
         currentModpackInfo.value = result.modpackInfo
         showEngineSelectDialog.value = true
-      } else if ('showModTypeModal' in result) {
-        // If we need to show mod type selection
-        customModData.value = result.customModData
-        showModTypeModal.value = true
       } else if ('success' in result) {
-        // If it's a direct download result
-        pendingDownloadNotification?.dismiss()
-
         if (result.success) {
           // Show success notification
           notificationService.downloadSuccess(
@@ -1182,8 +853,6 @@ const continueFolderExistsDownload = async () => {
     // Show error notification
     notificationService.downloadError(folderExistsModName.value, String(error))
 
-    // Dismiss any pending notification
-    pendingDownloadNotification?.dismiss()
     console.error('Failed to download mod:', error)
   } finally {
     // Reset state
@@ -1204,9 +873,6 @@ const updateFolderExistsMod = async () => {
 
       // Handle the result based on its type
       if ('success' in result) {
-        // If it's a direct update result
-        pendingDownloadNotification?.dismiss()
-
         if (result.success) {
           // Show success notification
           notificationService.updateSuccess(
@@ -1228,15 +894,11 @@ const updateFolderExistsMod = async () => {
     } else {
       // No update function available
       notificationService.updateNotAvailable(folderExistsModName.value)
-      pendingDownloadNotification?.dismiss()
       return
     }
   } catch (error) {
     // Show error notification
     notificationService.updateError(folderExistsModName.value, String(error))
-
-    // Dismiss any pending notification
-    pendingDownloadNotification?.dismiss()
 
     console.error('Failed to update mod:', error)
   } finally {
