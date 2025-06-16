@@ -519,7 +519,7 @@ watch(
       if (!form.value.engine) {
         form.value.engine = {
           engine_type: 'unknown',
-          engine_name: 'Unknown Engine',
+          engine_name: '',
           engine_icon: '',
           mods_folder: false,
           mods_folder_path: '',

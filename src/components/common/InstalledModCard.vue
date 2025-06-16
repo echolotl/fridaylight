@@ -29,7 +29,7 @@
           <span v-if="mod.version" class="badge">v{{ mod.version }}</span>
 
           <!-- Show engine name -->
-          <span v-if="mod.engine.engine_name != 'unknown'" class="badge">{{
+          <span v-if="mod.engine.engine_type != 'unknown'" class="badge">{{
             mod.engine.engine_name
           }}</span>
         </div>

@@ -11,7 +11,13 @@
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }
-          : {}
+          : {
+              backgroundImage: `url('/images/placeholder.png')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundBlendMode: 'luminosity',
+              backgroundColor: 'var(--theme-surface)',
+            }
       "
     ></div>
 
@@ -153,12 +159,15 @@ const formatEngineType = (engineType: string) => {
 .banner-image {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #0575e6, #021b79);
-  background-image: url('/images/menuBG.png');
   background-size: cover;
   background-position: center;
   position: relative;
   mask-image: linear-gradient(to bottom, black, transparent);
+}
+
+.banner-image.placeholder {
+  background-image: url('/images/placeholder.png');
+  mix-blend-mode: multiply;
 }
 
 .banner-image::after {
@@ -168,7 +177,7 @@ const formatEngineType = (engineType: string) => {
   left: 0;
   width: 100%;
   height: 70%;
-  background: linear-gradient(to top, var(--theme-bg), transparent);
+  background: linear-gradient(to top, var(--theme-surface), transparent);
   pointer-events: none;
 }
 

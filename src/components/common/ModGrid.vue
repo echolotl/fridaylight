@@ -1,8 +1,7 @@
 <template>
   <div>
-    <div v-if="loading" class="loading-content">
-      <q-spinner color="primary" size="48px" />
-      <div>{{ loadingMessage }}</div>
+    <div v-if="loading" class="mods-grid">
+      <SkeletonModCard v-for="n in 15" :key="n" />
     </div>
 
     <div v-else-if="mods.length === 0" class="no-results">
@@ -38,6 +37,7 @@
 import { computed } from 'vue'
 import type { GameBananaMod } from '@main-types'
 import ModCard from './ModCard.vue'
+import SkeletonModCard from '@components/skeletons/SkeletonModCard.vue'
 
 const props = defineProps({
   mods: {

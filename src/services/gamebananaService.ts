@@ -291,7 +291,7 @@ export class GameBananaService {
       if (!mod.engine) {
         mod.engine = {
           engine_type: 'unknown',
-          engine_name: 'Unknown Engine',
+          engine_name: '',
           engine_icon: '',
           mods_folder: false,
           mods_folder_path: '',

@@ -7,5 +7,13 @@
   "engine_icon": "Codename.webp",
   "engine_description": "Codename Engine is a new Friday Night Funkin' Engine aimed at simplifying modding, along with extensibility and ease of use.",
   "engine_version": "0.1.0-legacy",
-  "primary": true
+  "primary": true,
+  "credits": [
+    {
+      "name": "Codename Crew",
+      "role": "Main Developers",
+      "url": "https://github.com/CodenameCrew"
+    }
+  ],
+  "credits_url": "https://github.com/orgs/CodenameCrew/people"
 }

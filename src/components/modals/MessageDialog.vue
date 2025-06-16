@@ -1,7 +1,7 @@
 <template>
   <q-dialog v-model="showDialog" :persistent="persistent">
     <q-card
-      class="phantom-font"
+      class="phantom-font dialog"
       style="
         background: var(--theme-solid);
         color: var(--text-color);
@@ -126,6 +126,12 @@ const onCancel = () => {
 </script>
 
 <style scoped>
+.dialog {
+  width: 90vw;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: hidden;
+}
 .dialog-title {
   margin: 0;
 }

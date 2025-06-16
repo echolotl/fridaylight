@@ -7,5 +7,18 @@
   "engine_icon": "Psych.webp",
   "engine_description": "Engine originally used on Mind Games Mod, intended to be a fix for the vanilla version's many issues while keeping the casual play aspect of it. Also aiming to be an easier alternative to newbie coders.",
   "engine_version": "1.0.4",
-  "primary": true
+  "primary": true,
+  "credits": [
+    {
+      "name": "ShadowMario",
+      "role": "Main Developer and Lead",
+      "url": "https://github.com/ShadowMario"
+    },
+    {
+      "name": "Riveren",
+      "role": "Main Artist and Animator",
+      "url": "https://x.com/riverennn"
+    }
+  ],
+  "credits_url": "https://github.com/ShadowMario/FNF-PsychEngine/blob/main/README.md#credits"
 }

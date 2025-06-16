@@ -530,7 +530,7 @@ export class DatabaseService {
               ? JSON.parse(mod.engine_data)
               : {
                   engine_type: 'unknown',
-                  engine_name: 'Unknown Engine',
+                  engine_name: '',
                   engine_icon: '',
                   mods_folder: false,
                   mods_folder_path: '',
@@ -539,7 +539,7 @@ export class DatabaseService {
             dbConsole.error('Failed to parse engine data for mod:', mod.id, e)
             engine = {
               engine_type: 'unknown',
-              engine_name: 'Unknown Engine',
+              engine_name: '',
               engine_icon: '',
               mods_folder: false,
               mods_folder_path: '',
@@ -576,7 +576,7 @@ export class DatabaseService {
           ? JSON.parse(mod.engine_data)
           : {
               engine_type: 'unknown',
-              engine_name: 'Unknown Engine',
+              engine_name: '',
               engine_icon: '',
               mods_folder: false,
               mods_folder_path: '',
@@ -585,7 +585,7 @@ export class DatabaseService {
         dbConsole.error('Failed to parse engine data for mod:', mod.id, e)
         engine = {
           engine_type: 'unknown',
-          engine_name: 'Unknown Engine',
+          engine_name: '',
           engine_icon: '',
           mods_folder: false,
           mods_folder_path: '',
@@ -1426,7 +1426,7 @@ export class DatabaseService {
               ? JSON.parse(mod.engine_data)
               : {
                   engine_type: 'unknown',
-                  engine_name: 'Unknown Engine',
+                  engine_name: '',
                   engine_icon: '',
                   mods_folder: false,
                   mods_folder_path: '',
@@ -1435,7 +1435,7 @@ export class DatabaseService {
             dbConsole.error('Failed to parse engine data for mod:', mod.id, e)
             engine = {
               engine_type: 'unknown',
-              engine_name: 'Unknown Engine',
+              engine_name: '',
               engine_icon: '',
               mods_folder: false,
               mods_folder_path: '',
@@ -1476,7 +1476,7 @@ export class DatabaseService {
                   ? JSON.parse(mod.engine_data)
                   : {
                       engine_type: 'unknown',
-                      engine_name: 'Unknown Engine',
+                      engine_name: '',
                       engine_icon: '',
                       mods_folder: false,
                       mods_folder_path: '',
@@ -1489,7 +1489,7 @@ export class DatabaseService {
                 )
                 engine = {
                   engine_type: 'unknown',
-                  engine_name: 'Unknown Engine',
+                  engine_name: '',
                   engine_icon: '',
                   mods_folder: false,
                   mods_folder_path: '',
@@ -1614,7 +1614,7 @@ export class DatabaseService {
       display_order: 9999,
       engine: {
         engine_type: 'unknown',
-        engine_name: 'Unknown Engine',
+        engine_name: '',
         engine_icon: '',
         mods_folder: false,
         mods_folder_path: '',
@@ -1664,7 +1664,7 @@ export class DatabaseService {
             ? JSON.parse(mod.engine_data)
             : {
                 engine_type: 'unknown',
-                engine_name: 'Unknown Engine',
+                engine_name: '',
                 engine_icon: '',
                 mods_folder: false,
                 mods_folder_path: '',
@@ -1673,7 +1673,7 @@ export class DatabaseService {
           dbConsole.error('Failed to parse engine data for mod:', mod.id, e)
           engine = {
             engine_type: 'unknown',
-            engine_name: 'Unknown Engine',
+            engine_name: '',
             engine_icon: '',
             mods_folder: false,
             mods_folder_path: '',
@@ -1724,7 +1724,7 @@ export class DatabaseService {
             ? JSON.parse(mod.engine_data)
             : {
                 engine_type: 'unknown',
-                engine_name: 'Unknown Engine',
+                engine_name: '',
                 engine_icon: '',
                 mods_folder: false,
                 mods_folder_path: '',
@@ -1733,7 +1733,7 @@ export class DatabaseService {
           dbConsole.error('Failed to parse engine data for mod:', mod.id, e)
           engine = {
             engine_type: 'unknown',
-            engine_name: 'Unknown Engine',
+            engine_name: '',
             engine_icon: '',
             mods_folder: false,
             mods_folder_path: '',

@@ -82,7 +82,19 @@ export interface EngineData {
   engine_description?: string
   engine_version?: string
   primary?: boolean
-  [key: string]: unknown // Allow for additional properties
+  credits?: EngineDataCredit[]
+  credits_url?: string
+  suggestors?: string[]
+  [key: string]: unknown
+}
+
+/**
+ * Interface for engine data credits
+ */
+export interface EngineDataCredit {
+  name: string
+  role: string
+  url?: string
 }
 
 /**
@@ -148,6 +160,21 @@ export async function getAllEngineTypes(): Promise<EngineTypeInfo[]> {
     console.error('Error getting engine types:', error)
     return []
   }
+}
+
+export async function getEngineTypeData(
+  engineType: string
+): Promise<EngineData | null> {
+  try {
+    const engineTypeData = await resolveResource(`resources/${engineType}.json`)
+    if (engineTypeData) {
+      const fileContent = await readTextFile(engineTypeData)
+      return JSON.parse(fileContent) as EngineData
+    }
+  } catch (error) {
+    console.error(`Error getting engine type data for ${engineType}:`, error)
+  }
+  return null
 }
 
 export function formatBytes(bytes: number): string {

@@ -7,6 +7,7 @@
     >
       <q-img
         :src="previewImageUrl"
+        :placeholder-src="'images/placeholder.png'"
         class="mod-thumbnail"
         :img-style="{
           filter: mod.initial_visibility == 'warn' ? 'blur(5px)' : 'none',

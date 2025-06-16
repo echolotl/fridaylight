@@ -87,7 +87,7 @@
         <q-btn
           flat
           dense
-          icon="open_in_new"
+          icon="M24,6v10.5h-1.5v3h-1.5v1.5h-1.5v1.5h-3v1.5H6v-1.5h-3v-1.5h-1.5v-1.5H0v-4.5h9v-1.5h4.5v-1.5h1.5v-4.5h1.5V3h-1.5V0h4.5v3h1.5v1.5h1.5v1.5h1.5Z"
           class="phantom-font"
           label="Open
           Gamebanana"
@@ -96,7 +96,7 @@
         </q-btn>
       </div>
       <div class="featured-mods-section">
-        <div class="mod-card-container">
+        <div v-if="!isLoadingFeatured" class="mod-card-container">
           <ModCard
             v-for="mod in featuredMods"
             :key="mod.id"
@@ -105,22 +105,22 @@
             @show-details="openModDetails(mod.id, mod.model_name)"
           />
         </div>
+        <div v-else class="mod-card-container">
+          <SkeletonModCard v-for="n in 3" :key="n" :show-button="false" />
+        </div>
       </div>
     </div>
     <div class="main-content">
       <div class="hop-back-in">
-        <h6 class="phantom-font-difficulty">
+        <h6 class="phantom-font-difficulty q-mb-md">
           Recently Played
           <hr />
         </h6>
-        <div class="mod-card-container">
-          <div v-if="isLoadingInstalled" class="loading-state">
-            <q-spinner color="primary" size="2rem" />
-            <p>Loading recently played mods...</p>
-          </div>
-          <p v-else-if="recentlyPlayedMods.length === 0" class="no-mods">
+        <div v-if="!isLoadingInstalled" class="mod-card-container">
+          <p v-if="recentlyPlayedMods.length === 0" class="no-mods">
             No recently played mods.
           </p>
+
           <InstalledModCard
             v-for="mod in recentlyPlayedMods"
             v-else
@@ -130,6 +130,9 @@
             @configure="configureMod"
             @show-details="selectMod"
           />
+        </div>
+        <div v-else class="mod-card-container">
+          <SkeletonInstalledModCard v-for="n in 5" :key="n" />
         </div>
       </div>
       <div class="all-mods">
@@ -144,13 +147,9 @@
             @click="showSortMenu"
           ></q-btn>
         </h6>
-        <hr />
-        <div class="mod-card-container">
-          <div v-if="isLoadingInstalled" class="loading-state">
-            <q-spinner color="primary" size="2rem" />
-            <p>Loading installed mods...</p>
-          </div>
-          <p v-else-if="installedMods.length === 0" class="no-mods">
+        <hr class="q-mb-md q-mt-sm" />
+        <div v-if="!isLoadingInstalled" class="mod-card-container">
+          <p v-if="installedMods.length === 0" class="no-mods">
             No mods installed yet.
           </p>
           <InstalledModCard
@@ -162,6 +161,9 @@
             @configure="configureMod"
             @show-details="selectMod"
           />
+        </div>
+        <div v-else class="mod-card-container">
+          <SkeletonInstalledModCard v-for="n in 5" :key="n" />
         </div>
       </div>
     </div>
@@ -241,6 +243,8 @@ import {
   NotificationService,
   OngoingNotificationResult,
 } from '@services/notificationService'
+import SkeletonModCard from '@components/skeletons/SkeletonModCard.vue'
+import SkeletonInstalledModCard from '@components/skeletons/SkeletonInstalledModCard.vue'
 
 const emit = defineEmits([
   'launch-mod',
@@ -1009,8 +1013,5 @@ const updateFolderExistsMod = async () => {
   align-items: center;
   margin: 0;
   margin-top: 3rem;
-}
-.all-mods hr {
-  margin-bottom: 3rem;
 }
 </style>

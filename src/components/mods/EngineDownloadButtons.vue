@@ -10,6 +10,7 @@
         :key="engine.engineType"
         flat
         class="engine-btn"
+        style="padding-right: 8px"
         no-caps
         @click="$emit('download-engine', engine.engineType)"
       >
@@ -27,6 +28,15 @@
             :src="engineIcons[engine.data.engine_icon]"
             :alt="engine.engineName"
             class="engine-icon"
+          />
+          <q-btn
+            flat
+            icon="info"
+            round
+            dense
+            style="color: var(--theme-text-secondary)"
+            class="q-ml-sm"
+            @click.stop="openDetails(engine.engineType)"
           />
         </template>
       </q-btn>
@@ -47,6 +57,7 @@
           v-for="engine in secondaryEngines"
           :key="engine.engineType"
           flat
+          style="padding-right: 8px"
           no-caps
           class="engine-btn"
           @click="$emit('download-engine', engine.engineType)"
@@ -66,6 +77,15 @@
               :alt="engine.engineName"
               class="engine-icon"
             />
+            <q-btn
+              flat
+              icon="info"
+              style="color: var(--theme-text-secondary)"
+              round
+              dense
+              class="q-ml-sm"
+              @click.stop="openDetails(engine.engineType)"
+            />
           </template>
         </q-btn>
       </div>
@@ -79,20 +99,121 @@
       </div>
     </q-expansion-item>
   </div>
+
+  <!-- View Details Modal -->
+  <MessageDialog
+    :model-value="detailsModal"
+    :confirm-label="'Close'"
+    single-option
+    disable-icon
+    title="Engine Details"
+    @update:model-value="detailsModal = $event"
+  >
+    <template #default>
+      <div class="banner-container">
+        <div
+          class="details-banner"
+          :style="{
+            backgroundImage: currentModalEngine?.engine_banner
+              ? bannerImage
+              : 'url(images/placeholder.png)',
+          }"
+        ></div>
+        <div class="banner-overlay">
+          <div class="engine-logo">
+            <img
+              v-if="engineLogo"
+              :src="engineLogo"
+              :alt="currentModalEngine?.engine_name"
+              class="engine-logo-img"
+            />
+          </div>
+          <div class="banner-version phantom-font-difficulty">
+            <span v-if="currentModalEngine?.engine_version">
+              v{{ currentModalEngine.engine_version }}
+            </span>
+            <img
+              v-if="currentModalEngine?.engine_icon"
+              :src="engineIcons[currentModalEngine.engine_icon]"
+              alt="Engine Icon"
+              class="engine-icon"
+            />
+          </div>
+        </div>
+      </div>
+      <div class="modal-main-content">
+        <p v-html="currentModalEngine?.engine_description"></p>
+        <div v-if="currentModalEngine?.credits?.length" class="credits-content">
+          <h6 class="phantom-font-difficulty q-mt-md q-mb-md">
+            Credits
+            <hr />
+          </h6>
+
+          <q-list dense class="q-px-none">
+            <q-item
+              v-for="credit in currentModalEngine?.credits"
+              :key="credit.name"
+              class="q-px-none"
+            >
+              <q-item-section v-if="!credit.url">
+                <span>{{ credit.name }}</span>
+              </q-item-section>
+              <q-item-section v-else>
+                <a class="cursor-pointer link" @click="openUrl(credit.url)">{{
+                  credit.name
+                }}</a>
+              </q-item-section>
+              <q-item-section side>
+                <span
+                  class="phantom-font"
+                  style="color: var(--theme-text-secondary)"
+                  >{{ credit.role }}</span
+                >
+              </q-item-section>
+            </q-item>
+          </q-list>
+          <q-btn
+            v-if="currentModalEngine?.credits_url"
+            class="q-mt-md full-width"
+            icon="open_in_new"
+            label="View Full Credits"
+            flat
+            @click="openUrl(currentModalEngine.credits_url)"
+          >
+          </q-btn>
+        </div>
+        <span
+          v-if="currentModalEngine?.suggestors?.length"
+          style="color: var(--theme-text-secondary)"
+          >Suggested by: {{ currentModalEngine.suggestors.join(', ') }}</span
+        >
+      </div>
+    </template>
+  </MessageDialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { openUrl } from '@tauri-apps/plugin-opener'
-import { getAllEngineTypes, type EngineTypeInfo } from '../../utils'
-import { resolveResource } from '@tauri-apps/api/path'
+import {
+  getAllEngineTypes,
+  getEngineTypeData,
+  type EngineTypeInfo,
+  type EngineData,
+} from '../../utils'
+import { resolveResource, sep } from '@tauri-apps/api/path'
 import { invoke } from '@tauri-apps/api/core'
+import MessageDialog from '@modals/MessageDialog.vue'
 
 defineEmits(['download-engine'])
 
 const engineTypes = ref<EngineTypeInfo[]>([])
 const engineIcons = ref<Record<string, string>>({})
 
+const detailsModal = ref(false)
+const currentModalEngine = ref<EngineData | null>(null)
+const bannerImage = ref('')
+const engineLogo = ref('')
 const primaryEngines = computed(() =>
   engineTypes.value.filter((engine: EngineTypeInfo) => engine.isPrimary)
 )
@@ -128,12 +249,38 @@ async function loadEngineIcons() {
     if (engine.data.engine_icon) {
       try {
         engineIcons.value[engine.data.engine_icon] = await getIconAsBase64(
-          `resources/${engine.data.engine_icon}`
+          `resources${sep()}${engine.data.engine_icon}`
         )
       } catch (error) {
         console.error(`Failed to load icon for ${engine.engineName}:`, error)
       }
     }
+  }
+}
+
+async function openDetails(engine_type: string) {
+  const engineData = await getEngineTypeData(engine_type)
+  console.log('Engine Data:', engineData)
+  if (engineData) {
+    currentModalEngine.value = engineData
+    if (engineData.engine_banner) {
+      const imageData = await getIconAsBase64(
+        'resources' + sep() + engineData.engine_banner || ''
+      )
+      bannerImage.value = `url(${imageData})`
+    } else {
+      bannerImage.value = ''
+    }
+    if (engineData.engine_logo) {
+      engineLogo.value = await getIconAsBase64(
+        'resources' + sep() + engineData.engine_logo || ''
+      )
+    } else {
+      engineLogo.value = ''
+    }
+    detailsModal.value = true
+  } else {
+    console.error(`No data found for engine type: ${engine_type}`)
   }
 }
 </script>
@@ -146,6 +293,7 @@ async function loadEngineIcons() {
   display: flex;
   margin-bottom: 16px;
   gap: 8px;
+  flex-wrap: wrap;
 }
 .engine-btn {
   border-radius: 8px;
@@ -159,16 +307,57 @@ async function loadEngineIcons() {
   border-bottom: 2px solid var(--theme-border);
   display: flex;
   flex-direction: row;
+  flex-shrink: 0;
 }
 .engine-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
-
+.details-banner {
+  width: 100%;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 0.5rem 0.5rem 0 0;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+  margin-bottom: 16px;
+}
+.banner-overlay {
+  position: absolute;
+  top: 0;
+  left: 1rem;
+  right: 0;
+  bottom: 0;
+  height: 200px;
+  width: calc(100% - 2rem);
+}
 .engine-icon {
   width: 32px;
   height: 32px;
   margin-left: 8px;
+}
+
+.engine-logo-img {
+  position: absolute;
+  width: auto;
+  height: 100px;
+  object-fit: contain;
+  overflow: hidden;
+  bottom: 1rem;
+  left: 1rem;
+}
+.banner-version {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  font-size: 0.75rem;
+  color: var(--theme-text);
+  margin-left: 4px;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-direction: row;
 }
 
 .engine-text {
@@ -181,6 +370,12 @@ async function loadEngineIcons() {
 }
 .more-engines {
   border-radius: 1rem;
+}
+.modal-main-content {
+  padding: 1rem;
+  color: var(--theme-text);
+  width: 100%;
+  text-wrap-mode: wrap;
 }
 .more-engines-content {
   flex-wrap: wrap;
