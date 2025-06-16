@@ -3,7 +3,7 @@ name = "fridaylight"
 version = "0.11.2"
 description = "a Friday Night Funkin mod loader"
 authors = ["echolotl"]
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

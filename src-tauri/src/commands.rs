@@ -332,7 +332,7 @@ pub fn launch_mod(
         );
 
         // Also update the global state
-        if let Ok(mut global_mods) = crate::models::GLOBAL_MODS_STATE.lock() {
+        match crate::models::GLOBAL_MODS_STATE.lock() { Ok(mut global_mods) => {
           if let Some(global_mod_info) = global_mods.get_mut(&id) {
             global_mod_info.process_id = Some(pid);
             global_mod_info.last_played = Some(current_time);
@@ -348,11 +348,11 @@ pub fn launch_mod(
               mod_info.name
             );
           }
-        } else {
+        } _ => {
           warn!(
             "Failed to acquire lock on global state when updating process info"
           );
-        }
+        }}
       }
 
       // Clone the id for use in threads
@@ -448,7 +448,7 @@ pub fn is_mod_running(id: String, mods_state: State<'_, ModsState>) -> bool {
 
   // Also check in the global state for debugging
   let running_in_global_state = {
-    if let Ok(global_mods) = crate::models::GLOBAL_MODS_STATE.lock() {
+    match crate::models::GLOBAL_MODS_STATE.lock() { Ok(global_mods) => {
       if let Some(mod_info) = global_mods.get(&id) {
         let running = mod_info.process_id.is_some();
         info!(
@@ -462,10 +462,10 @@ pub fn is_mod_running(id: String, mods_state: State<'_, ModsState>) -> bool {
         info!("Mod with ID {} not found in global state", id);
         false
       }
-    } else {
+    } _ => {
       info!("Could not acquire lock on global state");
       false
-    }
+    }}
   };
 
   // If there's a discrepancy between the states, log it
@@ -508,9 +508,8 @@ pub fn stop_mod(
             mod_info.process_id = None;
 
             // Also update the global state
-            if
-              let Ok(mut global_mods) = crate::models::GLOBAL_MODS_STATE.lock()
-            {
+            match crate::models::GLOBAL_MODS_STATE.lock()
+            { Ok(mut global_mods) => {
               if let Some(global_mod_info) = global_mods.get_mut(&id) {
                 global_mod_info.process_id = None;
                 info!(
@@ -523,9 +522,9 @@ pub fn stop_mod(
                   mod_info.name
                 );
               }
-            } else {
+            } _ => {
               warn!("Failed to acquire lock on global state when stopping mod");
-            }
+            }}
 
             Ok(())
           }
