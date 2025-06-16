@@ -199,15 +199,10 @@
   <!-- Mod Type Selection Modal -->
   <ModTypeSelectionModal
     v-model="showModTypeModal"
-    :mod-data="customModData"
-    @submit="onModTypeSubmit"
-    @back="
-      showModTypeModal =
-        false && customModData?.isCustomUrl
-          ? (showCustomUrlModal = true)
-          : false
-    "
-    @cancel="handleModTypeCancel"
+    :mod-name="currentDownloadMod?.name"
+    @submit="onModTypeSelected"
+    @back="onModTypeBack"
+    @cancel="cancelDownload"
   />
   <!-- Folder Exists Confirmation Dialog -->
   <FolderExistsDialog
@@ -236,8 +231,6 @@ import DownloadFileSelector from '@modals/DownloadFileSelector.vue'
 import EngineSelectionDialog from '@modals/EngineSelectionDialog.vue'
 import ModTypeSelectionModal from '@modals/ModTypeSelectionModal.vue'
 import FolderExistsDialog from '@modals/FolderExistsDialog.vue'
-import { StoreService } from '../../services/storeService'
-import { formatEngineName } from '@utils/index'
 import {
   NotificationService,
   OngoingNotificationResult,
@@ -294,10 +287,7 @@ let pendingDownloadNotification: OngoingNotificationResult | null = null
 const showEngineSelectDialog = ref(false)
 const currentModpackInfo = ref<ModpackInfo | null>(null)
 
-// For custom URL download
-const showCustomUrlModal = ref(false)
 const showModTypeModal = ref(false)
-const customModData = ref<any>(null)
 
 // For folder existence confirmation
 const showFolderExistsDialog = ref(false)
@@ -485,8 +475,6 @@ const downloadMod = async (mod: GameBananaMod) => {
       return
     }
     if ('showModTypeModal' in result) {
-      // If we need to show mod type selection
-      customModData.value = result.customModData
       showModTypeModal.value = true
       return
     }
@@ -603,8 +591,6 @@ const onFileSelected = async (selectedFile: any) => {
     }
 
     if ('showModTypeModal' in result) {
-      // If we need to show mod type selection
-      customModData.value = result.customModData
       showModTypeModal.value = true
       return
     }
@@ -654,185 +640,8 @@ const cancelDownload = () => {
   // Reset state variables
   currentDownloadMod.value = null
   currentModpackInfo.value = null
-  customModData.value = null
   folderExistsDownloadContinueFunction.value = null
   folderExistsUpdateFunction.value = null
-}
-
-// Function for custom URL download
-const onCustomUrlSubmit = (formData: any) => {
-  console.log('Custom URL form submitted:', formData)
-  // Add isCustomUrl flag to identify the source of this mod data
-  customModData.value = {
-    ...formData,
-    isCustomUrl: true,
-  }
-  showCustomUrlModal.value = false
-  showModTypeModal.value = true
-}
-
-// Function for handling mod type selection
-const onModTypeSubmit = async (typeData: any) => {
-  console.log('Mod type selected:', typeData)
-  if (!customModData.value) return
-  try {
-    // Show loading notification
-    pendingDownloadNotification = notificationService.downloadPreparing(
-      customModData.value.name
-    )
-
-    // Determine install location based on mod type
-    let installLocation: string | null = null
-
-    if (typeData.modType === 'executable') {
-      // For standalone mods, use the standard install location
-      const storeService = StoreService.getInstance()
-      installLocation = await storeService.getSetting('installLocation')
-    } else {
-      // For modpacks, use the engine's mods folder
-      if (typeData.engineMod) {
-        installLocation = gamebananaService.getModsFolderPath(
-          typeData.engineMod
-        )
-      } else {
-        throw new Error(
-          `No ${await formatEngineName(typeData.modType)} installation found`
-        )
-      }
-    }
-
-    console.log(
-      `Downloading ${customModData.value.name} to ${
-        installLocation || 'default location'
-      }`
-    )
-
-    // Reset the modal state
-    showModTypeModal.value = false
-
-    // Generate a random modId for tracking the download
-    const modId = Math.floor(Math.random() * 1000000)
-
-    // Call backend to download using the custom mod command instead
-    const result = await invoke<string>('download_custom_mod_command', {
-      url: customModData.value.url,
-      name: customModData.value.name,
-      modId,
-      installLocation,
-      thumbnailUrl: customModData.value.bannerData,
-      description: customModData.value.description,
-      version: customModData.value.version,
-    })
-
-    // Process the result
-    let modInfo: any
-    let modPath: string
-
-    try {
-      // Try to parse as JSON
-      const parsed = JSON.parse(result)
-      modPath = parsed.path
-      modInfo = parsed.mod_info
-    } catch {
-      // If parsing fails, assume it's just the path string
-      modPath = result
-      // Get mod info directly from the backend
-      const allMods = await invoke<any[]>('get_mods')
-      modInfo = allMods.find(m => m.path === modPath)
-    }
-
-    // If we still don't have mod info, create one with custom data
-    if (!modInfo) {
-      modInfo = {
-        id: crypto.randomUUID(),
-        name: customModData.value.name,
-        path: modPath,
-        executable_path: null,
-        icon_data: null,
-        banner_data: customModData.value.bannerData,
-        logo_data: customModData.value.logoData,
-        description: customModData.value.description,
-        version: customModData.value.version || null,
-        engine_type:
-          typeData.modType !== 'executable' ? typeData.modType : null,
-        engine:
-          typeData.modType !== 'executable'
-            ? {
-                engine_type: typeData.modType,
-                engine_name: await formatEngineName(typeData.modType),
-                mods_folder: true,
-                mods_folder_path: 'mods',
-              }
-            : null,
-      }
-    } else {
-      // Update the mod info with custom data
-      modInfo.name = customModData.value.name
-      modInfo.banner_data =
-        customModData.value.bannerData || modInfo.banner_data
-      modInfo.logo_data = customModData.value.logoData || modInfo.logo_data
-      modInfo.description =
-        customModData.value.description || modInfo.description
-      modInfo.version = customModData.value.version || modInfo.version
-
-      if (typeData.modType !== 'executable') {
-        modInfo.engine_type = typeData.modType
-        modInfo.engine = {
-          ...(modInfo.engine || {}),
-          engine_type: typeData.modType,
-          engine_name: await formatEngineName(typeData.modType),
-          mods_folder: true,
-          mods_folder_path: 'mods',
-        }
-      }
-    }
-
-    // Save the mod to the database
-    if (modInfo) {
-      await gamebananaService.saveModToDatabase(modInfo)
-    } // Dismiss loading notification
-    pendingDownloadNotification?.dismiss()
-
-    // Show success notification
-    notificationService.downloadSuccess(
-      customModData.value.name,
-      'Ready to play from the mods list'
-    )
-
-    // Reset the custom mod data
-    customModData.value = null
-
-    // Trigger refresh event to update mod list
-    setTimeout(() => {
-      const refreshEvent = new CustomEvent('refresh-mods')
-      window.dispatchEvent(refreshEvent)
-    }, 500)
-  } catch (error) {
-    // Show error notification
-    notificationService.downloadError(
-      customModData.value?.name || 'mod',
-      String(error)
-    )
-
-    console.error('Failed to download custom mod:', error)
-
-    // Reset the custom mod data
-    customModData.value = null
-
-    // Dismiss loading notification if any
-    pendingDownloadNotification?.dismiss()
-  }
-}
-
-// Handle cancel from mod type selection modal
-const handleModTypeCancel = () => {
-  // Check the source of the mod type modal - custom URL or regular download
-  if (customModData.value?.isCustomUrl) {
-    showCustomUrlModal.value = true
-  }
-
-  showModTypeModal.value = false
-  customModData.value = null
 }
 
 // Function to continue download when folder exists
@@ -913,6 +722,88 @@ const updateFolderExistsMod = async () => {
     folderExistsDownloadContinueFunction.value = null
     folderExistsUpdateFunction.value = null
   }
+}
+// Function called when mod type is selected from the modal
+const onModTypeSelected = async (selection: {
+  modType: string
+  engineMod: any
+  isAddon?: boolean
+}) => {
+  if (!currentDownloadMod.value) return
+
+  try {
+    // Hide the modal immediately to provide feedback to the user
+    showModTypeModal.value = false
+
+    if (selection.modType === 'executable') {
+      // For executables, just proceed with normal download
+      const result = await gamebananaService.startDownload(
+        currentDownloadMod.value
+      )
+
+      // Handle folder exists dialog if needed
+      if ('showFolderExistsDialog' in result) {
+        folderExistsModName.value = result.modName
+        folderExistsDownloadContinueFunction.value = result.continueDownload
+        folderExistsUpdateFunction.value = result.updateMod || null
+        showFolderExistsDialog.value = true
+        return
+      }
+    } else {
+      // For modpacks, create modpack info and use engine selection
+      const modpackInfo: ModpackInfo = {
+        mod: currentDownloadMod.value,
+        type: selection.modType,
+        compatibleEngines: [selection.engineMod],
+      }
+
+      // For Codename Engine addons, we need to modify the installation path
+      if (selection.modType === 'codename' && selection.isAddon) {
+        // We'll handle this in the downloadModpackForEngine method
+        const result = await gamebananaService.downloadModpackForEngine(
+          modpackInfo,
+          {
+            ...selection.engineMod,
+            isAddon: true,
+          }
+        )
+
+        if (!result.success) {
+          notificationService.installationFailed(
+            currentDownloadMod.value.name,
+            result.error || 'Unknown error'
+          )
+        }
+      } else {
+        // Regular modpack installation
+        const result = await gamebananaService.downloadModpackForEngine(
+          modpackInfo,
+          selection.engineMod
+        )
+
+        if (!result.success) {
+          notificationService.installationFailed(
+            currentDownloadMod.value.name,
+            result.error || 'Unknown error'
+          )
+        }
+      }
+    }
+  } catch (error) {
+    notificationService.installationFailed(
+      currentDownloadMod.value.name,
+      String(error)
+    )
+  } finally {
+    // Reset state
+    currentDownloadMod.value = null
+  }
+}
+
+// Function called when user goes back from mod type selection modal
+const onModTypeBack = () => {
+  // For now, just close the modal since there's no previous step
+  showModTypeModal.value = false
 }
 </script>
 
