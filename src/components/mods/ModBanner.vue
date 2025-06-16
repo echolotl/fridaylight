@@ -64,7 +64,7 @@
         class="mod-info-overlay"
       >
         <span v-if="mod.version" class="version-tag phantom-font-difficulty"
-          ><b>v{{ mod.version }}</b></span
+          >v{{ mod.version }}</span
         >
         <span
           v-if="
@@ -309,10 +309,10 @@ const formatEngineType = (engineType: string) => {
   object-fit: contain;
 }
 .version-tag {
-  color: var(--q-primary);
-  transform: translateY(1px);
+  color: var(--theme-text);
   padding: 5px 10px;
   border-radius: 4px;
   font-size: 0.8rem;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 </style>

@@ -7,9 +7,11 @@
         color: var(--text-color);
         border: 2px solid var(--theme-border);
         backdrop-filter: blur(30px);
+        display: flex;
+        flex-direction: column;
       "
     >
-      <q-card-section class="row items-center">
+      <q-card-section class="row items-center" style="flex-shrink: 0">
         <q-icon
           v-if="!disableIcon"
           :name="icon"
@@ -21,15 +23,21 @@
         <h6 class="dialog-title phantom-font-difficulty">{{ title }}</h6>
       </q-card-section>
 
-      <q-card-section class="q-pt-none">
+      <q-card-section class="q-pt-none dialog-content">
         <div v-if="heading" class="text-h6">{{ heading }}</div>
-        <div v-if="subHeading" class="text-caption">{{ subHeading }}</div>
+        <div
+          v-if="subHeading"
+          class="text-caption"
+          style="color: var(--theme-text-secondary)"
+        >
+          {{ subHeading }}
+        </div>
         <p v-if="message" class="text-body2 q-mt-sm">{{ message }}</p>
         <slot></slot>
         <!-- For custom content -->
       </q-card-section>
 
-      <q-card-actions align="right">
+      <q-card-actions align="right" style="flex-shrink: 0">
         <q-btn
           v-if="!singleOption"
           v-close-popup
@@ -134,6 +142,10 @@ const onCancel = () => {
 }
 .dialog-title {
   margin: 0;
+}
+.dialog-content {
+  flex: 1;
+  min-height: 0; /* Important for flex child to shrink properly */
 }
 .scrollarea {
   width: 100%;

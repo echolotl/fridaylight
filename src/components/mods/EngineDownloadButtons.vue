@@ -106,88 +106,99 @@
     :confirm-label="'Close'"
     single-option
     disable-icon
+    :persistent="false"
     title="Engine Details"
     @update:model-value="detailsModal = $event"
   >
     <template #default>
-      <div class="banner-container">
-        <div
-          class="details-banner"
-          :style="{
-            backgroundImage: currentModalEngine?.engine_banner
-              ? bannerImage
-              : 'url(images/placeholder.png)',
-          }"
-        ></div>
-        <div class="banner-overlay">
-          <div class="engine-logo">
-            <img
-              v-if="engineLogo"
-              :src="engineLogo"
-              :alt="currentModalEngine?.engine_name"
-              class="engine-logo-img"
-            />
+      <q-scroll-area style="max-height: 80vh; height: 400px; width: 100%">
+        <div class="">
+          <div class="banner-container">
+            <div
+              class="details-banner"
+              :style="{
+                backgroundImage: currentModalEngine?.engine_banner
+                  ? bannerImage
+                  : 'url(images/placeholder.png)',
+              }"
+            ></div>
+            <div class="banner-overlay">
+              <div class="engine-logo">
+                <img
+                  v-if="engineLogo"
+                  :src="engineLogo"
+                  :alt="currentModalEngine?.engine_name"
+                  class="engine-logo-img"
+                />
+              </div>
+              <div class="banner-version phantom-font-difficulty">
+                <span v-if="currentModalEngine?.engine_version">
+                  v{{ currentModalEngine.engine_version }}
+                </span>
+                <img
+                  v-if="currentModalEngine?.engine_icon"
+                  :src="engineIcons[currentModalEngine.engine_icon]"
+                  alt="Engine Icon"
+                  class="engine-icon"
+                />
+              </div>
+            </div>
           </div>
-          <div class="banner-version phantom-font-difficulty">
-            <span v-if="currentModalEngine?.engine_version">
-              v{{ currentModalEngine.engine_version }}
-            </span>
-            <img
-              v-if="currentModalEngine?.engine_icon"
-              :src="engineIcons[currentModalEngine.engine_icon]"
-              alt="Engine Icon"
-              class="engine-icon"
-            />
-          </div>
-        </div>
-      </div>
-      <div class="modal-main-content">
-        <p v-html="currentModalEngine?.engine_description"></p>
-        <div v-if="currentModalEngine?.credits?.length" class="credits-content">
-          <h6 class="phantom-font-difficulty q-mt-md q-mb-md">
-            Credits
-            <hr />
-          </h6>
-
-          <q-list dense class="q-px-none">
-            <q-item
-              v-for="credit in currentModalEngine?.credits"
-              :key="credit.name"
-              class="q-px-none"
+          <div class="modal-main-content">
+            <p v-html="currentModalEngine?.engine_description"></p>
+            <div
+              v-if="currentModalEngine?.credits?.length"
+              class="credits-content"
             >
-              <q-item-section v-if="!credit.url">
-                <span>{{ credit.name }}</span>
-              </q-item-section>
-              <q-item-section v-else>
-                <a class="cursor-pointer link" @click="openUrl(credit.url)">{{
-                  credit.name
-                }}</a>
-              </q-item-section>
-              <q-item-section side>
-                <span
-                  class="phantom-font"
-                  style="color: var(--theme-text-secondary)"
-                  >{{ credit.role }}</span
+              <h6 class="phantom-font-difficulty q-mt-md q-mb-md">
+                Credits
+                <hr />
+              </h6>
+
+              <q-list dense class="q-px-none">
+                <q-item
+                  v-for="credit in currentModalEngine?.credits"
+                  :key="credit.name"
+                  class="q-px-none"
                 >
-              </q-item-section>
-            </q-item>
-          </q-list>
-          <q-btn
-            v-if="currentModalEngine?.credits_url"
-            class="q-mt-md full-width"
-            icon="open_in_new"
-            label="View Full Credits"
-            flat
-            @click="openUrl(currentModalEngine.credits_url)"
-          >
-          </q-btn>
+                  <q-item-section v-if="!credit.url">
+                    <span>{{ credit.name }}</span>
+                  </q-item-section>
+                  <q-item-section v-else>
+                    <a
+                      class="cursor-pointer link"
+                      @click="openUrl(credit.url)"
+                      >{{ credit.name }}</a
+                    >
+                  </q-item-section>
+                  <q-item-section side>
+                    <span
+                      class="phantom-font"
+                      style="color: var(--theme-text-secondary)"
+                      >{{ credit.role }}</span
+                    >
+                  </q-item-section>
+                </q-item>
+              </q-list>
+              <q-btn
+                v-if="currentModalEngine?.credits_url"
+                class="q-mt-md full-width"
+                icon="open_in_new"
+                label="View Full Credits"
+                flat
+                @click="openUrl(currentModalEngine.credits_url)"
+              >
+              </q-btn>
+            </div>
+            <span
+              v-if="currentModalEngine?.suggestors?.length"
+              style="color: var(--theme-text-secondary)"
+              >Suggested by:
+              {{ currentModalEngine.suggestors.join(', ') }}</span
+            >
+          </div>
         </div>
-        <span
-          v-if="currentModalEngine?.suggestors?.length"
-          style="color: var(--theme-text-secondary)"
-          >Suggested by: {{ currentModalEngine.suggestors.join(', ') }}</span
-        >
-      </div>
+      </q-scroll-area>
     </template>
   </MessageDialog>
 </template>

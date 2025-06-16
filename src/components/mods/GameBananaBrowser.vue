@@ -35,7 +35,7 @@
 
     <!-- Home View with Featured and Latest Mods -->
     <q-scroll-area v-else class="scroll-container">
-      <div class="main-browser">
+      <div class="main-browser absolute fit">
         <div class="featured-header">
           <div class="mods-section">
             <FeaturedModsCarousel
