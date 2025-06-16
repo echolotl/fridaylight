@@ -3,7 +3,7 @@ name = "fridaylight"
 version = "0.11.2"
 description = "a Friday Night Funkin mod loader"
 authors = ["echolotl"]
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,17 +15,17 @@ name = "fnfml_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2.2.0", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2.5.0", features = [] }
 tauri-plugin-opener = "2"
 tauri-plugin-store = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 uuid = { version = "1.16.0", features = ["v4"] }
 tauri-plugin-dialog = "2"
-ico = "0.3.0"
+ico = "0.4.0"
 base64 = "0.22.1"
 image = "0.25.6"
 winapi = { version = "0.3.9", features = ["winuser", "shellapi"] }
@@ -33,9 +33,9 @@ tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 reqwest = { version = "0.12", features = ["json", "stream"] }
 chrono = "0.4"
 log = "0.4"
-env_logger = "0.10"
+env_logger = "0.11.8"
 simplelog = "0.12"
-zip = "2.6.1"
+zip = "4.1.0"
 futures-util = "0.3.31"
 bytes = "1.10.1"
 sevenz-rust = "0.6.1"
