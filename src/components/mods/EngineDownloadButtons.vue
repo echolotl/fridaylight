@@ -92,8 +92,10 @@
       <div>
         Have a suggestion for an engine? Ask on the
         <a
-          class="cursor-pointer"
-          @click="openUrl('https://www.github.com/echolotl/fridaylight/issues')"
+          class="cursor-pointer link"
+          @click="
+            handleUrlClick('https://www.github.com/echolotl/fridaylight/issues')
+          "
           >GitHub</a
         >!
       </div>
@@ -145,7 +147,7 @@
             </div>
           </div>
           <div class="modal-main-content">
-            <p v-html="currentModalEngine?.engine_description"></p>
+            <p v-html="processedEngineDescription"></p>
             <div
               v-if="currentModalEngine?.credits?.length"
               class="credits-content"
@@ -167,7 +169,7 @@
                   <q-item-section v-else>
                     <a
                       class="cursor-pointer link"
-                      @click="openUrl(credit.url)"
+                      @click="handleUrlClick(credit.url)"
                       >{{ credit.name }}</a
                     >
                   </q-item-section>
@@ -186,7 +188,7 @@
                 icon="open_in_new"
                 label="View Full Credits"
                 flat
-                @click="openUrl(currentModalEngine.credits_url)"
+                @click="handleUrlClick(currentModalEngine.credits_url)"
               >
               </q-btn>
             </div>
@@ -205,10 +207,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { openUrl } from '@tauri-apps/plugin-opener'
 import {
   getAllEngineTypes,
   getEngineTypeData,
+  processHtmlAnchors,
   type EngineTypeInfo,
   type EngineData,
 } from '../../utils'
@@ -233,6 +235,12 @@ const secondaryEngines = computed(() =>
   engineTypes.value.filter((engine: EngineTypeInfo) => !engine.isPrimary)
 )
 
+const processedEngineDescription = computed(() => {
+  if (!currentModalEngine.value?.engine_description) return ''
+
+  return processHtmlAnchors(currentModalEngine.value.engine_description)
+})
+
 onMounted(async () => {
   try {
     engineTypes.value = await getAllEngineTypes()
@@ -241,6 +249,12 @@ onMounted(async () => {
     console.error('Failed to load engine types:', error)
   }
 })
+
+const handleUrlClick = (url: string) => {
+  ;(
+    window as typeof window & { handleUrlClick: (url: string) => void }
+  ).handleUrlClick(url)
+}
 
 async function getIconAsBase64(iconPath: string): Promise<string> {
   try {
@@ -271,7 +285,6 @@ async function loadEngineIcons() {
 
 async function openDetails(engine_type: string) {
   const engineData = await getEngineTypeData(engine_type)
-  console.log('Engine Data:', engineData)
   if (engineData) {
     currentModalEngine.value = engineData
     if (engineData.engine_banner) {
@@ -397,5 +410,14 @@ async function openDetails(engine_type: string) {
 }
 :deep(.dropdown-icon) {
   color: var(--theme-text-secondary);
+}
+
+.link {
+  color: var(--theme-primary);
+  text-decoration: underline;
+}
+
+.link:hover {
+  color: var(--theme-primary-light);
 }
 </style>

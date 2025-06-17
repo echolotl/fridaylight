@@ -64,6 +64,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { listen } from '@tauri-apps/api/event'
 import { check } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
+import { openUrl } from '@tauri-apps/plugin-opener'
 import Sidebar from './components/layout/Sidebar.vue'
 import EngineSelectionDialog from './components/modals/EngineSelectionDialog.vue'
 import MessageDialog from './components/modals/MessageDialog.vue'
@@ -229,6 +230,10 @@ onUnmounted(() => {
   })
 
   document.removeEventListener('show-context-menu', (() => {}) as EventListener)
+
+  // Clean up global function
+  delete (window as typeof window & { handleUrlClick?: (url: string) => void })
+    .handleUrlClick
 })
 
 // Initialize application settings
@@ -536,10 +541,15 @@ onMounted(async () => {
       // If using custom theme, apply the saved theme directly
       const themeValue = await getThemePreference()
       await applyTheme(themeValue)
-    }
-
-    // Set up download event listeners
+    } // Set up download event listeners
     cleanupEventListeners = setupGameBananaEventListeners()
+
+    // Set up global function for handling URL clicks in v-html content
+    ;(
+      window as typeof window & { handleUrlClick: (url: string) => void }
+    ).handleUrlClick = (url: string) => {
+      openUrl(url)
+    }
 
     // Update progress bar - Step 3: Initialize deep link handler
     initStatusText.value = 'Setting up deep link handler...'

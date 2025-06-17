@@ -162,6 +162,12 @@ export async function getAllEngineTypes(): Promise<EngineTypeInfo[]> {
   }
 }
 
+/**
+ * Get engine type data from the resources directory
+ * @param engineType The engine type string to get data for
+ * @returns The parsed engine data or null if not found
+ */
+
 export async function getEngineTypeData(
   engineType: string
 ): Promise<EngineData | null> {
@@ -182,4 +188,29 @@ export function formatBytes(bytes: number): string {
   else if (bytes < 1048576) return `${(bytes / 1024).toFixed(2)} KB`
   else if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(2)} MB`
   else return `${(bytes / 1073741824).toFixed(2)} GB`
+}
+
+/**
+ * Process HTML content to replace anchor tag href attributes with click events
+ * @param htmlContent The HTML content to process
+ * @returns The processed HTML content with href attributes replaced by click events
+ */
+export function processHtmlAnchors(htmlContent: string): string {
+  if (!htmlContent) return ''
+
+  // Replace href attributes with click events for openUrl
+  return htmlContent.replace(
+    /<a\s+([^>]*?)href\s*=\s*["']([^"']+)["']([^>]*?)>/gi,
+    (_match, beforeHref, url, afterHref) => {
+      // Remove any existing href and onclick attributes
+      const cleanAttributes = beforeHref
+        .replace(/\s*href\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\s*onclick\s*=\s*["'][^"']*["']/gi, '')
+      const cleanAfterAttributes = afterHref
+        .replace(/\s*href\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/\s*onclick\s*=\s*["'][^"']*["']/gi, '')
+
+      return `<a ${cleanAttributes} class="cursor-pointer link" onclick="window.handleUrlClick('${url}')"${cleanAfterAttributes}>`
+    }
+  )
 }

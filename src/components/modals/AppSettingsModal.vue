@@ -308,9 +308,7 @@
                 <q-scroll-area class="acknowledgements">
                   <ul style="list-style-type: none; padding-left: 0">
                     <li>
-                      <a @click="openUrl('https://gamebanana.com/games/8694')">
-                        Gamebanana
-                      </a>
+                      <div>Gamebanana</div>
                       <div class="text-caption">
                         For providing a stable platform for Friday Night Funkin'
                         mods!
@@ -344,6 +342,12 @@
                       <span> Funkin' Launcher Dev Team </span>
                       <div class="text-caption">
                         For providing inspiration and ideas for this app
+                      </div>
+                    </li>
+                    <li>
+                      <span> SteamGridDB </span>
+                      <div class="text-caption">
+                        For providing a variety of banners and icons for engines
                       </div>
                     </li>
                   </ul>
