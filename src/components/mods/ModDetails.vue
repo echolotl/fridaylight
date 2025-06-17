@@ -112,8 +112,8 @@ import EngineModsList from '@mods/EngineModsList.vue'
 import TerminalOutput from '@common/TerminalOutput.vue'
 import ContributorInfobox from '@common/ContributorInfobox.vue'
 import { Mod } from '@main-types'
-import { useQuasar } from 'quasar'
 import { StoreService } from '@services/storeService'
+import { notificationService } from '@services/notificationService'
 
 const props = defineProps({
   mod: {
@@ -136,7 +136,6 @@ const emit = defineEmits([
 
 const appSettings = StoreService.getInstance()
 
-const $q = useQuasar()
 const showDetails = ref(false)
 const isModRunning = ref(false)
 const showTerminalOutput = ref(false)
@@ -148,25 +147,23 @@ const handleModAction = async () => {
   if (!props.mod) return
 
   if (isModRunning.value) {
-    console.log(`Stopping mod ${props.mod.id}`)
+    console.info(`Stopping mod ${props.mod.id}`)
     // Stop the mod
     try {
       await invoke('stop_mod', { id: props.mod.id })
-      console.log(`Stop command successful, updating UI state`)
+      console.info(`Stop command successful, updating UI state`)
       isModRunning.value = false
       showTerminalOutput.value = false // Hide terminal immediately
     } catch (error) {
       console.error('Failed to stop mod:', error)
-      $q.notify({
-        type: 'negative',
-        message: `Failed to stop ${props.mod.name}`,
-        caption: String(error),
-        position: 'bottom-right',
-        timeout: 3000,
-      })
+      notificationService.modError(
+        props.mod.name,
+        'stop',
+        error instanceof Error ? error.message : String(error)
+      )
     }
   } else {
-    console.log(`Launching mod ${props.mod.id}`)
+    console.info(`Launching mod ${props.mod.id}`)
     // Launch the mod
     emit('launch-mod', props.mod.id)
 
@@ -176,13 +173,13 @@ const handleModAction = async () => {
       // If the setting is not found, default to false
       showTerminalOutput.value =
         terminalSetting !== undefined ? terminalSetting : false
-      console.log(
+      console.info(
         `Setting terminal visibility to ${showTerminalOutput.value} based on app settings`
       )
     }
 
     // Update UI state immediately, will be confirmed when we receive the event
-    console.log(
+    console.info(
       `Setting isModRunning to true in anticipation of successful launch`
     )
     isModRunning.value = true
@@ -193,9 +190,9 @@ const clearModLogs = async (modId: string) => {
   if (!modId) return
 
   try {
-    console.log(`Clearing logs for mod: ${modId}`)
+    console.info(`Clearing logs for mod: ${modId}`)
     await invoke('clear_mod_logs', { id: modId })
-    console.log(`Logs cleared for mod: ${modId}`)
+    console.info(`Logs cleared for mod: ${modId}`)
   } catch (error) {
     console.error('Failed to clear mod logs:', error)
   }
@@ -223,48 +220,55 @@ const formatEngineType = (engineType: string) => {
 
 // Set up mod-terminated event listener
 const setupModTerminatedListener = async () => {
-  if (modTerminatedListener) {
-    console.log(`Removing existing mod-terminated listener`)
-    modTerminatedListener()
-    modTerminatedListener = null
-  }
+  // Clean up existing listener first
+  cleanupModTerminatedListener()
 
   if (props.mod) {
-    console.log(`Setting up mod-terminated listener for mod: ${props.mod.id}`)
+    console.info(`Setting up mod-terminated listener for mod: ${props.mod.id}`)
     modTerminatedListener = await listen<string>('mod-terminated', event => {
-      console.log(
-        `Received mod-terminated event with payload: ${event.payload}`
+      console.info(
+        `[ModDetails ${props.mod?.id}] Received mod-terminated event with payload: ${event.payload}`
       )
 
       // Check if this event is for the current mod
       if (event.payload === props.mod?.id) {
-        console.log(
-          `Event is for current mod ${props.mod?.id}, updating UI state`
+        console.info(
+          `[ModDetails ${props.mod?.id}] Event is for current mod, updating UI state`
         )
         isModRunning.value = false
         showTerminalOutput.value = false
 
         // Display notification that the mod has terminated
-        $q.notify({
-          type: 'info',
-          message: `${props.mod.name} has stopped`,
-          position: 'bottom-right',
-          timeout: 2000,
-        })
+        notificationService.modStopped(props.mod.name)
       } else {
-        console.log(`Event is for a different mod, ignoring`)
+        console.info(
+          `[ModDetails ${props.mod?.id}] Event is for a different mod (${event.payload}), ignoring`
+        )
       }
     })
-    console.log(`Mod-terminated listener successfully set up`)
+    console.info(
+      `[ModDetails ${props.mod?.id}] Mod-terminated listener successfully set up`
+    )
+  }
+}
+
+// Clean up mod-terminated event listener
+const cleanupModTerminatedListener = () => {
+  if (modTerminatedListener) {
+    console.info(
+      `[ModDetails ${props.mod?.id}] Removing mod-terminated listener`
+    )
+    modTerminatedListener()
+    modTerminatedListener = null
   }
 }
 
 // Check if a mod is currently running using the backend
 const checkModRunningStatus = async (modId: string) => {
   try {
-    console.log(`Checking if mod ${modId} is running...`)
+    console.info(`Checking if mod ${modId} is running...`)
     const running = await invoke<boolean>('is_mod_running', { id: modId })
-    console.log(`Mod ${modId} running status from backend: ${running}`)
+    console.info(`Mod ${modId} running status from backend: ${running}`)
     return running
   } catch (error) {
     console.error('Error checking mod running status:', error)
@@ -289,12 +293,16 @@ watch(
   async (newModId, oldModId) => {
     // Only reset state when the actual mod ID changes (meaning a different mod was selected)
     if (newModId !== oldModId) {
-      console.log(`Mod changed from ${oldModId} to ${newModId}`)
+      console.info(`Mod changed from ${oldModId} to ${newModId}`)
+
+      // Clean up previous listener first
+      cleanupModTerminatedListener()
+
       if (newModId) {
-        console.log(`Checking running status for new mod: ${newModId}`)
+        console.info(`Checking running status for new mod: ${newModId}`)
         // Check if the mod is currently running in the backend
         const isRunning = await checkModRunningStatus(newModId)
-        console.log(
+        console.info(
           `Setting isModRunning.value = ${isRunning} based on backend state check`
         )
         isModRunning.value = isRunning
@@ -303,12 +311,12 @@ watch(
         if (isRunning && appSettings) {
           showTerminalOutput.value =
             (await appSettings.getSetting('showTerminalOutput')) || false
-          console.log(
+          console.info(
             `Terminal output visibility set to ${showTerminalOutput.value}`
           )
         } else {
           showTerminalOutput.value = false
-          console.log(`Terminal output hidden because mod is not running`)
+          console.info(`Terminal output hidden because mod is not running`)
         }
 
         // Set up event listener for this mod
@@ -316,12 +324,6 @@ watch(
       } else {
         isModRunning.value = false
         showTerminalOutput.value = false
-
-        // Clean up listener if no mod is selected
-        if (modTerminatedListener) {
-          modTerminatedListener()
-          modTerminatedListener = null
-        }
       }
     }
   },
@@ -343,37 +345,17 @@ watch(
 )
 
 onMounted(async () => {
-  // Setup event listener
-  if (props.mod) {
-    console.log(`ModDetails mounted with mod ID: ${props.mod.id}`)
-    await setupModTerminatedListener()
-
-    // Check if the mod is currently running
-    console.log(
-      `Checking if mod ${props.mod.id} is running on component mount...`
-    )
-    const isRunning = await checkModRunningStatus(props.mod.id)
-    console.log(`Setting initial isModRunning state to: ${isRunning}`)
-    isModRunning.value = isRunning
-
-    // If the mod is running, check terminal display preference
-    if (isRunning && appSettings) {
-      const terminalSetting =
-        (await appSettings.getSetting('showTerminalOutput')) || false
-      console.log(
-        `Setting terminal visibility to ${terminalSetting} from app settings`
-      )
-      showTerminalOutput.value = terminalSetting
-    }
-  }
+  // The watcher with immediate: true will handle the initial setup
+  // No need to duplicate the listener setup here
+  console.info(`ModDetails mounted with mod ID: ${props.mod?.id || 'none'}`)
 })
 
 onUnmounted(() => {
+  console.info(
+    `[ModDetails ${props.mod?.id}] Component unmounting, cleaning up listeners`
+  )
   // Clean up event listener
-  if (modTerminatedListener) {
-    modTerminatedListener()
-    modTerminatedListener = null
-  }
+  cleanupModTerminatedListener()
 })
 </script>
 
