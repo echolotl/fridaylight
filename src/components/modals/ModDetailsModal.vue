@@ -26,7 +26,14 @@
           Loading...
         </div>
         <q-space />
-        <q-btn flat round icon="close" class="close-btn" @click="closeModal" />
+        <q-btn
+          flat
+          round
+          dense
+          icon="close"
+          class="close-btn"
+          @click="closeModal"
+        />
       </q-card-section>
       <q-scroll-area class="mod-details-scroll-area">
         <q-card-section v-if="loading" class="flex flex-center">
@@ -323,11 +330,17 @@
                 class="q-mb-md flex justify-center items-center"
                 style="color: var(--theme-text-secondary)"
               >
-                <q-icon name="favorite" size="2em" class="q-mr-xs" />
+                <q-icon
+                  name="favorite"
+                  size="2em"
+                  class="q-mr-xs"
+                  color="pink"
+                />
                 <div>
-                  Thanked by <b>{{ modInfo._nThanksCount }}</b>
+                  Thanked by
+                  <b style="color: var(--pink)">{{ modInfo._nThanksCount }}</b>
                   <span v-if="modInfo._nThanksCount > 1"> people</span
-                  ><span v-else>person</span>!
+                  ><span v-else> person</span>!
                 </div>
               </div>
               <div class="mod-badges">

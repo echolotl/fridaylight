@@ -60,16 +60,49 @@
             />
             <div class="gamebanana-section q-mt-lg">
               <q-separator class="q-my-md" />
-              <div class="text-subtitle1 q-mb-md">GameBanana Integration</div>
+              <div class="text-subtitle1 q-mb-md">
+                <q-icon
+                  name="M24,6v10.5h-1.5v3h-1.5v1.5h-1.5v1.5h-3v1.5H6v-1.5h-3v-1.5h-1.5v-1.5H0v-4.5h9v-1.5h4.5v-1.5h1.5v-4.5h1.5V3h-1.5V0h4.5v3h1.5v1.5h1.5v1.5h1.5Z"
+                  size="sm"
+                  class="q-mr-sm"
+                />GameBanana Integration
+              </div>
               <q-input
                 :model-value="gameBananaInfo?.url || ''"
                 label="GameBanana URL"
                 outlined
                 class="q-mb-md"
                 placeholder="https://gamebanana.com/mods/..."
-                hint="Link to the mod's GameBanana page"
                 @update:model-value="updateGameBananaUrl"
               />
+              <div v-if="gameBananaInfo && gameBananaInfo.url" class="flex">
+                <q-btn
+                  label="Sync with Gamebanana"
+                  class="flex-grow-1"
+                  icon="sync"
+                  flat
+                  :loading="gamebananaSyncing"
+                  @click="syncWithGameBanana"
+                />
+                <q-btn
+                  label="View on GameBanana"
+                  class="flex-grow-1 q-ml-sm"
+                  icon="open_in_new"
+                  flat
+                  @click="openUrl(gameBananaInfo.url)"
+                />
+                <div
+                  class="text-caption q-mt-sm"
+                  style="color: var(--theme-text-secondary)"
+                >
+                  Syncing with GameBanana will fetch the latest metadata, and
+                  will overwrite any existing metadata. You'll still need to
+                  save the mod settings to apply changes.
+                  <br />
+                  The version you have installed will not change, but the
+                  version displayed might.
+                </div>
+              </div>
             </div>
 
             <div class="danger-zone q-mt-lg">
@@ -438,7 +471,7 @@ import { ref, watch, computed } from 'vue'
 import { Mod, ModInfoGBData } from '@main-types'
 import { formatEngineName } from '../../utils'
 import MessageDialog from './MessageDialog.vue'
-import { revealItemInDir } from '@tauri-apps/plugin-opener'
+import { revealItemInDir, openUrl } from '@tauri-apps/plugin-opener'
 import { invoke } from '@tauri-apps/api/core'
 
 const props = defineProps({
@@ -493,6 +526,7 @@ const iconPreview = ref<string | null>(null)
 const gameBananaInfo = ref<ModInfoGBData | null>(null)
 const metadataData = ref<any>(null)
 const metadataLoaded = ref(false)
+const gamebananaSyncing = ref(false)
 
 const engineTypes = [
   { label: 'Vanilla', value: 'vanilla' },
@@ -743,6 +777,30 @@ const formatGameBananaModelType = (modelType: string) => {
       return 'Tool'
     default:
       return 'Mod'
+  }
+}
+
+const syncWithGameBanana = async () => {
+  if (!gameBananaInfo.value || !gameBananaInfo.value.url) {
+    console.warn('No GameBanana URL set, cannot sync')
+    return
+  }
+  gamebananaSyncing.value = true
+  try {
+    const response = await invoke<any>('get_mod_info_command', {
+      modId: gameBananaInfo.value.id,
+      modelType: gameBananaInfo.value.model_type,
+    })
+
+    // Update form with the fetched data
+    form.value.name = response?._sName || form.value.name
+    form.value.description = response?._sDescription || form.value.description
+    form.value.version = response?._sVersion || form.value.version
+    console.log('GameBanana sync response:', response)
+    gamebananaSyncing.value = false
+  } catch (error) {
+    console.error('Failed to sync with GameBanana:', error)
+    gamebananaSyncing.value = false
   }
 }
 

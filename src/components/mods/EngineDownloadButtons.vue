@@ -363,9 +363,11 @@ async function openDetails(engine_type: string) {
 
 .engine-logo-img {
   position: absolute;
-  width: auto;
-  height: 100px;
+  width: 50%;
+  height: auto;
+  max-height: 60%;
   object-fit: contain;
+  object-position: left;
   overflow: hidden;
   bottom: 1rem;
   left: 1rem;

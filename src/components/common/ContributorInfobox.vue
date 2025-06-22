@@ -1,5 +1,8 @@
 <template>
-  <div v-if="hasGamebanana && gameBananaInfo" class="flex justify-center">
+  <div
+    v-if="hasGamebanana && gameBananaInfo && gameBananaInfo.url"
+    class="flex justify-center"
+  >
     <q-btn
       flat
       label="Open in Gamebanana"
