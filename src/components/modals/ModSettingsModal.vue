@@ -119,9 +119,6 @@
                   Syncing with GameBanana will fetch the latest metadata, and
                   will overwrite any existing metadata. You'll still need to
                   save the mod settings to apply changes.
-                  <br />
-                  The version you have installed will not change, but the
-                  version displayed might.
                 </div>
               </div>
             </div>
