@@ -157,7 +157,7 @@
                 <hr />
               </h6>
 
-              <q-list dense class="q-px-none">
+              <q-list dense>
                 <q-item
                   v-for="credit in currentModalEngine?.credits"
                   :key="credit.name"

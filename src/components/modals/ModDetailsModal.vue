@@ -33,8 +33,10 @@
           <div v-if="isSlowRequest" class="text-center phantom-font">
             <q-icon name="hourglass_empty" size="2em" color="orange" />
             <div class="q-mt-sm" style="color: var(--theme-text-secondary)">
-              This is taking a really long time. Something might have gone wrong
-              on our end, or GameBanana's. Maybe try again later?
+              This is taking a really long time.
+              <br />
+              Something might have gone wrong on our end, or GameBanana's. Maybe
+              try again later?
             </div>
           </div>
         </q-card-section>
@@ -87,7 +89,7 @@
               <div>
                 <div
                   class="phantom-font mod-info-text"
-                  v-html="modInfo._sText"
+                  v-html="processHtmlAnchors(modInfo._sText)"
                 ></div>
               </div>
               <div v-if="modInfo._nUpdatesCount > 0">
@@ -182,7 +184,7 @@
                       </div>
                       <div
                         class="phantom-font update-text"
-                        v-html="update._sText"
+                        v-html="processHtmlAnchors(update._sText)"
                       ></div>
                     </div>
                   </q-expansion-item>
@@ -268,7 +270,7 @@
                     <div class="q-mt-sm">
                       <div
                         class="phantom-font comment-text"
-                        v-html="comment._sText"
+                        v-html="processHtmlAnchors(comment._sText)"
                       ></div>
                       <div v-if="comment._aPoster._sSigUrl">
                         <img
@@ -316,6 +318,18 @@
               </div>
             </div>
             <div class="mod-details-right phantom-font">
+              <div
+                v-if="modInfo._nThanksCount"
+                class="q-mb-md flex justify-center items-center"
+                style="color: var(--theme-text-secondary)"
+              >
+                <q-icon name="favorite" size="2em" class="q-mr-xs" />
+                <div>
+                  Thanked by <b>{{ modInfo._nThanksCount }}</b>
+                  <span v-if="modInfo._nThanksCount > 1"> people</span
+                  ><span v-else>person</span>!
+                </div>
+              </div>
               <div class="mod-badges">
                 <div v-if="modInfo._nLikeCount > 0" class="custom-badge">
                   <q-icon name="thumb_up" class="q-mr-xs" />
@@ -356,24 +370,9 @@
                   @click="downloadMod"
                 />
                 <div
-                  v-if="
-                    modInfo._aFiles &&
-                    modInfo._aFiles.length > 0 &&
-                    modInfo._aFiles[0]._bContainsExe
-                  "
+                  v-if="modInfo._aFiles && modInfo._aFiles.length > 0"
                   class="q-mt-sm"
                 >
-                  <q-badge
-                    v-if="modInfo._aFiles[0]._sClamAvResult === 'clean'"
-                    label="CLAMAV"
-                    class="q-mr-xs"
-                  >
-                    <q-icon name="check" size="xs" class="q-ml-xs" />
-                  </q-badge>
-                  <q-badge v-else label="CLAMAV" color="negative">
-                    <q-icon name="warning" size="xs" class="q-ml-xs" />
-                  </q-badge>
-
                   <q-badge
                     v-if="modInfo._aFiles[0]._sAvastAvResult === 'clean'"
                     label="AVAST"
@@ -382,6 +381,10 @@
                   </q-badge>
                   <q-badge v-else label="AVAST" color="negative">
                     <q-icon name="warning" size="xs" class="q-ml-xs" />
+                    <q-tooltip class="phantom-font text-center">
+                      This mod may contain malware.<br />
+                      Stay safe!
+                    </q-tooltip>
                   </q-badge>
                 </div>
 
@@ -478,6 +481,10 @@
                               "
                             >
                               {{ author._sName }}
+                              <q-icon
+                                v-if="author._sProfileUrl"
+                                name="arrow_outward"
+                              />
                             </div>
                             <div v-if="author._sRole" class="credits-role">
                               {{ author._sRole }}
@@ -488,6 +495,26 @@
                     </div>
                   </div>
                 </div>
+              </div>
+              <div v-if="modInfo._sDevNotes" class="q-mt-md">
+                <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
+                  Developer Notes
+                  <hr />
+                </h6>
+                <div
+                  class="phantom-font mod-info-text"
+                  v-html="processHtmlAnchors(modInfo._sDevNotes)"
+                ></div>
+              </div>
+              <div v-if="modInfo._sLicense" class="q-mt-md">
+                <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
+                  License
+                  <hr />
+                </h6>
+                <div
+                  class="phantom-font mod-info-text"
+                  v-html="processHtmlAnchors(modInfo._sLicense)"
+                ></div>
               </div>
             </div>
           </q-card-section>
@@ -509,6 +536,7 @@ import {
 } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { openUrl } from '@tauri-apps/plugin-opener'
+import { processHtmlAnchors } from '@utils/index'
 
 const props = defineProps({
   modId: {

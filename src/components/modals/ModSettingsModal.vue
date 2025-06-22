@@ -51,7 +51,6 @@
               autogrow
               placeholder="Enter mod description"
             />
-
             <q-input
               v-model="form.version"
               label="Version"
@@ -59,6 +58,19 @@
               class="q-mb-md"
               placeholder="e.g. 1.0.0"
             />
+            <div class="gamebanana-section q-mt-lg">
+              <q-separator class="q-my-md" />
+              <div class="text-subtitle1 q-mb-md">GameBanana Integration</div>
+              <q-input
+                :model-value="gameBananaInfo?.url || ''"
+                label="GameBanana URL"
+                outlined
+                class="q-mb-md"
+                placeholder="https://gamebanana.com/mods/..."
+                hint="Link to the mod's GameBanana page"
+                @update:model-value="updateGameBananaUrl"
+              />
+            </div>
 
             <div class="danger-zone q-mt-lg">
               <q-separator class="q-my-md" />
@@ -423,10 +435,11 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { Mod } from '@main-types'
+import { Mod, ModInfoGBData } from '@main-types'
 import { formatEngineName } from '../../utils'
 import MessageDialog from './MessageDialog.vue'
 import { revealItemInDir } from '@tauri-apps/plugin-opener'
+import { invoke } from '@tauri-apps/api/core'
 
 const props = defineProps({
   modelValue: {
@@ -476,6 +489,11 @@ const engineIconPreview = ref<string | null>(null)
 const iconFile = ref<File | null>(null)
 const iconPreview = ref<string | null>(null)
 
+// GameBanana metadata state
+const gameBananaInfo = ref<ModInfoGBData | null>(null)
+const metadataData = ref<any>(null)
+const metadataLoaded = ref(false)
+
 const engineTypes = [
   { label: 'Vanilla', value: 'vanilla' },
   { label: 'Psych Engine', value: 'psych' },
@@ -511,7 +529,7 @@ const showSuperDeleteDialog = ref(false)
 // Reset form when modal is opened
 watch(
   () => props.modelValue,
-  newVal => {
+  async newVal => {
     if (newVal && props.mod) {
       // Clone the mod object to form
       form.value = JSON.parse(JSON.stringify(props.mod))
@@ -536,9 +554,62 @@ watch(
       engineIconFile.value = null // Clear file input ref
       iconFile.value = null // Clear file input ref
       activeSection.value = 'general' // Reset to general tab
+
+      // Load metadata for GameBanana info
+      await loadMetadataData()
     }
   }
 )
+
+// Load metadata and GameBanana info when modal opens
+const loadMetadataData = async () => {
+  if (!props.mod?.path) return
+
+  try {
+    const metadata = await invoke('get_mod_metadata', {
+      modPath: props.mod.path,
+    })
+    metadataData.value = metadata
+
+    // Extract GameBanana info from metadata
+    if (
+      metadata &&
+      typeof metadata === 'object' &&
+      (metadata as any).gamebanana
+    ) {
+      gameBananaInfo.value = (metadata as any).gamebanana
+    } else {
+      gameBananaInfo.value = null
+    }
+
+    metadataLoaded.value = true
+  } catch (error) {
+    console.warn('Failed to load metadata data:', error)
+    metadataLoaded.value = true
+  }
+}
+
+// Save GameBanana info to metadata
+const saveGameBananaMetadata = async () => {
+  if (!props.mod?.path || !metadataData.value) return
+
+  try {
+    const updatedMetadata = { ...metadataData.value }
+
+    if (gameBananaInfo.value) {
+      updatedMetadata.gamebanana = gameBananaInfo.value
+    } else {
+      delete updatedMetadata.gamebanana
+    }
+
+    await invoke('save_mod_metadata', {
+      modPath: props.mod.path,
+      metadata: updatedMetadata,
+    })
+  } catch (error) {
+    console.warn('Failed to save GameBanana metadata:', error)
+  }
+}
 
 const handleBannerFileChange = (file: File | null) => {
   bannerFile.value = file // Store the file reference
@@ -643,6 +714,38 @@ const superDeleteMod = () => {
   emit('super-delete-mod', props.mod?.id)
 }
 
+const updateGameBananaUrl = (url: string | number | null) => {
+  const urlString = url?.toString() || ''
+  if (!gameBananaInfo.value) {
+    gameBananaInfo.value = {
+      id: parseInt(urlString.split('/').pop() || '0') || 0,
+      url: urlString,
+      model_type: formatGameBananaModelType(urlString.split('/')[3] || 'mods'),
+    }
+    console.log('Initialized GameBanana info:', gameBananaInfo.value)
+  } else {
+    gameBananaInfo.value = {
+      id: parseInt(urlString.split('/').pop() || '0') || 0,
+      url: urlString,
+      model_type: formatGameBananaModelType(urlString.split('/')[3] || 'mods'),
+    }
+    console.log('Updated GameBanana info:', gameBananaInfo.value)
+  }
+}
+
+const formatGameBananaModelType = (modelType: string) => {
+  switch (modelType.toLowerCase()) {
+    case 'mods':
+      return 'Mod'
+    case 'wips':
+      return 'Wip'
+    case 'tools':
+      return 'Tool'
+    default:
+      return 'Mod'
+  }
+}
+
 const save = async () => {
   const updatedMod = { ...form.value }
 
@@ -700,7 +803,13 @@ const save = async () => {
     }
   }
 
-  console.log('MODAL: Emitting save with mod data:', JSON.stringify(updatedMod))
+  // Save GameBanana metadata separately
+  await saveGameBananaMetadata()
+
+  console.info(
+    'MODAL: Emitting save with mod data:',
+    JSON.stringify(updatedMod)
+  )
 
   emit('save', updatedMod)
 }

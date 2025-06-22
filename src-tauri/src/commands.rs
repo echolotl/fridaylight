@@ -332,27 +332,30 @@ pub fn launch_mod(
         );
 
         // Also update the global state
-        match crate::models::GLOBAL_MODS_STATE.lock() { Ok(mut global_mods) => {
-          if let Some(global_mod_info) = global_mods.get_mut(&id) {
-            global_mod_info.process_id = Some(pid);
-            global_mod_info.last_played = Some(current_time);
-            info!(
-              "Updated global state for mod {}: pid={}, last_played={}",
-              mod_info.name,
-              pid,
-              current_time
-            );
-          } else {
+        match crate::models::GLOBAL_MODS_STATE.lock() {
+          Ok(mut global_mods) => {
+            if let Some(global_mod_info) = global_mods.get_mut(&id) {
+              global_mod_info.process_id = Some(pid);
+              global_mod_info.last_played = Some(current_time);
+              info!(
+                "Updated global state for mod {}: pid={}, last_played={}",
+                mod_info.name,
+                pid,
+                current_time
+              );
+            } else {
+              warn!(
+                "Mod {} not found in global state when updating process info",
+                mod_info.name
+              );
+            }
+          }
+          _ => {
             warn!(
-              "Mod {} not found in global state when updating process info",
-              mod_info.name
+              "Failed to acquire lock on global state when updating process info"
             );
           }
-        } _ => {
-          warn!(
-            "Failed to acquire lock on global state when updating process info"
-          );
-        }}
+        }
       }
 
       // Clone the id for use in threads
@@ -448,24 +451,27 @@ pub fn is_mod_running(id: String, mods_state: State<'_, ModsState>) -> bool {
 
   // Also check in the global state for debugging
   let running_in_global_state = {
-    match crate::models::GLOBAL_MODS_STATE.lock() { Ok(global_mods) => {
-      if let Some(mod_info) = global_mods.get(&id) {
-        let running = mod_info.process_id.is_some();
-        info!(
-          "Mod {} is running in global state: {} (pid: {:?})",
-          mod_info.name,
-          running,
-          mod_info.process_id
-        );
-        running
-      } else {
-        info!("Mod with ID {} not found in global state", id);
+    match crate::models::GLOBAL_MODS_STATE.lock() {
+      Ok(global_mods) => {
+        if let Some(mod_info) = global_mods.get(&id) {
+          let running = mod_info.process_id.is_some();
+          info!(
+            "Mod {} is running in global state: {} (pid: {:?})",
+            mod_info.name,
+            running,
+            mod_info.process_id
+          );
+          running
+        } else {
+          info!("Mod with ID {} not found in global state", id);
+          false
+        }
+      }
+      _ => {
+        info!("Could not acquire lock on global state");
         false
       }
-    } _ => {
-      info!("Could not acquire lock on global state");
-      false
-    }}
+    }
   };
 
   // If there's a discrepancy between the states, log it
@@ -508,23 +514,27 @@ pub fn stop_mod(
             mod_info.process_id = None;
 
             // Also update the global state
-            match crate::models::GLOBAL_MODS_STATE.lock()
-            { Ok(mut global_mods) => {
-              if let Some(global_mod_info) = global_mods.get_mut(&id) {
-                global_mod_info.process_id = None;
-                info!(
-                  "Updated global state for mod {}: pid=None",
-                  mod_info.name
-                );
-              } else {
+            match crate::models::GLOBAL_MODS_STATE.lock() {
+              Ok(mut global_mods) => {
+                if let Some(global_mod_info) = global_mods.get_mut(&id) {
+                  global_mod_info.process_id = None;
+                  info!(
+                    "Updated global state for mod {}: pid=None",
+                    mod_info.name
+                  );
+                } else {
+                  warn!(
+                    "Mod {} not found in global state when stopping",
+                    mod_info.name
+                  );
+                }
+              }
+              _ => {
                 warn!(
-                  "Mod {} not found in global state when stopping",
-                  mod_info.name
+                  "Failed to acquire lock on global state when stopping mod"
                 );
               }
-            } _ => {
-              warn!("Failed to acquire lock on global state when stopping mod");
-            }}
+            }
 
             Ok(())
           }
@@ -1037,6 +1047,60 @@ pub fn get_mod_metadata(
   }
 }
 
+// Command to save a mod's metadata JSON
+#[tauri::command]
+pub fn save_mod_metadata(
+  mod_path: String,
+  metadata: serde_json::Value
+) -> Result<(), String> {
+  info!("Saving metadata for mod at path: {}", mod_path);
+
+  let path_obj = Path::new(&mod_path);
+
+  // Check if the path exists
+  if !path_obj.exists() {
+    let err_msg = format!("Mod path does not exist: {}", mod_path);
+    error!("{}", err_msg);
+    return Err(err_msg);
+  }
+
+  // Create a new save function that overwrites existing metadata
+  let flight_folder = path_obj.join(".flight");
+
+  // Ensure the .flight folder exists
+  if !flight_folder.exists() {
+    debug!("Creating .flight directory: {}", flight_folder.display());
+    if let Err(e) = std::fs::create_dir_all(&flight_folder) {
+      let error_msg = format!("Failed to create .flight directory: {}", e);
+      error!("{}", error_msg);
+      return Err(error_msg);
+    }
+  }
+
+  // Prepare metadata.json file path
+  let metadata_path = flight_folder.join("metadata.json");
+
+  // Format the JSON with pretty-printing
+  let json_string = match serde_json::to_string_pretty(&metadata) {
+    Ok(json) => json,
+    Err(e) => {
+      let error_msg = format!("Failed to serialize metadata to JSON: {}", e);
+      error!("{}", error_msg);
+      return Err(error_msg);
+    }
+  };
+
+  // Write the JSON string to the file (overwrites existing file)
+  if let Err(e) = std::fs::write(&metadata_path, json_string) {
+    let error_msg = format!("Failed to write metadata.json: {}", e);
+    error!("{}", error_msg);
+    return Err(error_msg);
+  }
+
+  info!("Successfully saved metadata.json to: {}", metadata_path.display());
+  Ok(())
+}
+
 // Command to get terminal logs for a specific mod
 #[tauri::command]
 pub fn get_mod_logs(id: String) -> Vec<String> {
@@ -1288,7 +1352,8 @@ pub fn run() {
         check_mod_dependency,
         check_gamebanana_mod_version,
         compare_update_semver,
-        update_gamebanana_mod_command
+        update_gamebanana_mod_command,
+        save_mod_metadata
       ]
     )
     .run(tauri::generate_context!())
