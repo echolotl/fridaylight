@@ -327,8 +327,8 @@ async function openDetails(engine_type: string) {
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
-  background-color: var(--theme-card);
-  border-bottom: 2px solid var(--theme-border);
+  background-color: var(--theme-solid);
+  border: 1px solid var(--theme-border);
   display: flex;
   flex-direction: row;
   flex-shrink: 0;

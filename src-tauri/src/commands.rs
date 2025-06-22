@@ -967,6 +967,15 @@ pub async fn get_file_as_base64(file_path: String) -> Result<String, String> {
   crate::modutils::get_mod_icon_data(&file_path)
 }
 
+#[tauri::command]
+pub async fn get_url_as_base64(url: String) -> Result<String, String> {
+  info!("Loading URL as base64: {}", url);
+  match crate::utils::fetch_image_as_data_url(&url).await {
+    Some(data) => Ok(data),
+    None => Err("Failed to fetch image as data URL".to_string()),
+  }
+}
+
 // Command to check if the OS is Windows 11 or greater
 #[tauri::command]
 pub fn is_windows_11() -> bool {
@@ -1353,7 +1362,8 @@ pub fn run() {
         check_gamebanana_mod_version,
         compare_update_semver,
         update_gamebanana_mod_command,
-        save_mod_metadata
+        save_mod_metadata,
+        get_url_as_base64
       ]
     )
     .run(tauri::generate_context!())

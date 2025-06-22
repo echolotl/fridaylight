@@ -98,12 +98,14 @@ const bannerStyle = computed(() => {
       backgroundImage: `url(${props.mod.banner_data})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
+      mixBlendMode: 'normal' as const,
     }
   }
   return {
-    backgroundImage: 'url("/images/menuBG.png")',
+    backgroundImage: 'url("/images/placeholder.png")',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
+    mixBlendMode: 'luminosity' as const,
   }
 })
 
@@ -254,7 +256,11 @@ const showContextMenu = (event: MouseEvent) => {
 
 <style scoped>
 .mod-card {
-  background: var(--theme-card);
+  background: linear-gradient(
+    180deg,
+    var(--theme-surface) 0%,
+    var(--theme-border) 100%
+  );
   border-radius: 0.75rem;
   overflow: hidden;
   display: flex;
@@ -262,8 +268,8 @@ const showContextMenu = (event: MouseEvent) => {
   transition:
     transform 0.2s,
     box-shadow 0.2s;
-  border-bottom: 2px solid var(--theme-border);
-  border-top: 2px solid var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  border-top: none;
 }
 
 .mod-card:hover {
@@ -282,7 +288,6 @@ const showContextMenu = (event: MouseEvent) => {
   position: relative;
   height: 160px;
   overflow: hidden;
-  border-bottom: 2px solid var(--theme-border);
 }
 
 .mod-thumbnail {
@@ -291,6 +296,7 @@ const showContextMenu = (event: MouseEvent) => {
   display: flex;
   align-items: flex-end;
   background: var(--theme-card-accent);
+  border-radius: 0 0 0.75rem 0.75rem;
 }
 
 .mod-logo {
@@ -355,7 +361,7 @@ const showContextMenu = (event: MouseEvent) => {
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.7rem;
-  background-color: var(--theme-card);
+  border: 1px solid var(--theme-border);
   color: var(--theme-text-secondary);
 }
 

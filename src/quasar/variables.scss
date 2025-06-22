@@ -124,6 +124,10 @@ hr {
   margin: 0.5rem 0;
 }
 
+.q-separator {
+  background: var(--theme-border) !important;
+}
+
 /* Make sure any Quasar containers are transparent */
 .q-layout,
 .q-page-container,

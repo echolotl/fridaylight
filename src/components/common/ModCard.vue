@@ -131,17 +131,25 @@ const showContextMenu = (event: MouseEvent) => {
 
 <style scoped>
 .mod-card {
-  background: var(--theme-card);
+  background: linear-gradient(
+    180deg,
+    var(--theme-surface) 0%,
+    var(--theme-border) 100%
+  );
   border-radius: 0.75rem;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
   transition:
     transform 0.2s,
     box-shadow 0.2s;
-  border-bottom: 2px solid var(--theme-border);
-  border-top: 2px solid var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  border-top: none;
   min-width: 300px;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(3px);
+  isolation: isolate;
 }
 
 .mod-card:hover {
@@ -159,7 +167,7 @@ const showContextMenu = (event: MouseEvent) => {
 .mod-thumbnail {
   height: 160px;
   object-fit: cover;
-  border-bottom: 2px solid var(--theme-border);
+  border-radius: 0 0 0.75rem 0.75rem;
 }
 
 .mod-info {

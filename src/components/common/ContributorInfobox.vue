@@ -6,6 +6,7 @@
     <q-btn
       flat
       label="Open in Gamebanana"
+      class="q-mb-sm"
       icon="M24,6v10.5h-1.5v3h-1.5v1.5h-1.5v1.5h-3v1.5H6v-1.5h-3v-1.5h-1.5v-1.5H0v-4.5h9v-1.5h4.5v-1.5h1.5v-4.5h1.5V3h-1.5V0h4.5v3h1.5v1.5h1.5v1.5h1.5Z"
       @click="
         emit('open-gamebanana', gameBananaInfo.id, gameBananaInfo.model_type)
@@ -41,8 +42,8 @@
       </div>
     </div>
     <!-- Show loading while checking version -->
-    <div v-else-if="!versionStatus" class="text-caption">
-      <q-spinner size="16px" /> Checking for updates...
+    <div v-else-if="!versionStatus" class="text-caption flex items-center">
+      <q-spinner size="sm" class="q-mr-sm" /> Checking for updates...
     </div>
   </div>
   <div v-if="hasContributors" class="contributor-infobox">

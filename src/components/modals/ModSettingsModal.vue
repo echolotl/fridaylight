@@ -65,7 +65,7 @@
                   name="M24,6v10.5h-1.5v3h-1.5v1.5h-1.5v1.5h-3v1.5H6v-1.5h-3v-1.5h-1.5v-1.5H0v-4.5h9v-1.5h4.5v-1.5h1.5v-4.5h1.5V3h-1.5V0h4.5v3h1.5v1.5h1.5v1.5h1.5Z"
                   size="sm"
                   class="q-mr-sm"
-                />GameBanana Integration
+                />GameBanana Info
               </div>
               <q-input
                 :model-value="gameBananaInfo?.url || ''"
@@ -75,22 +75,43 @@
                 placeholder="https://gamebanana.com/mods/..."
                 @update:model-value="updateGameBananaUrl"
               />
-              <div v-if="gameBananaInfo && gameBananaInfo.url" class="flex">
+              <div
+                v-if="gameBananaInfo && gameBananaInfo.url"
+                class="row q-gutter-sm q-mb-md"
+              >
                 <q-btn
                   label="Sync with Gamebanana"
-                  class="flex-grow-1"
+                  class="col"
                   icon="sync"
-                  flat
+                  outline
                   :loading="gamebananaSyncing"
                   @click="syncWithGameBanana"
                 />
                 <q-btn
                   label="View on GameBanana"
-                  class="flex-grow-1 q-ml-sm"
+                  class="col"
                   icon="open_in_new"
-                  flat
+                  outline
                   @click="openUrl(gameBananaInfo.url)"
                 />
+                <div class="full-width">
+                  <div class="q-my-xs">
+                    <q-checkbox
+                      v-model="changeBanner"
+                      label="Change Banner"
+                      class="q-ml-sm"
+                      color="primary"
+                      dense
+                    />
+                    <q-checkbox
+                      v-model="changeVersion"
+                      label="Change Version"
+                      class="q-ml-sm"
+                      color="primary"
+                      dense
+                    />
+                  </div>
+                </div>
                 <div
                   class="text-caption q-mt-sm"
                   style="color: var(--theme-text-secondary)"
@@ -527,6 +548,8 @@ const gameBananaInfo = ref<ModInfoGBData | null>(null)
 const metadataData = ref<any>(null)
 const metadataLoaded = ref(false)
 const gamebananaSyncing = ref(false)
+const changeBanner = ref(true)
+const changeVersion = ref(true)
 
 const engineTypes = [
   { label: 'Vanilla', value: 'vanilla' },
@@ -792,11 +815,48 @@ const syncWithGameBanana = async () => {
       modelType: gameBananaInfo.value.model_type,
     })
 
+    console.info('GameBanana API response received')
+
     // Update form with the fetched data
     form.value.name = response?._sName || form.value.name
     form.value.description = response?._sDescription || form.value.description
-    form.value.version = response?._sVersion || form.value.version
-    console.log('GameBanana sync response:', response)
+    if (changeVersion.value) {
+      form.value.version = response?._sVersion || form.value.version
+    }
+
+    // Handle banner image with better error handling
+    if (response?._aPreviewMedia?._aImages?.[0] && changeBanner.value) {
+      const bannerImage = response._aPreviewMedia._aImages[0]
+      const bannerUrl = `${bannerImage._sBaseUrl}/${bannerImage._sFile}`
+      console.info('Constructed banner URL:', bannerUrl)
+
+      // Validate URL before attempting to fetch
+      if (bannerUrl && bannerUrl !== 'undefined/undefined') {
+        try {
+          console.info('Attempting to fetch banner from URL:', bannerUrl)
+          const bannerData = await invoke<string>('get_url_as_base64', {
+            url: bannerUrl,
+          })
+          console.info(
+            'Successfully fetched banner data, length:',
+            bannerData?.length || 0
+          )
+          if (bannerData) {
+            form.value.banner_data = bannerData
+            bannerPreview.value = bannerData
+          }
+        } catch (bannerError) {
+          console.error('Failed to fetch banner image:', bannerError)
+          console.error('Banner URL that failed:', bannerUrl)
+        }
+      } else {
+        console.warn('Invalid banner URL constructed:', bannerUrl)
+      }
+    } else {
+      console.info('No preview images found in response')
+    }
+
+    console.info('GameBanana sync completed successfully')
     gamebananaSyncing.value = false
   } catch (error) {
     console.error('Failed to sync with GameBanana:', error)
@@ -1011,6 +1071,10 @@ const handleOpenFileLocationClick = async (path: string) => {
 }
 :deep(.q-field__messages) {
   color: var(--theme-text-secondary);
+}
+:deep(.q-checkbox__bg) {
+  border-color: var(--theme-border);
+  background-color: var(--theme-solid);
 }
 .list-item {
   background-color: var(--theme-surface);
