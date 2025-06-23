@@ -98,10 +98,10 @@
         <div v-if="!isLoadingFeatured" class="mod-card-container">
           <ModCard
             v-for="mod in featuredMods"
-            :key="mod.id"
+            :key="mod._idRow"
             :mod="mod"
             @download="downloadMod(mod)"
-            @show-details="openModDetails(mod.id, mod.model_name)"
+            @show-details="openModDetails(mod._idRow, mod._sModelName)"
           />
         </div>
         <div v-else class="mod-card-container">
@@ -180,7 +180,7 @@
   <DownloadFileSelector
     v-model="showFileSelector"
     :files="downloadFiles"
-    :mod-name="currentDownloadMod?.name || ''"
+    :mod-name="currentDownloadMod?._sName || ''"
     :alternate-file-sources="alternateFileSources"
     @select="onFileSelected"
     @cancel="cancelDownload"
@@ -199,7 +199,7 @@
   <!-- Mod Type Selection Modal -->
   <ModTypeSelectionModal
     v-model="showModTypeModal"
-    :mod-name="currentDownloadMod?.name"
+    :mod-name="currentDownloadMod?._sName"
     @submit="onModTypeSelected"
     @back="onModTypeBack"
     @cancel="cancelDownload"
@@ -217,7 +217,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { GameBananaMod, Mod } from '../../types'
+import { Mod } from '@main-types'
+import type { GBTopSubs, GBTopSubsItem } from '@custom-types/gamebanana'
 import {
   gamebananaService,
   type ModpackInfo,
@@ -245,7 +246,7 @@ const emit = defineEmits([
   'gamebanana-browser',
 ])
 // Featured mods state
-const featuredMods = ref<GameBananaMod[]>([])
+const featuredMods = ref<GBTopSubsItem[]>([])
 const isLoadingFeatured = ref(false)
 
 // Installed mods state
@@ -280,7 +281,7 @@ const isModDetailsModalOpen = ref<boolean>(false)
 const showFileSelector = ref(false)
 const downloadFiles = ref<any[]>([])
 const alternateFileSources = ref<any[]>([])
-const currentDownloadMod = ref<GameBananaMod | null>(null)
+const currentDownloadMod = ref<GBTopSubsItem | null>(null)
 let pendingDownloadNotification: OngoingNotificationResult | null = null
 
 // For modpack handling
@@ -416,17 +417,15 @@ const getRecentlyPlayedMods = (count: number = 5): Mod[] => {
 const fetchFeaturedMods = async () => {
   isLoadingFeatured.value = true
   try {
-    const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
-      'fetch_gamebanana_mods_command',
-      {
-        query: 'featured',
-        page: 1, // Always get first page for featured
-      }
-    )
+    const response = await invoke<GBTopSubs>('fetch_gamebanana_mods_command', {
+      query: 'featured',
+      page: 1, // Always get first page for featured
+    })
+    console.log(response)
 
     // Filter mods that weren't featured today
-    const filteredMods = response.mods.filter(mod => {
-      return mod.period === 'today'
+    const filteredMods = response.filter(mod => {
+      return mod._sPeriod === 'today'
     })
 
     featuredMods.value = filteredMods
@@ -453,7 +452,7 @@ const fetchInstalledMods = async (): Promise<void> => {
 }
 
 // Download handling
-const downloadMod = async (mod: GameBananaMod) => {
+const downloadMod = async (mod: GBTopSubsItem) => {
   try {
     currentDownloadMod.value = mod
 
@@ -604,7 +603,7 @@ const onFileSelected = async (selectedFile: any) => {
     }
     if ('success' in result && !result.success) {
       notificationService.downloadError(
-        currentDownloadMod.value.name,
+        currentDownloadMod.value._sName,
         String('error' in result ? result.error : 'Unknown error')
       )
     }
@@ -617,7 +616,7 @@ const onFileSelected = async (selectedFile: any) => {
     currentDownloadMod.value = null
   } catch (error) {
     notificationService.downloadError(
-      currentDownloadMod.value?.name || 'mod',
+      currentDownloadMod.value?._sName || 'mod',
       String(error)
     )
 
@@ -635,7 +634,7 @@ const cancelDownload = () => {
   showFolderExistsDialog.value = false
   // Show cancellation notification
   if (currentDownloadMod.value) {
-    notificationService.downloadCancelled(currentDownloadMod.value.name)
+    notificationService.downloadCancelled(currentDownloadMod.value._sName)
   }
   // Reset state variables
   currentDownloadMod.value = null
@@ -770,7 +769,7 @@ const onModTypeSelected = async (selection: {
 
         if (!result.success) {
           notificationService.installationFailed(
-            currentDownloadMod.value.name,
+            currentDownloadMod.value._sName,
             result.error || 'Unknown error'
           )
         }
@@ -783,7 +782,7 @@ const onModTypeSelected = async (selection: {
 
         if (!result.success) {
           notificationService.installationFailed(
-            currentDownloadMod.value.name,
+            currentDownloadMod.value._sName,
             result.error || 'Unknown error'
           )
         }
@@ -791,7 +790,7 @@ const onModTypeSelected = async (selection: {
     }
   } catch (error) {
     notificationService.installationFailed(
-      currentDownloadMod.value.name,
+      currentDownloadMod.value._sName,
       String(error)
     )
   } finally {

@@ -21,6 +21,18 @@
           <img :src="modInfo?._aCategory._sIconUrl" class="mod-details-icon" />
           {{ modInfo?._sName }}
         </div>
+        <div
+          v-else-if="error"
+          class="text-h6 phantom-font-difficulty header-text"
+        >
+          <q-icon
+            name="error"
+            size="40px"
+            color="negative"
+            class="mod-details-icon"
+          />
+          {{ error }}
+        </div>
         <div v-else class="text-h6 phantom-font-difficulty header-text">
           <q-spinner size="40px" color="primary" class="mod-details-icon" />
           Loading...
@@ -57,7 +69,10 @@
           <q-card-section class="mod-details-content">
             <div class="mod-details-left">
               <q-carousel
-                v-if="modInfo._aPreviewMedia?._aImages?.length >= 1"
+                v-if="
+                  modInfo?._aPreviewMedia?._aImages &&
+                  modInfo._aPreviewMedia._aImages.length >= 1
+                "
                 v-model="currentSlide"
                 animated
                 autoplay
@@ -69,12 +84,12 @@
               >
                 <q-carousel-slide
                   v-for="(image, index) in modInfo._aPreviewMedia._aImages"
-                  :key="getImageUrl(image) || index"
+                  :key="image._sFile"
                   :name="index"
                   class="flex"
                 >
                   <img
-                    :src="getImageUrl(image)"
+                    :src="image._sBaseUrl + '/' + image._sFile"
                     class="carousel-image"
                     alt="Mod preview image"
                   />
@@ -99,7 +114,7 @@
                   v-html="processHtmlAnchors(modInfo._sText)"
                 ></div>
               </div>
-              <div v-if="modInfo._nUpdatesCount > 0">
+              <div v-if="modInfo._nUpdatesCount && modInfo._nUpdatesCount > 0">
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                   <div class="flex">
                     Updates
@@ -113,91 +128,96 @@
                   </div>
                   <hr />
                 </h6>
-                <div
-                  v-for="update in modUpdates._aRecords"
-                  :key="update._idRow || update._sName"
-                >
-                  <q-expansion-item
-                    dense
-                    class="phantom-font"
-                    group="updates"
-                    expand-icon-class="dropdown-icon"
+                <div v-if="modUpdates">
+                  <div
+                    v-for="update in modUpdates._aRecords"
+                    :key="update._idRow || update._sName"
                   >
-                    <template #header>
-                      <div class="flex column">
-                        <div class="flex row">
-                          <div class="text-subtitle1">
-                            {{ update._sName }}
-                          </div>
-                          <div
-                            class="q-ml-xs flex row items-cente custom-badge-small"
-                          >
-                            <q-icon name="add" size="xs" />
-                            {{ formatDate(update._tsDateAdded) }}
-                          </div>
-                        </div>
-                        <div class="">
-                          <div
-                            v-if="update._sVersion"
-                            class="phantom-font"
-                            style="color: var(--theme-text-secondary)"
-                          >
-                            {{ update._sVersion }}
-                          </div>
-                          <div class="flex row badge-container">
+                    <q-expansion-item
+                      dense
+                      class="phantom-font"
+                      group="updates"
+                      expand-icon-class="dropdown-icon"
+                    >
+                      <template #header>
+                        <div class="flex column">
+                          <div class="flex row">
+                            <div class="text-subtitle1">
+                              {{ update._sName }}
+                            </div>
                             <div
-                              v-for="(count, category) in groupChanges(
-                                update._aChangeLog
-                              )"
-                              :key="category"
+                              class="q-ml-xs flex row items-cente custom-badge-small"
+                            >
+                              <q-icon name="add" size="xs" />
+                              {{ formatDate(update._tsDateAdded) }}
+                            </div>
+                          </div>
+                          <div class="">
+                            <div
+                              v-if="update._sVersion"
                               class="phantom-font"
                               style="color: var(--theme-text-secondary)"
                             >
-                              <q-badge
-                                :style="{
-                                  backgroundColor: getCategoryColor(category),
-                                }"
-                                >{{ category }}
-                                <span
-                                  v-if="count > 1"
-                                  style="color: lightgray; margin-left: 0.25rem"
-                                  >{{ count }}</span
-                                ></q-badge
+                              {{ update._sVersion }}
+                            </div>
+                            <div class="flex row badge-container">
+                              <div
+                                v-for="(count, category) in groupChanges(
+                                  update._aChangeLog
+                                )"
+                                :key="category"
+                                class="phantom-font"
+                                style="color: var(--theme-text-secondary)"
                               >
+                                <q-badge
+                                  :style="{
+                                    backgroundColor: getCategoryColor(category),
+                                  }"
+                                  >{{ category }}
+                                  <span
+                                    v-if="count > 1"
+                                    style="
+                                      color: lightgray;
+                                      margin-left: 0.25rem;
+                                    "
+                                    >{{ count }}</span
+                                  ></q-badge
+                                >
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <q-space />
-                    </template>
-                    <div class="q-mt-sm">
-                      <div class="changelog q-ml-sm q-mb-sm">
-                        <div
-                          v-for="(change, changeIndex) in update._aChangeLog"
-                          :key="`${change.cat}-${changeIndex}`"
-                          class="phantom-font flex row items-center q-mb-xs"
-                        >
-                          <q-chip
-                            :clickable="false"
-                            :ripple="false"
-                            :style="{
-                              backgroundColor: getCategoryColor(change.cat),
-                              color: 'white',
-                            }"
-                            >{{ change.cat }}</q-chip
+                        <q-space />
+                      </template>
+                      <div class="q-mt-sm">
+                        <div class="changelog q-ml-sm q-mb-sm">
+                          <div
+                            v-for="(change, changeIndex) in update._aChangeLog"
+                            :key="`${change.cat}-${changeIndex}`"
+                            class="phantom-font flex row items-center q-mb-xs"
                           >
-                          <div>{{ change.text }}</div>
+                            <q-chip
+                              :clickable="false"
+                              :ripple="false"
+                              :style="{
+                                backgroundColor: getCategoryColor(change.cat),
+                                color: 'white',
+                              }"
+                              >{{ change.cat }}</q-chip
+                            >
+                            <div>{{ change.text }}</div>
+                          </div>
                         </div>
+                        <div
+                          class="phantom-font update-text"
+                          v-html="processHtmlAnchors(update._sText)"
+                        ></div>
                       </div>
-                      <div
-                        class="phantom-font update-text"
-                        v-html="processHtmlAnchors(update._sText)"
-                      ></div>
-                    </div>
-                  </q-expansion-item>
+                    </q-expansion-item>
+                  </div>
                 </div>
               </div>
-              <div v-if="modComments._aRecords.length > 0">
+              <div v-if="modComments && modComments._aRecords.length > 0">
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                   <div class="flex">
                     Comments
@@ -344,19 +364,31 @@
                 </div>
               </div>
               <div class="mod-badges">
-                <div v-if="modInfo._nLikeCount > 0" class="custom-badge">
+                <div
+                  v-if="modInfo._nLikeCount && modInfo._nLikeCount > 0"
+                  class="custom-badge"
+                >
                   <q-icon name="thumb_up" class="q-mr-xs" />
                   {{ formatNumber(modInfo._nLikeCount) }}
                 </div>
-                <div v-if="modInfo._nDownloadCount > 0" class="custom-badge">
+                <div
+                  v-if="modInfo._nDownloadCount && modInfo._nDownloadCount > 0"
+                  class="custom-badge"
+                >
                   <q-icon name="download" class="q-mr-xs" />
                   {{ formatNumber(modInfo._nDownloadCount) }}
                 </div>
-                <div v-if="modInfo._nViewCount > 0" class="custom-badge">
+                <div
+                  v-if="modInfo._nViewCount && modInfo._nViewCount > 0"
+                  class="custom-badge"
+                >
                   <q-icon name="visibility" class="q-mr-xs" />
                   {{ formatNumber(modInfo._nViewCount) }}
                 </div>
-                <div v-if="modInfo._nPostCount > 0" class="custom-badge">
+                <div
+                  v-if="modInfo._nPostCount && modInfo._nPostCount > 0"
+                  class="custom-badge"
+                >
                   <q-icon name="comment" class="q-mr-xs" />
                   {{ formatNumber(modInfo._nPostCount) }}
                 </div>
@@ -368,7 +400,10 @@
                   <q-icon name="edit" class="q-mr-xs" />
                   {{ formatDate(modInfo._tsDateModified) }}
                 </div>
-                <div v-if="modInfo._tsDateUpdated > 0" class="custom-badge">
+                <div
+                  v-if="modInfo._tsDateUpdated && modInfo._tsDateUpdated > 0"
+                  class="custom-badge"
+                >
                   <q-icon name="update" class="q-mr-xs" />
                   {{ formatDate(modInfo._tsDateUpdated) }}
                 </div>
@@ -550,6 +585,12 @@ import {
 import { invoke } from '@tauri-apps/api/core'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { processHtmlAnchors } from '@utils/index'
+import {
+  GBChangeLogEntry,
+  GBModPosts,
+  GBModUpdates,
+  GBProfilePage,
+} from '@custom-types/gamebanana'
 
 const props = defineProps({
   modId: {
@@ -568,9 +609,9 @@ const props = defineProps({
 
 const emit = defineEmits(['update:isOpen', 'download'])
 
-const modInfo = ref<any>(null)
-const modUpdates = ref<any>(null)
-const modComments = ref<any>(null)
+const modInfo = ref<GBProfilePage | null>(null)
+const modUpdates = ref<GBModUpdates | null>(null)
+const modComments = ref<GBModPosts | null>(null)
 const loading = ref(true)
 const error = ref('')
 const currentSlide = ref(0)
@@ -633,24 +674,25 @@ async function fetchModInfo() {
   }, 15000)
 
   try {
-    const infoResult = await invoke<any>('get_mod_info_command', {
+    const infoResult = await invoke<GBProfilePage>('get_mod_info_command', {
       modId: props.modId,
       modelType: props.modelType || 'Mod',
     })
 
-    const updatesResult = await invoke<any>('get_mod_updates_command', {
-      modId: props.modId,
-      page: 1,
-      modelType: props.modelType || 'Mod',
-    })
-    console.log('Updates result:', updatesResult)
-    const commentsResult = await invoke<any>('get_mod_posts_command', {
-      modId: props.modId,
-      page: 1,
-      modelType: props.modelType || 'Mod',
-    })
+    const updatesResult = await invoke<GBModUpdates>(
+      'get_mod_updates_command',
+      {
+        modId: props.modId,
+        page: 1,
+        modelType: props.modelType || 'Mod',
+      }
+    )
 
-    console.log('Comments result:', commentsResult)
+    const commentsResult = await invoke<GBModPosts>('get_mod_posts_command', {
+      modId: props.modId,
+      page: 1,
+      modelType: props.modelType || 'Mod',
+    })
 
     if (!infoResult) {
       throw new Error('Failed to fetch mod information')
@@ -664,9 +706,11 @@ async function fetchModInfo() {
     modInfo.value = infoResult
     modUpdates.value = updatesResult
     modComments.value = commentsResult
-  } catch (err: any) {
-    error.value = err.message || 'Failed to fetch mod information'
-    console.error('Error fetching mod info:', err)
+  } catch (e) {
+    if (e instanceof Error) {
+      error.value = e.message || 'Failed to fetch mod information'
+      console.error('Error fetching mod info:', e)
+    }
   } finally {
     clearTimeout(slowRequestTimeout)
     loading.value = false
@@ -716,100 +760,9 @@ function formatDate(timestamp: number): string {
   }
 }
 
-// Helper function to get image URL
-function getImageUrl(image: any): string {
-  // Use the largest available image size
-  if (image._sFile) {
-    return `${image._sBaseUrl}/${image._sFile}`
-  } else if (image._sFile800) {
-    return `${image._sBaseUrl}/${image._sFile800}`
-  } else if (image._sFile530) {
-    return `${image._sBaseUrl}/${image._sFile530}`
-  } else if (image._sFile220) {
-    return `${image._sBaseUrl}/${image._sFile220}`
-  } else if (image._sFile100) {
-    return `${image._sBaseUrl}/${image._sFile100}`
-  }
-  return ''
-}
-
-// Function to transform the raw API response into a proper GameBananaMod object
-function transformToGameBananaMod(rawModInfo: any): any {
-  if (!rawModInfo) return null
-
-  let previewImages: any[] = []
-
-  // Convert preview images if available
-  if (
-    rawModInfo._aPreviewMedia?._aImages &&
-    Array.isArray(rawModInfo._aPreviewMedia._aImages)
-  ) {
-    previewImages = rawModInfo._aPreviewMedia._aImages.map((image: any) => {
-      return {
-        imageType: image._sType || '',
-        baseUrl: image._sBaseUrl || '',
-        fileName: image._sFile || '',
-        file100: image._sFile100 || '',
-        file220: image._sFile220 || '',
-        file530: image._sFile530 || '',
-        file800: image._sFile800 || '',
-        height100: image._nHeight100 || 0,
-        width100: image._nWidth100 || 0,
-        height220: image._nHeight220 || 0,
-        width220: image._nWidth220 || 0,
-        height530: image._nHeight530 || 0,
-        width530: image._nWidth530 || 0,
-        height800: image._nHeight800 || 0,
-        width800: image._nWidth800 || 0,
-      }
-    })
-  }
-
-  // Build a properly formatted GameBananaMod object
-  return {
-    id: rawModInfo._idRow || props.modId,
-    name: rawModInfo._sName || '',
-    owner: rawModInfo._aSubmitter?._sName || '',
-    description: rawModInfo._sDescription || '',
-    thumbnail_url: rawModInfo._sIconUrl || '',
-    download_url: '', // This will be set correctly by the GameBananaBrowser
-    views: rawModInfo._nViewCount || 0,
-    downloads: rawModInfo._nDownloadCount || 0,
-    likes: rawModInfo._nLikeCount || 0,
-    model_name: rawModInfo._sModelName || '',
-    profile_url: rawModInfo._sProfileUrl || '',
-    image_url: rawModInfo._sImageUrl || '',
-    initial_visibility: rawModInfo._sInitialVisibility || '',
-    period: rawModInfo._sPeriod || '',
-    submitter_id: rawModInfo._aSubmitter?._idRow || 0,
-    submitter_name: rawModInfo._aSubmitter?._sName || '',
-    submitter_profile_url: rawModInfo._aSubmitter?._sProfileUrl || '',
-    submitter_avatar_url: rawModInfo._aSubmitter?._sAvatarUrl || '',
-    submitter_u_pic: rawModInfo._aSubmitter?._sUPic || '',
-    post_count: rawModInfo._nPostCount || 0,
-    category_name: rawModInfo._aCategory?._sName || '',
-    category_profile_url: rawModInfo._aCategory?._sProfileUrl || '',
-    category_icon_url: rawModInfo._aCategory?._sIconUrl || '',
-    singular_title: rawModInfo._sSingularTitle || '',
-    icon_classes: rawModInfo._sIconClasses || '',
-    date_added: rawModInfo._tsDateAdded || 0,
-    date_modified: rawModInfo._tsDateModified || 0,
-    date_updated: rawModInfo._tsDateUpdated || 0,
-    has_files: true,
-    tags: rawModInfo._aTags || [],
-    preview_images: previewImages,
-    version: rawModInfo._sVersion || '',
-    is_obsolete: rawModInfo._bIsObsolete || false,
-    has_content_ratings: rawModInfo._bHasContentRatings || false,
-    view_count: rawModInfo._nViewCount || 0,
-    is_owned_by_accessor: rawModInfo._bIsOwnedByAccessor || false,
-    was_featured: rawModInfo._bWasFeatured || false,
-  }
-}
-
 // Function to handle the download button click
 // Function to group changelog categories and count occurrences
-function groupChanges(changes: any[]): Record<string, number> {
+function groupChanges(changes: GBChangeLogEntry[]): Record<string, number> {
   const grouped: Record<string, number> = {}
 
   if (Array.isArray(changes)) {
@@ -853,7 +806,7 @@ function getCategoryColor(category: string): string {
 }
 
 function downloadMod() {
-  const formattedMod = transformToGameBananaMod(modInfo.value)
+  const formattedMod = modInfo.value
   if (formattedMod) {
     emit('download', formattedMod)
   }

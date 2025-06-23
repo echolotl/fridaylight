@@ -25,6 +25,7 @@
 
     "paths": {
       "@main-types": ["types/index.ts"],
+      "@custom-types/*": ["types/*"],
       "@modals/*": ["components/modals/*"],
       "@components/*": ["components/*"],
       "@stores/*": ["stores/*"],

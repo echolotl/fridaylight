@@ -2,6 +2,7 @@ use crate::download::download_gamebanana_mod;
 use crate::filesystem::create_mod_info;
 use crate::gamebanana::{
   fetch_gamebanana_mods,
+  fetch_featured_mods,
   get_mod_download_files,
   get_mod_info,
 };
@@ -14,7 +15,12 @@ use crate::modutils::{
 };
 use crate::models::{
   EngineModsResponse,
-  GameBananaResponse,
+  GBDownloadPage,
+  GBModPosts,
+  GBModUpdates,
+  GBProfilePage,
+  GBSubfeed,
+  GBTopSubs,
   ModDisableResult,
   ModInfo,
   ModsState,
@@ -562,15 +568,20 @@ pub fn stop_mod(
 pub async fn fetch_gamebanana_mods_command(
   query: String,
   page: i64
-) -> Result<GameBananaResponse, String> {
+) -> Result<GBSubfeed, String> {
   fetch_gamebanana_mods(query, page).await
+}
+
+#[tauri::command]
+pub async fn get_featured_mods_command() -> Result<GBTopSubs, String> {
+  fetch_featured_mods().await
 }
 
 #[tauri::command]
 pub async fn get_mod_info_command(
   mod_id: i64,
   model_type: Option<String>
-) -> Result<serde_json::Value, String> {
+) -> Result<GBProfilePage, String> {
   // Default to "Mod" if not specified
   let model_type = model_type.unwrap_or_else(|| "Mod".to_string());
   get_mod_info(mod_id, &model_type).await
@@ -582,7 +593,7 @@ pub async fn get_mod_posts_command(
   mod_id: i64,
   page: i64,
   model_type: Option<String>
-) -> Result<serde_json::Value, String> {
+) -> Result<GBModPosts, String> {
   // Default to "Mod" if not specified
   let model_type = model_type.unwrap_or_else(|| "Mod".to_string());
   crate::gamebanana::get_mod_posts(mod_id, page, &model_type).await
@@ -593,7 +604,7 @@ pub async fn get_mod_updates_command(
   mod_id: i64,
   page: i64,
   model_type: Option<String>
-) -> Result<serde_json::Value, String> {
+) -> Result<GBModUpdates, String> {
   // Default to "Mod" if not specified
   let model_type = model_type.unwrap_or_else(|| "Mod".to_string());
   crate::gamebanana::get_mod_updates(mod_id, page, &model_type).await
@@ -987,7 +998,7 @@ pub fn is_windows_11() -> bool {
 pub async fn get_mod_download_files_command(
   mod_id: i64,
   model_type: Option<String>
-) -> Result<serde_json::Value, String> {
+) -> Result<GBDownloadPage, String> {
   // Default to "Mod" if not specified
   let model_type = model_type.unwrap_or_else(|| "Mod".to_string());
   get_mod_download_files(mod_id, &model_type).await
@@ -1336,6 +1347,7 @@ pub fn run() {
         get_mods,
         launch_mod,
         fetch_gamebanana_mods_command,
+        get_featured_mods_command,
         get_mod_info_command,
         download_gamebanana_mod_command,
         download_custom_mod_command,

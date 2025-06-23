@@ -5,7 +5,6 @@ import {
 } from '@services/notificationService'
 import { StoreService } from './storeService'
 import { downloadState, downloadingMods } from '../stores/downloadState'
-import { GameBananaMod } from '../types'
 import { formatEngineName } from '@utils/index'
 
 // Map to track mod IDs to download IDs

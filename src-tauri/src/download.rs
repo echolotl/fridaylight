@@ -91,7 +91,7 @@ pub async fn download_gamebanana_mod(
   // Extract banner URL and fetch banner image
   let banner_url = mod_info_response
     .as_ref()
-    .and_then(|info| extract_banner_url(info, mod_id, &model_type));
+    .and_then(|info| extract_banner_url(info.clone()));
 
   debug!("Banner URL: {:?}", banner_url);
 
@@ -545,6 +545,7 @@ pub async fn download_gamebanana_mod(
   let final_logo_data = custom_logo_data;
 
   // Create the mod info with banner
+  let unwrapped_mod_info_response = mod_info_response.clone().unwrap();
   let id = uuid::Uuid::new_v4().to_string();
   let mod_info = ModInfo {
     id: id.clone(),
@@ -553,19 +554,11 @@ pub async fn download_gamebanana_mod(
     executable_path,
     display_order: Some(0),
     icon_data,
-    description: mod_info_response
-      .as_ref()
-      .and_then(|info| info.get("_sDescription"))
-      .and_then(|v| v.as_str())
-      .map(|s| s.to_string()),
+    description: unwrapped_mod_info_response.description,
     banner_data: final_banner_data,
     logo_data: final_logo_data,
     logo_position: Some("left_bottom".to_string()),
-    version: mod_info_response
-      .as_ref()
-      .and_then(|info| info.get("_sVersion"))
-      .and_then(|v| v.as_str())
-      .map(|s| s.to_string()),
+    version: unwrapped_mod_info_response.version,
     engine: None, // Initialize with None for now
     process_id: None, // Initialize with None since mod is not running yet
     contributors: mod_info_response
@@ -575,12 +568,7 @@ pub async fn download_gamebanana_mod(
     date_added: Some(chrono::Utc::now().timestamp()), // Set current timestamp as date added
     last_played: None, // Initialize with None since mod is not played yet
     gamebanana: Some(crate::models::ModInfoGBData {
-      url: mod_info_response
-        .as_ref()
-        .and_then(|info| info.get("_sProfileUrl"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string(),
+      url: unwrapped_mod_info_response.profile_url,
       id: mod_id,
       model_type: model_type.clone(),
     }),

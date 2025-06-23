@@ -208,6 +208,11 @@ import ModTypeSelectionModal from '@modals/ModTypeSelectionModal.vue'
 import ModDetailsModal from '@modals/ModDetailsModal.vue'
 import { NotificationService } from '@services/notificationService'
 import { formatEngineName } from '@utils/index'
+import {
+  type GBSubfeed,
+  type GBSubfeedRecord,
+  type GBTopSubs,
+} from '@custom-types/gamebanana'
 
 // Declare db for TypeScript
 declare global {
@@ -231,17 +236,17 @@ let eventListenerCleanup: (() => void) | undefined
 const searchQuery = ref('')
 const isLoadingSearch = ref(false)
 const hasSearched = ref(false)
-const searchResults = ref<any[]>([])
+const searchResults = ref<GBSubfeedRecord[]>([])
 
 // Featured mods state
-const featuredMods = ref<any[]>([])
+const featuredMods = ref<GBTopSubs>([])
 const isLoadingFeatured = ref(false)
 
 // Latest mods and modpacks state
-const latestMods = ref<any[]>([])
-const psychModpacks = ref<any[]>([])
-const vsliceModpacks = ref<any[]>([])
-const codenameModpacks = ref<any[]>([])
+const latestMods = ref<GBSubfeedRecord[]>([])
+const psychModpacks = ref<GBSubfeedRecord[]>([])
+const vsliceModpacks = ref<GBSubfeedRecord[]>([])
+const codenameModpacks = ref<GBSubfeedRecord[]>([])
 const isLoadingLatest = ref(false)
 const isLoadingPsychModpacks = ref(false)
 const isLoadingVsliceModpacks = ref(false)
@@ -295,56 +300,64 @@ watch(selectedModType, async newType => {
       await fetchPsychModpacks()
     } else {
       // If data is already loaded, just update the totalPages
-      const response = await invoke<{ mods: any[]; total: number }>(
+      const response = await invoke<GBSubfeed>(
         'fetch_gamebanana_mods_command',
         {
           query: '_psychmodpack',
           page: 1,
         }
       )
-      totalPages.value = Math.ceil(response.total / itemsPerPage)
+      totalPages.value = Math.ceil(
+        response._aMetadata._nRecordCount / response._aMetadata._nPerpage
+      )
     }
   } else if (newType === 'vsliceModpacks') {
     if (vsliceModpacks.value.length === 0) {
       await fetchVsliceModpacks()
     } else {
       // If data is already loaded, just update the totalPages
-      const response = await invoke<{ mods: any[]; total: number }>(
+      const response = await invoke<GBSubfeed>(
         'fetch_gamebanana_mods_command',
         {
           query: '_vslicemodpack',
           page: 1,
         }
       )
-      totalPages.value = Math.ceil(response.total / itemsPerPage)
+      totalPages.value = Math.ceil(
+        response._aMetadata._nRecordCount / response._aMetadata._nPerpage
+      )
     }
   } else if (newType === 'codenameModpacks') {
     if (codenameModpacks.value.length === 0) {
       await fetchCodenameModpacks()
     } else {
       // If data is already loaded, just update the totalPages
-      const response = await invoke<{ mods: any[]; total: number }>(
+      const response = await invoke<GBSubfeed>(
         'fetch_gamebanana_mods_command',
         {
           query: '_codenamemodpack',
           page: 1,
         }
       )
-      totalPages.value = Math.ceil(response.total / itemsPerPage)
+      totalPages.value = Math.ceil(
+        response._aMetadata._nRecordCount / response._aMetadata._nPerpage
+      )
     }
   } else if (newType === 'executables') {
     if (latestMods.value.length === 0) {
       await fetchLatestMods()
     } else {
       // If data is already loaded, just update the totalPages
-      const response = await invoke<{ mods: any[]; total: number }>(
+      const response = await invoke<GBSubfeed>(
         'fetch_gamebanana_mods_command',
         {
           query: 'latest',
           page: 1,
         }
       )
-      totalPages.value = Math.ceil(response.total / itemsPerPage)
+      totalPages.value = Math.ceil(
+        response._aMetadata._nRecordCount / response._aMetadata._nPerpage
+      )
     }
   }
 })
@@ -387,15 +400,9 @@ onBeforeUnmount(() => {
 const fetchFeaturedMods = async () => {
   isLoadingFeatured.value = true
   try {
-    const response = await invoke<{ mods: any[]; total: number }>(
-      'fetch_gamebanana_mods_command',
-      {
-        query: 'featured',
-        page: 1, // Always get first page for featured
-      }
-    )
+    const response = await invoke<GBTopSubs>('get_featured_mods_command')
 
-    featuredMods.value = response.mods
+    featuredMods.value = response
   } catch (error) {
     console.error('Failed to fetch featured mods:', error)
   } finally {
@@ -406,16 +413,14 @@ const fetchFeaturedMods = async () => {
 const fetchLatestMods = async () => {
   isLoadingLatest.value = true
   try {
-    const response = await invoke<{ mods: any[]; total: number }>(
-      'fetch_gamebanana_mods_command',
-      {
-        query: 'latest',
-        page: currentPage.value,
-      }
+    const response = await invoke<GBSubfeed>('fetch_gamebanana_mods_command', {
+      query: 'latest',
+      page: currentPage.value,
+    })
+    latestMods.value = response._aRecords as GBSubfeedRecord[]
+    totalPages.value = Math.ceil(
+      response._aMetadata._nRecordCount / response._aMetadata._nPerpage
     )
-
-    latestMods.value = response.mods
-    totalPages.value = Math.ceil(response.total / itemsPerPage)
   } catch (error) {
     console.error('Failed to fetch latest mods:', error)
   } finally {
@@ -426,17 +431,16 @@ const fetchLatestMods = async () => {
 const fetchPsychModpacks = async () => {
   isLoadingPsychModpacks.value = true
   try {
-    const response = await invoke<{ mods: any[]; total: number }>(
-      'fetch_gamebanana_mods_command',
-      {
-        query: '_psychmodpack',
-        page: currentPage.value,
-      }
-    )
+    const response = await invoke<GBSubfeed>('fetch_gamebanana_mods_command', {
+      query: '_psychmodpack',
+      page: currentPage.value,
+    })
 
-    psychModpacks.value = response.mods
+    psychModpacks.value = response._aRecords as GBSubfeedRecord[]
     if (selectedModType.value === 'psychModpacks') {
-      totalPages.value = Math.ceil(response.total / itemsPerPage)
+      totalPages.value = Math.ceil(
+        response._aMetadata._nRecordCount / response._aMetadata._nPerpage
+      )
     }
   } catch (error) {
     console.error('Failed to fetch Psych Engine modpacks:', error)
@@ -448,17 +452,16 @@ const fetchPsychModpacks = async () => {
 const fetchVsliceModpacks = async () => {
   isLoadingVsliceModpacks.value = true
   try {
-    const response = await invoke<{ mods: any[]; total: number }>(
-      'fetch_gamebanana_mods_command',
-      {
-        query: '_vslicemodpack',
-        page: currentPage.value,
-      }
-    )
+    const response = await invoke<GBSubfeed>('fetch_gamebanana_mods_command', {
+      query: '_vslicemodpack',
+      page: currentPage.value,
+    })
 
-    vsliceModpacks.value = response.mods
+    vsliceModpacks.value = response._aRecords as GBSubfeedRecord[]
     if (selectedModType.value === 'vsliceModpacks') {
-      totalPages.value = Math.ceil(response.total / itemsPerPage)
+      totalPages.value = Math.ceil(
+        response._aMetadata._nRecordCount / response._aMetadata._nPerpage
+      )
     }
   } catch (error) {
     console.error('Failed to fetch V-Slice modpacks:', error)
@@ -470,17 +473,16 @@ const fetchVsliceModpacks = async () => {
 const fetchCodenameModpacks = async () => {
   isLoadingCodenameModpacks.value = true
   try {
-    const response = await invoke<{ mods: any[]; total: number }>(
-      'fetch_gamebanana_mods_command',
-      {
-        query: '_codenamemodpack',
-        page: currentPage.value,
-      }
-    )
+    const response = await invoke<GBSubfeed>('fetch_gamebanana_mods_command', {
+      query: '_codenamemodpack',
+      page: currentPage.value,
+    })
 
-    codenameModpacks.value = response.mods
+    codenameModpacks.value = response._aRecords as GBSubfeedRecord[]
     if (selectedModType.value === 'codenameModpacks') {
-      totalPages.value = Math.ceil(response.total / itemsPerPage)
+      totalPages.value = Math.ceil(
+        response._aMetadata._nRecordCount / response._aMetadata._nPerpage
+      )
     }
   } catch (error) {
     console.error('Failed to fetch Codename Engine modpacks:', error)
@@ -501,16 +503,15 @@ const searchMods = async () => {
   currentPage.value = 1
 
   try {
-    const response = await invoke<{ mods: any[]; total: number }>(
-      'fetch_gamebanana_mods_command',
-      {
-        query: searchQuery.value,
-        page: currentPage.value,
-      }
-    )
+    const response = await invoke<GBSubfeed>('fetch_gamebanana_mods_command', {
+      query: searchQuery.value,
+      page: currentPage.value,
+    })
 
-    searchResults.value = response.mods
-    totalPages.value = Math.ceil(response.total / itemsPerPage)
+    searchResults.value = response._aRecords as GBSubfeedRecord[]
+    totalPages.value = Math.ceil(
+      response._aMetadata._nRecordCount / response._aMetadata._nPerpage
+    )
     hasSearched.value = true
   } catch (error) {
     console.error('Failed to search mods:', error)
@@ -530,18 +531,11 @@ const openModDetails = (
   modId: string | number | true,
   modelType: string | number | true
 ) => {
-  console.log('Opening mod details for ID:', modId)
   // Convert modId to number to ensure type compatibility
   selectedModId.value = modId ? Number(modId) : 0
   currentModelType.value = modelType ? String(modelType) : 'Mod'
-  console.log(
-    'Selected mod ID:',
-    selectedModId.value,
-    'Model Type:',
-    currentModelType.value
-  )
+
   isModDetailsModalOpen.value = true
-  console.log('Mod details modal opened')
 }
 
 // Pagination handling
@@ -551,7 +545,7 @@ const changePage = async (page: number) => {
   if (activeView.value === 'search') {
     isLoadingSearch.value = true
     try {
-      const response = await invoke<{ mods: any[]; total: number }>(
+      const response = await invoke<GBSubfeed>(
         'fetch_gamebanana_mods_command',
         {
           query: searchQuery.value,
@@ -559,9 +553,11 @@ const changePage = async (page: number) => {
         }
       )
 
-      searchResults.value = response.mods
+      searchResults.value = response._aRecords as GBSubfeedRecord[]
       // Make sure to update totalPages from the response
-      totalPages.value = Math.ceil(response.total / itemsPerPage)
+      totalPages.value = Math.ceil(
+        response._aMetadata._nRecordCount / response._aMetadata._nPerpage
+      )
     } catch (error) {
       console.error('Failed to fetch search page:', error)
     } finally {
@@ -572,7 +568,7 @@ const changePage = async (page: number) => {
     if (selectedModType.value === 'executables') {
       isLoadingLatest.value = true
       try {
-        const response = await invoke<{ mods: any[]; total: number }>(
+        const response = await invoke<{ mods: GBSubfeed; total: number }>(
           'fetch_gamebanana_mods_command',
           {
             query: 'latest',
@@ -580,9 +576,12 @@ const changePage = async (page: number) => {
           }
         )
 
-        latestMods.value = response.mods
+        latestMods.value = response.mods._aRecords as GBSubfeedRecord[]
         // Make sure to update totalPages from the response
-        totalPages.value = Math.ceil(response.total / itemsPerPage)
+        totalPages.value = Math.ceil(
+          response.mods._aMetadata._nRecordCount /
+            response.mods._aMetadata._nPerpage
+        )
       } catch (error) {
         console.error('Failed to fetch latest page:', error)
       } finally {
@@ -591,7 +590,7 @@ const changePage = async (page: number) => {
     } else if (selectedModType.value === 'psychModpacks') {
       isLoadingPsychModpacks.value = true
       try {
-        const response = await invoke<{ mods: any[]; total: number }>(
+        const response = await invoke<GBSubfeed>(
           'fetch_gamebanana_mods_command',
           {
             query: '_psychmodpack',
@@ -599,9 +598,11 @@ const changePage = async (page: number) => {
           }
         )
 
-        psychModpacks.value = response.mods
+        psychModpacks.value = response._aRecords as GBSubfeedRecord[]
         // Make sure to update totalPages from the response
-        totalPages.value = Math.ceil(response.total / itemsPerPage)
+        totalPages.value = Math.ceil(
+          response._aMetadata._nRecordCount / response._aMetadata._nPerpage
+        )
       } catch (error) {
         console.error('Failed to fetch Psych Engine modpacks page:', error)
       } finally {
@@ -610,7 +611,7 @@ const changePage = async (page: number) => {
     } else if (selectedModType.value === 'vsliceModpacks') {
       isLoadingVsliceModpacks.value = true
       try {
-        const response = await invoke<{ mods: any[]; total: number }>(
+        const response = await invoke<GBSubfeed>(
           'fetch_gamebanana_mods_command',
           {
             query: '_vslicemodpack',
@@ -618,9 +619,11 @@ const changePage = async (page: number) => {
           }
         )
 
-        vsliceModpacks.value = response.mods
+        vsliceModpacks.value = response._aRecords as GBSubfeedRecord[]
         // Make sure to update totalPages from the response
-        totalPages.value = Math.ceil(response.total / itemsPerPage)
+        totalPages.value = Math.ceil(
+          response._aMetadata._nRecordCount / response._aMetadata._nPerpage
+        )
       } catch (error) {
         console.error('Failed to fetch V-Slice modpacks page:', error)
       } finally {

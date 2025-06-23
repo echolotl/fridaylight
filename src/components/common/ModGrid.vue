@@ -12,10 +12,10 @@
     <div v-else class="mods-grid">
       <ModCard
         v-for="mod in mods"
-        :key="mod.id"
+        :key="mod._idRow"
         :mod="mod"
         @download="$emit('download', mod)"
-        @show-details="$emit('showDetails', mod.id, mod.model_name)"
+        @show-details="$emit('showDetails', mod._idRow, mod._sModelName)"
       />
     </div>
 
@@ -35,13 +35,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { GameBananaMod } from '@main-types'
+import type { GBSubfeedRecord } from '@custom-types/gamebanana'
 import ModCard from './ModCard.vue'
 import SkeletonModCard from '@components/skeletons/SkeletonModCard.vue'
 
 const props = defineProps({
   mods: {
-    type: Array as () => GameBananaMod[],
+    type: Array as () => GBSubfeedRecord[],
     default: () => [],
   },
   loading: {

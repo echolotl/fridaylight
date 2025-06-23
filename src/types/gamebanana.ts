@@ -6,26 +6,26 @@
  */
 export interface GBProfilePage {
   _idRow: number
-  _nStatus: number
+  _nStatus: string
   _bIsPrivate: boolean
   _tsDateModified: number
   _tsDateAdded: number
   _sProfileUrl: string
   _aPreviewMedia: {
-    _aImages: GBImage[]
+    _aImages?: GBImage[]
   }
   _sFeedbackInstructions?: string
   _sCommentsMode: string
-  _bAccessorIsSubmittor: boolean
+  _bAccessorIsSubmittor?: boolean
   _bIsTrashed: boolean
   _bIsWithheld: boolean
   _sName: string
-  _nUpdatesCount: number
+  _nUpdatesCount?: number
   _bHasUpdates: boolean
-  _tsDateUpdated: number
+  _tsDateUpdated?: number
   _nAllTodosCount: number
   _bHasTodos: boolean
-  _nPostCount: number
+  _nPostCount?: number
   _aTags: GBTag[]
   _bCreatedBySubmitter: boolean
   _bIsPorted: boolean
@@ -42,12 +42,13 @@ export interface GBProfilePage {
     ask: string[]
     no: string[]
   }
+  _sDescription?: string
   _bGenerateTableOfContents: boolean
   _sText: string
-  _bIsObsolete: boolean
-  _nLikeCount: number
-  _nViewCount: number
-  _sVersion: string
+  _bIsObsolete?: boolean
+  _nLikeCount?: number
+  _nViewCount?: number
+  _sVersion?: string
   _bAcceptsDonations: boolean
   _bShowRipePromo: boolean
   _aEmbeddables: {
@@ -59,10 +60,11 @@ export interface GBProfilePage {
   _aGame: GBGame
   _aCategory: GBCategory
   _aSuperCategory?: GBCategory
-  _aAlternateFileSources: GBAltFile[]
+  _aAlternateFileSources?: GBAltFile[]
   _aCredits: GBCredit[]
   _bAdvancedRequirementsExist?: boolean
   _aRequirements?: GBRequirement[]
+  _sDevNotes?: string
 }
 
 /**
@@ -96,10 +98,19 @@ export interface GBTopSubsItem {
   _sImageUrl: string
   _sThumbnailUrl: string
   _sInitialVisibility: string
-  _sPeriod: 'week' | 'month' | '3month' | '6month' | 'year' | 'alltime'
+  _sPeriod:
+    | 'today'
+    | 'week'
+    | 'month'
+    | '3month'
+    | '6month'
+    | 'year'
+    | 'alltime'
   _aSubmitter: GBMiniSubmitter
-  _nLikeCount: number
+  _nLikeCount?: number
+  _nPostCount?: number
   _aRootCategory: GBMiniCategory
+  _sDescription: string
 }
 
 /**
@@ -116,7 +127,7 @@ export interface GBSubfeed {
 }
 
 // Represents a mod in the Subfeed
-interface GBSubfeedRecord {
+export interface GBSubfeedRecord {
   _idRow: number
   _sModelName: string
   _sSingularTitle: string
@@ -126,21 +137,21 @@ interface GBSubfeedRecord {
   _tsDateAdded: number
   _tsDateModified: number
   _bHasFiles: boolean
-  _aTags: GBTag[]
+  _aTags: string[]
   _aPreviewMedia: {
     _aImages: GBImage[]
   }
   _aSubmitter: GBMiniSubmitter
   _aRootCategory: GBMiniCategory
-  _sVersion: string
-  _tsDateUpdated: number
-  _bIsObsolete: boolean
+  _sVersion?: string
+  _tsDateUpdated?: number
+  _bIsObsolete?: boolean
   _sInitialVisibility: string
   _bHasContentRatings: boolean
-  _nLikeCount: number
-  _nPostCount: number
+  _nLikeCount?: number
+  _nPostCount?: number
   _bWasFeatured: boolean
-  _nViewCount: number
+  _nViewCount?: number
   _bIsOwnedByAccessor: boolean
 }
 
@@ -166,13 +177,14 @@ interface GBModPost {
   _nReplyCount: number
   _iPinLevel: number
   _nStampScore: number
-  _aPreviewMedia: {
+  _aPreviewMedia?: {
     _aImages: GBImage[]
   }
   _sText: string
   _aPoster: GBSubmitter
   _bFollowLinks: boolean
   _aStamps: GBStamp[]
+  _aLabels: string[]
 }
 
 /**
@@ -191,7 +203,7 @@ export interface GBModUpdates {
 // Represents a mod update in GameBanana
 interface GBModUpdate {
   _idRow: number
-  _nStatus: number
+  _nStatus: string
   _bIsPrivate: boolean
   _tsDateAdded: number
   _tsDateModified: number
@@ -201,17 +213,17 @@ interface GBModUpdate {
       _sSnippet: string
     }
   }
-  _bAccessorIsSubmittor: boolean
+  _bAccessorIsSubmittor?: boolean
   _bIsTrashed: boolean
   _sName: string
-  _nPostCount: number
+  _nPostCount?: number
   _sInitialVisibility: string
   _bHasFiles: boolean
   _sText: string
   _bShowRipePromo: boolean
   _aSubmitter: GBSubmitter
   _bFollowLinks: boolean
-  _sVersion: string
+  _sVersion?: string
   _aChangeLog: GBChangeLogEntry[]
   _aSubmission: GBMiniSubmission
   _aAccess: {
@@ -229,7 +241,7 @@ interface GBMiniSubmission {
 }
 
 // Represents a change log entry in GameBanana updates
-interface GBChangeLogEntry {
+export interface GBChangeLogEntry {
   text: string
   cat: string
 }
@@ -328,7 +340,7 @@ interface GBGame {
 interface GBImage {
   _sType: string
   _sBaseUrl: string
-  _sCaption: string
+  _sCaption?: string
   _sFile: string
   _sFile220?: string
   _sFile530?: string
@@ -354,6 +366,7 @@ interface GBFile {
   _sAnalysisResult: string
   _sAnalysisResultVerbose: string
   _sAvastAvState: string
+  _sAvastAvResult: string
   _bHasContents: boolean
   _sDescription?: string
   _aModManagerIntegrations?: GBModManagerIntegration[]
@@ -361,7 +374,7 @@ interface GBFile {
 
 // Represents a mod manager integration item
 interface GBModManagerIntegration {
-  _sIconClasses: string
+  _sIconClasses?: string
   _idToolRow: number
   _aGameRowIds: number[]
   _sInstallerName: string
@@ -408,9 +421,17 @@ type GBCredit = {
 
 // Represents an author in GameBanana API credit
 type GBCreditAuthor = {
-  _sRole: string
-  _idRow: number
+  _sRole?: string
+  _idRow?: number
   _sName: string
-  _sProfileUrl: string
-  _bIsOnline: boolean
+  _sProfileUrl?: string
+  _sUrl?: string
+  _bIsOnline?: boolean
+  _sUpicUrl?: string
+  _aAffiliatedStudio?: {
+    _sProfileUrl: string
+    _sName: string
+    _sFlagUrl: string
+    _sBannerUrl: string
+  }
 }

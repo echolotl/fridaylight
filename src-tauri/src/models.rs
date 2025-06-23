@@ -45,9 +45,10 @@ pub type GBRequirement = (String, String);
 /// This is used to fetch featured submissions.
 pub type GBTopSubs = Vec<GBTopSubsItem>;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum GBPeriod {
+  Today,
   Week,
   Month,
   #[serde(rename = "3month")]
@@ -58,20 +59,20 @@ pub enum GBPeriod {
   Alltime,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBPreviewMedia {
   #[serde(rename = "_aImages")]
-  pub images: Vec<GBImage>,
+  pub images: Option<Vec<GBImage>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBLicenseChecklist {
   pub yes: Vec<String>,
   pub ask: Vec<String>,
   pub no: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBEmbeddables {
   #[serde(rename = "_sEmbeddableImageBaseUrl")]
   pub embeddable_image_base_url: String,
@@ -79,7 +80,7 @@ pub struct GBEmbeddables {
   pub variants: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBListMetadata {
   #[serde(rename = "_nRecordCount")]
   pub record_count: i64,
@@ -89,19 +90,19 @@ pub struct GBListMetadata {
   pub is_complete: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBModUpdatePreviewMediaMetadata {
   #[serde(rename = "_sSnippet")]
   pub snippet: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBModUpdatePreviewMedia {
   #[serde(rename = "_aMetadata")]
   pub metadata: GBModUpdatePreviewMediaMetadata,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct GBModUpdateAccess {
   #[serde(rename = "Update_Edit")]
@@ -110,7 +111,7 @@ pub struct GBModUpdateAccess {
   pub update_trash: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBSubjectShaper {
   #[serde(rename = "_sBorderStyle")]
   pub border_style: String,
@@ -124,12 +125,12 @@ pub struct GBSubjectShaper {
 
 /// Represents a GameBanana ProfilePage API response.
 /// This is used to fetch general mod details.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBProfilePage {
   #[serde(rename = "_idRow")]
   pub id_row: i64,
   #[serde(rename = "_nStatus")]
-  pub status: i64,
+  pub status: String,
   #[serde(rename = "_bIsPrivate")]
   pub is_private: bool,
   #[serde(rename = "_tsDateModified")]
@@ -145,7 +146,7 @@ pub struct GBProfilePage {
   #[serde(rename = "_sCommentsMode")]
   pub comments_mode: String,
   #[serde(rename = "_bAccessorIsSubmittor")]
-  pub accessor_is_submittor: bool,
+  pub accessor_is_submittor: Option<bool>,
   #[serde(rename = "_bIsTrashed")]
   pub is_trashed: bool,
   #[serde(rename = "_bIsWithheld")]
@@ -153,17 +154,17 @@ pub struct GBProfilePage {
   #[serde(rename = "_sName")]
   pub name: String,
   #[serde(rename = "_nUpdatesCount")]
-  pub updates_count: i64,
+  pub updates_count: Option<i64>,
   #[serde(rename = "_bHasUpdates")]
   pub has_updates: bool,
   #[serde(rename = "_tsDateUpdated")]
-  pub date_updated: i64,
+  pub date_updated: Option<i64>,
   #[serde(rename = "_nAllTodosCount")]
   pub all_todos_count: i64,
   #[serde(rename = "_bHasTodos")]
   pub has_todos: bool,
   #[serde(rename = "_nPostCount")]
-  pub post_count: i64,
+  pub post_count: Option<i64>,
   #[serde(rename = "_aTags")]
   pub tags: Vec<GBTag>,
   #[serde(rename = "_bCreatedBySubmitter")]
@@ -188,18 +189,20 @@ pub struct GBProfilePage {
   pub license: String,
   #[serde(rename = "_aLicenseChecklist")]
   pub license_checklist: GBLicenseChecklist,
+  #[serde(rename = "_sDescription")]
+  pub description: Option<String>,
   #[serde(rename = "_bGenerateTableOfContents")]
   pub generate_table_of_contents: bool,
   #[serde(rename = "_sText")]
   pub text: String,
   #[serde(rename = "_bIsObsolete")]
-  pub is_obsolete: bool,
+  pub is_obsolete: Option<bool>,
   #[serde(rename = "_nLikeCount")]
-  pub like_count: i64,
+  pub like_count: Option<i64>,
   #[serde(rename = "_nViewCount")]
-  pub view_count: i64,
+  pub view_count: Option<i64>,
   #[serde(rename = "_sVersion")]
-  pub version: String,
+  pub version: Option<String>,
   #[serde(rename = "_bAcceptsDonations")]
   pub accepts_donations: bool,
   #[serde(rename = "_bShowRipePromo")]
@@ -217,18 +220,20 @@ pub struct GBProfilePage {
   #[serde(rename = "_aSuperCategory")]
   pub super_category: Option<GBCategory>,
   #[serde(rename = "_aAlternateFileSources")]
-  pub alternate_file_sources: Vec<GBAltFile>,
+  pub alternate_file_sources: Option<Vec<GBAltFile>>,
   #[serde(rename = "_aCredits")]
   pub credits: Vec<GBCredit>,
   #[serde(rename = "_bAdvancedRequirementsExist")]
   pub advanced_requirements_exist: Option<bool>,
   #[serde(rename = "_aRequirements")]
   pub requirements: Option<Vec<GBRequirement>>,
+  #[serde(rename = "_sDevNotes")]
+  pub dev_notes: Option<String>,
 }
 
 /// Represents a GameBanana DownloadPage API response.
 /// This is used to fetch mod download details.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBDownloadPage {
   #[serde(rename = "_bIsTrashed")]
   pub is_trashed: bool,
@@ -251,7 +256,7 @@ pub struct GBDownloadPage {
 }
 
 // Represents a Mod from TopSubs
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBTopSubsItem {
   #[serde(rename = "_idRow")]
   pub id_row: i64,
@@ -272,14 +277,18 @@ pub struct GBTopSubsItem {
   #[serde(rename = "_aSubmitter")]
   pub submitter: GBMiniSubmitter,
   #[serde(rename = "_nLikeCount")]
-  pub like_count: i64,
+  pub like_count: Option<i64>,
+  #[serde(rename = "_nPostCount")]
+  pub post_count: Option<i64>,
   #[serde(rename = "_aRootCategory")]
   pub root_category: GBMiniCategory,
+  #[serde(rename = "_sDescription")]
+  pub description: String,
 }
 
 /// Represents a GameBanana Subfeed API response.
 /// This is used to fetch submissions in a list.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBSubfeed {
   #[serde(rename = "_aMetadata")]
   pub metadata: GBListMetadata,
@@ -288,7 +297,7 @@ pub struct GBSubfeed {
 }
 
 // Represents a mod in the Subfeed
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBSubfeedRecord {
   #[serde(rename = "_idRow")]
   pub id_row: i64,
@@ -309,7 +318,7 @@ pub struct GBSubfeedRecord {
   #[serde(rename = "_bHasFiles")]
   pub has_files: bool,
   #[serde(rename = "_aTags")]
-  pub tags: Vec<GBTag>,
+  pub tags: Vec<String>,
   #[serde(rename = "_aPreviewMedia")]
   pub preview_media: GBPreviewMedia,
   #[serde(rename = "_aSubmitter")]
@@ -317,30 +326,30 @@ pub struct GBSubfeedRecord {
   #[serde(rename = "_aRootCategory")]
   pub root_category: GBMiniCategory,
   #[serde(rename = "_sVersion")]
-  pub version: String,
+  pub version: Option<String>,
   #[serde(rename = "_tsDateUpdated")]
-  pub date_updated: i64,
+  pub date_updated: Option<i64>,
   #[serde(rename = "_bIsObsolete")]
-  pub is_obsolete: bool,
+  pub is_obsolete: Option<bool>,
   #[serde(rename = "_sInitialVisibility")]
   pub initial_visibility: String,
   #[serde(rename = "_bHasContentRatings")]
   pub has_content_ratings: bool,
   #[serde(rename = "_nLikeCount")]
-  pub like_count: i64,
+  pub like_count: Option<i64>,
   #[serde(rename = "_nPostCount")]
-  pub post_count: i64,
+  pub post_count: Option<i64>,
   #[serde(rename = "_bWasFeatured")]
   pub was_featured: bool,
   #[serde(rename = "_nViewCount")]
-  pub view_count: i64,
+  pub view_count: Option<i64>,
   #[serde(rename = "_bIsOwnedByAccessor")]
   pub is_owned_by_accessor: bool,
 }
 
 /// Represents a GameBanana Posts API response.
 /// This is used to fetch mod posts.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBModPosts {
   #[serde(rename = "_aMetadata")]
   pub metadata: GBListMetadata,
@@ -349,12 +358,12 @@ pub struct GBModPosts {
 }
 
 // Represents a post on a mod
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBModPost {
   #[serde(rename = "_idRow")]
   pub id_row: i64,
   #[serde(rename = "_nStatus")]
-  pub status: i64,
+  pub status: String,
   #[serde(rename = "_tsDateAdded")]
   pub date_added: i64,
   #[serde(rename = "_tsDateModified")]
@@ -366,7 +375,7 @@ pub struct GBModPost {
   #[serde(rename = "_nStampScore")]
   pub stamp_score: i64,
   #[serde(rename = "_aPreviewMedia")]
-  pub preview_media: GBPreviewMedia,
+  pub preview_media: Option<GBPreviewMedia>,
   #[serde(rename = "_sText")]
   pub text: String,
   #[serde(rename = "_aPoster")]
@@ -375,11 +384,13 @@ pub struct GBModPost {
   pub follow_links: bool,
   #[serde(rename = "_aStamps")]
   pub stamps: Vec<GBStamp>,
+  #[serde(rename = "_aLabels")]
+  pub labels: Vec<String>,
 }
 
 /// Represents a GameBanana Updates API response.
 /// This is used to fetch submitted mod updates.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBModUpdates {
   #[serde(rename = "_aMetadata")]
   pub metadata: GBListMetadata,
@@ -388,12 +399,12 @@ pub struct GBModUpdates {
 }
 
 // Represents a mod update in GameBanana
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBModUpdate {
   #[serde(rename = "_idRow")]
   pub id_row: i64,
   #[serde(rename = "_nStatus")]
-  pub status: i64,
+  pub status: String,
   #[serde(rename = "_bIsPrivate")]
   pub is_private: bool,
   #[serde(rename = "_tsDateAdded")]
@@ -405,13 +416,13 @@ pub struct GBModUpdate {
   #[serde(rename = "_aPreviewMedia")]
   pub preview_media: GBModUpdatePreviewMedia,
   #[serde(rename = "_bAccessorIsSubmittor")]
-  pub accessor_is_submittor: bool,
+  pub accessor_is_submittor: Option<bool>,
   #[serde(rename = "_bIsTrashed")]
   pub is_trashed: bool,
   #[serde(rename = "_sName")]
   pub name: String,
   #[serde(rename = "_nPostCount")]
-  pub post_count: i64,
+  pub post_count: Option<i64>,
   #[serde(rename = "_sInitialVisibility")]
   pub initial_visibility: String,
   #[serde(rename = "_bHasFiles")]
@@ -425,7 +436,7 @@ pub struct GBModUpdate {
   #[serde(rename = "_bFollowLinks")]
   pub follow_links: bool,
   #[serde(rename = "_sVersion")]
-  pub version: String,
+  pub version: Option<String>,
   #[serde(rename = "_aChangeLog")]
   pub change_log: Vec<GBChangeLogEntry>,
   #[serde(rename = "_aSubmission")]
@@ -435,7 +446,7 @@ pub struct GBModUpdate {
 }
 
 // Reduced version of the normal submission, used in some places
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBMiniSubmission {
   #[serde(rename = "_sName")]
   pub name: String,
@@ -448,14 +459,14 @@ pub struct GBMiniSubmission {
 }
 
 // Represents a change log entry in GameBanana updates
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBChangeLogEntry {
   pub text: String,
   pub cat: String,
 }
 
 // Represents a GameBanana tag
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBTag {
   #[serde(rename = "_sTitle")]
   pub title: String,
@@ -464,7 +475,7 @@ pub struct GBTag {
 }
 
 // Represents a GameBanana stamp
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBStamp {
   #[serde(rename = "_sIconClasses")]
   pub icon_classes: String,
@@ -477,7 +488,7 @@ pub struct GBStamp {
 }
 
 // Represents a GameBanana submitter (author) profile
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBSubmitter {
   #[serde(rename = "_idRow")]
   pub id_row: i64,
@@ -548,7 +559,7 @@ pub struct GBSubmitter {
 }
 
 // Reduced version of a normal submitter, used in some places
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBMiniSubmitter {
   #[serde(rename = "_idRow")]
   pub id_row: i64,
@@ -577,7 +588,7 @@ pub struct GBMiniSubmitter {
 }
 
 // Represents a game in GameBanana API
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBGame {
   #[serde(rename = "_idRow")]
   pub id_row: i64,
@@ -600,14 +611,14 @@ pub struct GBGame {
 }
 
 // Represents an image in _aImages
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBImage {
   #[serde(rename = "_sType")]
   pub r#type: String,
   #[serde(rename = "_sBaseUrl")]
   pub base_url: String,
   #[serde(rename = "_sCaption")]
-  pub caption: String,
+  pub caption: Option<String>,
   #[serde(rename = "_sFile")]
   pub file: String,
   #[serde(rename = "_sFile220")]
@@ -631,7 +642,7 @@ pub struct GBImage {
 }
 
 // Represents a file in _aFiles
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBFile {
   #[serde(rename = "_idRow")]
   pub id_row: i64,
@@ -655,6 +666,8 @@ pub struct GBFile {
   pub analysis_result_verbose: String,
   #[serde(rename = "_sAvastAvState")]
   pub avast_av_state: String,
+  #[serde(rename = "_sAvastAvResult")]
+  pub avast_av_result: String,
   #[serde(rename = "_bHasContents")]
   pub has_contents: bool,
   #[serde(rename = "_sDescription")]
@@ -664,10 +677,10 @@ pub struct GBFile {
 }
 
 // Represents a mod manager integration item
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBModManagerIntegration {
   #[serde(rename = "_sIconClasses")]
-  pub icon_classes: String,
+  pub icon_classes: Option<String>,
   #[serde(rename = "_idToolRow")]
   pub tool_row_id: i64,
   #[serde(rename = "_aGameRowIds")]
@@ -683,14 +696,14 @@ pub struct GBModManagerIntegration {
 }
 
 // Represents an alternate file source in GameBanana API
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBAltFile {
   pub url: String,
   pub description: String,
 }
 
 // Represents a category in GameBanana API
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBCategory {
   #[serde(rename = "_idRow")]
   pub id_row: i64,
@@ -705,7 +718,7 @@ pub struct GBCategory {
 }
 
 // Reduced version of a category, used in some places
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBMiniCategory {
   #[serde(rename = "_sName")]
   pub name: String,
@@ -716,7 +729,7 @@ pub struct GBMiniCategory {
 }
 
 // Represents a bio item in GameBanana API
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBBioItem {
   #[serde(rename = "_sTitle")]
   pub title: String,
@@ -725,7 +738,7 @@ pub struct GBBioItem {
 }
 
 // Represents a credit group in GameBanana API
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBCredit {
   #[serde(rename = "_sGroupName")]
   pub group_name: String,
@@ -734,18 +747,35 @@ pub struct GBCredit {
 }
 
 // Represents an author in GameBanana API credit
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBCreditAuthor {
   #[serde(rename = "_sRole")]
   pub role: String,
-  #[serde(rename = "_idRow")]
-  pub id_row: i64,
+  #[serde(rename = "_sName")]
+  pub name: String,
+  #[serde(rename = "_sProfileUrl")]
+  pub profile_url: Option<String>,
+  #[serde(rename = "_sUrl")]
+  pub url: Option<String>,
+  #[serde(rename = "_bIsOnline")]
+  pub is_online: Option<bool>,
+  #[serde(rename = "_sUpicUrl")]
+  pub upic_url: Option<String>,
+  #[serde(rename = "_aAffiliatedStudio")]
+  pub affiliated_studio: Option<GBAffiliatedStudio>,
+}
+
+// Represents an affiliated studio in GameBanana API
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GBAffiliatedStudio {
+  #[serde(rename = "_sBannerUrl")]
+  pub banner_url: String,
   #[serde(rename = "_sName")]
   pub name: String,
   #[serde(rename = "_sProfileUrl")]
   pub profile_url: String,
-  #[serde(rename = "_bIsOnline")]
-  pub is_online: bool,
+  #[serde(rename = "_sFlagUrl")]
+  pub flag_url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -859,13 +889,6 @@ pub struct EngineModsResponse {
 
 // Create a state to manage our mods
 pub struct ModsState(pub Mutex<HashMap<String, ModInfo>>);
-
-// Define the response structure for GameBanana mods
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GameBananaResponse {
-  pub mods: Vec<GameBananaMod>,
-  pub total: i64,
-}
 
 // Event structures for download progress tracking
 #[derive(Clone, Serialize)]
