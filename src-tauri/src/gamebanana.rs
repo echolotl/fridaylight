@@ -382,14 +382,17 @@ pub async fn get_mod_posts(
       };
 
       // Convert JSON response to GBModPosts
-      let mod_posts = match serde_json::from_value::<GBModPosts>(data) {
+      let mod_posts = match serde_json::from_value::<GBModPosts>(data.clone()) {
         Ok(posts) => {
           debug!("Successfully fetched mod posts for mod ID: {}", mod_id);
           Ok(posts)
         }
         Err(e) => {
-          let error_msg =
-            format!("Failed to convert JSON to GBModPosts: {}", e);
+          let error_msg = format!(
+            "Failed to convert JSON to GBModPosts: {} | JSON Response: {}",
+            e,
+            data
+          );
           error!("{}", error_msg);
           Err(error_msg)
         }
@@ -488,13 +491,13 @@ pub fn extract_contributors(
       let name = &author.name;
 
       // Get author role if available
-      let role = &author.role;
+      let role = author.role.clone();
 
       // Add the contributor to the group's members
       members.push(crate::models::Contributor {
         name: name.to_string(),
         icon: None, // GameBanana API doesn't provide author icons in this context
-        role: Some(role.to_string()),
+        role: role,
       });
     }
 

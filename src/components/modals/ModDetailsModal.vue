@@ -95,6 +95,35 @@
                   />
                 </q-carousel-slide>
               </q-carousel>
+              <div v-if="modInfo._iCompletionPercentage" class="q-mt-md">
+                <q-linear-progress
+                  :value="modInfo._iCompletionPercentage / 100"
+                  color="primary"
+                  class="q-mb-sm"
+                  rounded
+                />
+                <div class="text-subtitle1 phantom-font">
+                  <span style="color: var(--theme-text-secondary)">{{
+                    modInfo._sDevelopmentState
+                  }}</span>
+                  <span style="color: var(--theme-text-secondary)"> - </span>
+                  {{ modInfo._iCompletionPercentage }}% complete<span
+                    v-if="modInfo._iCompletionPercentage < 75"
+                    >.</span
+                  >
+                  <span
+                    v-else-if="
+                      modInfo._iCompletionPercentage > 75 &&
+                      modInfo._iCompletionPercentage < 90
+                    "
+                    >!</span
+                  ><span v-else-if="modInfo._iCompletionPercentage >= 90"
+                    >!!</span
+                  ><span v-else-if="modInfo._iCompletionPercentage === 100"
+                    >!!!</span
+                  >
+                </div>
+              </div>
               <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                 <div class="flex">
                   Description
@@ -160,7 +189,13 @@
                             >
                               {{ update._sVersion }}
                             </div>
-                            <div class="flex row badge-container">
+                            <div
+                              v-if="
+                                update._aChangeLog &&
+                                update._aChangeLog.length > 0
+                              "
+                              class="flex row badge-container"
+                            >
                               <div
                                 v-for="(count, category) in groupChanges(
                                   update._aChangeLog
@@ -231,11 +266,9 @@
                   </div>
                   <hr />
                 </h6>
-                <div
-                  v-for="comment in modComments._aRecords"
-                  :key="comment._idRow"
-                >
-                  <div v-if="comment._aPoster" class="flex column">
+                <!-- Valid comments with posters -->
+                <div v-for="comment in validComments" :key="comment._idRow">
+                  <div class="flex column">
                     <div class="flex row items-center phantom-font">
                       <img
                         :src="
@@ -333,7 +366,11 @@
                       </div>
                     </div>
                   </div>
-                  <div v-else>
+                  <hr style="border-top-style: dashed" />
+                </div>
+                <!-- Trashed comments (without posters) -->
+                <div v-for="comment in trashedComments" :key="comment._idRow">
+                  <div>
                     <span
                       class="phantom-font"
                       style="color: var(--theme-text-secondary)"
@@ -588,6 +625,7 @@ import { processHtmlAnchors } from '@utils/index'
 import {
   GBChangeLogEntry,
   GBModPosts,
+  GBModPost,
   GBModUpdates,
   GBProfilePage,
 } from '@custom-types/gamebanana'
@@ -624,6 +662,30 @@ const hasCredits = computed(() => {
     Array.isArray(modInfo.value._aCredits) &&
     modInfo.value._aCredits.length > 0
   )
+})
+
+// Type guard to check if a comment has a poster
+function hasValidPoster(
+  comment: GBModPosts['_aRecords'][number]
+): comment is GBModPost {
+  return (
+    comment &&
+    '_aPoster' in comment &&
+    typeof comment._aPoster === 'object' &&
+    comment._aPoster !== null
+  )
+}
+
+// Computed property to get valid comments with posters
+const validComments = computed(() => {
+  if (!modComments.value?._aRecords) return []
+  return modComments.value._aRecords.filter(hasValidPoster)
+})
+
+// Computed property to get trashed comments (without posters)
+const trashedComments = computed(() => {
+  if (!modComments.value?._aRecords) return []
+  return modComments.value._aRecords.filter(comment => !hasValidPoster(comment))
 })
 
 // Function to clear all data from the component

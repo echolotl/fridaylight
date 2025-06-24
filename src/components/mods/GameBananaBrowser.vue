@@ -209,9 +209,11 @@ import ModDetailsModal from '@modals/ModDetailsModal.vue'
 import { NotificationService } from '@services/notificationService'
 import { formatEngineName } from '@utils/index'
 import {
+  GBAltFile,
+  GBFile,
   type GBSubfeed,
   type GBSubfeedRecord,
-  type GBTopSubs,
+  GBTopSubsItem,
 } from '@custom-types/gamebanana'
 
 // Declare db for TypeScript
@@ -239,7 +241,7 @@ const hasSearched = ref(false)
 const searchResults = ref<GBSubfeedRecord[]>([])
 
 // Featured mods state
-const featuredMods = ref<GBTopSubs>([])
+const featuredMods = ref<GBTopSubsItem[]>([])
 const isLoadingFeatured = ref(false)
 
 // Latest mods and modpacks state
@@ -255,7 +257,6 @@ const isLoadingCodenameModpacks = ref(false)
 // Pagination state
 const currentPage = ref(1)
 const totalPages = ref(1)
-const itemsPerPage = 20
 
 // View state
 const activeView = ref('all') // 'all', 'search'
@@ -263,16 +264,15 @@ const selectedModType = ref('executables') // For tabs
 
 // For file selection
 const showFileSelector = ref(false)
-const downloadFiles = ref<any[]>([])
-const alternateFileSources = ref<any[]>([])
+const downloadFiles = ref<GBFile[]>([])
+const alternateFileSources = ref<GBAltFile[]>([])
 const currentDownloadMod = ref<any | null>(null)
 // Store the selected file for future use
-const selectedFile = ref<any | null>(null)
+const selectedFile = ref<GBFile[] | null>(null)
 
 // For modpack handling
 const showEngineSelectDialog = ref(false)
 const currentModpackInfo = ref<ModpackInfo | null>(null)
-const selectedEngineMod = ref<any>(null)
 
 // For folder existence confirmation
 const showFolderExistsDialog = ref(false)
@@ -400,7 +400,7 @@ onBeforeUnmount(() => {
 const fetchFeaturedMods = async () => {
   isLoadingFeatured.value = true
   try {
-    const response = await invoke<GBTopSubs>('get_featured_mods_command')
+    const response = await invoke<GBTopSubsItem[]>('get_featured_mods_command')
 
     featuredMods.value = response
   } catch (error) {
@@ -541,6 +541,7 @@ const openModDetails = (
 // Pagination handling
 const changePage = async (page: number) => {
   currentPage.value = page
+  console.log('Changing page to:', page)
 
   if (activeView.value === 'search') {
     isLoadingSearch.value = true
@@ -549,7 +550,7 @@ const changePage = async (page: number) => {
         'fetch_gamebanana_mods_command',
         {
           query: searchQuery.value,
-          page: page,
+          page: currentPage.value,
         }
       )
 
@@ -568,7 +569,7 @@ const changePage = async (page: number) => {
     if (selectedModType.value === 'executables') {
       isLoadingLatest.value = true
       try {
-        const response = await invoke<{ mods: GBSubfeed; total: number }>(
+        const response = await invoke<GBSubfeed>(
           'fetch_gamebanana_mods_command',
           {
             query: 'latest',
@@ -576,11 +577,10 @@ const changePage = async (page: number) => {
           }
         )
 
-        latestMods.value = response.mods._aRecords as GBSubfeedRecord[]
+        latestMods.value = response._aRecords as GBSubfeedRecord[]
         // Make sure to update totalPages from the response
         totalPages.value = Math.ceil(
-          response.mods._aMetadata._nRecordCount /
-            response.mods._aMetadata._nPerpage
+          response._aMetadata._nRecordCount / response._aMetadata._nPerpage
         )
       } catch (error) {
         console.error('Failed to fetch latest page:', error)
@@ -632,7 +632,7 @@ const changePage = async (page: number) => {
     } else if (selectedModType.value === 'codenameModpacks') {
       isLoadingCodenameModpacks.value = true
       try {
-        const response = await invoke<{ mods: any[]; total: number }>(
+        const response = await invoke<GBSubfeed>(
           'fetch_gamebanana_mods_command',
           {
             query: '_codenamemodpack',
@@ -640,9 +640,11 @@ const changePage = async (page: number) => {
           }
         )
 
-        codenameModpacks.value = response.mods
+        codenameModpacks.value = response._aRecords as GBSubfeedRecord[]
         // Make sure to update totalPages from the response
-        totalPages.value = Math.ceil(response.total / itemsPerPage)
+        totalPages.value = Math.ceil(
+          response._aMetadata._nRecordCount / response._aMetadata._nPerpage
+        )
       } catch (error) {
         console.error('Failed to fetch Codename Engine modpacks page:', error)
       } finally {
@@ -724,7 +726,6 @@ const onEngineSelected = async (engine: any) => {
   } finally {
     // Reset state
     currentModpackInfo.value = null
-    selectedEngineMod.value = null
   }
 }
 

@@ -77,7 +77,7 @@
                   <div class="featured-title phantom-font-display">
                     {{ mod._sName }}
                   </div>
-                  <div class="featured-description">
+                  <div v-if="mod._sDescription" class="featured-description">
                     {{ shortenDescription(mod._sDescription) }}
                   </div>
 
@@ -95,11 +95,11 @@
                         <q-icon name="warning" size="sm" color="yellow" />
                         Has sensitive content!
                       </span>
-                      <span>
+                      <span v-if="mod._nPostCount">
                         <q-icon name="message" size="sm" />
                         {{ formatNumber(mod._nPostCount) }}
                       </span>
-                      <span>
+                      <span v-if="mod._nLikeCount">
                         <q-icon name="thumb_up" size="sm" />
                         {{ formatNumber(mod._nLikeCount) }}
                       </span>
@@ -117,12 +117,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { GBTopSubs, GBTopSubsItem } from '@custom-types/gamebanana'
+import type { GBTopSubsItem } from '@custom-types/gamebanana'
 import { openUrl } from '@tauri-apps/plugin-opener'
 
 defineProps({
   mods: {
-    type: Array as () => GBTopSubs,
+    type: Array as () => GBTopSubsItem[],
     default: () => [],
   },
   loading: {

@@ -417,18 +417,17 @@ const getRecentlyPlayedMods = (count: number = 5): Mod[] => {
 const fetchFeaturedMods = async () => {
   isLoadingFeatured.value = true
   try {
-    const response = await invoke<GBTopSubs>('fetch_gamebanana_mods_command', {
-      query: 'featured',
-      page: 1, // Always get first page for featured
-    })
-    console.log(response)
+    const response = await invoke<GBTopSubsItem[]>(
+      'get_featured_mods_command',
+      {
+        query: 'featured',
+        page: 1, // Always get first page for featured
+      }
+    )
 
-    // Filter mods that weren't featured today
-    const filteredMods = response.filter(mod => {
-      return mod._sPeriod === 'today'
-    })
-
-    featuredMods.value = filteredMods
+    console.log('Featured mods response:', response)
+    // Filter out mods not featured today
+    featuredMods.value = response.filter(mod => mod._sPeriod === 'today')
   } catch (error) {
     console.error('Failed to fetch featured mods:', error)
   } finally {

@@ -39,7 +39,7 @@ impl fmt::Display for MetadataError {
 pub type GBMedal = (String, String, String, i64);
 
 // Represents a requirement in GameBanana API
-pub type GBRequirement = (String, String);
+pub type GBRequirement = Vec<String>;
 
 /// Represents a GameBanana TopSubs API response.
 /// This is used to fetch featured submissions.
@@ -61,7 +61,7 @@ pub enum GBPeriod {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBPreviewMedia {
-  #[serde(rename = "_aImages")]
+  #[serde(rename = "_aImages", default)]
   pub images: Option<Vec<GBImage>>,
 }
 
@@ -168,9 +168,9 @@ pub struct GBProfilePage {
   #[serde(rename = "_aTags")]
   pub tags: Vec<GBTag>,
   #[serde(rename = "_bCreatedBySubmitter")]
-  pub created_by_submitter: bool,
+  pub created_by_submitter: Option<bool>,
   #[serde(rename = "_bIsPorted")]
-  pub is_ported: bool,
+  pub is_ported: Option<bool>,
   #[serde(rename = "_nThanksCount")]
   pub thanks_count: i64,
   #[serde(rename = "_sInitialVisibility")]
@@ -180,7 +180,7 @@ pub struct GBProfilePage {
   #[serde(rename = "_nDownloadCount")]
   pub download_count: i64,
   #[serde(rename = "_aFiles")]
-  pub files: Vec<GBFile>,
+  pub files: Option<Vec<GBFile>>,
   #[serde(rename = "_nSubscriberCount")]
   pub subscriber_count: i64,
   #[serde(rename = "_aContributingStudios")]
@@ -229,6 +229,37 @@ pub struct GBProfilePage {
   pub requirements: Option<Vec<GBRequirement>>,
   #[serde(rename = "_sDevNotes")]
   pub dev_notes: Option<String>,
+  #[serde(rename = "_aFeaturings")]
+  pub featurings: Option<HashMap<String, GBFeaturing>>,
+  // WIP Specific Fields
+  #[serde(rename = "_akDevelopmentState")]
+  pub small_development_state: Option<String>,
+  #[serde(rename = "_sDevelopmentState")]
+  pub development_state: Option<String>,
+  #[serde(rename = "_iCompletionPercentage")]
+  pub completion_percentage: Option<u32>,
+  #[serde(rename = "_aFinishedWork")]
+  pub finished_work: Option<GBFinishedWork>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GBFinishedWork {
+  #[serde(rename = "_aFinishedWorksOnGameBanana")]
+  pub finished_works_on_game_banana: Vec<String>,
+  #[serde(rename = "_aRemoteFinishedWorkUrls")]
+  pub remote_finished_work_urls: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GBFeaturing {
+  #[serde(rename = "_sFeatureGroup")]
+  pub feature_group: String,
+  #[serde(rename = "_sIconClasses")]
+  pub icon_classes: String,
+  #[serde(rename = "_sTitle")]
+  pub title: String,
+  #[serde(rename = "_tsDate")]
+  pub date: i64,
 }
 
 /// Represents a GameBanana DownloadPage API response.
@@ -283,7 +314,7 @@ pub struct GBTopSubsItem {
   #[serde(rename = "_aRootCategory")]
   pub root_category: GBMiniCategory,
   #[serde(rename = "_sDescription")]
-  pub description: String,
+  pub description: Option<String>,
 }
 
 /// Represents a GameBanana Subfeed API response.
@@ -354,7 +385,15 @@ pub struct GBModPosts {
   #[serde(rename = "_aMetadata")]
   pub metadata: GBListMetadata,
   #[serde(rename = "_aRecords")]
-  pub records: Vec<GBModPost>,
+  pub records: Vec<GBModPostRecord>,
+}
+
+// Enum to handle both regular and trashed posts
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum GBModPostRecord {
+  Post(GBModPost),
+  TrashedPost(GBModTrashedPost),
 }
 
 // Represents a post on a mod
@@ -375,7 +414,7 @@ pub struct GBModPost {
   #[serde(rename = "_nStampScore")]
   pub stamp_score: i64,
   #[serde(rename = "_aPreviewMedia")]
-  pub preview_media: Option<GBPreviewMedia>,
+  pub preview_media: Option<Vec<serde_json::Value>>,
   #[serde(rename = "_sText")]
   pub text: String,
   #[serde(rename = "_aPoster")]
@@ -383,9 +422,31 @@ pub struct GBModPost {
   #[serde(rename = "_bFollowLinks")]
   pub follow_links: bool,
   #[serde(rename = "_aStamps")]
-  pub stamps: Vec<GBStamp>,
+  pub stamps: Option<Vec<GBStamp>>,
   #[serde(rename = "_aLabels")]
-  pub labels: Vec<String>,
+  pub labels: Option<Vec<String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GBModTrashedPost {
+  #[serde(rename = "_aPreviewMedia")]
+  pub preview_media: Vec<serde_json::Value>,
+  #[serde(rename = "_iPinLevel")]
+  pub pin_level: i64,
+  #[serde(rename = "_idRow")]
+  pub id_row: i64,
+  #[serde(rename = "_nReplyCount")]
+  pub reply_count: i64,
+  #[serde(rename = "_nStampScore")]
+  pub stamp_score: i64,
+  #[serde(rename = "_nStatus")]
+  pub status: String,
+  #[serde(rename = "_sText")]
+  pub text: String,
+  #[serde(rename = "_tsDateAdded")]
+  pub date_added: i64,
+  #[serde(rename = "_tsDateModified")]
+  pub date_modified: i64,
 }
 
 /// Represents a GameBanana Updates API response.
@@ -438,7 +499,7 @@ pub struct GBModUpdate {
   #[serde(rename = "_sVersion")]
   pub version: Option<String>,
   #[serde(rename = "_aChangeLog")]
-  pub change_log: Vec<GBChangeLogEntry>,
+  pub change_log: Option<Vec<GBChangeLogEntry>>,
   #[serde(rename = "_aSubmission")]
   pub submission: GBMiniSubmission,
   #[serde(rename = "_aAccess")]
@@ -485,6 +546,8 @@ pub struct GBStamp {
   pub category: String,
   #[serde(rename = "_nCount")]
   pub count: i64,
+  #[serde(rename = "_sUnlockName")]
+  pub unlock_name: Option<String>,
 }
 
 // Represents a GameBanana submitter (author) profile
@@ -508,7 +571,7 @@ pub struct GBSubmitter {
   pub hd_avatar_url: Option<String>,
   #[serde(rename = "_sUpicUrl")]
   pub upic_url: Option<String>,
-  #[serde(rename = "_sSubjectShaper")]
+  #[serde(rename = "_aSubjectShaper")]
   pub subject_shaper: Option<GBSubjectShaper>,
   #[serde(rename = "_sSubjectShaperCssCode")]
   pub subject_shaper_css_code: Option<String>,
@@ -547,7 +610,7 @@ pub struct GBSubmitter {
   #[serde(rename = "_nSubscriberCount")]
   pub subscriber_count: Option<i64>,
   #[serde(rename = "_aDonationMethods")]
-  pub donation_methods: Option<Vec<String>>,
+  pub donation_methods: Option<Vec<GBDonationMethod>>,
   #[serde(rename = "_bAccessorIsBuddy")]
   pub accessor_is_buddy: Option<bool>,
   #[serde(rename = "_bBuddyRequestExistsWithAccessor")]
@@ -556,6 +619,8 @@ pub struct GBSubmitter {
   pub accessor_is_subscribed: Option<bool>,
   #[serde(rename = "_aBio")]
   pub bio: Option<Vec<GBBioItem>>,
+  #[serde(rename = "_aClearanceLevels")]
+  pub clearance_levels: Option<Vec<String>>,
 }
 
 // Reduced version of a normal submitter, used in some places
@@ -577,14 +642,46 @@ pub struct GBMiniSubmitter {
   pub hd_avatar_url: Option<String>,
   #[serde(rename = "_sUpicUrl")]
   pub upic_url: Option<String>,
-  #[serde(rename = "_sSubjectShaper")]
-  pub subject_shaper: Option<GBSubjectShaper>,
   #[serde(rename = "_sSubjectShaperCssCode")]
   pub subject_shaper_css_code: Option<String>,
   #[serde(rename = "_sHovatarUrl")]
   pub hovatar_url: Option<String>,
   #[serde(rename = "_sMoreByUrl")]
   pub more_by_url: Option<String>,
+  #[serde(rename = "_aClearanceLevels")]
+  pub clearance_levels: Option<Vec<String>>,
+}
+
+// Represents a validator for a donation method
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GBDonationMethodValidator {
+  #[serde(rename = "_regexValidPattern")]
+  pub regex_valid_pattern: String,
+  #[serde(rename = "_sWarningMessage")]
+  pub warning_message: String,
+}
+
+// Represents a donation method in GameBanana API
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GBDonationMethod {
+  #[serde(rename = "_aValidator")]
+  pub validator: Option<GBDonationMethodValidator>,
+  #[serde(rename = "_bIsUrl")]
+  pub is_url: bool,
+  #[serde(rename = "_sFormattedValue")]
+  pub formatted_value: Option<String>,
+  #[serde(rename = "_sIconClasses")]
+  pub icon_classes: String,
+  #[serde(rename = "_sInputPlaceholder")]
+  pub input_placeholder: String,
+  #[serde(rename = "_sInputType")]
+  pub input_type: String,
+  #[serde(rename = "_sTitle")]
+  pub title: String,
+  #[serde(rename = "_sValue")]
+  pub value: String,
+  #[serde(rename = "_sValueTemplate")]
+  pub value_template: Option<String>,
 }
 
 // Represents a game in GameBanana API
@@ -672,8 +769,17 @@ pub struct GBFile {
   pub has_contents: bool,
   #[serde(rename = "_sDescription")]
   pub description: Option<String>,
+  #[serde(rename = "_aAnalysisWarnings")]
+  pub analysis_warnings: Option<GBAnalysisWarnings>,
   #[serde(rename = "_aModManagerIntegrations")]
   pub mod_manager_integrations: Option<Vec<GBModManagerIntegration>>,
+}
+
+// Represents analysis warnings for a file
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GBAnalysisWarnings {
+  pub contains_exe: Option<Vec<String>>,
+  pub nested_archives: Option<Vec<String>>,
 }
 
 // Represents a mod manager integration item
@@ -750,7 +856,7 @@ pub struct GBCredit {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBCreditAuthor {
   #[serde(rename = "_sRole")]
-  pub role: String,
+  pub role: Option<String>,
   #[serde(rename = "_sName")]
   pub name: String,
   #[serde(rename = "_sProfileUrl")]

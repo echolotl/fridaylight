@@ -27,13 +27,13 @@ export interface GBProfilePage {
   _bHasTodos: boolean
   _nPostCount?: number
   _aTags: GBTag[]
-  _bCreatedBySubmitter: boolean
-  _bIsPorted: boolean
+  _bCreatedBySubmitter?: boolean
+  _bIsPorted?: boolean
   _nThanksCount: number
   _sInitialVisibility: string
   _sDownloadUrl: string
   _nDownloadCount: number
-  _aFiles: GBFile[]
+  _aFiles?: GBFile[]
   _nSubscriberCount: number
   _aContributingStudios: unknown[]
   _sLicense: string
@@ -65,6 +65,24 @@ export interface GBProfilePage {
   _bAdvancedRequirementsExist?: boolean
   _aRequirements?: GBRequirement[]
   _sDevNotes?: string
+  _aFeaturings?: Record<string, GBFeaturing[]>
+  // WIP Specific fields
+  _akDevelopmentState?: string
+  _sDevelopmentState?: string
+  _iCompletionPercentage?: number
+  _aFinishedWork?: GBFinishedWork
+}
+
+export interface GBFeaturing {
+  _sFeatureGroup: string
+  _sIconClasses: string
+  _sTitle: string
+  _tsDate: number
+}
+
+export interface GBFinishedWork {
+  _aFinishedWorksOnGameBanana: string[]
+  _aRemoteFinishedWorkUrls: string[]
 }
 
 /**
@@ -87,7 +105,14 @@ export interface GBDownloadPage {
  * Represents a GameBanana TopSubs API response.
  * This is used to fetch featured submissions.
  */
-export type GBTopSubs = Array<GBTopSubsItem>
+export interface GBTopSubs {
+  _aMetadata: {
+    _nRecordCount: number
+    _nPerpage: number
+    _bIsComplete: boolean
+  }
+  _aRecords: GBTopSubsItem[]
+}
 
 // Represents a Mod from TopSubs
 export interface GBTopSubsItem {
@@ -110,7 +135,7 @@ export interface GBTopSubsItem {
   _nLikeCount?: number
   _nPostCount?: number
   _aRootCategory: GBMiniCategory
-  _sDescription: string
+  _sDescription?: string
 }
 
 /**
@@ -165,11 +190,11 @@ export interface GBModPosts {
     _nPerpage: number
     _bIsComplete: boolean
   }
-  _aRecords: GBModPost[]
+  _aRecords: (GBModPost | GBModTrashedPost)[]
 }
 
 // Represents a post on a mod
-interface GBModPost {
+export interface GBModPost {
   _idRow: number
   _nStatus: number
   _tsDateAdded: number
@@ -177,14 +202,26 @@ interface GBModPost {
   _nReplyCount: number
   _iPinLevel: number
   _nStampScore: number
-  _aPreviewMedia?: {
-    _aImages: GBImage[]
-  }
+  _aPreviewMedia?: object[]
   _sText: string
   _aPoster: GBSubmitter
   _bFollowLinks: boolean
-  _aStamps: GBStamp[]
-  _aLabels: string[]
+  _aStamps?: GBStamp[]
+  _aLabels?: string[]
+}
+
+interface GBModTrashedPost {
+  _idRow: number
+  _nStatus: number
+  _tsDateAdded: number
+  _tsDateModified: number
+  _nReplyCount: number
+  _iPinLevel: number
+  _nStampScore: number
+  _aPreviewMedia?: object[]
+  _sText: string
+  _aStamps?: GBStamp[]
+  _aLabels?: string[]
 }
 
 /**
@@ -201,7 +238,7 @@ export interface GBModUpdates {
 }
 
 // Represents a mod update in GameBanana
-interface GBModUpdate {
+export interface GBModUpdate {
   _idRow: number
   _nStatus: string
   _bIsPrivate: boolean
@@ -224,7 +261,7 @@ interface GBModUpdate {
   _aSubmitter: GBSubmitter
   _bFollowLinks: boolean
   _sVersion?: string
-  _aChangeLog: GBChangeLogEntry[]
+  _aChangeLog?: GBChangeLogEntry[]
   _aSubmission: GBMiniSubmission
   _aAccess: {
     Update_Edit: boolean
@@ -233,7 +270,7 @@ interface GBModUpdate {
 }
 
 // Reduced version of the normal submission, used in some places
-interface GBMiniSubmission {
+export interface GBMiniSubmission {
   _sName: string
   _sProfileUrl: string
   _sModelName: string
@@ -247,21 +284,22 @@ export interface GBChangeLogEntry {
 }
 
 // Represents a GameBanana tag
-interface GBTag {
+export interface GBTag {
   _sTitle: string
   _sValue: string
 }
 
 // Represents a GameBanana stamp
-interface GBStamp {
+export interface GBStamp {
   _sIconClasses: string
   _sTitle: string
   _sCategory: string
   _nCount: number
+  _UnlockName?: string
 }
 
 // Represents a GameBanana submitter (author) profile
-interface GBSubmitter {
+export interface GBSubmitter {
   _idRow: number
   _sName: string
   _sUserTitle: string
@@ -295,15 +333,16 @@ interface GBSubmitter {
   _bHasRipe: boolean
   _nBuddyCount?: number
   _nSubscriberCount?: number
-  _aDonationMethods?: string[]
+  _aDonationMethods?: GBDonationMethod[]
   _bAccessorIsBuddy?: boolean
   _bBuddyRequestExistsWithAccessor?: boolean
   _bAccessorIsSubscribed?: boolean
   _aBio?: GBBioItem[]
+  _aClearanceLevels?: string[]
 }
 
 // Reduced version of a normal submitter, used in some places
-interface GBMiniSubmitter {
+export interface GBMiniSubmitter {
   _idRow: number
   _sName: string
   _bIsOnline: boolean
@@ -321,10 +360,28 @@ interface GBMiniSubmitter {
   _sSubjectShaperCssCode?: string
   _sHovatarUrl?: string
   _sMoreByUrl?: string
+  _aClearanceLevels?: string[]
+}
+
+export interface GBDonationMethodValidator {
+  _regexValidPattern: string
+  _sWarningMessage: string
+}
+
+export interface GBDonationMethod {
+  _aValidator: GBDonationMethodValidator
+  _bIsUrl: boolean
+  _sFormattedValue?: string
+  _sIconClasses: string
+  _sInputPlaceholder: string
+  _sInputType: string
+  _sTitle: string
+  _sValue: string
+  _sValueTemplate?: string
 }
 
 // Represents a game in GameBanana API
-interface GBGame {
+export interface GBGame {
   _idRow: number
   _sName: string
   _sAbbreviation: string
@@ -337,7 +394,7 @@ interface GBGame {
 }
 
 // Represents an image in _aImages
-interface GBImage {
+export interface GBImage {
   _sType: string
   _sBaseUrl: string
   _sCaption?: string
@@ -354,7 +411,7 @@ interface GBImage {
 }
 
 // Represents a file in _aFiles
-interface GBFile {
+export interface GBFile {
   _idRow: number
   _sFile: string
   _nFilesize: number
@@ -369,11 +426,15 @@ interface GBFile {
   _sAvastAvResult: string
   _bHasContents: boolean
   _sDescription?: string
+  _aAnalysisWarnings?: {
+    contains_exe?: string[]
+    nested_archive?: string[]
+  }
   _aModManagerIntegrations?: GBModManagerIntegration[]
 }
 
 // Represents a mod manager integration item
-interface GBModManagerIntegration {
+export interface GBModManagerIntegration {
   _sIconClasses?: string
   _idToolRow: number
   _aGameRowIds: number[]
@@ -384,13 +445,13 @@ interface GBModManagerIntegration {
 }
 
 // Represents an alternate file source in GameBanana API
-interface GBAltFile {
+export interface GBAltFile {
   url: string
   description: string
 }
 
 // Represents a category in GameBanana API
-interface GBCategory {
+export interface GBCategory {
   _idRow: number
   _sName: string
   _sModelName: string
@@ -402,25 +463,25 @@ interface GBCategory {
 type GBMiniCategory = Omit<GBCategory, '_idRow' | '_sModelName'>
 
 // Represents a medal in GameBanana API
-type GBMedal = [string, string, string, number]
+export type GBMedal = [string, string, string, number]
 
 // Represents a requirement in GameBanana API
-type GBRequirement = [string, string]
+export type GBRequirement = string[]
 
 // Represents a bio item in GameBanana API
-type GBBioItem = {
+export type GBBioItem = {
   _sTitle: string
   _sValue: string
 }
 
 // Represents a credit group in GameBanana API
-type GBCredit = {
+export type GBCredit = {
   _sGroupName: string
   _aAuthors: GBCreditAuthor[]
 }
 
 // Represents an author in GameBanana API credit
-type GBCreditAuthor = {
+export type GBCreditAuthor = {
   _sRole?: string
   _idRow?: number
   _sName: string

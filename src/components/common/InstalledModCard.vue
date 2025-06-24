@@ -143,11 +143,6 @@ const formatDate = (timestamp: number): string => {
   const now = Date.now()
   const difference = now - normalizedTimestamp
 
-  // Debug info
-  console.log(`Current time: ${now}`)
-  console.log(`Original timestamp: ${timestamp}`)
-  console.log(`Normalized timestamp: ${normalizedTimestamp}`)
-
   // Convert milliseconds to days, hours, etc.
   const days = Math.floor(difference / (1000 * 60 * 60 * 24))
   const hours = Math.floor(
