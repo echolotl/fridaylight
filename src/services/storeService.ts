@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   validateFnfMods: true,
   showTerminalOutput: true,
   compactMode: false,
+  locale: 'en',
 }
 
 class sConsole {
