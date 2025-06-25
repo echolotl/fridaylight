@@ -78,7 +78,9 @@
               class="main-banner"
               :style="{ backgroundColor: accentColor }"
             ></div>
-            <div class="main-banner-title">Theme Preview</div>
+            <div class="main-banner-title">
+              {{ $t('app.modals.app_settings.appearance.theme_preview') }}
+            </div>
           </div>
           <div
             class="play-button"
@@ -193,14 +195,6 @@ const themeColorMap: Record<string, any> = {
     border: '2px solid rgba(49, 28, 36, 0.25)',
     sidebarActiveColor: '#d8c395',
     mainContentColor: '#d8c395',
-  },
-  doe: {
-    backgroundColor:
-      'linear-gradient(to top, #ffffff 20%, #9cedfc 50%, #7ba2f5)',
-    color: '#2c1d07',
-    border: '2px solid rgba(44, 29, 7, 0.25)',
-    sidebarActiveColor: 'rgba(255, 255, 255, 0.5)',
-    mainContentColor: 'rgba(255, 255, 255, 0.5)',
   },
   boo: {
     backgroundColor: '#cfe2ee',

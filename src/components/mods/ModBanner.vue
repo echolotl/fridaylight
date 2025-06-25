@@ -1,13 +1,12 @@
 <template>
   <div class="mod-banner">
     <!-- Banner image -->
-
     <div
       class="banner-image"
       :style="
-        mod && mod.banner_data
+        bannerPreview || (mod && mod.banner_data)
           ? {
-              backgroundImage: `url('${mod.banner_data}')`,
+              backgroundImage: `url('${bannerPreview || mod.banner_data}')`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }
@@ -24,9 +23,9 @@
     <!-- Title overlay on the banner -->
     <div class="title-overlay">
       <!-- Show logo if available -->
-      <div v-if="mod.logo_data" class="logo-container">
+      <div v-if="logoPreview || mod.logo_data" class="logo-container">
         <img
-          :src="mod.logo_data"
+          :src="logoPreview || mod.logo_data || ''"
           alt="Mod Logo"
           class="mod-logo"
           :class="{
@@ -124,6 +123,16 @@ const props = defineProps({
   mod: {
     type: Object as () => Mod,
     required: true,
+  },
+  bannerPreview: {
+    type: String,
+    required: false,
+    default: null,
+  },
+  logoPreview: {
+    type: String,
+    required: false,
+    default: null,
   },
 })
 

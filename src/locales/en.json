@@ -1,0 +1,314 @@
+{
+  "gamebanana": {
+    "best_of_today": "Best of Today",
+    "best_of_this_week": "Best of This Week",
+    "best_of_this_month": "Best of This Month",
+    "best_of_3_months": "Best of 3 Months",
+    "best_of_6_months": "Best of 6 Months",
+    "best_of_this_year": "Best of This Year",
+    "best_of_all_time": "Best of All Time",
+    "best_of_unknown": "Best of {period}",
+    "latest_mods": "Latest Mods",
+    "engine_downloads": "Engine Downloads",
+    "more_engines": "More Engines",
+    "have_a_suggestion_engine": "Have a suggestion for an engine? Ask on the {githubLink}!",
+    "loading_featured_mods": "Loading featured mods",
+    "loading_latest_mods": "Loading latest mods",
+    "loading_modpacks": "Loading {engineType} modpacks",
+    "sensitive_content": "Has sensitive content!"
+  },
+  "ui": {
+    "loading": "Loading",
+    "error": "An error occurred: {error}",
+    "unknown_error": "An unknown error occurred",
+    "danger_zone": "Danger Zone",
+    "downloading": "Downloading",
+    "search_results": "Search Results",
+    "searching": "Searching",
+    "no_results": "No results found",
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "remove": "Remove",
+      "close": "Close",
+      "create": "Create",
+      "back": "Back",
+      "open_in_browser": "Open in Browser",
+      "search_mods": "Search mods",
+      "create_folder": "Create Folder",
+      "edit_folder": "Edit Folder",
+      "delete_folder": "Delete Folder",
+      "view_details": "View Details",
+      "download": "Download",
+      "download_mod": "Download Mod",
+      "open_gamebanana": "Open GameBanana",
+      "view_on_gamebanana": "View on GameBanana",
+      "conformations": {
+        "delete_mod": "Are you sure you want to COMPLETELY DELETE this mod? This action cannot be undone.",
+        "remove_mod": "Are you sure you want to remove this mod from the list? This will not delete the mod files.",
+        "delete_folder": "Are you sure you want to delete this folder? This action cannot be undone."
+      }
+    }
+  },
+  "navigation": {
+    "home": "Home",
+    "settings": "Settings"
+  },
+  "sorting": {
+    "default_order": "Default Order",
+    "installed": "Installed",
+    "name": {
+      "asc": "Name (A-Z)",
+      "desc": "Name (Z-A)",
+      "sort": "Sort by Name",
+      "sorted": "Sorted by Name"
+    },
+    "date_added": {
+      "asc": "Date Added (Oldest First)",
+      "desc": "Date Added (Newest First)",
+      "sort": "Sort by Date Added",
+      "sorted": "Sorted by Date Added"
+    },
+    "last_played": {
+      "asc": "Last Played (Oldest First)",
+      "desc": "Last Played (Newest First)",
+      "sort": "Sort by Last Played",
+      "sorted": "Sorted by Last Played"
+    },
+    "direction": {
+      "asc": "Ascending",
+      "desc": "Descending"
+    }
+  },
+  "mods": {
+    "labels": {
+      "mod": "Mod",
+      "mods": "Mods",
+      "modpack": "Modpack",
+      "modpacks": "Modpacks",
+      "executable": "Executable",
+      "executables": "Executables"
+    },
+    "actions": {
+      "add_mod": "Add Mod",
+      "delete_mod": "Delete Mod",
+      "remove_mod": "Remove Mod",
+      "bulk_add_mod": "Bulk Add Mods"
+    },
+    "no_mods_disclaimer": "No mods added. Click the + button to add some!"
+  },
+  "app": {
+    "name": "Fridaylight",
+    "description": "An all in one mod manager, downloader, and launcher for Friday Night Funkin' mods.",
+    "notifications": {
+      "download": {
+        "downloading": "Downloading \"{modName}\"",
+        "preparing": "Preparing to download \"{modName}\"",
+        "success": "\"{modName}\" downloaded and installed successfully!",
+        "success_caption": "Ready to play from the mods list",
+        "error": "Failed to download \"{modName}\"",
+        "canceled": "Download canceled for \"{modName}\"",
+        "canceled_generic": "Download canceled",
+        "installation_error": "Installation failed for \"{modName}\""
+      },
+      "update": {
+        "updating": "Updating \"{modName}\"",
+        "preparing": "Preparing to update \"{modName}\"",
+        "success": "\"{modName}\" updated successfully!",
+        "error": "Failed to update \"{modName}\"",
+        "canceled": "Update canceled for \"{modName}\"",
+        "not_available": "Can't update \"{modName}\"",
+        "not_available_caption": "This mod cannot be updated through Fridaylight."
+      },
+      "mod": {
+        "stopped": "\"{modName}\" has been stopped",
+        "error": "Failed to {operation} \"{modName}\""
+      },
+      "modpack": {
+        "no_engine_error": "Unable to download this {engineName} modpack",
+        "no_engine_error_caption": "\"{modpackName}\" requires a {engineName} instance to be installed."
+      }
+    },
+    "modals": {
+      "engine_details": {
+        "title": "Engine Details",
+        "suggested_by": "Suggested by {username}",
+        "actions": {
+          "view_full_credits": "View Full Credits"
+        }
+      },
+      "app_settings": {
+        "title": "App Settings",
+        "appearance": {
+          "title": "Appearance",
+          "description": "Customize the look and feel of Fridaylight",
+          "use_system_theme": "Use System Theme",
+          "use_system_theme_description": "Automatically match your OS theme (Light/Dark)",
+          "builtin_themes": "Built-in Themes",
+          "custom_themes": "Custom Themes",
+          "custom_themes_description": "Want to add custom themes? Place them in the {themesLink} folder, then click the refresh button to load them.",
+          "accent_color": "Accent Color",
+          "compact_mode": "Compact Mode",
+          "compact_mode_description": "Minimize sidebar width and show only icons",
+          "theme_preview": "Theme Preview",
+          "actions": {
+            "refresh_themes": "Refresh Themes",
+            "reveal_themes_folder": "Reveal Themes Folder"
+          }
+        },
+        "installation": {
+          "title": "Installation",
+          "description": "Configure how mods are installed and managed",
+          "default_install_location": "Default Install Location",
+          "default_install_location_description": "Set the default folder where mods will be installed",
+          "validate_mods": "Validate Mods",
+          "validate_mods_description": "Validates folder structure before installing/adding mods (might cause issues with some mods)",
+          "show_terminal_output": "Show Terminal Output",
+          "show_terminal_output_description": "Display terminal output of mods when running"
+        },
+        "about": {
+          "title": "About",
+          "description": "Learn more about Fridaylight",
+          "created_by": "Created by {echolotl}",
+          "created_with": "Created with",
+          "version": "Version: {version}",
+          "bug_disclaimer": "Found a bug, or have a suggestion? Report it on GitHub!",
+          "beta_disclaimer": "This is a pre-release version of Fridaylight. It may contain bugs or incomplete features, and you should expect to lose data.",
+          "special_thanks": {
+            "title": "Acknowledgements and Special Thanks",
+            "gamebanana": "For providing a stable platform for Friday Night Funkin' mods!",
+            "cracsthor": "Created the original PhantomMuff font family files",
+            "noizdynamic": "Created the Tardling font file used in-app",
+            "name_flmoddevteam": "Funkin Launcher Dev Team",
+            "flmoddevteam": "For providing inspiration and ideas for this app",
+            "steamgriddb": "For providing a variety of banners and icons for engines"
+          }
+        },
+        "reset_settings": {
+          "title": "Reset Settings",
+          "description": "Reset all settings to default values. You'll need to save for changes to take effect.",
+          "confirmation": "Are you sure you want to reset all settings? This will revert all settings to their default values."
+        },
+        "reset_data": {
+          "title": "Reset App Data",
+          "description": "Reset all app data, including installed mods and settings. This will not delete your mod files.",
+          "confirmation": "Are you sure you want to reset all app data? This will remove all installed mods from the list and settings.",
+          "failed": "Failed to reset app data: {error}"
+        }
+      },
+      "mod_settings": {
+        "title": "Mod Settings",
+        "set_icon": "Set Icon",
+        "remove_icon": "Remove Icon",
+        "general": {
+          "title": "General Information",
+          "label": "General",
+          "mod_name": "Mod Name",
+          "mod_description": "Mod Description",
+          "mod_description_placeholder": "A brief description of the mod",
+          "mod_version": "Mod Version",
+          "mod_version_placeholder": "Version of the mod, e.g. 1.0.0",
+          "gamebanana_info": "GameBanana Info",
+          "gamebanana_profile_url": "GameBanana Profile URL",
+          "sync_with_gamebanana": "Sync with GameBanana",
+          "change_version": "Change Version",
+          "change_banner": "Change Banner",
+          "gamebanana_sync_description": "Syncing with GameBanana will fetch the latest metadata, and will overwrite any existing metadata. You'll still need to save the mod settings to apply changes."
+        },
+        "installation": {
+          "title": "Installation",
+          "folder_location": "Folder Location",
+          "executable_path": "Executable Path",
+          "remove_mod_description": "Removing a mod will not delete the mod files, but will remove it from the list.",
+          "delete_mod_description": "Deleting a mod will remove it from the list and {permanentlyDelete} the mod files. This action cannot be undone.",
+          "permanently_delete": "permanently delete"
+        },
+        "engine": {
+          "title": "Engine Configuration",
+          "label": "Engine",
+          "engine_type": "Engine Type",
+          "engine_type_description": "Determines how Fridaylight will handle this mod",
+          "engine_name": "Engine Name",
+          "engine_name_placeholder": "e.g. My Custom Psych Fork",
+          "engine_name_description": "The name of the engine this mod uses (optional)",
+          "engine_icon": "Engine Icon",
+          "set_engine_icon": "Set Engine Icon",
+          "has_mods_folder": "Has Mods Folder",
+          "mods_folder_path": "Mods Folder Path",
+          "mods_folder_path_placeholder": "mods",
+          "mods_folder_path_description": "The relative path to the mods folder from the executable. Default is 'mods'."
+        },
+        "appearance": {
+          "title": "Appearance",
+          "icon": "Icon",
+          "banner": "Banner",
+          "set_banner": "Set Banner",
+          "remove_banner": "Remove Banner",
+          "logo": "Logo",
+          "set_logo": "Set Logo",
+          "remove_logo": "Remove Logo",
+          "logo_position": {
+            "title": "Logo Position",
+            "description": "Position of the logo on the banner",
+            "bottom_left": "Bottom Left",
+            "middle_left": "Middle Left",
+            "middle": "Middle"
+          }
+        }
+      },
+      "mod_details": {
+        "slow_request": "This mod is taking a long time to load.",
+        "slow_request_description": "Something might have gone wrong on our end, or GameBanana's. Maybe try again later?",
+        "updates": "Updates",
+        "updates_count": "{count} updates total",
+        "comments": "Comments",
+        "comments_count": "{count} comments total",
+        "replies_count": "+{count} replies",
+        "comment_trashed": "This comment has been trashed",
+        "thanked_by": "Thanked by {count} users!",
+        "might_have_malware": "This mod might contain malicious software!",
+        "submitter": "Submitter",
+        "developer_notes": "Developer Notes",
+        "license": "License",
+        "description": "Description",
+        "changelog_category": {
+          "bugfix": "Bugfix",
+          "overhaul": "Overhaul",
+          "adjustment": "Adjustment",
+          "amendment": "Amendment",
+          "tweak": "Tweak",
+          "addition": "Addition",
+          "suggestion": "Suggestion",
+          "feature": "Feature",
+          "improvement": "Improvement",
+          "removal": "Removal",
+          "refactor": "Refactor"
+        }
+      },
+      "folders": {
+        "folder_name": "Folder Name",
+        "folder_name_required": "Folder name is required",
+        "folder_color": "Folder Color"
+      },
+      "download_file_select": {
+        "title": "Select Download File",
+        "description": "This mod, \"{ modName }\", has multiple download options. Please select one:",
+        "alternative_download_sources": "Alternative Download Sources (Manual Install)"
+      }
+    }
+  },
+  "misc": {
+    "credits": "Credits",
+    "colors": {
+      "red": "Red",
+      "orange": "Orange",
+      "yellow": "Yellow",
+      "green": "Green",
+      "cyan": "Cyan",
+      "blue": "Blue",
+      "purple": "Purple",
+      "pink": "Pink"
+    }
+  }
+}

@@ -82,7 +82,7 @@
               </g>
             </svg>
           </div>
-          <span>Best of Today</span>
+          <span>{{ $t('gamebanana.best_of_today') }}</span>
         </h6>
         <q-btn
           flat

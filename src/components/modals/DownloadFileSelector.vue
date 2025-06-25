@@ -7,15 +7,20 @@
   >
     <q-card class="download-selector-modal phantom-font">
       <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6 phantom-font-difficulty">Select Download File</div>
+        <div class="text-h6 phantom-font-difficulty">
+          {{ $t('app.modals.download_file_select.title') }}
+        </div>
         <q-space />
         <q-btn v-close-popup icon="close" flat round dense @click="cancel" />
       </q-card-section>
 
       <q-card-section>
         <p>
-          This mod, "{{ modName }}", has multiple download options. Please
-          select one:
+          {{
+            $t('app.modals.download_file_select.description', {
+              modName: props.modName,
+            })
+          }}
         </p>
 
         <q-list separator>
@@ -94,7 +99,9 @@
           class="alternate-sources q-mt-md"
         >
           <div class="text-subtitle1">
-            Alternative Download Sources (Manual Install)
+            {{
+              $t('app.modals.download_file_select.alternative_download_sources')
+            }}
           </div>
           <q-list separator>
             <q-item
@@ -155,7 +162,7 @@ const props = defineProps({
   },
   modName: {
     type: String,
-    default: 'Unknown Mod',
+    default: '',
   },
   alternateFileSources: {
     type: Array as () => GBAltFile[],

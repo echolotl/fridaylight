@@ -2,7 +2,9 @@
   <q-dialog v-model="showModal" persistent>
     <q-card class="folder-modal phantom-font">
       <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6 phantom-font-difficulty">Edit Folder</div>
+        <div class="text-h6 phantom-font-difficulty">
+          {{ $t('ui.actions.edit_folder') }}
+        </div>
         <q-space />
         <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
@@ -11,12 +13,16 @@
         <q-input
           ref="nameInput"
           v-model="folderName"
-          label="Folder Name"
+          :label="$t('app.modals.folders.folder_name')"
           outlined
           class="q-mb-md"
-          :rules="[val => !!val || 'Folder name is required']"
+          :rules="[
+            val => !!val || $t('app.modals.folders.folder_name_required'),
+          ]"
         />
-        <div class="text-subtitle2 q-mb-sm">Folder Color</div>
+        <div class="text-subtitle2 q-mb-sm">
+          {{ $t('app.modals.folders.folder_color') }}
+        </div>
         <div class="color-row q-mb-md">
           <q-btn
             v-for="color in folderColors"
@@ -73,6 +79,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue'
 import { Folder } from '@main-types'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   modelValue: {
@@ -87,6 +94,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'save-folder'])
 
+const { t } = useI18n()
 const showModal = computed({
   get: () => props.modelValue,
   set: value => emit('update:modelValue', value),
@@ -100,14 +108,14 @@ const nameInput = ref<HTMLInputElement | null>(null)
 const colorPickerInput = ref<HTMLInputElement | null>(null)
 
 const folderColors = [
-  { label: 'Pink', value: '#DB2955' },
-  { label: 'Blue', value: '#235789' },
-  { label: 'Green', value: '#35CE8D' },
-  { label: 'Purple', value: '#C490D1' },
-  { label: 'Orange', value: '#FE621D' },
-  { label: 'Yellow', value: '#f7c548' },
-  { label: 'Red', value: '#C03221' },
-  { label: 'Cyan', value: '#39A9DB' },
+  { label: t('misc.colors.pink'), value: '#DB2955' },
+  { label: t('misc.colors.blue'), value: '#235789' },
+  { label: t('misc.colors.green'), value: '#35CE8D' },
+  { label: t('misc.colors.purple'), value: '#C490D1' },
+  { label: t('misc.colors.orange'), value: '#FE621D' },
+  { label: t('misc.colors.yellow'), value: '#f7c548' },
+  { label: t('misc.colors.red'), value: '#C03221' },
+  { label: t('misc.colors.cyan'), value: '#39A9DB' },
 ]
 
 // Validate input

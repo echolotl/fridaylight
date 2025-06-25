@@ -8,7 +8,7 @@
           style="color: var(--theme-text-secondary)"
           :class="{ 'compact-mode': compactMode }"
         >
-          <div v-if="!compactMode">Mods</div>
+          <div v-if="!compactMode">{{ $t('mods.labels.mods') }}</div>
           <div class="flex items-center">
             <div class="flex sticky">
               <q-btn
@@ -25,7 +25,7 @@
                   :offset="[0, 10]"
                   class="phantom-font"
                 >
-                  Settings
+                  {{ $t('navigation.settings') }}
                 </q-tooltip>
               </q-btn>
               <q-btn
@@ -42,7 +42,7 @@
                   :offset="[0, 10]"
                   class="phantom-font"
                 >
-                  Add Mod
+                  {{ $t('mods.actions.add_mod') }}
                 </q-tooltip>
               </q-btn>
               <q-btn
@@ -60,7 +60,7 @@
                   :offset="[0, 10]"
                   class="phantom-font"
                 >
-                  Bulk Add Mods
+                  {{ $t('mods.actions.bulk_add_mod') }}
                 </q-tooltip>
               </q-btn>
               <q-btn
@@ -79,7 +79,7 @@
                   :offset="[0, 10]"
                   class="phantom-font"
                 >
-                  Create Folder
+                  {{ $t('ui.actions.create_folder') }}
                 </q-tooltip>
               </q-btn>
             </div>
@@ -88,7 +88,7 @@
             v-if="!compactMode"
             v-model="searchQuery"
             dense
-            placeholder="Search mods"
+            :placeholder="$t('ui.actions.search_mods')"
             class="search-input full-width"
             rounded
           >
@@ -114,7 +114,7 @@
           <q-item-section avatar>
             <q-icon name="home" style="margin-left: 4px" />
           </q-item-section>
-          <q-item-section>Home</q-item-section>
+          <q-item-section>{{ $t('navigation.home') }}</q-item-section>
         </q-item>
 
         <!-- Downloading mods section -->
@@ -124,7 +124,7 @@
             header
             style="color: var(--theme-text-secondary)"
           >
-            Downloading
+            {{ $t('ui.downloading') }}
           </q-item-label>
           <q-separator v-else spaced />
 
@@ -141,7 +141,7 @@
         <!-- Search results when search is active -->
         <template v-if="searchQuery.trim() !== ''">
           <q-item-label header style="color: var(--theme-text-secondary)">
-            Search Results
+            {{ $t('ui.search_results') }}
           </q-item-label>
 
           <!-- Display search results -->
@@ -165,7 +165,7 @@
           <q-item v-else>
             <q-item-section>
               <q-item-label caption style="color: var(--theme-text-secondary)">
-                No mods found matching "{{ searchQuery }}"
+                {{ $t('ui.no_results') }}
               </q-item-label>
             </q-item-section>
           </q-item>
@@ -258,7 +258,7 @@
           <q-item v-if="mods.length === 0 || displayItems.length === 0">
             <q-item-section>
               <q-item-label caption style="color: var(--theme-text-secondary)">
-                No mods added. Click the + button to add a mod folder.
+                {{ $t('mods.no_mods_disclaimer') }}
               </q-item-label>
             </q-item-section>
           </q-item>
@@ -269,18 +269,17 @@
     <MessageDialog
       v-if="modToDelete"
       v-model="showDeleteDialog"
-      title="Remove Mod"
+      :title="$t('mods.actions.remove_mod')"
       icon="warning"
       icon-color="negative"
-      confirm-label="Delete"
+      :confirm-label="$t('ui.actions.remove')"
       confirm-color="negative"
       @confirm="deleteMod"
     >
       <div class="text-h6">{{ modToDelete?.name }}</div>
       <div class="text-caption">{{ modToDelete?.path }}</div>
       <p class="text-body2 q-mt-sm">
-        Are you sure you want to remove this mod from Fridaylight? The mod files
-        will remain on your system.
+        {{ $t('ui.actions.conformations.remove_mod') }}
       </p>
     </MessageDialog>
 
@@ -288,7 +287,7 @@
     <MessageDialog
       v-if="folderToDelete"
       v-model="showDeleteFolderDialog"
-      title="Delete Folder"
+      :title="$t('ui.actions.delete_folder')"
       icon="warning"
       icon-color="negative"
       confirm-label="Delete"
@@ -297,8 +296,7 @@
     >
       <div class="text-h6">{{ folderToDelete?.name }}</div>
       <p class="text-body2 q-mt-sm">
-        This will only delete the folder. The mods inside will not be deleted
-        but will return to the main mod list.
+        {{ $t('ui.actions.conformations.delete_folder') }}
       </p>
     </MessageDialog>
 
@@ -306,7 +304,7 @@
     <MessageDialog
       v-if="modToSuperDelete"
       v-model="showSuperDeleteDialog"
-      title="Delete Mod"
+      :title="$t('mods.actions.delete_mod')"
       icon="delete_forever"
       icon-color="negative"
       confirm-label="Super Delete"
@@ -316,8 +314,7 @@
       <div class="text-h6">{{ modToSuperDelete?.name }}</div>
       <div class="text-caption">{{ modToSuperDelete?.path }}</div>
       <p class="text-body2 q-mt-sm">
-        This will PERMANENTLY DELETE the mod folder and all its contents from
-        your computer. This action cannot be undone!
+        {{ $t('ui.actions.conformations.delete_mod') }}
       </p>
     </MessageDialog>
 
@@ -348,6 +345,7 @@ import EditFolderModal from '@modals/EditFolderModal.vue'
 import MessageDialog from '@modals/MessageDialog.vue'
 import { Mod, Folder, DisplayItem } from '@main-types'
 import { v4 as uuidv4 } from 'uuid'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   mods: {
@@ -389,6 +387,8 @@ const emit = defineEmits([
   'open-mod-folder',
   'go-home',
 ])
+
+const { t } = useI18n()
 // Create a local reactive copy of the mods array for reordering
 const modsList = ref<Mod[]>([])
 const foldersList = ref<Folder[]>([])
@@ -406,13 +406,13 @@ const sortDirection = ref('asc')
 const sortHeaderText = computed(() => {
   switch (sortBy.value) {
     case 'name':
-      return 'Name'
+      return t('sorting.name.sorted')
     case 'date_added':
-      return 'Date Added'
+      return t('sorting.date_added.sorted')
     case 'last_played':
-      return 'Last Played'
+      return t('sorting.last_played.sorted')
     default:
-      return 'Installed'
+      return t('sorting.installed')
   }
 })
 
@@ -426,28 +426,31 @@ const showSortMenu = (event: MouseEvent) => {
   const sortOptions = [
     {
       icon: 'sort',
-      label: 'Default Order',
+      label: t('sorting.default_order'),
       action: () => setSortOption('default'),
     },
     {
       icon: 'sort_by_alpha',
-      label: 'Sort by Name',
+      label: t('sorting.name.sort'),
       action: () => setSortOption('name'),
     },
     {
       icon: 'date_range',
-      label: 'Sort by Date Added',
+      label: t('sorting.date_added.sort'),
       action: () => setSortOption('date_added'),
     },
     {
       icon: 'play_circle',
-      label: 'Sort by Last Played',
+      label: t('sorting.last_played.sort'),
       action: () => setSortOption('last_played'),
     },
     { separator: true },
     {
       icon: sortDirection.value === 'asc' ? 'arrow_upward' : 'arrow_downward',
-      label: sortDirection.value === 'asc' ? 'Ascending' : 'Descending',
+      label:
+        sortDirection.value === 'asc'
+          ? t('sorting.direction.asc')
+          : t('sorting.direction.desc'),
       action: () => toggleSortDirection(),
     },
   ]

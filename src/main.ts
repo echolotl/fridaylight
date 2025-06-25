@@ -123,3 +123,5 @@ initializeApp().catch(error => {
   })
   app.mount('#app')
 })
+
+export default i18n
