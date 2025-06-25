@@ -155,7 +155,8 @@
           "actions": {
             "refresh_themes": "Refresh Themes",
             "reveal_themes_folder": "Reveal Themes Folder"
-          }
+          },
+          "language": "Language"
         },
         "installation": {
           "title": "Installation",
