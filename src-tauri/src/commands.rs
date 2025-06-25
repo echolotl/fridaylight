@@ -16,6 +16,7 @@ use crate::modutils::{
 use crate::models::{
   EngineModsResponse,
   GBDownloadPage,
+  GBFile,
   GBModPosts,
   GBModUpdates,
   GBProfilePage,
@@ -613,71 +614,19 @@ pub async fn get_mod_updates_command(
 // Command to download a mod from GameBanana
 #[tauri::command]
 pub async fn download_gamebanana_mod_command(
-  url: String,
-  name: String,
-  mod_id: i64,
+  file: GBFile,
+  info: GBProfilePage,
   install_location: Option<String>,
-  model_type: Option<String>,
+  folder_name: Option<String>,
+  update_existing: Option<bool>,
   app: tauri::AppHandle
-) -> Result<String, String> {
+) -> Result<ModInfo, String> {
   download_gamebanana_mod(
-    url,
-    name,
-    mod_id,
+    file,
+    info,
     install_location,
-    model_type,
-    Some(false),
-    app
-  ).await
-}
-
-#[tauri::command]
-pub async fn download_custom_mod_command(
-  url: String,
-  name: String,
-  mod_id: i64,
-  install_location: Option<String>,
-  thumbnail_url: Option<String>,
-  description: Option<String>,
-  version: Option<String>,
-  app: tauri::AppHandle
-) -> Result<String, String> {
-  info!(
-    "Starting custom mod download process for {} with ID: {}",
-    name,
-    mod_id
-  );
-  crate::download::download_custom_mod(
-    url,
-    name,
-    mod_id,
-    install_location,
-    thumbnail_url,
-    description,
-    version,
-    Some(false),
-    app
-  ).await
-}
-
-// Command to update a mod (same as downloading a mod)
-#[tauri::command]
-pub async fn update_gamebanana_mod_command(
-  url: String,
-  name: String,
-  mod_id: i64,
-  install_location: Option<String>,
-  model_type: Option<String>,
-  app: tauri::AppHandle
-) -> Result<String, String> {
-  info!("Starting mod update process for {} with ID: {}", name, mod_id);
-  download_gamebanana_mod(
-    url,
-    name,
-    mod_id,
-    install_location,
-    model_type,
-    Some(true), // Indicate this is an update
+    folder_name,
+    update_existing,
     app
   ).await
 }
@@ -764,59 +713,6 @@ pub async fn sync_mods_from_database(
     updated_count
   );
   Ok(())
-}
-
-// Command to check if a mod folder already exists
-#[tauri::command]
-pub fn check_mod_folder_exists(
-  name: String,
-  install_location: Option<String>,
-  app: tauri::AppHandle
-) -> Result<bool, String> {
-  info!("Checking if mod folder exists for: {}", name);
-
-  // Sanitize mod name for folder name (same process as in download.rs)
-  let sanitized_name = name
-    .replace(' ', "-")
-    .replace('/', "_")
-    .replace('\\', "_")
-    .replace(':', "")
-    .replace('*', "")
-    .replace('?', "")
-    .replace('"', "")
-    .replace('<', "")
-    .replace('>', "")
-    .replace('|', "");
-
-  // Get the install location - use provided location or fall back to default
-  let install_dir = if let Some(location) = install_location {
-    let path = std::path::PathBuf::from(&location);
-    info!("Using provided install location: {}", path.display());
-    path
-  } else {
-    let default_path = crate::download::get_default_install_location(&app);
-    info!("Using default install location: {}", default_path.display());
-    default_path
-  };
-
-  // Build the potential mod folder path
-  let mod_folder = install_dir.join(&sanitized_name);
-  debug!("Checking if folder exists: {}", mod_folder.display());
-
-  // Check if the directory exists
-  let exists = mod_folder.exists();
-  info!(
-    "Mod folder {} for mod '{}': {}",
-    if exists {
-      "exists"
-    } else {
-      "does not exist"
-    },
-    name,
-    mod_folder.display()
-  );
-
-  Ok(exists)
 }
 
 #[tauri::command]
@@ -1263,6 +1159,23 @@ pub async fn check_gamebanana_mod_version(
   crate::gamebanana::get_mod_version(id, &model_type).await
 }
 
+#[tauri::command]
+pub fn check_mod_folder_exists(
+  info: GBProfilePage,
+  install_location: Option<String>,
+  folder_name: Option<String>,
+  app: tauri::AppHandle
+) -> Result<bool, String> {
+  Ok(
+    crate::download::simulate_mod_folder_creation(
+      info,
+      install_location,
+      folder_name,
+      &app
+    )
+  )
+}
+
 async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
   if let Some(update) = app.updater()?.check().await? {
     let mut downloaded = 0;
@@ -1350,7 +1263,6 @@ pub fn run() {
         get_featured_mods_command,
         get_mod_info_command,
         download_gamebanana_mod_command,
-        download_custom_mod_command,
         download_engine_command,
         sync_mods_from_database,
         select_mods_parent_folder,
@@ -1373,7 +1285,6 @@ pub fn run() {
         check_mod_dependency,
         check_gamebanana_mod_version,
         compare_update_semver,
-        update_gamebanana_mod_command,
         save_mod_metadata,
         get_url_as_base64
       ]

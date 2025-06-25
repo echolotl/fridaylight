@@ -1002,7 +1002,7 @@ pub struct DownloadStarted {
   pub mod_id: i64,
   pub name: String,
   pub content_length: usize,
-  pub thumbnail_url: String,
+  pub thumbnail_url: Option<String>,
 }
 
 #[derive(Clone, Serialize)]
