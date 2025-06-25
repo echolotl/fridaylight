@@ -28,7 +28,6 @@ class ThemeService {
     { id: 'garcello', name: 'garcello', displayName: 'Garcello' },
     { id: 'pump', name: 'pump', displayName: 'Pump' },
     { id: 'boo', name: 'boo', displayName: 'Boo' },
-    { id: 'doe', name: 'doe', displayName: 'Doe' },
   ]
   async initialize(): Promise<void> {
     try {

@@ -23,7 +23,7 @@
         </div>
         <div v-else class="text-h6 phantom-font-difficulty header-text">
           <q-spinner size="40px" color="primary" class="mod-details-icon" />
-          Loading...
+          {{ $t('ui.loading') }}...
         </div>
         <q-space />
         <q-btn
@@ -40,10 +40,9 @@
           <div v-if="isSlowRequest" class="text-center phantom-font">
             <q-icon name="hourglass_empty" size="2em" color="orange" />
             <div class="q-mt-sm" style="color: var(--theme-text-secondary)">
-              This is taking a really long time.
+              {{ $t('app.modals.mod_details.slow_request') }}
               <br />
-              Something might have gone wrong on our end, or GameBanana's. Maybe
-              try again later?
+              {{ $t('app.modals.mod_details.slow_request_description') }}
             </div>
           </div>
         </q-card-section>
@@ -73,16 +72,12 @@
                   :name="index"
                   class="flex"
                 >
-                  <img
-                    :src="getImageUrl(image)"
-                    class="carousel-image"
-                    alt="Mod preview image"
-                  />
+                  <img :src="getImageUrl(image)" class="carousel-image" />
                 </q-carousel-slide>
               </q-carousel>
               <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                 <div class="flex">
-                  Description
+                  {{ $t('app.modals.mod_details.description') }}
                   <q-space />
                   <div
                     class="text-subtitle1 phantom-font text-right"
@@ -102,13 +97,17 @@
               <div v-if="modInfo._nUpdatesCount > 0">
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                   <div class="flex">
-                    Updates
+                    {{ $t('app.modals.mod_details.updates') }}
                     <q-space />
                     <div
                       class="text-subtitle1 phantom-font text-right"
                       style="color: var(--theme-text-secondary)"
                     >
-                      {{ modInfo._nUpdatesCount }} updates total
+                      {{
+                        $t('app.modals.mod_details.updates_count', {
+                          count: modInfo._nUpdatesCount,
+                        })
+                      }}
                     </div>
                   </div>
                   <hr />
@@ -130,7 +129,7 @@
                             {{ update._sName }}
                           </div>
                           <div
-                            class="q-ml-xs flex row items-cente custom-badge-small"
+                            class="q-ml-xs flex row items-center custom-badge-small"
                           >
                             <q-icon name="add" size="xs" />
                             {{ formatDate(update._tsDateAdded) }}
@@ -184,7 +183,11 @@
                               backgroundColor: getCategoryColor(change.cat),
                               color: 'white',
                             }"
-                            >{{ change.cat }}</q-chip
+                            >{{
+                              $t(
+                                `app.modals.mod_details.changelog_category.${change.cat.toLowerCase()}`
+                              )
+                            }}</q-chip
                           >
                           <div>{{ change.text }}</div>
                         </div>
@@ -200,13 +203,17 @@
               <div v-if="modComments._aRecords.length > 0">
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                   <div class="flex">
-                    Comments
+                    {{ $t('app.modals.mod_details.comments') }}
                     <q-space />
                     <div
                       class="text-subtitle1 phantom-font text-right"
                       style="color: var(--theme-text-secondary)"
                     >
-                      {{ modComments._aMetadata._nRecordCount }} comments total
+                      {{
+                        $t('app.modals.mod_details.comments_count', {
+                          count: modComments._aMetadata._nRecordCount,
+                        })
+                      }}
                     </div>
                   </div>
                   <hr />
@@ -309,7 +316,11 @@
                         class="phantom-font text-right"
                         style="color: var(--theme-text-secondary)"
                       >
-                        + {{ comment._nReplyCount }} replies
+                        {{
+                          $t('app.modals.mod_details.replies_count', {
+                            count: comment._nReplyCount,
+                          })
+                        }}
                       </div>
                     </div>
                   </div>
@@ -317,7 +328,7 @@
                     <span
                       class="phantom-font"
                       style="color: var(--theme-text-secondary)"
-                      >Comment trashed</span
+                      >{{ $t('app.modals.mod_details.comment_trashed') }}</span
                     >
                   </div>
                   <hr style="border-top-style: dashed" />
@@ -337,10 +348,13 @@
                   color="pink"
                 />
                 <div>
-                  Thanked by
-                  <b style="color: var(--pink)">{{ modInfo._nThanksCount }}</b>
-                  <span v-if="modInfo._nThanksCount > 1"> people</span
-                  ><span v-else> person</span>!
+                  <i18n-t keypath="app.modals.mod_details.thanked_by">
+                    <template #count>
+                      <b style="color: var(--pink)">{{
+                        modInfo._nThanksCount
+                      }}</b>
+                    </template>
+                  </i18n-t>
                 </div>
               </div>
               <div class="mod-badges">
@@ -376,7 +390,7 @@
               <div class="q-mt-md">
                 <q-btn
                   color="primary"
-                  label="Download"
+                  :label="$t('ui.actions.download')"
                   size="lg"
                   class="action-button"
                   :disabled="!modInfo._aFiles || !modInfo._aFiles.length"
@@ -395,23 +409,22 @@
                   <q-badge v-else label="AVAST" color="negative">
                     <q-icon name="warning" size="xs" class="q-ml-xs" />
                     <q-tooltip class="phantom-font text-center">
-                      This mod may contain malware.<br />
-                      Stay safe!
+                      {{ $t('app.modals.mod_details.might_have_malware') }}
                     </q-tooltip>
                   </q-badge>
                 </div>
 
                 <q-btn
                   icon="launch"
-                  label="View in browser"
-                  class="action-button-secondary"
-                  flat
+                  :label="$t('ui.actions.open_in_browser')"
+                  class="full-width q-mt-sm"
+                  outline
                   @click="openUrl(modInfo._sProfileUrl)"
                 />
               </div>
               <div class="q-mt-md">
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
-                  Submitter
+                  {{ $t('app.modals.mod_details.submitter') }}
                   <hr />
                 </h6>
                 <div class="flex">
@@ -436,7 +449,7 @@
               <div v-if="hasCredits" class="q-mt-md">
                 <div class="credits-section">
                   <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
-                    Credits
+                    {{ $t('misc.credits') }}
                     <hr />
                   </h6>
                   <div class="credits-groups">
@@ -470,10 +483,7 @@
                                 )
                               "
                             >
-                              <img
-                                :src="author._sUpicUrl"
-                                :alt="`${author._sName}'s upic`"
-                              />
+                              <img :src="author._sUpicUrl" />
                             </div>
                             <div
                               v-else
@@ -511,7 +521,7 @@
               </div>
               <div v-if="modInfo._sDevNotes" class="q-mt-md">
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
-                  Developer Notes
+                  {{ $t('app.modals.mod_details.developer_notes') }}
                   <hr />
                 </h6>
                 <div
@@ -521,7 +531,7 @@
               </div>
               <div v-if="modInfo._sLicense" class="q-mt-md">
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
-                  License
+                  {{ $t('app.modals.mod_details.license') }}
                   <hr />
                 </h6>
                 <div
@@ -664,8 +674,8 @@ async function fetchModInfo() {
     modInfo.value = infoResult
     modUpdates.value = updatesResult
     modComments.value = commentsResult
-  } catch (err: any) {
-    error.value = err.message || 'Failed to fetch mod information'
+  } catch (err: unknown) {
+    error.value = (err as Error).message
     console.error('Error fetching mod info:', err)
   } finally {
     clearTimeout(slowRequestTimeout)

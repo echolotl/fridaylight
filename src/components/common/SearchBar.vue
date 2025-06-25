@@ -73,7 +73,7 @@
       <q-input
         v-model="searchQueryModel"
         dense
-        placeholder="Search mods..."
+        :placeholder="$t('ui.actions.search_mods') + '...'"
         class="search-input theme-input"
         clearable
         @keyup.enter="search"

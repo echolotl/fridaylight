@@ -82,7 +82,7 @@
               </g>
             </svg>
           </div>
-          <span>Best of Today</span>
+          <span>{{ $t('gamebanana.best_of_today') }}</span>
         </h6>
         <q-btn
           flat
@@ -688,10 +688,7 @@ const updateFolderExistsMod = async () => {
 
         if (result.success) {
           // Show success notification
-          notificationService.updateSuccess(
-            folderExistsModName.value,
-            'Ready to play from the mods list'
-          )
+          notificationService.updateSuccess(folderExistsModName.value)
 
           // Trigger the refresh event to update the mod list
           const refreshEvent = new CustomEvent('refresh-mods')

@@ -8,21 +8,28 @@
     />
 
     <!-- Search Results View -->
-    <div v-if="activeView === 'search'" class="section-header phantom-font">
-      <div class="text-subtitle1 phantom-font-difficulty">Search Results</div>
-      <q-btn
-        flat
-        color="primary"
-        icon="arrow_back"
-        label="Back to Home"
-        @click="clearSearch"
-      />
+    <div v-if="activeView === 'search'" class="phantom-font">
+      <h6 class="phantom-font-difficulty q-mb-md q-mt-md">
+        <div class="flex justify-between items-center">
+          {{ $t('ui.search_results') }}
+          <q-btn
+            flat
+            color="primary"
+            class="phantom-font"
+            icon="arrow_back"
+            :label="$t('ui.actions.back')"
+            @click="clearSearch"
+          />
+        </div>
+
+        <hr />
+      </h6>
     </div>
     <q-scroll-area v-if="activeView === 'search'" class="scroll-container">
       <ModGrid
         :mods="searchResults"
         :loading="isLoadingSearch"
-        loading-message="Searching mods..."
+        :loading-message="$t('ui.searching')"
         :empty-message="`No mods found matching '${searchQuery}'`"
         :current-page="currentPage"
         :total-pages="totalPages"
@@ -50,7 +57,7 @@
         <!-- Latest Mods Section -->
         <div class="mods-section">
           <h6 class="phantom-font-difficulty q-mb-md q-mt-md">
-            Latest Mods
+            {{ $t('gamebanana.latest_mods') }}
             <hr />
           </h6>
           <!-- Tab navigation -->
@@ -60,13 +67,21 @@
             class="mod-tabs"
             active-color="primary"
             indicator-color="primary"
-            align="justify"
             narrow-indicator
           >
-            <q-tab name="executables" label="Executables" />
-            <q-tab name="psychModpacks" label="Psych Engine Modpacks" />
-            <q-tab name="vsliceModpacks" label="V-Slice Modpacks" />
-            <q-tab name="codenameModpacks" label="Codename Engine Modpacks" />
+            <q-tab name="executables" :label="$t('mods.labels.executables')" />
+            <q-tab
+              name="psychModpacks"
+              :label="'Psych Engine ' + $t('mods.labels.modpacks')"
+            />
+            <q-tab
+              name="vsliceModpacks"
+              :label="'V-Slice ' + $t('mods.labels.modpacks')"
+            />
+            <q-tab
+              name="codenameModpacks"
+              :label="'Codename Engine ' + $t('mods.labels.modpacks')"
+            />
           </q-tabs>
 
           <q-tab-panels v-model="selectedModType" animated>
@@ -75,8 +90,8 @@
               <ModGrid
                 :mods="latestMods"
                 :loading="isLoadingLatest"
-                loading-message="Loading latest mods..."
-                empty-message="No mods found"
+                :loading-message="$t('gamebanana.loading_latest_mods')"
+                :empty-message="$t('ui.no_results')"
                 :current-page="currentPage"
                 :total-pages="totalPages"
                 :input-pagination="true"
@@ -91,8 +106,12 @@
               <ModGrid
                 :mods="psychModpacks"
                 :loading="isLoadingPsychModpacks"
-                loading-message="Loading Psych Engine modpacks..."
-                empty-message="No Psych Engine modpacks found"
+                :loading-message="
+                  $t('gamebanana.loading_modpacks', {
+                    engineType: 'Psych Engine',
+                  })
+                "
+                :empty-message="$t('ui.no_results')"
                 :current-page="currentPage"
                 :total-pages="totalPages"
                 :input-pagination="true"
@@ -107,8 +126,10 @@
               <ModGrid
                 :mods="vsliceModpacks"
                 :loading="isLoadingVsliceModpacks"
-                loading-message="Loading V-Slice modpacks..."
-                empty-message="No V-Slice modpacks found"
+                :loading-message="
+                  $t('gamebanana.loading_modpacks', { engineType: 'V-Slice' })
+                "
+                :empty-message="$t('ui.no_results')"
                 :current-page="currentPage"
                 :total-pages="totalPages"
                 :input-pagination="true"
@@ -123,8 +144,12 @@
               <ModGrid
                 :mods="codenameModpacks"
                 :loading="isLoadingCodenameModpacks"
-                loading-message="Loading Codename Engine modpacks..."
-                empty-message="No Codename Engine modpacks found"
+                :loading-message="
+                  $t('gamebanana.loading_modpacks', {
+                    engineType: 'Codename Engine',
+                  })
+                "
+                :empty-message="$t('ui.no_results')"
                 :current-page="currentPage"
                 :total-pages="totalPages"
                 :input-pagination="true"
@@ -208,7 +233,7 @@ import ModTypeSelectionModal from '@modals/ModTypeSelectionModal.vue'
 import ModDetailsModal from '@modals/ModDetailsModal.vue'
 import { NotificationService } from '@services/notificationService'
 import { formatEngineName } from '@utils/index'
-
+import { useI18n } from 'vue-i18n'
 // Declare db for TypeScript
 declare global {
   interface Window {
@@ -221,6 +246,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['resetModDetailsOnMount'])
+
+const { t } = useI18n()
 
 const notificationService = NotificationService.getInstance()
 
@@ -710,7 +737,7 @@ const onEngineSelected = async (engine: any) => {
     if (!result.success) {
       notificationService.installationFailed(
         currentModpackInfo.value.mod.name,
-        result.error || 'Unknown error'
+        result.error || t('ui.unknown_error')
       )
     }
   } catch (error) {
@@ -773,7 +800,7 @@ const onModTypeSelected = async (selection: {
         if (!result.success) {
           notificationService.installationFailed(
             currentDownloadMod.value.name,
-            result.error || 'Unknown error'
+            result.error || t('ui.unknown_error')
           )
         }
       } else {
@@ -786,7 +813,7 @@ const onModTypeSelected = async (selection: {
         if (!result.success) {
           notificationService.installationFailed(
             currentDownloadMod.value.name,
-            result.error || 'Unknown error'
+            result.error || t('ui.unknown_error')
           )
         }
       }
@@ -850,7 +877,7 @@ const onFileSelected = async (file: any) => {
     if ('success' in result && !result.success) {
       notificationService.downloadError(
         currentDownloadMod.value.name,
-        String('error' in result ? result.error : 'Unknown error')
+        String('error' in result ? result.error : t('ui.unknown_error'))
       )
     } // Trigger the refresh event to update the mod list
     const refreshEvent = new CustomEvent('refresh-mods')
@@ -888,7 +915,7 @@ const downloadEngine = async (engineType: string) => {
     if ('success' in result && !result.success) {
       notificationService.downloadError(
         await formatEngineName(engineType),
-        String(result.error || 'Unknown error')
+        String(result.error || t('ui.unknown_error'))
       )
     }
   } catch (error) {
@@ -936,10 +963,7 @@ const continueFolderExistsDownload = async () => {
       } else if ('success' in result) {
         if (result.success) {
           // Show success notification
-          notificationService.downloadSuccess(
-            folderExistsModName.value,
-            'Ready to play from the mods list'
-          )
+          notificationService.downloadSuccess(folderExistsModName.value)
 
           // Trigger the refresh event to update the mod list
           const refreshEvent = new CustomEvent('refresh-mods')
@@ -948,7 +972,7 @@ const continueFolderExistsDownload = async () => {
           // Show error notification
           notificationService.downloadError(
             folderExistsModName.value,
-            result.error || 'Unknown error'
+            result.error || t('ui.unknown_error')
           )
         }
       }
@@ -979,10 +1003,7 @@ const updateFolderExistsMod = async () => {
       if ('success' in result) {
         if (result.success) {
           // Show success notification
-          notificationService.updateSuccess(
-            folderExistsModName.value,
-            'Ready to play from the mods list'
-          )
+          notificationService.updateSuccess(folderExistsModName.value)
 
           // Trigger the refresh event to update the mod list
           const refreshEvent = new CustomEvent('refresh-mods')
@@ -991,7 +1012,7 @@ const updateFolderExistsMod = async () => {
           // Show error notification
           notificationService.updateError(
             folderExistsModName.value,
-            result.error || 'Unknown error'
+            result.error || t('ui.unknown_error')
           )
         }
       }

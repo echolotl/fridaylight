@@ -2,7 +2,7 @@
   <div>
     <div v-if="loading" class="loading-content">
       <q-spinner color="primary" size="48px" />
-      <div>Loading featured mods...</div>
+      <div>{{ $t('gamebanana.loading_featured_mods') }}...</div>
     </div>
 
     <div v-else class="featured-carousel">
@@ -90,14 +90,14 @@
                   <div class="featured-stats-container">
                     <q-btn
                       color="primary"
-                      label="View Details"
+                      :label="$t('ui.actions.view_details')"
                       class="featured-btn q-mt-sm"
                       @click.stop="$emit('showDetails', mod.id, mod.model_name)"
                     />
                     <div class="featured-stats">
                       <span v-if="mod.initial_visibility == 'warn'">
                         <q-icon name="warning" size="sm" color="yellow" />
-                        Has sensitive content!
+                        {{ $t('gamebanana.sensitive_content') }}
                       </span>
                       <span>
                         <q-icon name="message" size="sm" />
@@ -123,6 +123,7 @@
 import { ref } from 'vue'
 import type { GameBananaMod } from '../../types'
 import { openUrl } from '@tauri-apps/plugin-opener'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   mods: {
@@ -137,6 +138,8 @@ const props = defineProps({
 
 const emit = defineEmits(['download', 'showDetails'])
 
+const { t } = useI18n()
+
 const currentSlide = ref(0)
 
 console.log('Mods in carousel:', props.mods)
@@ -150,17 +153,17 @@ const showContextMenu = (event: MouseEvent, mod: GameBananaMod) => {
   const contextMenuOptions = [
     {
       icon: 'download',
-      label: 'Download Mod',
+      label: t('ui.actions.download_mod'),
       action: () => emit('download', mod),
     },
     {
       icon: 'info',
-      label: 'Show Details',
+      label: t('ui.actions.view_details'),
       action: () => emit('showDetails', mod.id),
     },
     {
       icon: 'open_in_new',
-      label: 'Open GameBanana Page',
+      label: t('ui.actions.open_in_browser'),
       action: () => openUrl(mod.profile_url),
     },
   ]
@@ -195,17 +198,17 @@ const formatNumber = (num: number): string => {
 
 // Format period labels
 const periodDisplayMap: Record<string, string> = {
-  today: 'Best of Today',
-  week: 'Best of this Week',
-  month: 'Best of this Month',
-  '3month': 'Best of 3 Months',
-  '6month': 'Best of 6 Months',
-  year: 'Best of this Year',
-  alltime: 'Best of All Time',
+  today: t('gamebanana.best_of_today'),
+  week: t('gamebanana.best_of_this_week'),
+  month: t('gamebanana.best_of_this_month'),
+  '3month': t('gamebanana.best_of_3_months'),
+  '6month': t('gamebanana.best_of_6_months'),
+  year: t('gamebanana.best_of_this_year'),
+  alltime: t('gamebanana.best_of_all_time'),
 }
 
 const formatPeriod = (period: string): string => {
-  return periodDisplayMap[period] || `Best of ${period}`
+  return periodDisplayMap[period] || t('gamebanana.best_of_unknown', { period })
 }
 
 // Shorten description for display

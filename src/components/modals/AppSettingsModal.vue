@@ -2,7 +2,9 @@
   <q-dialog v-model="showModal" persistent>
     <q-card class="settings-modal phantom-font">
       <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6 phantom-font-difficulty">App Settings</div>
+        <div class="text-h6 phantom-font-difficulty">
+          {{ $t('app.modals.app_settings.title') }}
+        </div>
         <q-space />
         <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
@@ -33,16 +35,21 @@
         <q-scroll-area class="settings-content">
           <!-- Appearance Section -->
           <q-card-section v-show="activeSection === 'appearance'">
-            <div class="text-subtitle1 q-mb-md">Appearance</div>
+            <div class="text-subtitle1 q-mb-md">
+              {{ $t('app.modals.app_settings.appearance.title') }}
+            </div>
 
             <div class="theme-toggle-container row q-mb-md">
               <q-item tag="label" class="full-width">
                 <q-item-section>
-                  <q-item-label>Use System Theme</q-item-label>
-                  <q-item-label caption
-                    >Automatically match your OS theme
-                    (Light/Dark)</q-item-label
-                  >
+                  <q-item-label>{{
+                    $t('app.modals.app_settings.appearance.use_system_theme')
+                  }}</q-item-label>
+                  <q-item-label caption>{{
+                    $t(
+                      'app.modals.app_settings.appearance.use_system_theme_description'
+                    )
+                  }}</q-item-label>
                 </q-item-section>
                 <q-item-section side>
                   <q-toggle v-model="settings.useSystemTheme" color="primary" />
@@ -52,7 +59,9 @@
             <div v-if="!settings.useSystemTheme" class="theme-selector q-mb-md">
               <!-- Built-in Themes Section -->
               <div class="theme-section">
-                <div class="text-subtitle2 q-mb-sm">Built-in Themes</div>
+                <div class="text-subtitle2 q-mb-sm">
+                  {{ $t('app.modals.app_settings.appearance.builtin_themes') }}
+                </div>
                 <div class="theme-grid">
                   <div
                     v-for="theme in builtInThemes"
@@ -77,13 +86,19 @@
                 class="theme-section custom-themes-section"
               >
                 <div class="row items-center justify-between q-mb-sm">
-                  <div class="text-subtitle2">Custom Themes</div>
+                  <div class="text-subtitle2">
+                    {{ $t('app.modals.app_settings.appearance.custom_themes') }}
+                  </div>
                   <div class="row items-center">
                     <q-btn
                       flat
                       color="primary"
                       icon="folder_open"
-                      label="Reveal Themes Folder"
+                      :label="
+                        $t(
+                          'app.modals.app_settings.appearance.actions.reveal_themes_folder'
+                        )
+                      "
                       class="phantom-font q-mr-sm"
                       @click="openThemesFolder"
                     />
@@ -91,7 +106,11 @@
                       flat
                       color="primary"
                       icon="refresh"
-                      label="Refresh Themes"
+                      :label="
+                        $t(
+                          'app.modals.app_settings.appearance.actions.refresh_themes'
+                        )
+                      "
                       class="phantom-font"
                       @click="refreshThemes"
                     />
@@ -116,27 +135,37 @@
               </div>
               <div v-else class="text-caption q-mt-sm">
                 <div class="row items-center justify-between">
-                  <div>
-                    Want to add custom themes? Place them in the
-                    <a
-                      class="text-primary"
-                      @click="revealItemInDir(customThemesPath)"
-                      >/themes</a
+                  <span>
+                    <i18n-t
+                      keypath="app.modals.app_settings.appearance.custom_themes_description"
                     >
-                    folder, then click the refresh button to load them.
-                  </div>
+                      <template #themesLink>
+                        <a
+                          class="text-primary"
+                          @click="revealItemInDir(customThemesPath)"
+                          >/themes</a
+                        >
+                      </template>
+                    </i18n-t>
+                  </span>
                   <q-btn
                     flat
                     color="primary"
                     icon="refresh"
-                    label="Refresh Themes"
+                    :label="
+                      $t(
+                        'app.modals.app_settings.appearance.actions.refresh_themes'
+                      )
+                    "
                     class="phantom-font"
                     @click="refreshThemes"
                   />
                 </div>
               </div>
             </div>
-            <div class="text-subtitle2 q-mb-sm">Accent Color</div>
+            <div class="text-subtitle2 q-mb-sm">
+              {{ $t('app.modals.app_settings.appearance.accent_color') }}
+            </div>
             <div class="color-row q-mb-md">
               <q-btn
                 v-for="color in accentColorOptions"
@@ -175,10 +204,16 @@
 
             <q-item tag="label" class="q-mb-md">
               <q-item-section>
-                <q-item-label>Compact Mode</q-item-label>
-                <q-item-label caption
-                  >Minimize sidebar width and show only icons</q-item-label
-                >
+                <q-item-label>{{
+                  $t('app.modals.app_settings.appearance.compact_mode')
+                }}</q-item-label>
+                <q-item-label caption>
+                  {{
+                    $t(
+                      'app.modals.app_settings.appearance.compact_mode_description'
+                    )
+                  }}
+                </q-item-label>
               </q-item-section>
               <q-item-section side>
                 <q-toggle v-model="settings.compactMode" color="primary" />
@@ -188,11 +223,17 @@
 
           <!-- Installation Section -->
           <q-card-section v-show="activeSection === 'installation'">
-            <div class="text-subtitle1 q-mb-md">Installation</div>
+            <div class="text-subtitle1 q-mb-md">
+              {{ $t('app.modals.app_settings.installation.title') }}
+            </div>
 
             <q-input
               v-model="settings.installLocation"
-              label="Default Install Location"
+              :label="
+                $t(
+                  'app.modals.app_settings.installation.default_install_location'
+                )
+              "
               outlined
               readonly
               class="q-mb-md"
@@ -211,9 +252,15 @@
 
             <q-item tag="label" class="q-mt-md">
               <q-item-section>
-                <q-item-label>Validate FNF Mods</q-item-label>
+                <q-item-label>{{
+                  $t('app.modals.app_settings.installation.validate_mods')
+                }}</q-item-label>
                 <q-item-label caption>
-                  Toggle validation of FNF mods before installation
+                  {{
+                    $t(
+                      'app.modals.app_settings.installation.validate_mods_description'
+                    )
+                  }}
                 </q-item-label>
               </q-item-section>
               <q-item-section side>
@@ -223,9 +270,17 @@
 
             <q-item tag="label" class="q-mt-md">
               <q-item-section>
-                <q-item-label>Show Terminal Output</q-item-label>
+                <q-item-label>{{
+                  $t(
+                    'app.modals.app_settings.installation.show_terminal_output'
+                  )
+                }}</q-item-label>
                 <q-item-label caption>
-                  Display terminal output when running mods
+                  {{
+                    $t(
+                      'app.modals.app_settings.installation.show_terminal_output_description'
+                    )
+                  }}
                 </q-item-label>
               </q-item-section>
               <q-item-section side>
@@ -239,7 +294,9 @@
 
           <!-- About Section -->
           <q-card-section v-show="activeSection === 'about'">
-            <div class="text-subtitle1">About</div>
+            <div class="text-subtitle1">
+              {{ $t('app.modals.app_settings.about.title') }}
+            </div>
 
             <div class="about-content">
               <div class="about-content-left">
@@ -248,15 +305,20 @@
                   class="fridaylight-logo"
                 />
                 <div class="text-subtitle2 q-mb-sm flex align-center">
-                  Created by
-                  <img
-                    src="/images/echolotlGB.png"
-                    class="q-ml-xs cursor-pointer"
-                    @click="openUrl('https://www.echolotl.lol/')"
-                  />
+                  <i18n-t keypath="app.modals.app_settings.about.created_by">
+                    <template #echolotl>
+                      <img
+                        src="/images/echolotlGB.png"
+                        class="q-mx-xs cursor-pointer"
+                        @click="openUrl('https://www.echolotl.lol/')"
+                      />
+                    </template>
+                  </i18n-t>
                 </div>
                 <div class="q-mb-sm">
-                  Version: 0.11.2
+                  <i18n-t keypath="app.modals.app_settings.about.version">
+                    <template #version> 0.11.2 </template>
+                  </i18n-t>
                   <span class="text-caption">(Windows, 64 bit)</span>
                 </div>
                 <div class="flex items-center q-mb-sm">
@@ -266,16 +328,17 @@
                     @click="
                       openUrl('https://github.com/echolotl/fridaylight/issues')
                     "
-                    >Found a bug, or have a suggestion? Report it on GitHub!</a
+                    >{{ $t('app.modals.app_settings.about.bug_disclaimer') }}</a
                   >
                 </div>
                 <div class="text-caption">
-                  This is pre-release software, so things might be unstable, and
-                  you should expect to lose data.
+                  {{ $t('app.modals.app_settings.about.beta_disclaimer') }}
                 </div>
               </div>
               <div class="about-content-right">
-                <div class="text-subtitle2 q-mb-sm">Created with</div>
+                <div class="text-subtitle2 q-mb-sm">
+                  {{ $t('app.modals.app_settings.about.created_with') }}
+                </div>
                 <div class="logo-grid">
                   <img
                     src="/images/vue.svg"
@@ -303,15 +366,18 @@
                   />
                 </div>
                 <div class="text-subtitle2 q-mt-md">
-                  Acknowledgements and Special Thanks
+                  {{ $t('app.modals.app_settings.about.special_thanks.title') }}
                 </div>
                 <q-scroll-area class="acknowledgements">
                   <ul style="list-style-type: none; padding-left: 0">
                     <li>
                       <div>Gamebanana</div>
                       <div class="text-caption">
-                        For providing a stable platform for Friday Night Funkin'
-                        mods!
+                        {{
+                          $t(
+                            'app.modals.app_settings.about.special_thanks.gamebanana'
+                          )
+                        }}
                       </div>
                     </li>
                     <li>
@@ -323,7 +389,11 @@
                         Cracsthor
                       </a>
                       <div class="text-caption">
-                        Created the original PhantomMuff font family files
+                        {{
+                          $t(
+                            'app.modals.app_settings.about.special_thanks.cracsthor'
+                          )
+                        }}
                       </div>
                     </li>
                     <li>
@@ -335,19 +405,35 @@
                         NoizDynamic
                       </a>
                       <div class="text-caption">
-                        Created the Tardling font file used in-app
+                        {{
+                          $t(
+                            'app.modals.app_settings.about.special_thanks.noizdynamic'
+                          )
+                        }}
                       </div>
                     </li>
                     <li>
-                      <span> Funkin' Launcher Dev Team </span>
+                      <span>{{
+                        $t(
+                          'app.modals.app_settings.about.special_thanks.name_flmoddevteam'
+                        )
+                      }}</span>
                       <div class="text-caption">
-                        For providing inspiration and ideas for this app
+                        {{
+                          $t(
+                            'app.modals.app_settings.about.special_thanks.flmoddevteam'
+                          )
+                        }}
                       </div>
                     </li>
                     <li>
                       <span> SteamGridDB </span>
                       <div class="text-caption">
-                        For providing a variety of banners and icons for engines
+                        {{
+                          $t(
+                            'app.modals.app_settings.about.special_thanks.steamgriddb'
+                          )
+                        }}
                       </div>
                     </li>
                   </ul>
@@ -357,31 +443,31 @@
 
             <div class="settings-reset-section q-mt-lg">
               <q-separator class="q-my-md" />
-              <div class="text-subtitle1 q-mb-md">Danger Zone</div>
+              <div class="text-subtitle1 q-mb-md">
+                {{ $t('ui.danger_zone') }}
+              </div>
               <q-btn
                 color="negative"
                 icon="restart_alt"
-                label="Reset to Default Settings"
+                :label="$t('app.modals.app_settings.reset_settings.title')"
                 class="full-width"
                 outline
                 @click="showResetSettingsDialog = true"
               />
               <div class="text-caption q-mt-sm">
-                This will reset all app settings to their default values. You'll
-                need to save for changes to take effect.
+                {{ $t('app.modals.app_settings.reset_settings.description') }}
               </div>
 
               <q-btn
                 color="negative"
                 icon="delete_forever"
-                label="Reset App Data"
+                :label="$t('app.modals.app_settings.reset_data.title')"
                 class="full-width q-mt-md"
                 outline
                 @click="showResetAppDataDialog = true"
               />
               <div class="text-caption q-mt-sm">
-                This will wipe the database and reset all application data. All
-                mod information will be lost, but files will not be deleted.
+                {{ $t('app.modals.app_settings.reset_data.description') }}
               </div>
             </div>
           </q-card-section>
@@ -392,11 +478,17 @@
         <q-btn
           v-close-popup
           flat
-          label="Cancel"
+          :label="$t('ui.actions.cancel')"
           color="primary"
           @click="cancel"
         />
-        <q-btn v-close-popup flat label="Save" color="primary" @click="save" />
+        <q-btn
+          v-close-popup
+          flat
+          :label="$t('ui.actions.save')"
+          color="primary"
+          @click="save"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -404,8 +496,8 @@
   <!-- Reset Settings Confirmation Dialog -->
   <MessageDialog
     v-model="showResetSettingsDialog"
-    title="Reset Settings"
-    message="Are you sure you want to reset all settings to their default values?"
+    :title="$t('app.modals.app_settings.reset_settings.title')"
+    :message="$t('app.modals.app_settings.reset_settings.confirmation')"
     icon="warning"
     icon-color="negative"
     confirm-label="Reset Settings"
@@ -416,8 +508,8 @@
   <!-- Reset App Data Confirmation Dialog -->
   <MessageDialog
     v-model="showResetAppDataDialog"
-    title="Reset App Data"
-    message="This will wipe the database and reset ALL application data. All mod information will be lost, but files will not be deleted. Do you want to continue?"
+    :title="$t('app.modals.app_settings.reset_data.title')"
+    :message="$t('app.modals.app_settings.reset_data.confirmation')"
     icon="warning"
     icon-color="negative"
     confirm-label="Reset App Data"
@@ -428,6 +520,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { invoke } from '@tauri-apps/api/core'
 import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener'
 import { AppSettings } from '@main-types'
@@ -450,34 +543,38 @@ const emit = defineEmits(['update:modelValue', 'save'])
 const storeService = StoreService.getInstance()
 
 const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS })
-
 // Sidebar navigation sections
+const { t } = useI18n()
 const settingsSections = [
-  { id: 'appearance', label: 'Appearance', icon: 'palette' },
-  { id: 'installation', label: 'Installation', icon: 'folder' },
-  { id: 'about', label: 'About', icon: 'info' },
+  {
+    id: 'appearance',
+    label: t('app.modals.app_settings.appearance.title'),
+    icon: 'palette',
+  },
+  {
+    id: 'installation',
+    label: t('app.modals.app_settings.installation.title'),
+    icon: 'folder',
+  },
+  {
+    id: 'about',
+    label: t('app.modals.app_settings.about.title'),
+    icon: 'info',
+  },
 ]
 
 // Track the active section
 const activeSection = ref('appearance')
 
 // Theme options - dynamically loaded from theme service
-const hasUnlockedExtraThemes = ref(false)
 const availableThemes = ref<any[]>([])
 
 const themeOptions = computed(() => {
-  const options = availableThemes.value.map(theme => ({
+  return availableThemes.value.map(theme => ({
     label: theme.displayName,
     value: theme.id,
     isCustom: theme.isCustom,
   }))
-  // Filter out "doe" theme unless extra themes are unlocked
-  return options.filter(option => {
-    if (option.value === 'doe' && !hasUnlockedExtraThemes.value) {
-      return false
-    }
-    return true
-  })
 })
 
 // Separate computed properties for built-in and custom themes
@@ -490,14 +587,14 @@ const customThemes = computed(() => {
 })
 
 const accentColorOptions = [
-  { label: 'Pink', value: '#DB2955' },
-  { label: 'Blue', value: '#235789' },
-  { label: 'Green', value: '#35CE8D' },
-  { label: 'Purple', value: '#C490D1' },
-  { label: 'Orange', value: '#FE621D' },
-  { label: 'Yellow', value: '#f7c548' },
-  { label: 'Red', value: '#C03221' },
-  { label: 'Cyan', value: '#39dbce' },
+  { label: t('misc.colors.pink'), value: '#DB2955' },
+  { label: t('misc.colors.blue'), value: '#235789' },
+  { label: t('misc.colors.green'), value: '#35CE8D' },
+  { label: t('misc.colors.purple'), value: '#C490D1' },
+  { label: t('misc.colors.orange'), value: '#FE621D' },
+  { label: t('misc.colors.yellow'), value: '#f7c548' },
+  { label: t('misc.colors.red'), value: '#C03221' },
+  { label: t('misc.colors.cyan'), value: '#39dbce' },
 ]
 
 // Helper function to get current accent color
@@ -886,7 +983,7 @@ const resetAppData = async () => {
     window.location.reload()
   } catch (error) {
     console.error('Failed to reset app data:', error)
-    window.alert(`Failed to reset app data: ${error}`)
+    window.alert(t('app.modals.app_settings.reset_data.failed', { error }))
   }
 }
 

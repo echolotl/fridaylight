@@ -2,7 +2,9 @@
   <q-dialog v-model="showModal" persistent>
     <q-card class="settings-modal phantom-font">
       <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6 phantom-font-difficulty">Mod Settings</div>
+        <div class="text-h6 phantom-font-difficulty">
+          {{ $t('app.modals.mod_settings.title') }}
+        </div>
         <q-space />
         <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
@@ -33,11 +35,13 @@
         <q-scroll-area class="settings-content">
           <!-- General Section -->
           <q-card-section v-show="activeSection === 'general'">
-            <div class="text-subtitle1 q-mb-md">General Information</div>
+            <div class="text-subtitle1 q-mb-md">
+              {{ $t('app.modals.mod_settings.general.title') }}
+            </div>
 
             <q-input
               v-model="form.name"
-              label="Mod Name"
+              :label="$t('app.modals.mod_settings.general.mod_name')"
               outlined
               class="q-mb-md"
             />
@@ -45,18 +49,24 @@
             <q-input
               v-model="form.description"
               type="textarea"
-              label="Description"
+              :label="$t('app.modals.mod_settings.general.mod_description')"
               outlined
               class="q-mb-md"
               autogrow
-              placeholder="Enter mod description"
+              :placeholder="
+                $t(
+                  'app.modals.mod_settings.general.mod_description_placeholder'
+                )
+              "
             />
             <q-input
               v-model="form.version"
-              label="Version"
+              :label="$t('app.modals.mod_settings.general.mod_version')"
               outlined
               class="q-mb-md"
-              placeholder="e.g. 1.0.0"
+              :placeholder="
+                $t('app.modals.mod_settings.general.mod_version_placeholder')
+              "
             />
             <div class="gamebanana-section q-mt-lg">
               <q-separator class="q-my-md" />
@@ -65,11 +75,13 @@
                   name="M24,6v10.5h-1.5v3h-1.5v1.5h-1.5v1.5h-3v1.5H6v-1.5h-3v-1.5h-1.5v-1.5H0v-4.5h9v-1.5h4.5v-1.5h1.5v-4.5h1.5V3h-1.5V0h4.5v3h1.5v1.5h1.5v1.5h1.5Z"
                   size="sm"
                   class="q-mr-sm"
-                />GameBanana Info
+                />{{ $t('app.modals.mod_settings.general.gamebanana_info') }}
               </div>
               <q-input
                 :model-value="gameBananaInfo?.url || ''"
-                label="GameBanana URL"
+                :label="
+                  $t('app.modals.mod_settings.general.gamebanana_profile_url')
+                "
                 outlined
                 class="q-mb-md"
                 placeholder="https://gamebanana.com/mods/..."
@@ -80,7 +92,9 @@
                 class="row q-gutter-sm q-mb-md"
               >
                 <q-btn
-                  label="Sync with Gamebanana"
+                  :label="
+                    $t('app.modals.mod_settings.general.sync_with_gamebanana')
+                  "
                   class="col"
                   icon="sync"
                   outline
@@ -88,7 +102,7 @@
                   @click="syncWithGameBanana"
                 />
                 <q-btn
-                  label="View on GameBanana"
+                  :label="$t('ui.actions.open_in_browser')"
                   class="col"
                   icon="open_in_new"
                   outline
@@ -98,14 +112,18 @@
                   <div class="q-my-xs">
                     <q-checkbox
                       v-model="changeBanner"
-                      label="Change Banner"
+                      :label="
+                        $t('app.modals.mod_settings.general.change_banner')
+                      "
                       class="q-ml-sm"
                       color="primary"
                       dense
                     />
                     <q-checkbox
                       v-model="changeVersion"
-                      label="Change Version"
+                      :label="
+                        $t('app.modals.mod_settings.general.change_version')
+                      "
                       class="q-ml-sm"
                       color="primary"
                       dense
@@ -116,59 +134,27 @@
                   class="text-caption q-mt-sm"
                   style="color: var(--theme-text-secondary)"
                 >
-                  Syncing with GameBanana will fetch the latest metadata, and
-                  will overwrite any existing metadata. You'll still need to
-                  save the mod settings to apply changes.
+                  {{
+                    $t(
+                      'app.modals.mod_settings.general.gamebanana_sync_description'
+                    )
+                  }}
                 </div>
-              </div>
-            </div>
-
-            <div class="danger-zone q-mt-lg">
-              <q-separator class="q-my-md" />
-              <div class="text-subtitle1 q-mb-md">Danger Zone</div>
-              <q-btn
-                color="negative"
-                icon="delete"
-                label="Remove Mod"
-                class="full-width"
-                outline
-                @click="showRemoveDialog = true"
-              />
-              <div
-                class="text-caption q-mt-sm"
-                style="color: var(--theme-text-secondary)"
-              >
-                This will remove the mod from Fridaylight but keep the files on
-                your system.
-              </div>
-
-              <q-btn
-                color="negative"
-                icon="delete_forever"
-                label="Delete Mod Files"
-                class="full-width q-mt-md"
-                outline
-                @click="showSuperDeleteDialog = true"
-              />
-              <div
-                class="text-caption q-mt-sm"
-                style="color: var(--theme-text-secondary)"
-              >
-                This will
-                <span class="text-negative text-bold">permanently delete</span>
-                the mod folder and all its contents from your computer. This
-                action cannot be undone!
               </div>
             </div>
           </q-card-section>
 
           <!-- Location Section -->
           <q-card-section v-show="activeSection === 'location'">
-            <div class="text-subtitle1 q-mb-md">File Locations</div>
+            <div class="text-subtitle1 q-mb-md">
+              {{ $t('app.modals.mod_settings.installation.title') }}
+            </div>
 
             <q-input
               v-model="form.path"
-              label="Folder Location"
+              :label="
+                $t('app.modals.mod_settings.installation.folder_location')
+              "
               outlined
               readonly
               class="q-mb-md"
@@ -193,7 +179,9 @@
 
             <q-input
               v-model="form.executable_path"
-              label="Executable Path"
+              :label="
+                $t('app.modals.mod_settings.installation.executable_path')
+              "
               outlined
               readonly
               class="q-mb-md"
@@ -215,35 +203,99 @@
                 </div>
               </template>
             </q-input>
+            <div class="danger-zone q-mt-lg">
+              <q-separator class="q-my-md" />
+              <div class="text-subtitle1 q-mb-md">
+                {{ $t('ui.danger_zone') }}
+              </div>
+              <div class="row q-col-gutter-md">
+                <div class="col-6">
+                  <q-btn
+                    icon="delete"
+                    :label="$t('mods.actions.remove_mod')"
+                    class="full-width"
+                    outline
+                    @click="showRemoveDialog = true"
+                  />
+                  <div
+                    class="text-caption q-mt-sm"
+                    style="color: var(--theme-text-secondary)"
+                  >
+                    {{
+                      $t(
+                        'app.modals.mod_settings.installation.remove_mod_description'
+                      )
+                    }}
+                  </div>
+                </div>
+                <div class="col-6">
+                  <q-btn
+                    color="negative"
+                    icon="delete_forever"
+                    :label="$t('mods.actions.delete_mod')"
+                    class="full-width"
+                    outline
+                    @click="showSuperDeleteDialog = true"
+                  />
+                  <div
+                    class="text-caption q-mt-sm"
+                    style="color: var(--theme-text-secondary)"
+                  >
+                    <i18n-t
+                      keypath="app.modals.mod_settings.installation.delete_mod_description"
+                      tag="span"
+                    >
+                      <template #permanentlyDelete>
+                        <b style="color: var(--red)">{{
+                          $t(
+                            'app.modals.mod_settings.installation.permanently_delete'
+                          )
+                        }}</b>
+                      </template>
+                    </i18n-t>
+                  </div>
+                </div>
+              </div>
+            </div>
           </q-card-section>
 
           <!-- Engine Section -->
           <q-card-section v-show="activeSection === 'engine'">
-            <div class="text-subtitle1 q-mb-md">Engine Settings</div>
+            <div class="text-subtitle1 q-mb-md">
+              {{ $t('app.modals.mod_settings.engine.title') }}
+            </div>
             <q-select
               v-model="form.engine.engine_type"
               :options="engineTypes"
-              label="Engine Type"
+              :label="$t('app.modals.mod_settings.engine.engine_type')"
               outlined
               class="q-mb-md selector"
               emit-value
               map-options
-              hint="The type of engine this mod uses"
+              :hint="
+                $t('app.modals.mod_settings.engine.engine_type_description')
+              "
               popup-content-class="phantom-font"
               popup-content-style="background-color: var(--theme-solid); color: var(--theme-text);"
             />
 
             <q-input
               v-model="form.engine.engine_name"
-              label="Custom Engine Name"
+              :label="$t('app.modals.mod_settings.engine.engine_name')"
               outlined
               class="q-mb-md"
-              placeholder="e.g. My Custom Psych Fork"
-              hint="A custom name for the engine (optional)"
+              :placeholder="
+                $t('app.modals.mod_settings.engine.engine_name_placeholder')
+              "
+              :hint="
+                $t('app.modals.mod_settings.engine.engine_name_description')
+              "
             />
 
             <div class="q-mb-md">
-              <div class="text-subtitle2 q-mb-sm">Engine Icon</div>
+              <div class="text-subtitle2 q-mb-sm">
+                {{ $t('app.modals.mod_settings.engine.engine_icon') }}
+              </div>
               <div
                 v-if="engineIconPreview || form.engine?.engine_icon"
                 class="engine-icon-preview"
@@ -259,7 +311,7 @@
 
               <q-file
                 v-model="engineIconFile"
-                label="Set Engine Icon"
+                :label="$t('app.modals.mod_settings.set_icon')"
                 outlined
                 accept=".jpg, .jpeg, .png, .webp, .ico"
                 class="q-mt-sm"
@@ -276,7 +328,7 @@
                 v-if="engineIconPreview || form.engine?.engine_icon"
                 flat
                 color="negative"
-                label="Remove Icon"
+                :label="$t('app.modals.mod_settings.remove_icon')"
                 class="q-mt-sm"
                 @click="removeEngineIcon"
               />
@@ -287,148 +339,163 @@
             <div class="q-mb-md">
               <q-toggle
                 v-model="form.engine!.mods_folder"
-                label="Has Mods Folder"
+                :label="$t('app.modals.mod_settings.engine.has_mods_folder')"
                 color="primary"
-                hint="Does this engine support a mods folder structure?"
               />
             </div>
 
             <q-input
               v-if="form.engine?.mods_folder"
               v-model="form.engine!.mods_folder_path"
-              label="Mods Folder Path"
+              :label="$t('app.modals.mod_settings.engine.mods_folder_path')"
               outlined
               class="q-mb-md"
-              placeholder="e.g. mods"
-              hint="Relative path to the mods folder from the executable directory"
+              :placeholder="
+                $t(
+                  'app.modals.mod_settings.engine.mods_folder_path_placeholder'
+                )
+              "
+              :hint="
+                $t(
+                  'app.modals.mod_settings.engine.mods_folder_path_description'
+                )
+              "
             />
           </q-card-section>
-
           <!-- Visuals Section -->
           <q-card-section v-show="activeSection === 'visuals'">
-            <div class="text-subtitle1 q-mb-md">Appearance</div>
-
-            <div class="icon-upload q-mb-md">
-              <div class="text-subtitle2 q-mb-sm">Mod Icon</div>
-              <div v-if="iconPreview || form.icon_data" class="icon-preview">
-                <img :src="iconPreview || form.icon_data" alt="Mod Icon" />
-              </div>
-              <div v-else class="icon-placeholder">
-                <q-icon name="image" size="48px" />
-              </div>
-              <q-file
-                v-model="iconFile"
-                label="Set Mod Icon"
-                outlined
-                accept=".jpg, .jpeg, .png, .webp, .ico"
-                class="q-mt-sm"
-                @update:model-value="handleIconFileChange"
-              >
-                <template #prepend>
-                  <div class="icon">
-                    <q-icon name="image" />
-                  </div>
-                </template>
-              </q-file>
-              <q-btn
-                v-if="iconPreview || form.icon_data"
-                flat
-                color="negative"
-                label="Remove Icon"
-                class="q-mt-sm"
-                @click="removeIcon"
-              />
+            <div class="text-subtitle1 q-mb-md">
+              {{ $t('app.modals.mod_settings.appearance.title') }}
             </div>
+            <ModBanner
+              :mod="form"
+              :banner-preview="bannerPreview ? bannerPreview : ''"
+              :logo-preview="logoPreview ? logoPreview : ''"
+            />
 
-            <div class="banner-upload q-mb-md">
-              <div class="text-subtitle2 q-mb-sm">Banner Image</div>
-              <div
-                v-if="bannerPreview || form.banner_data"
-                class="banner-preview"
-              >
-                <img
-                  :src="bannerPreview || form.banner_data"
-                  alt="Banner Preview"
-                />
-              </div>
-              <div v-else class="banner-placeholder">
-                <q-icon name="image" size="48px" />
-                <div>No banner image</div>
-              </div>
-              <q-file
-                v-model="bannerFile"
-                label="Set Banner Image"
-                outlined
-                accept=".jpg, .jpeg, .png"
-                class="q-mt-sm"
-                @update:model-value="handleBannerFileChange"
-              >
-                <template #prepend>
-                  <div class="icon">
-                    <q-icon name="panorama" />
+            <div class="row q-col-gutter-md">
+              <div class="col-12 col-md-4">
+                <div class="icon-upload">
+                  <div class="text-subtitle2 q-mb-sm">
+                    {{ $t('app.modals.mod_settings.appearance.icon') }}
                   </div>
-                </template>
-              </q-file>
-              <q-btn
-                v-if="bannerPreview || form.banner_data"
-                flat
-                color="negative"
-                label="Remove Banner"
-                class="q-mt-sm"
-                @click="removeBanner"
-              />
-            </div>
+                  <q-file
+                    v-model="iconFile"
+                    :label="$t('app.modals.mod_settings.set_icon')"
+                    outlined
+                    accept=".jpg, .jpeg, .png, .webp, .ico"
+                    class="q-mt-sm"
+                    @update:model-value="handleIconFileChange"
+                  >
+                    <template #prepend>
+                      <div class="icon">
+                        <q-icon name="image" />
+                      </div>
+                    </template>
+                    <template #append>
+                      <div class="flex items-center justify-center">
+                        <img
+                          v-if="iconPreview || form.icon_data"
+                          :src="iconPreview || form.icon_data"
+                          width="32"
+                          height="32"
+                        />
+                        <div v-else>
+                          <q-icon name="block" size="32px" />
+                        </div>
+                      </div>
+                    </template>
+                  </q-file>
+                  <q-btn
+                    v-if="iconPreview || form.icon_data"
+                    color="negative"
+                    outline
+                    class="q-mt-sm full-width"
+                    :label="$t('app.modals.mod_settings.remove_icon')"
+                    @click="removeIcon"
+                  />
+                </div>
+              </div>
 
-            <div class="logo-upload q-mb-md">
-              <div class="text-subtitle2 q-mb-sm">
-                Logo Image (Replaces Title)
-              </div>
-              <div v-if="logoPreview || form.logo_data" class="logo-preview">
-                <img
-                  :src="logoPreview || form.logo_data || ''"
-                  alt="Logo Preview"
-                />
-              </div>
-              <div v-else class="logo-placeholder">
-                <q-icon name="image" size="48px" />
-                <div>No logo image</div>
-              </div>
-              <q-file
-                v-model="logoFile"
-                label="Set Logo Image"
-                outlined
-                accept=".jpg, .jpeg, .png"
-                class="q-mt-sm"
-                @update:model-value="handleLogoFileChange"
-              >
-                <template #prepend>
-                  <div class="icon">
-                    <q-icon name="image" />
+              <div class="col-12 col-md-4">
+                <div class="banner-upload">
+                  <div class="text-subtitle2 q-mb-sm">
+                    {{ $t('app.modals.mod_settings.appearance.banner') }}
                   </div>
-                </template>
-              </q-file>
-              <q-btn
-                v-if="logoPreview || form.logo_data"
-                flat
-                color="negative"
-                label="Remove Logo"
-                class="q-mt-sm"
-                @click="removeLogo"
-              />
+                  <q-file
+                    v-model="bannerFile"
+                    :label="$t('app.modals.mod_settings.appearance.set_banner')"
+                    outlined
+                    accept=".jpg, .jpeg, .png"
+                    class="q-mt-sm"
+                    @update:model-value="handleBannerFileChange"
+                  >
+                    <template #prepend>
+                      <div class="icon">
+                        <q-icon name="panorama" />
+                      </div>
+                    </template>
+                  </q-file>
+                  <q-btn
+                    v-if="bannerPreview || form.banner_data"
+                    outline
+                    color="negative"
+                    :label="
+                      $t('app.modals.mod_settings.appearance.remove_banner')
+                    "
+                    class="q-mt-sm full-width"
+                    @click="removeBanner"
+                  />
+                </div>
+              </div>
 
-              <q-select
-                v-if="logoPreview || form.logo_data"
-                v-model="form.logo_position"
-                :options="logoPositionOptions"
-                label="Logo Position"
-                popup-content-class="phantom-font"
-                popup-content-style="background-color: var(--theme-solid); color: var(--theme-text);"
-                outlined
-                class="q-mt-md phantom-font selector"
-                emit-value
-                map-options
-                hint="Position of the logo in the banner"
-              />
+              <div class="col-12 col-md-4">
+                <div class="logo-upload">
+                  <div class="text-subtitle2 q-mb-sm">
+                    {{ $t('app.modals.mod_settings.appearance.logo') }}
+                  </div>
+                  <q-file
+                    v-model="logoFile"
+                    :label="$t('app.modals.mod_settings.appearance.set_logo')"
+                    outlined
+                    accept=".jpg, .jpeg, .png"
+                    class="q-mt-sm"
+                    @update:model-value="handleLogoFileChange"
+                  >
+                    <template #prepend>
+                      <div class="icon">
+                        <q-icon name="image" />
+                      </div>
+                    </template>
+                  </q-file>
+                  <q-btn
+                    v-if="logoPreview || form.logo_data"
+                    outline
+                    color="negative"
+                    :label="
+                      $t('app.modals.mod_settings.appearance.remove_logo')
+                    "
+                    class="q-mt-sm full-width"
+                    @click="removeLogo"
+                  />
+
+                  <q-select
+                    v-if="logoPreview || form.logo_data"
+                    v-model="form.logo_position"
+                    :options="logoPositionOptions"
+                    :label="
+                      $t('app.modals.mod_settings.appearance.logo_position')
+                    "
+                    popup-content-class="phantom-font"
+                    popup-content-style="background-color: var(--theme-solid); color: var(--theme-text);"
+                    outlined
+                    class="q-mt-md phantom-font selector"
+                    emit-value
+                    map-options
+                    hint="Position of the logo in the banner"
+                  />
+                </div>
+              </div>
             </div>
           </q-card-section>
         </q-scroll-area>
@@ -438,11 +505,17 @@
         <q-btn
           v-close-popup
           flat
-          label="Cancel"
+          :label="$t('ui.actions.cancel')"
           color="primary"
           @click="cancel"
         />
-        <q-btn v-close-popup flat label="Save" color="primary" @click="save" />
+        <q-btn
+          v-close-popup
+          flat
+          :label="$t('ui.actions.save')"
+          color="primary"
+          @click="save"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -450,36 +523,34 @@
   <!-- Remove Mod Confirmation Dialog -->
   <MessageDialog
     v-model="showRemoveDialog"
-    title="Remove Mod"
+    :title="$t('mods.actions.remove_mod')"
     icon="warning"
     icon-color="negative"
-    confirm-label="Remove Mod"
+    :confirm-label="$t('ui.actions.remove')"
     confirm-color="negative"
     @confirm="removeMod"
   >
     <div class="text-h6">{{ form.name }}</div>
     <div class="text-caption">{{ form.path }}</div>
     <p class="text-body2 q-mt-sm">
-      Are you sure you want to remove this mod from Fridaylight? The mod files
-      will remain on your system.
+      {{ $t('ui.actions.conformations.remove_mod') }}
     </p>
   </MessageDialog>
 
   <!-- Super Delete Mod Confirmation Dialog -->
   <MessageDialog
     v-model="showSuperDeleteDialog"
-    title="Delete Mod"
+    :title="$t('mods.actions.delete_mod')"
     icon="delete_forever"
     icon-color="negative"
-    confirm-label="Delete Forever"
+    :confirm-label="$t('ui.actions.delete')"
     confirm-color="negative"
     @confirm="superDeleteMod"
   >
     <div class="text-h6">{{ form.name }}</div>
     <div class="text-caption">{{ form.path }}</div>
     <p class="text-body2 q-mt-sm">
-      This will PERMANENTLY DELETE the mod folder and all its contents from your
-      computer. This action cannot be undone!
+      {{ $t('ui.actions.conformations.delete_mod') }}
     </p>
   </MessageDialog>
 </template>
@@ -491,6 +562,8 @@ import { formatEngineName } from '../../utils'
 import MessageDialog from './MessageDialog.vue'
 import { revealItemInDir, openUrl } from '@tauri-apps/plugin-opener'
 import { invoke } from '@tauri-apps/api/core'
+import ModBanner from '@components/mods/ModBanner.vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   modelValue: {
@@ -511,6 +584,8 @@ const emit = defineEmits([
   'delete-mod',
   'super-delete-mod',
 ])
+
+const { t } = useI18n()
 
 const form = ref<Mod>({
   id: '',
@@ -559,9 +634,18 @@ const engineTypes = [
 ]
 
 const logoPositionOptions = [
-  { label: 'Bottom Left', value: 'left_bottom' },
-  { label: 'Middle Left', value: 'left_middle' },
-  { label: 'Middle', value: 'middle' },
+  {
+    label: t('app.modals.mod_settings.appearance.logo_position.bottom_left'),
+    value: 'left_bottom',
+  },
+  {
+    label: t('app.modals.mod_settings.appearance.logo_position.middle_left'),
+    value: 'left_middle',
+  },
+  {
+    label: t('app.modals.mod_settings.appearance.logo_position.middle'),
+    value: 'middle',
+  },
 ]
 
 const showModal = computed({
@@ -570,10 +654,26 @@ const showModal = computed({
 })
 
 const modSettingsSections = [
-  { id: 'general', label: 'General', icon: 'info' },
-  { id: 'location', label: 'Location', icon: 'folder' },
-  { id: 'engine', label: 'Engine', icon: 'code' },
-  { id: 'visuals', label: 'Appearance', icon: 'palette' },
+  {
+    id: 'general',
+    label: t('app.modals.mod_settings.general.label'),
+    icon: 'info',
+  },
+  {
+    id: 'location',
+    label: t('app.modals.mod_settings.installation.title'),
+    icon: 'folder',
+  },
+  {
+    id: 'engine',
+    label: t('app.modals.mod_settings.engine.label'),
+    icon: 'code',
+  },
+  {
+    id: 'visuals',
+    label: t('app.modals.mod_settings.appearance.title'),
+    icon: 'palette',
+  },
 ]
 
 const activeSection = ref('general')

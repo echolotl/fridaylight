@@ -735,9 +735,6 @@ export class GameBananaService {
           'Selected file contains an executable, treating as standard mod'
         )
 
-        // Update notification to downloading
-        this.updateNotification(`Downloading "${mod.name}"...`)
-
         // Get the install location from settings
         let installLocation: string | null = null
         try {
@@ -808,9 +805,6 @@ export class GameBananaService {
           }
         }
       }
-
-      // If not a modpack and doesn't contain an executable, proceed with standard download
-      this.updateNotification(`Downloading "${mod.name}"...`)
 
       // Get the install location from settings
       let installLocation: string | null = null

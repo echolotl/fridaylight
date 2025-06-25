@@ -1,7 +1,7 @@
 <template>
   <div class="engine-download">
     <h6 class="phantom-font-difficulty q-mb-md">
-      Engine Downloads
+      {{ $t('gamebanana.engine_downloads') }}
       <hr />
     </h6>
     <div class="engine-download-buttons text-center">
@@ -49,7 +49,7 @@
     >
       <template #header>
         <div class="flex items-center justify-between">
-          <span>More Engines</span>
+          <span>{{ $t('gamebanana.more_engines') }}</span>
         </div>
       </template>
       <div class="more-engines-content">
@@ -90,14 +90,20 @@
         </q-btn>
       </div>
       <div>
-        Have a suggestion for an engine? Ask on the
-        <a
-          class="cursor-pointer link"
-          @click="
-            handleUrlClick('https://www.github.com/echolotl/fridaylight/issues')
-          "
-          >GitHub</a
-        >!
+        <i18n-t keypath="gamebanana.have_a_suggestion_engine">
+          <template #githubLink>
+            <a
+              class="cursor-pointer link"
+              style="color: var(--q-primary)"
+              @click="
+                handleUrlClick(
+                  'https://www.github.com/echolotl/fridaylight/issues'
+                )
+              "
+              >GitHub</a
+            >
+          </template>
+        </i18n-t>
       </div>
     </q-expansion-item>
   </div>
@@ -105,11 +111,11 @@
   <!-- View Details Modal -->
   <MessageDialog
     :model-value="detailsModal"
-    :confirm-label="'Close'"
+    :confirm-label="$t('ui.actions.close')"
     single-option
     disable-icon
     :persistent="false"
-    title="Engine Details"
+    :title="$t('app.modals.engine_details.title')"
     @update:model-value="detailsModal = $event"
   >
     <template #default>
@@ -140,7 +146,6 @@
                 <img
                   v-if="currentModalEngine?.engine_icon"
                   :src="engineIcons[currentModalEngine.engine_icon]"
-                  alt="Engine Icon"
                   class="engine-icon"
                 />
               </div>
@@ -153,7 +158,7 @@
               class="credits-content"
             >
               <h6 class="phantom-font-difficulty q-mt-md q-mb-md">
-                Credits
+                {{ $t('misc.credits') }}
                 <hr />
               </h6>
 
@@ -186,7 +191,9 @@
                 v-if="currentModalEngine?.credits_url"
                 class="q-mt-md full-width"
                 icon="open_in_new"
-                label="View Full Credits"
+                :label="
+                  $t('app.modals.engine_details.actions.view_full_credits')
+                "
                 flat
                 @click="handleUrlClick(currentModalEngine.credits_url)"
               >
@@ -195,8 +202,11 @@
             <span
               v-if="currentModalEngine?.suggestors?.length"
               style="color: var(--theme-text-secondary)"
-              >Suggested by:
-              {{ currentModalEngine.suggestors.join(', ') }}</span
+              >{{
+                $t('app.modals.engine_details.suggested_by', {
+                  username: currentModalEngine.suggestors.join(', '),
+                })
+              }}</span
             >
           </div>
         </div>
