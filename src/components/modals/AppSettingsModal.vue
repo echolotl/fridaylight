@@ -38,6 +38,28 @@
             <div class="text-subtitle1 q-mb-md">
               {{ $t('app.modals.app_settings.appearance.title') }}
             </div>
+            <div class="q-mb-sm">
+              <q-select
+                v-model="selectedLocale"
+                :options="localeOptions"
+                :label="$t('app.modals.app_settings.appearance.language')"
+                outlined
+                emit-value
+                map-options
+                popup-content-class="phantom-font"
+                popup-content-style="background-color: var(--theme-solid); color: var(--theme-text);"
+                @update:model-value="onLocaleChange"
+              >
+                <template #option="scope">
+                  <q-item v-bind="scope.itemProps">
+                    <q-item-section>
+                      <q-item-label>{{ scope.opt.label }}</q-item-label>
+                      <q-item-label caption>{{ scope.opt.code }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </template>
+              </q-select>
+            </div>
 
             <div class="theme-toggle-container row q-mb-md">
               <q-item tag="label" class="full-width">
@@ -529,6 +551,7 @@ import MessageDialog from './MessageDialog.vue'
 import { StoreService, DEFAULT_SETTINGS } from '../../services/storeService'
 import { DatabaseService } from '../../services/dbService'
 import { themeService } from '../../services/themeService'
+import { useLocale, AVAILABLE_LOCALES } from '../../composables/useLocale'
 
 const props = defineProps({
   modelValue: {
@@ -597,6 +620,42 @@ const accentColorOptions = [
   { label: t('misc.colors.cyan'), value: '#39dbce' },
 ]
 
+// Locale functionality
+const { currentLocale, changeLocale, isLoading: localeLoading } = useLocale()
+
+// Language options for the select component
+const localeOptions = computed(() => {
+  return AVAILABLE_LOCALES.map(locale => ({
+    label: locale.name,
+    value: locale.code,
+    code: locale.code,
+  }))
+})
+
+// Selected locale for the dropdown
+const selectedLocale = ref(currentLocale.value)
+
+// Handle locale change
+const onLocaleChange = async (newLocale: string) => {
+  if (localeLoading.value) return
+
+  try {
+    const success = await changeLocale(newLocale)
+    if (success) {
+      selectedLocale.value = newLocale // Save to settings
+      settings.value.locale = newLocale
+      await save()
+    }
+  } catch (error) {
+    console.error('Failed to change locale:', error)
+  }
+}
+
+// Watch for external locale changes
+watch(currentLocale, newLocale => {
+  selectedLocale.value = newLocale
+})
+
 // Helper function to get current accent color
 const getAccentColor = () => {
   if (typeof settings.value.accentColor === 'string') {
@@ -654,8 +713,10 @@ const loadSettings = async () => {
       isCustomAccentColor.value = false
       customAccentColor.value = '#DB2955' // Reset to default
     }
-
     console.log('Settings loaded from store service:', settings.value)
+
+    // Update selected locale based on loaded settings
+    selectedLocale.value = settings.value.locale || 'en'
 
     // Apply theme immediately upon loading
     await updateTheme()
@@ -1024,6 +1085,14 @@ onMounted(async () => {
       },
     ]
   }
+
+  // Initialize locale
+  try {
+    selectedLocale.value = settings.value.locale || 'en'
+  } catch (error) {
+    console.error('Failed to initialize locale:', error)
+    selectedLocale.value = 'en'
+  }
 })
 
 // Initialize settings on component creation
@@ -1230,5 +1299,18 @@ a {
 .fridaylight-logo {
   max-height: 125px;
   width: auto;
+}
+.q-field :deep(.q-field__label) {
+  color: var(--theme-text) !important;
+}
+
+.q-field.q-field--outlined :deep(.q-field__control) {
+  color: var(--theme-text);
+}
+:deep(.q-field__native) {
+  color: var(--theme-text);
+}
+:deep(.q-field__messages) {
+  color: var(--theme-text-secondary);
 }
 </style>
