@@ -1090,7 +1090,7 @@ function downloadMod() {
 .mod-info-text img,
 .update-text img,
 .comment-text img {
-  max-width: 50%;
+  max-width: 100%;
   max-height: 100%;
   object-fit: contain;
 }

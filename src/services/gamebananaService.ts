@@ -83,7 +83,7 @@ export class GameBananaService {
     const modsFolderPath =
       engineInstallation.path +
       sep() +
-      engineInstallation.engine.mods_folder_path
+      (engineInstallation.engine.mods_folder_path || 'mods')
     return await invoke<boolean>('check_mod_folder_exists', {
       info: mod,
       installLocation: modsFolderPath,
@@ -200,7 +200,7 @@ export class GameBananaService {
       const installPath =
         engineInstallation.path +
         sep() +
-        (folderName || engineInstallation.engine.mods_folder_path)
+        (engineInstallation.engine.mods_folder_path || 'mods')
 
       const downloadId = downloadState.createDownload(
         fileToDownload._idRow,
