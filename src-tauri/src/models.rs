@@ -385,17 +385,15 @@ pub struct GBModPosts {
   #[serde(rename = "_aMetadata")]
   pub metadata: GBListMetadata,
   #[serde(rename = "_aRecords")]
-  pub records: Vec<GBModPostRecord>,
+  pub records: Vec<GBModPost>,
 }
 
-// Enum to handle both regular and trashed posts
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
-pub enum GBModPostRecord {
-  Post(GBModPost),
-  TrashedPost(GBModTrashedPost),
+pub enum GBPreviewMediaField {
+  EmptyArray(Vec<serde_json::Value>),
+  Object(GBPreviewMedia),
 }
-
 // Represents a post on a mod
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBModPost {
@@ -413,40 +411,18 @@ pub struct GBModPost {
   pub pin_level: i64,
   #[serde(rename = "_nStampScore")]
   pub stamp_score: i64,
-  #[serde(rename = "_aPreviewMedia")]
-  pub preview_media: Option<Vec<serde_json::Value>>,
+  #[serde(rename = "_aPreviewMedia", default)]
+  pub preview_media: Option<GBPreviewMediaField>,
   #[serde(rename = "_sText")]
   pub text: String,
   #[serde(rename = "_aPoster")]
-  pub poster: GBSubmitter,
+  pub poster: Option<GBSubmitter>,
   #[serde(rename = "_bFollowLinks")]
-  pub follow_links: bool,
+  pub follow_links: Option<bool>,
   #[serde(rename = "_aStamps")]
   pub stamps: Option<Vec<GBStamp>>,
   #[serde(rename = "_aLabels")]
   pub labels: Option<Vec<String>>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct GBModTrashedPost {
-  #[serde(rename = "_aPreviewMedia")]
-  pub preview_media: Vec<serde_json::Value>,
-  #[serde(rename = "_iPinLevel")]
-  pub pin_level: i64,
-  #[serde(rename = "_idRow")]
-  pub id_row: i64,
-  #[serde(rename = "_nReplyCount")]
-  pub reply_count: i64,
-  #[serde(rename = "_nStampScore")]
-  pub stamp_score: i64,
-  #[serde(rename = "_nStatus")]
-  pub status: String,
-  #[serde(rename = "_sText")]
-  pub text: String,
-  #[serde(rename = "_tsDateAdded")]
-  pub date_added: i64,
-  #[serde(rename = "_tsDateModified")]
-  pub date_modified: i64,
 }
 
 /// Represents a GameBanana Updates API response.
@@ -711,7 +687,7 @@ pub struct GBGame {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBImage {
   #[serde(rename = "_sType")]
-  pub r#type: String,
+  pub r#type: Option<String>,
   #[serde(rename = "_sBaseUrl")]
   pub base_url: String,
   #[serde(rename = "_sCaption")]

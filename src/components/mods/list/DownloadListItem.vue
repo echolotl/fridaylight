@@ -40,7 +40,12 @@
       />
 
       <q-item-label
-        v-if="!props.download.isComplete && !props.download.isError"
+        v-if="
+          !props.download.isComplete &&
+          !props.download.isError &&
+          downloadSpeed &&
+          props.download.bytesDownloaded !== 0
+        "
         caption
         class="text-primary q-mt-xs"
       >
@@ -136,8 +141,6 @@ watch(
 
 const downloadSpeed = computed(() => {
   // Return early states
-  if (props.download.isComplete) return 'Complete'
-  if (props.download.isError) return 'Error'
   if (props.download.percentage === 0 || startTime.value === null)
     return 'Starting...'
   if (props.download.bytesDownloaded === 0) return 'Connecting...'

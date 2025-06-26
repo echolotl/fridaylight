@@ -612,6 +612,13 @@ pub fn simulate_mod_folder_creation(
         .replace('|', "")
     )
   };
+
+  // Log install location provided
+  if let Some(location) = &install_location {
+    debug!("Install location provided: {}", location);
+  } else {
+    debug!("No install location provided, using default");
+  }
   // Get full install path
   let install_path = PathBuf::from(
     install_location.unwrap_or_else(|| {
@@ -629,13 +636,13 @@ pub fn simulate_mod_folder_creation(
       "The mod folder '{}' already exists at the specified install location",
       full_install_path.display()
     );
-    false // Folder exists, so we cannot safely create it
+    true // Folder exists, so we cannot safely create it
   } else {
     info!(
       "The mod folder '{}' does not exist, it can be created safely",
       full_install_path.display()
     );
-    true // Folder does not exist, safe to create
+    false // Folder does not exist, safe to create
   }
 }
 

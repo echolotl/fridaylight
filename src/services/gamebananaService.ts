@@ -6,6 +6,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { downloadState } from '@stores/downloadState'
 import { sep } from '@tauri-apps/api/path'
 import { listen } from '@tauri-apps/api/event'
+import { notificationService } from './notificationService'
 
 const fileIdToDownloadId = new Map<number, string>()
 
@@ -61,8 +62,8 @@ export class GameBananaService {
     }
     return await invoke<boolean>('check_mod_folder_exists', {
       info: mod,
-      install_location: installLocation,
-      folder_name: folderName,
+      installLocation: installLocation,
+      folderName: folderName,
     })
   }
 
@@ -130,8 +131,21 @@ export class GameBananaService {
         updateExisting: update || false,
       })
 
-      if (result) {
+      if (result && !update) {
         await this.saveModToDatabase(result)
+      } else if (result && update) {
+        // If updating, we update the existing mod
+        const dbService = DatabaseService.getInstance()
+        const existingMod = await dbService.getModByPath(result.path)
+        if (existingMod) {
+          result.id = existingMod.id
+          await dbService.saveMod(result)
+        } else {
+          console.warn(
+            `No existing mod found to update for path: ${result.path}`
+          )
+          await this.saveModToDatabase(result)
+        }
       }
 
       const refreshEvent = new CustomEvent('refresh-mods')
@@ -183,6 +197,7 @@ export class GameBananaService {
         folderName: folderName,
         updateExisting: update || false,
       })
+      notificationService.downloadSuccess(modInfo._sName)
     } catch (error) {
       console.error('Error downloading modpack:', error)
       throw new Error('Failed to download modpack')

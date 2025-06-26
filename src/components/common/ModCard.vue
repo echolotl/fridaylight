@@ -51,15 +51,20 @@
       color="primary"
       label="Download"
       class="download-btn"
-      @click.stop="$emit('download', mod)"
+      @click.stop="handleDownload(mod)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { GBSubfeedRecord, GBTopSubsItem } from '@custom-types/gamebanana'
+import {
+  GBProfilePage,
+  type GBSubfeedRecord,
+  type GBTopSubsItem,
+} from '@custom-types/gamebanana'
 import { openUrl } from '@tauri-apps/plugin-opener'
+import { invoke } from '@tauri-apps/api/core'
 
 const props = defineProps({
   mod: {
@@ -144,6 +149,14 @@ const showContextMenu = (event: MouseEvent) => {
     // Fallback to document if target is null
     document.dispatchEvent(customEvent)
   }
+}
+const handleDownload = async (mod: GBSubfeedRecord | GBTopSubsItem) => {
+  const fullMod = await invoke<GBProfilePage>('get_mod_info_command', {
+    modId: mod._idRow,
+    modelName: mod._sModelName,
+  })
+  console.info('Full mod data:', fullMod)
+  emit('download', fullMod)
 }
 </script>
 

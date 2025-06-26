@@ -794,13 +794,13 @@ const downloadMod = async (mod: GBProfilePage) => {
     }
 
     // Step 4: Check if folder already exists
-    // TODO: Implement folder existence check
     const folderExists = await gamebananaService.checkModFolderExists(
       mod,
       await gamebananaService.getInstallLocation()
     )
+    console.info(`Folder exists for mod ${mod._sName}: ${folderExists}`)
 
-    if (folderExists) {
+    if (folderExists === true) {
       const folderAction = await showFolderExistsModal(mod._sName)
 
       switch (folderAction) {
@@ -811,7 +811,7 @@ const downloadMod = async (mod: GBProfilePage) => {
           break
         case 'download-anyway':
           // This will create a separate folder for the download
-          downloadItem.folderName = `${mod._sName} - ${new Date().toISOString()}`
+          downloadItem.folderName = `${mod._sName}-${new Date().toISOString().slice(11, 19).replace(/:/g, '-')}`
           if (
             await gamebananaService.checkModFolderExists(
               mod,

@@ -14,7 +14,7 @@
         v-for="mod in mods"
         :key="mod._idRow"
         :mod="mod"
-        @download="$emit('download', mod)"
+        @download="$emit('download', $event)"
         @show-details="$emit('showDetails', mod._idRow, mod._sModelName)"
       />
     </div>
