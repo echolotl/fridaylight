@@ -47,11 +47,18 @@
       </div>
     </div>
     <q-btn
-      v-if="'_bHasFiles' in mod && mod._bHasFiles"
+      v-if="'_bHasFiles' in mod && mod._bHasFiles && !nonDownloadable"
       color="primary"
       label="Download"
       class="download-btn"
       @click.stop="handleDownload(mod)"
+    />
+    <q-btn
+      v-else
+      color="primary"
+      label="View Details"
+      class="download-btn"
+      @click.stop="$emit('showDetails', mod._idRow, mod._sModelName)"
     />
   </div>
 </template>
@@ -70,6 +77,10 @@ const props = defineProps({
   mod: {
     type: Object as () => GBSubfeedRecord | GBTopSubsItem,
     required: true,
+  },
+  nonDownloadable: {
+    type: Boolean,
+    default: false,
   },
 })
 

@@ -794,10 +794,20 @@ const downloadMod = async (mod: GBProfilePage) => {
     }
 
     // Step 4: Check if folder already exists
-    const folderExists = await gamebananaService.checkModFolderExists(
-      mod,
-      await gamebananaService.getInstallLocation()
-    )
+    let folderExists = false
+    if ('engineInstallation' in downloadItem) {
+      // For modpacks, check in the engine's mods folder
+      folderExists = await gamebananaService.checkModpackFolderExists(
+        mod,
+        (downloadItem as ModpackDownload).engineInstallation
+      )
+    } else {
+      // For standalone mods, check in the main install location
+      folderExists = await gamebananaService.checkModFolderExists(
+        mod,
+        await gamebananaService.getInstallLocation()
+      )
+    }
     console.info(`Folder exists for mod ${mod._sName}: ${folderExists}`)
 
     if (folderExists === true) {
@@ -812,17 +822,34 @@ const downloadMod = async (mod: GBProfilePage) => {
         case 'download-anyway':
           // This will create a separate folder for the download
           downloadItem.folderName = `${mod._sName}-${new Date().toISOString().slice(11, 19).replace(/:/g, '-')}`
-          if (
-            await gamebananaService.checkModFolderExists(
-              mod,
-              await gamebananaService.getInstallLocation(),
-              downloadItem.folderName
-            )
-          ) {
-            // Handle folder already exists case
-            throw new Error(
-              `Folder ${downloadItem.folderName} already exists. Please choose a different name.`
-            )
+          if ('engineInstallation' in downloadItem) {
+            // For modpacks, check in the engine's mods folder
+            if (
+              await gamebananaService.checkModpackFolderExists(
+                mod,
+                (downloadItem as ModpackDownload).engineInstallation,
+                downloadItem.folderName
+              )
+            ) {
+              // Handle folder already exists case
+              throw new Error(
+                `Folder ${downloadItem.folderName} already exists. Trying again should generate a different one.`
+              )
+            }
+          } else {
+            // For standalone mods, check in the main install location
+            if (
+              await gamebananaService.checkModFolderExists(
+                mod,
+                await gamebananaService.getInstallLocation(),
+                downloadItem.folderName
+              )
+            ) {
+              // Handle folder already exists case
+              throw new Error(
+                `Folder ${downloadItem.folderName} already exists. Trying again should generate a different one.`
+              )
+            }
           }
           break
       }
@@ -862,18 +889,41 @@ const downloadMod = async (mod: GBProfilePage) => {
 
 const downloadEngine = async (engineType: string) => {
   try {
+    let folderName: string | undefined = undefined
+    let update = false
     // Check if the folder already exists
     const folderExists = await gamebananaService.checkEngineFolderExists(
       engineType,
       await gamebananaService.getInstallLocation()
     )
-
-    const result = await gamebananaService.downloadEngine(engineType)
-    if (result) {
-      await gamebananaService.saveModToDatabase(result)
+    if (folderExists) {
+      const action = await showFolderExistsModal(
+        await formatEngineName(engineType)
+      )
+      if (action === 'cancel') {
+        return // User cancelled
+      } else if (action === 'update') {
+        update = true
+      } else if (action === 'download-anyway') {
+        // Create a new folder for the download
+        folderName = `${formatEngineName(engineType)}-${new Date()
+          .toISOString()
+          .slice(11, 19)
+          .replace(/:/g, '-')}`
+      }
     }
+
+    await gamebananaService.downloadEngine(engineType, folderName, update)
   } catch (error) {
     console.error('Error downloading engine:', error)
+    if (error instanceof Error && error.message.includes('cancelled')) {
+      // User cancelled, don't show error notification
+      return
+    }
+    notificationService.downloadError(
+      await formatEngineName(engineType),
+      String(error)
+    )
     throw new Error('Failed to download engine')
   }
 }

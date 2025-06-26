@@ -33,7 +33,7 @@ struct EngineConfig {
   engine_type: String,
   engine_name: String,
   engine_url: String,
-  engine_banner: String,
+  engine_banner: Option<String>,
   engine_logo: String,
   engine_icon: String,
   engine_description: String,
@@ -55,7 +55,7 @@ pub async fn download_gamebanana_mod(
     file.id_row
   );
 
-  let model_type = info.category.model_name.clone();
+  let model_type = info.category.model_name.clone().replace("Category", "");
   let file_id = file.id_row;
   let mod_id = info.id_row;
 
@@ -695,13 +695,13 @@ pub fn simulate_engine_folder_creation(
       "The engine folder '{}' already exists at the specified install location",
       full_install_path.display()
     );
-    return false; // Folder exists, cannot safely create it
+    return true; // Folder exists, so it can be updated
   } else {
     info!(
       "The engine folder '{}' does not exist, it can be created safely",
       full_install_path.display()
     );
-    return true;
+    return false; // Folder does not exist, safe to create
   }
 }
 
@@ -744,8 +744,10 @@ pub async fn download_engine(
   engine_id: String,
   install_location: Option<String>,
   custom_name: Option<String>,
+  update_existing: Option<bool>,
+  download_id: i64,
   app: tauri::AppHandle
-) -> Result<String, String> {
+) -> Result<ModInfo, String> {
   info!("Starting direct engine download for: {}", engine_id);
 
   // Load engine configuration from JSON
@@ -760,14 +762,10 @@ pub async fn download_engine(
   let engine_description = config.engine_description;
   let engine_version = config.engine_version;
 
-  // Create a unique mod ID for tracking downloads
-  let mod_id = uuid::Uuid::new_v4().as_u128() as i64;
-  info!("Generated mod_id for {} engine: {}", engine_id, mod_id);
-
   // Emit download started event
   app
     .emit("download-started", DownloadStarted {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
       content_length: 0, // We don't know the size yet
       thumbnail_url: None,
@@ -777,11 +775,11 @@ pub async fn download_engine(
   // Emit progress event for the engine download fetch step
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
-      bytes_downloaded: 0,
-      total_bytes: 100,
       percentage: 5,
+      bytes_downloaded: 0,
+      total_bytes: 100, // Placeholder
       step: "Preparing to download engine...".to_string(),
     })
     .unwrap_or_else(|e|
@@ -801,7 +799,7 @@ pub async fn download_engine(
       // Emit error event
       app
         .emit("download-error", DownloadError {
-          mod_id,
+          mod_id: download_id,
           name: engine_name.to_string(),
           error: error_msg.clone(),
         })
@@ -831,7 +829,7 @@ pub async fn download_engine(
         // Emit error event
         app
           .emit("download-error", DownloadError {
-            mod_id,
+            mod_id: download_id,
             name: engine_name.to_string(),
             error: err_msg.clone(),
           })
@@ -850,7 +848,7 @@ pub async fn download_engine(
       // Emit error event
       app
         .emit("download-error", DownloadError {
-          mod_id,
+          mod_id: download_id,
           name: engine_name.to_string(),
           error: error_msg.clone(),
         })
@@ -912,7 +910,7 @@ pub async fn download_engine(
   // Update the download started event with actual content length
   app
     .emit("download-started", DownloadStarted {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
       content_length: total_size,
       thumbnail_url: None,
@@ -931,7 +929,7 @@ pub async fn download_engine(
       // Emit error event
       app
         .emit("download-error", DownloadError {
-          mod_id,
+          mod_id: download_id,
           name: engine_name.to_string(),
           error: error_msg.clone(),
         })
@@ -959,7 +957,7 @@ pub async fn download_engine(
           // Emit error event
           app
             .emit("download-error", DownloadError {
-              mod_id,
+              mod_id: download_id,
               name: engine_name.to_string(),
               error: error_msg.clone(),
             })
@@ -982,7 +980,7 @@ pub async fn download_engine(
         if percentage != last_percentage {
           app
             .emit("download-progress", DownloadProgress {
-              mod_id,
+              mod_id: download_id,
               name: engine_name.to_string(),
               bytes_downloaded: downloaded,
               total_bytes: total_size,
@@ -1003,7 +1001,7 @@ pub async fn download_engine(
         // Emit error event
         app
           .emit("download-error", DownloadError {
-            mod_id,
+            mod_id: download_id,
             name: engine_name.to_string(),
             error: error_msg.clone(),
           })
@@ -1019,7 +1017,7 @@ pub async fn download_engine(
   // Emit progress event for extraction
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
       bytes_downloaded: total_size,
       total_bytes: total_size,
@@ -1053,7 +1051,7 @@ pub async fn download_engine(
       // Emit error event
       app
         .emit("download-error", DownloadError {
-          mod_id,
+          mod_id: download_id,
           name: engine_name.to_string(),
           error: error_msg.clone(),
         })
@@ -1083,18 +1081,50 @@ pub async fn download_engine(
   let engine_folder = install_dir.join(&folder_name);
 
   if engine_folder.exists() {
-    debug!(
-      "Engine folder already exists, removing it: {}",
-      engine_folder.display()
-    );
-    if let Err(e) = fs::remove_dir_all(&engine_folder) {
-      let error_msg = format!("Failed to remove existing engine folder: {}", e);
+    if update_existing.unwrap_or(false) {
+      debug!(
+        "Engine folder already exists, updating in place: {}",
+        engine_folder.display()
+      );
+      // When updating, we keep the existing folder and just extract over it
+      // Note: We don't remove the folder when updating to preserve any user data/mods
+    } else {
+      debug!(
+        "Engine folder already exists, removing it: {}",
+        engine_folder.display()
+      );
+      if let Err(e) = fs::remove_dir_all(&engine_folder) {
+        let error_msg =
+          format!("Failed to remove existing engine folder: {}", e);
+        error!("{}", error_msg);
+
+        // Emit error event
+        app
+          .emit("download-error", DownloadError {
+            mod_id: download_id,
+            name: engine_name.to_string(),
+            error: error_msg.clone(),
+          })
+          .unwrap_or_else(|e|
+            error!("Failed to emit download-error event: {}", e)
+          );
+
+        return Err(error_msg);
+      }
+    }
+  }
+
+  // Only create the directory if it doesn't exist (for updates, it should already exist)
+  if !engine_folder.exists() {
+    debug!("Creating engine folder: {}", engine_folder.display());
+    if let Err(e) = fs::create_dir_all(&engine_folder) {
+      let error_msg = format!("Failed to create engine folder: {}", e);
       error!("{}", error_msg);
 
       // Emit error event
       app
         .emit("download-error", DownloadError {
-          mod_id,
+          mod_id: download_id,
           name: engine_name.to_string(),
           error: error_msg.clone(),
         })
@@ -1106,29 +1136,12 @@ pub async fn download_engine(
     }
   }
 
-  debug!("Creating engine folder: {}", engine_folder.display());
-  if let Err(e) = fs::create_dir_all(&engine_folder) {
-    let error_msg = format!("Failed to create engine folder: {}", e);
-    error!("{}", error_msg);
-
-    // Emit error event
-    app
-      .emit("download-error", DownloadError {
-        mod_id,
-        name: engine_name.to_string(),
-        error: error_msg.clone(),
-      })
-      .unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
-
-    return Err(error_msg);
-  }
-
   // Extract the archive
   let extraction_result = extract_archive(
     &download_path,
     &engine_folder,
     &engine_name,
-    mod_id,
+    download_id,
     &app
   );
   if let Err(e) = extraction_result {
@@ -1144,7 +1157,7 @@ pub async fn download_engine(
   // Emit progress event for finalizing
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
       bytes_downloaded: 95,
       total_bytes: 100,
@@ -1182,7 +1195,8 @@ pub async fn download_engine(
   }
 
   // Copy standard banner and logo from resources
-  let banner_path = "resources/".to_string() + &engine_banner;
+  let banner_path =
+    "resources/".to_string() + engine_banner.as_deref().unwrap_or("");
   let logo_path = "resources/".to_string() + &engine_logo;
   let engine_icon_path = "resources/".to_string() + &engine_icon;
 
@@ -1301,7 +1315,7 @@ pub async fn download_engine(
   // Emit download finished event
   app
     .emit("download-finished", DownloadFinished {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
       mod_info: mod_info.clone(),
     })
@@ -1312,7 +1326,7 @@ pub async fn download_engine(
   // Emit progress event for completion
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
       bytes_downloaded: 100,
       total_bytes: 100,
@@ -1323,7 +1337,7 @@ pub async fn download_engine(
       error!("Failed to emit download-progress event: {}", e)
     );
 
-  Ok(engine_folder.to_string_lossy().to_string())
+  Ok(mod_info)
 }
 
 // Helper function to extract archives of different types

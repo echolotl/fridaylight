@@ -67,7 +67,7 @@
 
         <template v-else-if="modInfo">
           <q-card-section class="mod-details-content">
-            <div class="mod-details-left">
+            <div class="mod-details-left col">
               <q-carousel
                 v-if="
                   modInfo?._aPreviewMedia?._aImages &&
@@ -381,7 +381,7 @@
                 </div>
               </div>
             </div>
-            <div class="mod-details-right phantom-font">
+            <div class="mod-details-right phantom-font col">
               <div
                 v-if="modInfo._nThanksCount"
                 class="q-mb-md flex justify-center items-center"
@@ -481,7 +481,17 @@
                   @click="openUrl(modInfo._sProfileUrl)"
                 />
               </div>
-              <div class="q-mt-md">
+              <div v-if="modInfo._aStudio" class="q-mt-md">
+                <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
+                  Studio
+                  <hr />
+                </h6>
+                <div class="flex justify-center">
+                  <div>Created by</div>
+                  <div @onclick="openUrl(modInfo._aStudio._sProfileUrl)">
+                    <img :src="modInfo._aStudio._sBannerUrl" />
+                  </div>
+                </div>
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                   Submitter
                   <hr />
@@ -946,7 +956,7 @@ function downloadMod() {
 .mod-carousel {
   max-width: 800px;
   max-height: 100%;
-  height: max-content;
+  height: 20vh;
   width: fit-content;
   margin: 0 auto;
   border-radius: 8px;
@@ -1074,13 +1084,13 @@ function downloadMod() {
 .update-textm .comment-text {
   line-height: 1.2;
   text-wrap: break-chars;
-  max-width: 100%;
+  max-width: fit-content;
 }
 
 .mod-info-text img,
 .update-text img,
 .comment-text img {
-  max-width: 100%;
+  max-width: 50%;
   max-height: 100%;
   object-fit: contain;
 }

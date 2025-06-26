@@ -1194,11 +1194,14 @@ const openGamebananaBrowser = () => {
 }
 
 // Open a specific GameBanana mod page
-const openGamebananaMod = (modId: number | string, modelType: string) => {
+const openGamebananaMod = (payload: {
+  modId: number | string
+  modelType: string
+}) => {
   setActivePage('gamebanana')
   // Ensure we're always working with proper types
-  const numericId = Number(modId) || 0
-  const typeString = String(modelType || 'Mod')
+  const numericId = Number(payload.modId) || 0
+  const typeString = String(payload.modelType || 'Mod')
 
   console.info(
     `Opening GameBanana mod ${numericId} with model type ${typeString}`

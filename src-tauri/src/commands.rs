@@ -636,13 +636,17 @@ pub async fn download_engine_command(
   engine_type: String,
   install_location: Option<String>,
   custom_name: Option<String>,
+  update_existing: Option<bool>,
+  download_id: i64,
   app: tauri::AppHandle
-) -> Result<String, String> {
+) -> Result<ModInfo, String> {
   info!("Starting direct download process for {} engine", engine_type);
   crate::download::download_engine(
     engine_type,
     install_location,
     custom_name,
+    update_existing,
+    download_id,
     app
   ).await
 }

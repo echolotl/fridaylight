@@ -35,6 +35,7 @@ export interface GBProfilePage {
   _nDownloadCount: number
   _aFiles?: GBFile[]
   _nSubscriberCount: number
+  _aStudio?: GBStudio
   _aContributingStudios: unknown[]
   _sLicense: string
   _aLicenseChecklist: {
@@ -42,6 +43,8 @@ export interface GBProfilePage {
     ask: string[]
     no: string[]
   }
+  _aContentRatings?: Record<string, string>
+  _aEmbeddedMedia?: string[]
   _sDescription?: string
   _bGenerateTableOfContents: boolean
   _sText: string
@@ -71,6 +74,16 @@ export interface GBProfilePage {
   _sDevelopmentState?: string
   _iCompletionPercentage?: number
   _aFinishedWork?: GBFinishedWork
+}
+
+export interface GBStudio {
+  _idRow: number
+  _sName: string
+  _sProfileUrl: string
+  _sBannerUrl: string
+  _nSubscriberCount: number
+  _bAccessorIsSubscribed?: boolean
+  _idAccessorSubscriptionRow?: number
 }
 
 export interface GBFeaturing {
@@ -291,9 +304,9 @@ export interface GBTag {
 
 // Represents a GameBanana stamp
 export interface GBStamp {
-  _sIconClasses: string
-  _sTitle: string
-  _sCategory: string
+  _sIconClasses?: string
+  _sTitle?: string
+  _sCategory?: string
   _nCount: number
   _UnlockName?: string
 }
@@ -447,7 +460,7 @@ export interface GBModManagerIntegration {
 // Represents an alternate file source in GameBanana API
 export interface GBAltFile {
   url: string
-  description: string
+  description?: string
 }
 
 // Represents a category in GameBanana API

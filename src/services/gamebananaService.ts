@@ -7,6 +7,7 @@ import { downloadState } from '@stores/downloadState'
 import { sep } from '@tauri-apps/api/path'
 import { listen } from '@tauri-apps/api/event'
 import { notificationService } from './notificationService'
+import { formatEngineName } from '@utils/index'
 
 const fileIdToDownloadId = new Map<number, string>()
 
@@ -68,6 +69,29 @@ export class GameBananaService {
   }
 
   /**
+   * Checks if a modpack folder exists in the engine's mods folder.
+   * @param mod The mod information.
+   * @param engineInstallation The engine installation to check within.
+   * @param folderName The name of the folder to check.
+   * @returns A promise that resolves to a boolean indicating if the folder exists.
+   */
+  public async checkModpackFolderExists(
+    mod: GBProfilePage,
+    engineInstallation: Mod,
+    folderName?: string
+  ): Promise<boolean> {
+    const modsFolderPath =
+      engineInstallation.path +
+      sep() +
+      engineInstallation.engine.mods_folder_path
+    return await invoke<boolean>('check_mod_folder_exists', {
+      info: mod,
+      installLocation: modsFolderPath,
+      folderName: folderName,
+    })
+  }
+
+  /**
    * Checks if the engine folder exists.
    * @param engineType The type of the engine.
    * @param installLocation The installation location of the engine.
@@ -87,8 +111,8 @@ export class GameBananaService {
     }
     return await invoke<boolean>('check_engine_folder_exists', {
       engineType,
-      install_location: installLocation,
-      folder_name: folderName,
+      installLocation: installLocation,
+      folderName: folderName,
     })
   }
 
@@ -206,22 +230,52 @@ export class GameBananaService {
 
   public async downloadEngine(
     engineType: string,
-    folderName?: string
+    folderName?: string,
+    update?: boolean
   ): Promise<Mod> {
     try {
       const installLocation = await this.getInstallLocation()
       if (!installLocation) {
         throw new Error('Install location is not set')
       }
+      const trackingId = Math.floor(Math.random() * 1000000)
+
+      const downloadId = downloadState.createDownload(
+        trackingId,
+        await formatEngineName(engineType)
+      )
+
+      fileIdToDownloadId.set(trackingId, downloadId)
+      downloadState.updateDownloadProgress({
+        id: downloadId,
+        step: `Preparing engine download...`,
+        isComplete: false,
+        isError: false,
+      })
 
       const result = await invoke<Mod>('download_engine_command', {
         engineType,
-        installLocation,
+        installLocation: installLocation,
         folderName,
+        updateExisting: update || false,
+        downloadId: trackingId,
       })
 
-      if (result) {
+      if (result && !update) {
         await this.saveModToDatabase(result)
+      } else if (result && update) {
+        // If updating, we update the existing mod
+        const dbService = DatabaseService.getInstance()
+        const existingMod = await dbService.getModByPath(result.path)
+        if (existingMod) {
+          result.id = existingMod.id
+          await dbService.saveMod(result)
+        } else {
+          console.warn(
+            `No existing mod found to update for path: ${result.path}`
+          )
+          await this.saveModToDatabase(result)
+        }
       }
 
       const refreshEvent = new CustomEvent('refresh-mods')

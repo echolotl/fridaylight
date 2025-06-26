@@ -284,7 +284,10 @@ const handleOpenGamebanana = (id: number, model_type: string) => {
   console.info(
     `Opening GameBanana mod with ID: ${numericId}, model type: ${modelType}`
   )
-  emit('open-gamebanana-mod', numericId, modelType)
+  emit('open-gamebanana-mod', {
+    modId: numericId,
+    modelType: modelType,
+  })
 }
 
 // Watch for changes to props.mod.id

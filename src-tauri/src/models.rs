@@ -183,12 +183,18 @@ pub struct GBProfilePage {
   pub files: Option<Vec<GBFile>>,
   #[serde(rename = "_nSubscriberCount")]
   pub subscriber_count: i64,
+  #[serde(rename = "_aStudio")]
+  pub studio: Option<GBStudio>,
   #[serde(rename = "_aContributingStudios")]
   pub contributing_studios: Vec<serde_json::Value>,
   #[serde(rename = "_sLicense")]
   pub license: String,
   #[serde(rename = "_aLicenseChecklist")]
   pub license_checklist: GBLicenseChecklist,
+  #[serde(rename = "_aContentRatings")]
+  pub content_ratings: Option<serde_json::Value>,
+  #[serde(rename = "_aEmbeddedMedia")]
+  pub embedded_media: Option<Vec<String>>,
   #[serde(rename = "_sDescription")]
   pub description: Option<String>,
   #[serde(rename = "_bGenerateTableOfContents")]
@@ -240,6 +246,24 @@ pub struct GBProfilePage {
   pub completion_percentage: Option<u32>,
   #[serde(rename = "_aFinishedWork")]
   pub finished_work: Option<GBFinishedWork>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GBStudio {
+  #[serde(rename = "_idRow")]
+  pub id_row: i64,
+  #[serde(rename = "_sName")]
+  pub name: String,
+  #[serde(rename = "_sProfileUrl")]
+  pub profile_url: String,
+  #[serde(rename = "_sBannerUrl")]
+  pub banner_url: String,
+  #[serde(rename = "_nSubscriberCount")]
+  pub subscriber_count: i64,
+  #[serde(rename = "_bAccessorIsSubscribed")]
+  pub accessor_is_subscribed: Option<bool>,
+  #[serde(rename = "_idAccessorSubscriptionRow")]
+  pub id_accessor_subscription_row: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -515,11 +539,11 @@ pub struct GBTag {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBStamp {
   #[serde(rename = "_sIconClasses")]
-  pub icon_classes: String,
+  pub icon_classes: Option<String>,
   #[serde(rename = "_sTitle")]
-  pub title: String,
+  pub title: Option<String>,
   #[serde(rename = "_sCategory")]
-  pub category: String,
+  pub category: Option<String>,
   #[serde(rename = "_nCount")]
   pub count: i64,
   #[serde(rename = "_sUnlockName")]
@@ -781,7 +805,7 @@ pub struct GBModManagerIntegration {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBAltFile {
   pub url: String,
-  pub description: String,
+  pub description: Option<String>,
 }
 
 // Represents a category in GameBanana API

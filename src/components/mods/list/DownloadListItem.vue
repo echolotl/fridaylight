@@ -44,7 +44,9 @@
           !props.download.isComplete &&
           !props.download.isError &&
           downloadSpeed &&
-          props.download.bytesDownloaded !== 0
+          props.download.bytesDownloaded !== 0 &&
+          !props.download.step.includes('Extracting') &&
+          !compactMode
         "
         caption
         class="text-primary q-mt-xs"
