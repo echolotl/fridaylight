@@ -1176,6 +1176,23 @@ pub fn check_mod_folder_exists(
   )
 }
 
+#[tauri::command]
+pub fn check_engine_folder_exists(
+  engine_type: String,
+  install_location: Option<String>,
+  custom_name: Option<String>,
+  app: tauri::AppHandle
+) -> Result<bool, String> {
+  Ok(
+    crate::download::simulate_engine_folder_creation(
+      engine_type,
+      install_location,
+      custom_name,
+      &app
+    )
+  )
+}
+
 async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
   if let Some(update) = app.updater()?.check().await? {
     let mut downloaded = 0;
@@ -1280,6 +1297,7 @@ pub fn run() {
         clear_mod_logs,
         super_delete_mod,
         check_mod_folder_exists,
+        check_engine_folder_exists,
         get_mod_posts_command,
         get_mod_updates_command,
         check_mod_dependency,

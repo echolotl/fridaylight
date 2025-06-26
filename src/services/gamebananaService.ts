@@ -5,6 +5,9 @@ import { GBFile, GBProfilePage } from '@custom-types/gamebanana'
 import { invoke } from '@tauri-apps/api/core'
 import { downloadState } from '@stores/downloadState'
 import { sep } from '@tauri-apps/api/path'
+import { listen } from '@tauri-apps/api/event'
+
+const fileIdToDownloadId = new Map<number, string>()
 
 export class GameBananaService {
   private static instance: GameBananaService
@@ -47,11 +50,42 @@ export class GameBananaService {
 
   public async checkModFolderExists(
     mod: GBProfilePage,
-    installLocation: string,
+    installLocation?: string,
     folderName?: string
   ): Promise<boolean> {
+    if (!installLocation) {
+      installLocation = await this.getInstallLocation()
+      if (!installLocation) {
+        throw new Error('Install location is not set')
+      }
+    }
     return await invoke<boolean>('check_mod_folder_exists', {
       info: mod,
+      install_location: installLocation,
+      folder_name: folderName,
+    })
+  }
+
+  /**
+   * Checks if the engine folder exists.
+   * @param engineType The type of the engine.
+   * @param installLocation The installation location of the engine.
+   * @param folderName The name of the folder to check.
+   * @returns A promise that resolves to a boolean indicating if the folder exists.
+   */
+  public async checkEngineFolderExists(
+    engineType: string,
+    installLocation?: string,
+    folderName?: string
+  ): Promise<boolean> {
+    if (!installLocation) {
+      installLocation = await this.getInstallLocation()
+      if (!installLocation) {
+        throw new Error('Install location is not set')
+      }
+    }
+    return await invoke<boolean>('check_engine_folder_exists', {
+      engineType,
       install_location: installLocation,
       folder_name: folderName,
     })
@@ -76,9 +110,13 @@ export class GameBananaService {
         throw new Error('Install location is not set')
       }
 
-      downloadState.createDownload(fileToDownload._idRow, modInfo._sName)
+      const downloadId = downloadState.createDownload(
+        fileToDownload._idRow,
+        modInfo._sName
+      )
+      fileIdToDownloadId.set(fileToDownload._idRow, downloadId)
       downloadState.updateDownloadProgress({
-        id: fileToDownload._idRow.toString(),
+        id: downloadId,
         step: `Preparing download...`,
         isComplete: false,
         isError: false,
@@ -126,15 +164,19 @@ export class GameBananaService {
         sep() +
         (folderName || engineInstallation.engine.mods_folder_path)
 
-      downloadState.createDownload(fileToDownload._idRow, modInfo._sName)
+      const downloadId = downloadState.createDownload(
+        fileToDownload._idRow,
+        modInfo._sName
+      )
+      fileIdToDownloadId.set(fileToDownload._idRow, downloadId)
       downloadState.updateDownloadProgress({
-        id: fileToDownload._idRow.toString(),
+        id: downloadId,
         step: `Preparing download...`,
         isComplete: false,
         isError: false,
       })
 
-      await invoke<Mod>('download_gamebanana_modpack_command', {
+      await invoke<Mod>('download_gamebanana_mod_command', {
         info: modInfo,
         file: fileToDownload,
         installLocation: installPath,
@@ -146,4 +188,177 @@ export class GameBananaService {
       throw new Error('Failed to download modpack')
     }
   }
+
+  public async downloadEngine(
+    engineType: string,
+    folderName?: string
+  ): Promise<Mod> {
+    try {
+      const installLocation = await this.getInstallLocation()
+      if (!installLocation) {
+        throw new Error('Install location is not set')
+      }
+
+      const result = await invoke<Mod>('download_engine_command', {
+        engineType,
+        installLocation,
+        folderName,
+      })
+
+      if (result) {
+        await this.saveModToDatabase(result)
+      }
+
+      const refreshEvent = new CustomEvent('refresh-mods')
+      window.dispatchEvent(refreshEvent)
+
+      return result
+    } catch (error) {
+      console.error('Error downloading engine:', error)
+      throw new Error('Failed to download engine')
+    }
+  }
+
+  async getCompatibleEngines(engineType: string): Promise<Mod[]> {
+    try {
+      const dbService = DatabaseService.getInstance()
+      const allMods = await dbService.getAllMods()
+
+      // Filter mods where the engine type matches the provided engineType
+      const engines = allMods.filter(
+        (mod: Mod) => mod.engine.engine_type === engineType
+      )
+
+      return engines
+    } catch (error) {
+      console.error('Error getting compatible engines:', error)
+      return Promise.reject('Failed to get compatible engines')
+    }
+  }
 }
+
+listen('download-progress', (event: any) => {
+  console.info('Download progress:', event.payload)
+
+  const modId = event.payload.mod_id
+  if (!modId) {
+    console.warn('No modId found in download progress event')
+    return
+  }
+  let downloadId = fileIdToDownloadId.get(modId)
+  if (!downloadId) {
+    console.warn(`No download ID found locally for mod ID ${modId}`)
+    // Try and find it in the downloadState
+    const existingDownload = Object.values(downloadState.downloadingMods).find(
+      download => download.modId === modId
+    )
+    if (existingDownload) {
+      console.info(
+        `Found existing download ID ${existingDownload.id} for mod ID ${modId}`
+      )
+      fileIdToDownloadId.set(modId, existingDownload.id)
+      // Update the download ID
+      downloadId = existingDownload.id
+    } else {
+      console.warn(`No download ID found for mod ID ${modId} in downloadState`)
+      return
+    }
+  }
+  downloadState.updateDownloadProgress({
+    id: downloadId,
+    step: event.payload.step,
+    percentage: event.payload.percentage,
+    bytesDownloaded: event.payload.bytes_downloaded || 0,
+    totalBytes: event.payload.total_bytes || 0,
+    isComplete: event.payload.isComplete || false,
+    isError: event.payload.isError || false,
+  })
+})
+
+listen('download-finished', (event: any) => {
+  console.info('Download complete:', event.payload)
+  const modId = event.payload.mod_id
+  if (!modId) {
+    console.warn('No modId found in download complete event')
+    return
+  }
+  let downloadId = fileIdToDownloadId.get(modId)
+  if (!downloadId) {
+    console.warn(`No download ID found for locally mod ID ${modId}`)
+    // Try and find it in the downloadState
+    const existingDownload = Object.values(downloadState.downloadingMods).find(
+      download => download.modId === modId
+    )
+    if (existingDownload) {
+      console.info(
+        `Found existing download ID ${existingDownload.id} for mod ID ${modId}`
+      )
+      fileIdToDownloadId.set(modId, existingDownload.id)
+      // Update the download ID
+      downloadId = existingDownload.id
+    } else {
+      console.warn(`No download ID found for mod ID ${modId} in downloadState`)
+      return
+    }
+  }
+  downloadState.updateDownloadProgress({
+    id: downloadId,
+    percentage: 100,
+    step: 'Download complete!',
+    isComplete: true,
+    isError: false,
+  })
+
+  setTimeout(() => {
+    downloadState.completeDownload(downloadId)
+    const event = new CustomEvent('refresh-mods')
+    window.dispatchEvent(event)
+    // Clear the mapping after completion
+    fileIdToDownloadId.delete(modId)
+  }, 1500)
+})
+
+listen('download-error', (event: any) => {
+  console.error('Download error:', event.payload)
+  const modId = event.payload.mod_id
+  if (!modId) {
+    console.warn('No modId found in download error event')
+    return
+  }
+  let downloadId = fileIdToDownloadId.get(modId)
+  if (!downloadId) {
+    console.warn(`No download ID found locally for mod ID ${modId}`)
+    // Try and find it in the downloadState
+    const existingDownload = Object.values(downloadState.downloadingMods).find(
+      download => download.modId === modId
+    )
+    if (existingDownload) {
+      console.info(
+        `Found existing download ID ${existingDownload.id} for mod ID ${modId}`
+      )
+      fileIdToDownloadId.set(modId, existingDownload.id)
+      // Update the download ID
+      downloadId = existingDownload.id
+    } else {
+      console.warn(`No download ID found for mod ID ${modId} in downloadState`)
+      return
+    }
+  }
+  downloadState.updateDownloadProgress({
+    id: downloadId,
+    step: 'Download failed',
+    isComplete: false,
+    isError: true,
+    error: event.payload.error || 'Unknown error',
+  })
+  setTimeout(() => {
+    downloadState.errorDownload(
+      downloadId,
+      event.payload.error || 'Unknown error'
+    )
+    // Clear the mapping after error
+    fileIdToDownloadId.delete(modId)
+  }, 1500)
+})
+
+export const gamebananaService = GameBananaService.getInstance()

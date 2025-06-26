@@ -45,6 +45,7 @@ export interface Folder {
  * Represents a Friday Night Funkin' mod
  */
 export interface Mod {
+  _aFiles: any
   id: string
   name: string
   path: string

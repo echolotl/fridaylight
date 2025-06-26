@@ -276,12 +276,12 @@ pub async fn download_gamebanana_mod(
         if percentage != last_percentage {
           app
             .emit("download-progress", DownloadProgress {
-              mod_id,
+              mod_id: file_id,
               name: info.name.clone(),
               bytes_downloaded: downloaded,
               total_bytes: total_size,
               percentage,
-              step: "Downloading mod file".to_string(),
+              step: "Downloading mod...".to_string(),
             })
             .unwrap_or_else(|e|
               error!("Failed to emit download-progress event: {}", e)
@@ -313,7 +313,7 @@ pub async fn download_gamebanana_mod(
   // Emit progress event for extraction
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
+      mod_id: file_id,
       name: info.name.clone(),
       bytes_downloaded: total_size,
       total_bytes: total_size,
@@ -444,7 +444,7 @@ pub async fn download_gamebanana_mod(
   // Emit progress event for finalizing
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
+      mod_id: file_id,
       name: info.name.clone(),
       bytes_downloaded: 95,
       total_bytes: 100,
@@ -563,7 +563,7 @@ pub async fn download_gamebanana_mod(
   // Emit download finished event
   app
     .emit("download-finished", DownloadFinished {
-      mod_id,
+      mod_id: file_id,
       name: info.name.clone(),
       mod_info: mod_info.clone(),
     })
@@ -574,7 +574,7 @@ pub async fn download_gamebanana_mod(
   // Emit progress event for completion
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
+      mod_id: file_id,
       name: info.name.clone(),
       bytes_downloaded: 100,
       total_bytes: 100,
@@ -636,6 +636,65 @@ pub fn simulate_mod_folder_creation(
       full_install_path.display()
     );
     true // Folder does not exist, safe to create
+  }
+}
+
+// Simulate engine folder creation to check if it can be created safely
+pub fn simulate_engine_folder_creation(
+  engine_type: String,
+  install_location: Option<String>,
+  folder_name: Option<String>,
+  app: &tauri::AppHandle
+) -> bool {
+  let config = match load_engine_config(&engine_type, &app) {
+    Ok(config) => config,
+    Err(e) => {
+      error!("Failed to load engine configuration: {}", e);
+      return false; // Cannot simulate if config loading fails
+    }
+  };
+
+  let engine_name = config.engine_name;
+  let install_path = if let Some(location) = install_location {
+    PathBuf::from(location)
+  } else {
+    get_default_install_location(&app)
+  };
+  let folder_path = if folder_name.is_some() {
+    folder_name.clone()
+  } else {
+    Some(
+      engine_name
+        .replace(' ', "-")
+        .replace('/', "_")
+        .replace('\\', "_")
+        .replace(':', "")
+        .replace('*', "")
+        .replace('?', "")
+        .replace('"', "")
+        .replace('<', "")
+        .replace('>', "")
+        .replace('|', "")
+    )
+  };
+  let folder_path = PathBuf::from(
+    folder_path.unwrap_or_else(|| engine_name.to_string())
+  );
+  let full_install_path = install_path.join(folder_path);
+
+  // Check if the full install path exists
+  if full_install_path.exists() {
+    warn!(
+      "The engine folder '{}' already exists at the specified install location",
+      full_install_path.display()
+    );
+    return false; // Folder exists, cannot safely create it
+  } else {
+    info!(
+      "The engine folder '{}' does not exist, it can be created safely",
+      full_install_path.display()
+    );
+    return true;
   }
 }
 

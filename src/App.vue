@@ -71,10 +71,7 @@ import MessageDialog from './components/modals/MessageDialog.vue'
 import ContextMenu from './components/common/ContextMenu.vue'
 import { DatabaseService } from '@services/dbService'
 import { StoreService, DEFAULT_SETTINGS } from '@services/storeService'
-import {
-  gamebananaService,
-  setupGameBananaEventListeners,
-} from '@services/gamebananaService'
+import { gamebananaService } from '@services/gamebananaService'
 import { themeService } from '@services/themeService'
 import { AppSettings } from './types'
 import { notificationService } from '@services/notificationService'
@@ -119,24 +116,7 @@ const onEngineSelected = async (engine: any) => {
     }
 
     // Use the gamebananaService to handle modpack download with selected engine
-    const result = await gamebananaService.downloadDeepLinkModpackWithEngine(
-      currentDownloadUrl.value,
-      currentModName.value,
-      currentModId.value,
-      currentModelType.value,
-      engine
-    )
-
-    // Close the dialog
-    showEngineSelectDialog.value = false
-
-    // Show an error if there was one
-    if (!result.success) {
-      notificationService.downloadError(
-        `Failed to download ${currentModName.value}`,
-        result.error || 'Unknown error'
-      )
-    }
+    // Original downloadWithDeepLink function
   } catch (error) {
     console.error('Failed to download modpack:', error)
 
@@ -478,31 +458,7 @@ const processDeepLinkModDownload = async (
     })
 
     // Use the gamebananaService to handle the deep link download
-    const result = await gamebananaService.downloadModFromDeepLink(
-      downloadUrl,
-      modId,
-      modelType
-    )
-
-    // Type guard to check if we need to show the engine selection dialog
-    if ('showEngineSelectDialog' in result && result.showEngineSelectDialog) {
-      // Show the engine selection dialog with the data from the result
-      compatibleEngines.value = result.compatibleEngines
-      currentModpackType.value = result.modpackType
-      currentModName.value = result.modName
-      currentDownloadUrl.value = result.downloadUrl
-      currentModId.value = result.modId
-      currentModelType.value = result.modelType
-      showEngineSelectDialog.value = true
-    } else if ('success' in result) {
-      // Handle regular operation result
-      if (!result.success && result.error) {
-        notificationService.downloadError(
-          'Failed to download mod',
-          result.error
-        )
-      }
-    }
+    // Original downloadWithDeepLink function
   } catch (error) {
     console.error('Failed to download mod from deep link:', error)
 
@@ -541,8 +497,7 @@ onMounted(async () => {
       // If using custom theme, apply the saved theme directly
       const themeValue = await getThemePreference()
       await applyTheme(themeValue)
-    } // Set up download event listeners
-    cleanupEventListeners = setupGameBananaEventListeners()
+    }
 
     // Set up global function for handling URL clicks in v-html content
     ;(
