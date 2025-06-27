@@ -846,6 +846,7 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
     last_played: None, // Initialize with None since the mod hasn't been played yet
     date_added: Some(current_time), // Set the current timestamp
     gamebanana: None,
+    save_terminal_output: false, // Default to false, can be changed later
   };
 
   Ok(mod_info)

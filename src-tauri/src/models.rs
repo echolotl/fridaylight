@@ -926,6 +926,7 @@ pub struct ModInfo {
   pub last_played: Option<i64>, // Unix timestamp when mod was last played
   pub date_added: Option<i64>, // Unix timestamp when mod was added
   pub gamebanana: Option<ModInfoGBData>, // GameBanana mod data
+  pub save_terminal_output: bool, // Whether to save terminal output
 }
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ModInfoGBData {

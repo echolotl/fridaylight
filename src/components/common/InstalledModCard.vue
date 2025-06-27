@@ -29,9 +29,11 @@
           <span v-if="mod.version" class="badge">v{{ mod.version }}</span>
 
           <!-- Show engine name -->
-          <span v-if="mod.engine.engine_type != 'unknown'" class="badge">{{
-            mod.engine.engine_name
-          }}</span>
+          <span
+            v-if="mod.engine && mod.engine.engine_type != 'unknown'"
+            class="badge"
+            >{{ mod.engine.engine_name }}</span
+          >
         </div>
 
         <!-- Contributors if available -->
@@ -78,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import type { Mod } from '@main-types'
 import { revealItemInDir } from '@tauri-apps/plugin-opener'
 
@@ -197,6 +199,12 @@ const contributorCount = computed(() => {
   return props.mod.contributors.reduce((total, group) => {
     return total + (group.members ? group.members.length : 0)
   }, 0)
+})
+
+onMounted(() => {
+  console.info(
+    `Mod card mounted for: ${props.mod.name} (Full Mod: ${JSON.stringify(props.mod)})`
+  )
 })
 
 // Context menu handler

@@ -215,13 +215,29 @@
                 </div>
               </template>
             </q-input>
-            <q-btn
-              outline
-              color="primary"
-              label="Reveal Logs Folder"
-              icon="folder_open"
-              @click="handleOpenFileLocationClick(logsFolderPath)"
-            />
+            <div class="flex justify-between q-mb-md">
+              <q-checkbox
+                v-model="form.save_terminal_output"
+                label="Save Terminal Output"
+                color="primary"
+              />
+              <div v-if="form.save_terminal_output">
+                <q-btn
+                  outline
+                  class="q-mr-md"
+                  color="red"
+                  label="Delete Logs"
+                  icon="delete"
+                  @click="handleDeleteLogsClick"
+                />
+                <q-btn
+                  outline
+                  label="Reveal Logs Folder"
+                  icon="folder_open"
+                  @click="handleOpenFileLocationClick(logsFolderPath)"
+                />
+              </div>
+            </div>
           </q-card-section>
 
           <!-- Engine Section -->
@@ -292,7 +308,7 @@
             <q-separator class="q-my-md" />
 
             <div class="q-mb-md">
-              <q-toggle
+              <q-checkbox
                 v-model="form.engine!.mods_folder"
                 label="Has Mods Folder"
                 color="primary"
@@ -494,11 +510,11 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { Mod, ModInfoGBData } from '@main-types'
-import { formatEngineName } from '../../utils'
 import MessageDialog from './MessageDialog.vue'
 import { revealItemInDir, openUrl } from '@tauri-apps/plugin-opener'
 import { invoke } from '@tauri-apps/api/core'
 import { appDataDir, sep } from '@tauri-apps/api/path'
+import { DEFAULT_ENGINE } from '@services/dbService'
 
 const props = defineProps({
   modelValue: {
@@ -520,6 +536,14 @@ const emit = defineEmits([
   'super-delete-mod',
 ])
 
+const engine = ref({
+  engine_type: 'unknown',
+  engine_name: '',
+  engine_icon: '',
+  mods_folder: false,
+  mods_folder_path: '',
+})
+
 const form = ref<Mod>({
   id: '',
   name: '',
@@ -530,15 +554,9 @@ const form = ref<Mod>({
   banner_data: '',
   logo_data: '',
   version: '',
-  engine: {
-    engine_type: '',
-    engine_name: '',
-    engine_icon: '',
-    mods_folder: true,
-    mods_folder_path: '',
-  },
+  engine: engine.value,
+  save_terminal_output: false,
 })
-
 const bannerFile = ref<File | null>(null)
 const bannerPreview = ref<string | null>(null)
 const logoFile = ref<File | null>(null)
@@ -608,8 +626,20 @@ watch(
     if (newVal && props.mod) {
       // Clone the mod object to form
       form.value = JSON.parse(JSON.stringify(props.mod))
-      // Ensure engine object exists in the cloned form
-      if (!form.value.engine) {
+
+      // Properly handle engine object - parse if it's a string, otherwise use as-is
+      if (props.mod.engine) {
+        if (typeof props.mod.engine === 'string') {
+          try {
+            form.value.engine = JSON.parse(props.mod.engine)
+          } catch (e) {
+            console.warn('Failed to parse engine string:', e)
+            form.value.engine = DEFAULT_ENGINE
+          }
+        } else {
+          form.value.engine = { ...props.mod.engine }
+        }
+      } else {
         form.value.engine = {
           engine_type: 'unknown',
           engine_name: '',
@@ -618,6 +648,19 @@ watch(
           mods_folder_path: '',
         }
       }
+
+      // Update the engine ref to match the form
+      engine.value = {
+        engine_type: form.value.engine.engine_type,
+        engine_name: form.value.engine.engine_name || '',
+        engine_icon: form.value.engine.engine_icon || '',
+        mods_folder: form.value.engine.mods_folder,
+        mods_folder_path: form.value.engine.mods_folder_path || '',
+      }
+
+      // Ensure save_terminal_output defaults to false if not explicitly set to true
+      form.value.save_terminal_output = form.value.save_terminal_output === true
+
       // Initialize preview values with existing data
       bannerPreview.value = form.value.banner_data || null
       logoPreview.value = form.value.logo_data || null
@@ -629,6 +672,11 @@ watch(
       engineIconFile.value = null // Clear file input ref
       iconFile.value = null // Clear file input ref
       activeSection.value = 'general' // Reset to general tab
+
+      console.info(
+        `Form values initialized for mod: ${form.value.id}:`,
+        form.value
+      )
 
       // Load metadata for GameBanana info
       await loadMetadataData()
@@ -882,6 +930,15 @@ const syncWithGameBanana = async () => {
   }
 }
 
+const handleDeleteLogsClick = async () => {
+  try {
+    await invoke('clear_all_mod_logs', { modId: form.value.id })
+    console.info('Mod logs deleted successfully')
+  } catch (error) {
+    console.error('Failed to delete mod logs:', error)
+  }
+}
+
 const save = async () => {
   const updatedMod = { ...form.value }
 
@@ -898,17 +955,6 @@ const save = async () => {
   }
   // Otherwise preserve existing logo_data
 
-  // Handle Engine Icon Image
-  if (engineIconPreview.value && updatedMod.engine) {
-    updatedMod.engine.engine_icon = engineIconPreview.value
-  } else if (
-    engineIconFile.value === null &&
-    updatedMod.engine &&
-    form.value.engine?.engine_icon === ''
-  ) {
-    updatedMod.engine.engine_icon = ''
-  }
-
   // Handle Mod Icon Image
   if (iconPreview.value) {
     updatedMod.icon_data = iconPreview.value
@@ -919,24 +965,8 @@ const save = async () => {
 
   // First, make sure engine object exists
   if (!updatedMod.engine) {
-    updatedMod.engine = {
-      engine_type: 'unknown',
-      engine_name: await formatEngineName('unknown'),
-      engine_icon: '',
-      mods_folder: false,
-      mods_folder_path: '',
-    }
-  } else {
-    const defaultName = await formatEngineName(updatedMod.engine.engine_type)
-    const originalDefaultName = await formatEngineName(
-      props.mod?.engine?.engine_type || 'unknown'
-    )
-    if (
-      !updatedMod.engine.engine_name ||
-      updatedMod.engine.engine_name === originalDefaultName
-    ) {
-      updatedMod.engine.engine_name = defaultName
-    }
+    // Then parse the string to an object
+    updatedMod.engine = { ...DEFAULT_ENGINE, ...form.value.engine }
   }
 
   // Save GameBanana metadata separately

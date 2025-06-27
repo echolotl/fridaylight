@@ -7,10 +7,10 @@
  */
 export interface Engine {
   engine_type: string
-  engine_name: string
-  engine_icon: string
+  engine_name?: string
+  engine_icon?: string
   mods_folder: boolean
-  mods_folder_path: string
+  mods_folder_path?: string
 }
 
 /**
@@ -63,6 +63,7 @@ export interface Mod {
   last_played?: number // Unix timestamp when mod was last played
   date_added?: number // Unix timestamp when mod was added
   gamebanana?: ModInfoGBData // GameBanana mod data
+  save_terminal_output: boolean // Whether to save terminal output from running the mod
 }
 
 export interface ModInfoGBData {

@@ -72,6 +72,7 @@
         <!-- Show engine-specific mods list if mod has engine type and executable path -->
         <div
           v-if="
+            mod.engine &&
             mod.engine.engine_type &&
             mod.executable_path &&
             mod.engine.mods_folder
@@ -79,8 +80,14 @@
         >
           <EngineModsList
             :executable-path="mod.executable_path"
-            :engine-type="mod.engine.engine_type"
-            :custom-mods-folder="mod.engine.mods_folder_path"
+            :engine-type="
+              mod.engine ? mod.engine.engine_type : DEFAULT_ENGINE.engine_type
+            "
+            :custom-mods-folder="
+              mod.engine
+                ? mod.engine.mods_folder_path
+                : DEFAULT_ENGINE.mods_folder_path
+            "
           />
         </div>
       </div>
@@ -114,6 +121,7 @@ import ContributorInfobox from '@common/ContributorInfobox.vue'
 import { Mod } from '@main-types'
 import { StoreService } from '@services/storeService'
 import { notificationService } from '@services/notificationService'
+import { DEFAULT_ENGINE } from '@services/dbService'
 
 const props = defineProps({
   mod: {
@@ -190,9 +198,12 @@ const clearModLogs = async (modId: string) => {
   if (!modId) return
 
   try {
-    console.info(`Clearing logs for mod: ${modId}`)
-    await invoke('clear_mod_logs', { id: modId })
-    console.info(`Logs cleared for mod: ${modId}`)
+    if (!props.mod?.save_terminal_output) {
+      invoke('clear_all_mod_logs', { id: modId })
+    } else {
+      invoke('clear_mod_logs', { id: modId })
+    }
+    console.info(`Mod logs cleared for mod ID: ${modId}`)
   } catch (error) {
     console.error('Failed to clear mod logs:', error)
   }

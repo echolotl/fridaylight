@@ -197,7 +197,6 @@ import HomePage from '@mods/HomePage.vue'
 import { Mod, Folder, DisplayItem } from '@main-types'
 import { StoreService } from '../../services/storeService'
 import { DatabaseService } from '@services/dbService'
-import { formatEngineName } from '@utils/index'
 import { revealItemInDir } from '@tauri-apps/plugin-opener'
 import { sep } from '@tauri-apps/api/path'
 import { notificationService } from '@services/notificationService'
@@ -220,9 +219,6 @@ declare global {
     db: any
   }
 }
-
-// So I didn't have to change anything
-type ModInfo = Mod
 
 // Default width and min/max constraints
 const sidebarWidth = ref(250)
@@ -264,9 +260,9 @@ const stopResize = () => {
 }
 
 // Mod list and selection
-const mods = ref<ModInfo[]>([])
+const mods = ref<Mod[]>([])
 const folders = ref<Folder[]>([])
-const selectedMod = ref<ModInfo | null>(null)
+const selectedMod = ref<Mod | null>(null)
 const launchError = ref<string | null>(null)
 const showSettingsModal = ref(false)
 const activePage = ref('home') // Default to showing home page
@@ -373,7 +369,7 @@ const loadFoldersFromDatabase = async () => {
 // This is a fallback if no mods are found in the database
 const loadModsFromMemory = async () => {
   try {
-    const modList = await invoke<ModInfo[]>('get_mods')
+    const modList = await invoke<Mod[]>('get_mods')
 
     // First, check for mods with display_order of 9999 or undefined and fix them
     let needsReindexing = false
@@ -415,20 +411,8 @@ const loadModsFromMemory = async () => {
 }
 
 // Save a mod to the database
-const saveModToDatabase = async (mod: ModInfo) => {
+const saveModToDatabase = async (mod: Mod) => {
   try {
-    // Ensure engine name is formatted before initial save
-    if (mod.engine && !mod.engine.engine_name) {
-      mod.engine.engine_name = await formatEngineName(mod.engine.engine_type)
-    } else if (!mod.engine) {
-      mod.engine = {
-        engine_type: 'unknown',
-        engine_name: await formatEngineName('unknown'),
-        engine_icon: '',
-        mods_folder: false,
-        mods_folder_path: '',
-      }
-    }
     await dbService.saveMod(mod)
     console.log('Mod saved successfully:', mod.name)
     await loadModsFromDatabase() // Reload mods from DB
@@ -464,7 +448,7 @@ const selectModFolder = async () => {
     if (modFolderPath) {
       try {
         // Pass the validation setting to the backend
-        const modInfo = await invoke<ModInfo>('add_mod', {
+        const modInfo = await invoke<Mod>('add_mod', {
           path: modFolderPath,
           validate: validateFnfMods,
         })
@@ -526,7 +510,7 @@ const selectModsParentFolder = async () => {
     })
 
     // Call the Rust command to select a folder containing multiple mods
-    const addedMods = await invoke<ModInfo[]>('select_mods_parent_folder', {
+    const addedMods = await invoke<Mod[]>('select_mods_parent_folder', {
       validate: validateFnfMods,
     })
 
@@ -574,7 +558,7 @@ const selectModsParentFolder = async () => {
   }
 }
 
-const selectMod = (mod: ModInfo) => {
+const selectMod = (mod: Mod) => {
   console.log('selectMod called with mod:', mod)
   selectedMod.value = mod
   console.log('selectedMod.value after setting:', selectedMod.value)
@@ -603,32 +587,6 @@ const handleSaveMod = async (updatedMod: Mod) => {
     JSON.stringify(updatedMod)
   ) // Log incoming data
   try {
-    // Ensure engine object exists before saving
-    if (!updatedMod.engine) {
-      console.warn('Mod engine object missing, creating default.')
-      updatedMod.engine = {
-        engine_type: 'unknown',
-        engine_name: await formatEngineName('unknown'), // Use util
-        engine_icon: '',
-        mods_folder: false,
-        mods_folder_path: '',
-      }
-    } else {
-      // Ensure engine_name is set correctly based on type if needed
-      const defaultName = await formatEngineName(updatedMod.engine.engine_type)
-      // Only update name if it's empty or matches the default name of the *original* type
-      const originalMod = mods.value.find(m => m.id === updatedMod.id)
-      const originalDefaultName = await formatEngineName(
-        originalMod?.engine?.engine_type || 'unknown'
-      )
-      if (
-        !updatedMod.engine.engine_name ||
-        updatedMod.engine.engine_name === originalDefaultName
-      ) {
-        updatedMod.engine.engine_name = defaultName
-      }
-    }
-
     console.log(
       'SIDEBAR: Calling dbService.saveMod with:',
       JSON.stringify(updatedMod)
@@ -1178,13 +1136,13 @@ const handleFolderModsReorder = async (data: {
 }
 
 // Function to handle opening settings for a specific mod
-const openModSettings = (mod: ModInfo) => {
+const openModSettings = (mod: Mod) => {
   // Set the selected mod and open the settings modal
   selectedMod.value = mod
   showSettingsModal.value = true
 }
 
-const openModFolder = async (mod: ModInfo) => {
+const openModFolder = async (mod: Mod) => {
   // Open the mod folder in the file explorer
   await revealItemInDir(mod.path + sep())
 }

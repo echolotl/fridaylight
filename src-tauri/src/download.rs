@@ -505,6 +505,7 @@ pub async fn download_gamebanana_mod(
       id: mod_id,
       model_type: model_type.clone(),
     }),
+    save_terminal_output: false, // Default to false
   };
 
   // Create metadata.json file in the .flight folder
@@ -1302,7 +1303,8 @@ pub async fn download_engine(
     metadata_version: Some(CURRENT_METADATA_VERSION),
     date_added: Some(chrono::Utc::now().timestamp()), // Set current timestamp as date added
     last_played: None, // Initialize with None since mod is not played yet
-    gamebanana: None, // No GameBanana data for custom engines
+    gamebanana: None, // No GameBanana data for engines
+    save_terminal_output: false, // Default to false
   };
 
   // Add the mod to our state
