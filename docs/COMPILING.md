@@ -1,4 +1,4 @@
-# Compiling Fridaylight
+# ![](/docs/compiling.png)
 
 ## Requirements
 

@@ -1,4 +1,4 @@
-# Fridaylight Metadata
+# ![](/docs/metadata.png)
 
 Located in the same directory as the mod's executable, mod creators have the ability to provide additional metadata to be used and displayed on its mod page by creating a folder with the name `.flight` and including any of these files:
 
