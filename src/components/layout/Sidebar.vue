@@ -199,7 +199,10 @@ import { StoreService } from '../../services/storeService'
 import { DatabaseService } from '@services/dbService'
 import { revealItemInDir } from '@tauri-apps/plugin-opener'
 import { sep } from '@tauri-apps/api/path'
-import { notificationService } from '@services/notificationService'
+import {
+  notificationService,
+  OngoingNotificationResult,
+} from '@services/notificationService'
 
 // Use the props without storing in a variable to avoid the unused variable warning
 defineProps<{
@@ -486,6 +489,8 @@ const selectModFolder = async () => {
   }
 }
 
+let loadingNotif: OngoingNotificationResult
+
 const selectModsParentFolder = async () => {
   try {
     // Get current validation setting from database
@@ -504,7 +509,7 @@ const selectModsParentFolder = async () => {
     }
 
     // Show loading notification
-    const loadingNotif = notificationService.ongoing({
+    loadingNotif = notificationService.ongoing({
       message: 'Searching for mods...',
       caption: 'This might take a while.',
     })
@@ -554,6 +559,7 @@ const selectModsParentFolder = async () => {
       message: 'Failed to import mods',
       caption: String(error),
     })
+    loadingNotif.dismiss()
     console.error('Failed to select mods parent folder:', error)
   }
 }

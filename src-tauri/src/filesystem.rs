@@ -24,7 +24,7 @@ pub fn find_executables(dir_path: &Path) -> Vec<PathBuf> {
     depth: usize
   ) {
     // Limit recursion depth so we dont blow up everything
-    if depth > 5 {
+    if depth > 3 {
       return;
     }
 

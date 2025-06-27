@@ -881,9 +881,6 @@ const resetAppData = async () => {
     // Then clear the database (delete all data from tables)
     await dbService.clearDatabase()
     console.log('Database has been cleared successfully')
-
-    // Reload the application to apply changes
-    window.location.reload()
   } catch (error) {
     console.error('Failed to reset app data:', error)
     window.alert(`Failed to reset app data: ${error}`)

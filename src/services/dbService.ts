@@ -1478,8 +1478,8 @@ export class DatabaseService {
   }
 
   /**
-   * Clear all data from the database
-   * This wipes all tables but preserves the schema
+   * Completely erase the database
+   * This drops all tables and removes the schema
    */
   public async clearDatabase(): Promise<void> {
     if (!this.db) {
@@ -1489,24 +1489,26 @@ export class DatabaseService {
     return withDatabaseLock(
       async db => {
         try {
-          // Delete all mods
-          await db.execute('DELETE FROM mods')
-          dbConsole.log('Deleted all mods from database')
+          // Drop mods table
+          await db.execute('DROP TABLE IF EXISTS mods')
+          dbConsole.log('Dropped mods table')
 
-          // Delete all folders
-          await db.execute('DELETE FROM folders')
-          dbConsole.log('Deleted all folders from database')
+          // Drop folders table
+          await db.execute('DROP TABLE IF EXISTS folders')
+          dbConsole.log('Dropped folders table')
 
-          // Delete all mod folder mappings (for backward compatibility)
-          await db.execute('DELETE FROM mod_folders')
-          dbConsole.log('Deleted all mod folder mappings from database')
+          // Drop engine_mod_profiles table
+          await db.execute('DROP TABLE IF EXISTS engine_mod_profiles')
+          dbConsole.log('Dropped engine_mod_profiles table')
 
-          // Sync with backend to reflect the cleared state
-          await this.syncModsWithBackend(db)
+          // Sync empty state to backend
+          await invoke('remove_all_mods_command')
+          dbConsole.log('Synced empty state to backend')
 
-          dbConsole.log('Database cleared successfully')
+          dbConsole.log('Database completely erased successfully')
+          window.location.reload()
         } catch (error) {
-          dbConsole.error('Failed to clear database:', error)
+          dbConsole.error('Failed to completely erase database:', error)
           throw error
         }
       },

@@ -230,8 +230,15 @@ pub fn add_mod(
   let mod_info = create_mod_info(&path)?;
   let id = mod_info.id.clone();
 
-  // Add to our state
+  // Check if the mod's path already exists in the state
   let mut mods = mods_state.0.lock().unwrap();
+  if mods.values().any(|existing_mod| existing_mod.path == path) {
+    let err_msg = format!("Mod with path '{}' already exists", path);
+    warn!("{}", err_msg);
+    return Err(err_msg);
+  }
+
+  // Add to our state
   mods.insert(id, mod_info.clone());
   info!("Mod added successfully: {} ({})", mod_info.name, mod_info.id);
 
@@ -714,6 +721,18 @@ pub async fn sync_mods_from_database(
     added_count,
     updated_count
   );
+  Ok(())
+}
+
+// Command to remove all mods from the state
+#[tauri::command]
+pub async fn remove_all_mods_command(
+  mods_state: State<'_, ModsState>
+) -> Result<(), String> {
+  info!("Removing all mods from state");
+  let mut mods = mods_state.0.lock().unwrap();
+  mods.clear();
+  info!("All mods removed from state");
   Ok(())
 }
 
@@ -1329,7 +1348,8 @@ pub fn run() {
         check_gamebanana_mod_version,
         compare_update_semver,
         save_mod_metadata,
-        get_url_as_base64
+        get_url_as_base64,
+        remove_all_mods_command
       ]
     )
     .run(tauri::generate_context!())

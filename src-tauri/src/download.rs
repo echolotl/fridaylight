@@ -554,6 +554,20 @@ pub async fn download_gamebanana_mod(
   // Add the mod to our state
   let mods_state = app.state::<crate::models::ModsState>();
   let mut mods = mods_state.0.lock().unwrap();
+  if mods.values().any(|existing_mod| existing_mod.path == mod_info.path) {
+    let err_msg = format!("Mod with path '{}' already exists", mod_info.path);
+    warn!("{}", err_msg);
+    // Emit error event
+    app
+      .emit("download-error", DownloadError {
+        mod_id: file_id,
+        name: info.name.clone(),
+        error: err_msg.clone(),
+      })
+      .unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
+    return Err(err_msg);
+  }
+
   mods.insert(id.clone(), mod_info.clone());
 
   info!(
@@ -1310,6 +1324,19 @@ pub async fn download_engine(
   // Add the mod to our state
   let mods_state = app.state::<crate::models::ModsState>();
   let mut mods = mods_state.0.lock().unwrap();
+  if mods.values().any(|existing_mod| existing_mod.path == mod_info.path) {
+    let err_msg = format!("Mod with path '{}' already exists", mod_info.path);
+    warn!("{}", err_msg);
+    // Emit error event
+    app
+      .emit("download-error", DownloadError {
+        mod_id: download_id,
+        name: engine_name.to_string(),
+        error: err_msg.clone(),
+      })
+      .unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
+    return Err(err_msg);
+  }
   mods.insert(id.clone(), mod_info.clone());
 
   info!("Successfully downloaded and installed {} engine", engine_name);
