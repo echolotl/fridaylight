@@ -314,8 +314,8 @@ let folderExistsRejecter: ((reason?: any) => void) | null = null
 let modTypeSelectionResolver:
   | ((
       value:
-        | { type: string; engineInstallation?: Mod }
-        | PromiseLike<{ type: string; engineInstallation?: Mod }>
+        | { modType: string; engineMod?: Mod; isAddon: boolean }
+        | PromiseLike<{ modType: string; engineMod?: Mod; isAddon: boolean }>
     ) => void)
   | null = null
 let modTypeSelectionRejecter: ((reason?: any) => void) | null = null
@@ -735,15 +735,19 @@ const downloadMod = async (mod: GBProfilePage) => {
         if (engineType === 'generic') {
           // Generic modpack - show mod type selection modal
           const modTypeResult = await showModTypeSelectionModal(mod._sName)
+          console.info(
+            `Mod "${mod._sName}"'s' user selected type:`,
+            modTypeResult
+          )
           if (
-            (modTypeResult.type === 'psych' ||
-              modTypeResult.type === 'codename' ||
-              modTypeResult.type === 'vanilla' ||
-              modTypeResult.type === 'fps-plus') &&
-            modTypeResult.engineInstallation
+            (modTypeResult.modType === 'psych' ||
+              modTypeResult.modType === 'codename' ||
+              modTypeResult.modType === 'vanilla' ||
+              modTypeResult.modType === 'fps-plus') &&
+            modTypeResult.engineMod
           ) {
             ;(downloadItem as ModpackDownload).engineInstallation =
-              modTypeResult.engineInstallation
+              modTypeResult.engineMod
           } else {
             // If the user picks "standalone", then we treat it as a regular mod download
             console.info(
@@ -771,11 +775,11 @@ const downloadMod = async (mod: GBProfilePage) => {
         // If not a specific engine modpack, show mod type selection modal
         const modTypeResult = await showModTypeSelectionModal(mod._sName)
 
-        if (modTypeResult.type === 'modpack') {
+        if (modTypeResult.modType === 'modpack') {
           // User selected modpack - check if they provided an engine
-          if (modTypeResult.engineInstallation) {
+          if (modTypeResult.engineMod) {
             ;(downloadItem as ModpackDownload).engineInstallation =
-              modTypeResult.engineInstallation
+              modTypeResult.engineMod
           } else {
             // Need to show engine selection
             const compatibleEngines =
@@ -977,8 +981,8 @@ const showFolderExistsModal = (
 
 const showModTypeSelectionModal = (
   modName: string
-): Promise<{ type: string; engineInstallation?: Mod }> => {
-  return new Promise<{ type: string; engineInstallation?: Mod }>(
+): Promise<{ modType: string; engineMod?: Mod; isAddon: boolean }> => {
+  return new Promise<{ modType: string; engineMod?: Mod; isAddon: boolean }>(
     (resolve, reject) => {
       currentModalModName.value = modName
       isModTypeSelectionModalOpen.value = true
@@ -1054,8 +1058,9 @@ const handleFolderExistsCancel = () => {
 }
 
 const handleModTypeSelection = (result: {
-  type: string
-  engineInstallation?: Mod
+  modType: string
+  engineMod?: Mod
+  isAddon: boolean
 }) => {
   isModTypeSelectionModalOpen.value = false
   if (modTypeSelectionResolver) {
