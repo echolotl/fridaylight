@@ -515,6 +515,7 @@ import { revealItemInDir, openUrl } from '@tauri-apps/plugin-opener'
 import { invoke } from '@tauri-apps/api/core'
 import { appDataDir, sep } from '@tauri-apps/api/path'
 import { DEFAULT_ENGINE } from '@services/dbService'
+import { notificationService } from '@services/notificationService'
 
 const props = defineProps({
   modelValue: {
@@ -932,7 +933,7 @@ const syncWithGameBanana = async () => {
 
 const handleDeleteLogsClick = async () => {
   try {
-    await invoke('clear_all_mod_logs', { modId: form.value.id })
+    await invoke('clear_all_mod_logs', { id: form.value.id })
     console.info('Mod logs deleted successfully')
   } catch (error) {
     console.error('Failed to delete mod logs:', error)
@@ -1003,7 +1004,16 @@ const handleSelectExecutableClick = () => {
 }
 
 const handleOpenFileLocationClick = async (path: string) => {
-  await revealItemInDir(path)
+  try {
+    await revealItemInDir(path)
+  } catch (error) {
+    console.error('Failed to open file location:', error)
+
+    notificationService.operationError(
+      'Failed to open file location',
+      String(error)
+    )
+  }
 }
 </script>
 
