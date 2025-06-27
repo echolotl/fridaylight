@@ -15,10 +15,15 @@
       </div>
     </div>
 
-    <q-scroll-area ref="terminalContent" class="terminal-content">
-      <pre v-if="logs.length > 0">{{ logs.join('\n') }}</pre>
-      <div v-else class="terminal-empty-message">Getting latest output...</div>
-    </q-scroll-area>
+    <q-virtual-scroll
+      ref="terminalContent"
+      :items="logs"
+      class="terminal-content"
+    >
+      <template #default="{ item }">
+        <pre>{{ item }}</pre>
+      </template>
+    </q-virtual-scroll>
 
     <div class="terminal-status-bar">
       <div class="terminal-info">
@@ -40,7 +45,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import type { QScrollArea } from 'quasar'
+import type { QVirtualScroll } from 'quasar'
 import { notificationService } from '@services/notificationService'
 
 const props = defineProps({
@@ -57,7 +62,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'clear'])
 
 const logs = ref<string[]>([])
-const terminalContent = ref<InstanceType<typeof QScrollArea> | null>(null)
+const terminalContent = ref<InstanceType<typeof QVirtualScroll> | null>(null)
 const autoScroll = ref(true)
 const refreshInterval = ref<number | null>(null)
 
@@ -66,12 +71,12 @@ const fetchLogs = async () => {
   if (!props.modId || !props.isVisible) return
 
   try {
-    console.log(`Fetching logs for mod ${props.modId}`)
+    console.info(`Fetching logs for mod ${props.modId}`)
     const newLogs = await invoke<string[]>('get_mod_logs', {
       id: props.modId,
     })
 
-    console.log(`Received logs for mod ${props.modId}:`, newLogs)
+    console.info(`Received logs for mod ${props.modId}:`, newLogs)
 
     if (Array.isArray(newLogs) && newLogs.length > 0) {
       // Only update if there are new logs to avoid unnecessary renders
@@ -83,8 +88,7 @@ const fetchLogs = async () => {
 
         // Scroll to bottom if auto-scroll is enabled
         if (autoScroll.value) {
-          await nextTick()
-          scrollToBottom()
+          await scrollToBottom()
         }
       }
     } else {
@@ -96,8 +100,11 @@ const fetchLogs = async () => {
 }
 
 // Scroll to the bottom of the terminal
-const scrollToBottom = () => {
-  terminalContent.value?.setScrollPercentage('vertical', 1, 0)
+const scrollToBottom = async () => {
+  if (terminalContent.value) {
+    await nextTick()
+    terminalContent.value.scrollTo(logs.value.length - 1)
+  }
 }
 
 // Copy terminal content to clipboard

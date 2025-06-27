@@ -85,10 +85,9 @@ const showContextMenu = (event: MouseEvent) => {
 
     { separator: true },
     {
-      icon: 'close',
+      icon: 'remove_circle_outline',
       label: 'Remove Mod',
       action: () => emit('delete-mod', props.mod),
-      danger: true,
     },
     {
       icon: 'delete_forever',

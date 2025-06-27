@@ -215,6 +215,13 @@
                 </div>
               </template>
             </q-input>
+            <q-btn
+              outline
+              color="primary"
+              label="Reveal Logs Folder"
+              icon="folder_open"
+              @click="handleOpenFileLocationClick(logsFolderPath)"
+            />
           </q-card-section>
 
           <!-- Engine Section -->
@@ -491,6 +498,7 @@ import { formatEngineName } from '../../utils'
 import MessageDialog from './MessageDialog.vue'
 import { revealItemInDir, openUrl } from '@tauri-apps/plugin-opener'
 import { invoke } from '@tauri-apps/api/core'
+import { appDataDir, sep } from '@tauri-apps/api/path'
 
 const props = defineProps({
   modelValue: {
@@ -569,6 +577,18 @@ const showModal = computed({
   get: () => props.modelValue,
   set: value => emit('update:modelValue', value),
 })
+
+const logsFolderPath = ref<string>('')
+
+watch(
+  () => props.modelValue,
+  async newVal => {
+    if (newVal && props.mod) {
+      logsFolderPath.value =
+        (await appDataDir()) + sep() + 'mod_logs' + sep() + form.value.id
+    }
+  }
+)
 
 const modSettingsSections = [
   { id: 'general', label: 'General', icon: 'info' },

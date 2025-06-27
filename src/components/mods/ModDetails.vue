@@ -46,7 +46,7 @@
           v-if="isModRunning && showTerminalOutput"
           :mod-id="mod.id"
           :is-visible="isModRunning && showTerminalOutput"
-          @close="showTerminalOutput = false"
+          @close="showTerminalOutput = false && clearModLogs"
           @clear="clearModLogs"
         />
 
@@ -225,27 +225,32 @@ const setupModTerminatedListener = async () => {
 
   if (props.mod) {
     console.info(`Setting up mod-terminated listener for mod: ${props.mod.id}`)
-    modTerminatedListener = await listen<string>('mod-terminated', event => {
-      console.info(
-        `[ModDetails ${props.mod?.id}] Received mod-terminated event with payload: ${event.payload}`
-      )
-
-      // Check if this event is for the current mod
-      if (event.payload === props.mod?.id) {
+    modTerminatedListener = await listen<string>(
+      'mod-terminated',
+      async event => {
         console.info(
-          `[ModDetails ${props.mod?.id}] Event is for current mod, updating UI state`
+          `[ModDetails ${props.mod?.id}] Received mod-terminated event with payload: ${event.payload}`
         )
-        isModRunning.value = false
-        showTerminalOutput.value = false
 
-        // Display notification that the mod has terminated
-        notificationService.modStopped(props.mod.name)
-      } else {
-        console.info(
-          `[ModDetails ${props.mod?.id}] Event is for a different mod (${event.payload}), ignoring`
-        )
+        // Check if this event is for the current mod
+        if (event.payload === props.mod?.id) {
+          console.info(
+            `[ModDetails ${props.mod?.id}] Event is for current mod, updating UI state`
+          )
+          isModRunning.value = false
+          showTerminalOutput.value = false
+
+          // Display notification that the mod has terminated
+          notificationService.modStopped(props.mod.name)
+
+          await invoke('clear_mod_logs', { id: props.mod.id })
+        } else {
+          console.info(
+            `[ModDetails ${props.mod?.id}] Event is for a different mod (${event.payload}), ignoring`
+          )
+        }
       }
-    })
+    )
     console.info(
       `[ModDetails ${props.mod?.id}] Mod-terminated listener successfully set up`
     )

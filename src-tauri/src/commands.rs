@@ -296,9 +296,6 @@ pub fn launch_mod(
 
   debug!("Using working directory: {}", working_dir.display());
 
-  // Clear previous logs for this mod
-  crate::terminaloutput::clear_logs(&id);
-
   // Add initial log entry showing the startup
   crate::terminaloutput::add_log(
     &id,
@@ -1027,10 +1024,18 @@ pub fn get_mod_logs(id: String) -> Vec<String> {
   crate::terminaloutput::get_logs(&id)
 }
 
-// Command to clear terminal logs for a specific mod
+// Command to clear in-memory terminal logs for a specific mod, while saving them to a file
 #[tauri::command]
 pub fn clear_mod_logs(id: String) -> Result<(), String> {
   info!("Clearing terminal logs for mod with ID: {}", id);
+  crate::terminaloutput::clear_memory_logs(&id);
+  Ok(())
+}
+
+// Command to clear all logs for a specific mod, including the file
+#[tauri::command]
+pub fn clear_all_mod_logs(id: String) -> Result<(), String> {
+  info!("Clearing all logs for mod with ID: {}", id);
   crate::terminaloutput::clear_logs(&id);
   Ok(())
 }

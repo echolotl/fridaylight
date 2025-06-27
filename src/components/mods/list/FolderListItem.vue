@@ -159,7 +159,7 @@ const showContextMenu = (event: MouseEvent) => {
     },
     { separator: true },
     {
-      icon: 'delete',
+      icon: 'folder_delete',
       label: 'Remove Folder',
       action: () => emit('delete-folder', props.folder),
       danger: true,
