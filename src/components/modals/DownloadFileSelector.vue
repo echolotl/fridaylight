@@ -33,19 +33,38 @@
               <q-item-label
                 >{{ file._sFile }}
                 <q-icon
-                  v-if="file._bContainsExe"
+                  v-if="file._aAnalysisWarnings?.contains_exe"
                   name="terminal"
                   class="q-ml-xs"
-                  color="secondary"
+                  color="red"
                   size="xs"
-                />
+                >
+                  <q-tooltip>
+                    <span class="phantom-font">Contains executable files</span>
+                  </q-tooltip>
+                </q-icon>
+                <q-icon
+                  v-if="file._aAnalysisWarnings?.nested_archive"
+                  name="archive"
+                  class="q-ml-xs"
+                  color="orange"
+                  size="xs"
+                >
+                  <q-tooltip>
+                    <span class="phantom-font">Contains nested archives</span>
+                  </q-tooltip>
+                </q-icon>
                 <q-icon
                   v-if="file._sAnalysisState === 'pending'"
                   name="hourglass_empty"
                   class="q-ml-xs"
                   color="orange"
                   size="xs"
-                />
+                >
+                  <q-tooltip>
+                    <span class="phantom-font">Analysis pending</span>
+                  </q-tooltip>
+                </q-icon>
               </q-item-label>
               <q-item-label
                 v-if="file._sDescription"
@@ -122,30 +141,8 @@
 </template>
 
 <script setup lang="ts">
+import { GBAltFile, GBFile } from '@custom-types/gamebanana'
 import { ref, watch } from 'vue'
-
-// Define interface for files
-interface DownloadFile {
-  _idRow: number
-  _sFile: string
-  _nFilesize: number
-  _sDescription: string
-  _tsDateAdded: number
-  _nDownloadCount: number
-  _sAnalysisState: string
-  _sAnalysisResultCode: string
-  _sAnalysisResult: string
-  _bContainsExe: boolean
-  _sDownloadUrl: string
-  _sMd5Checksum: string
-  _sClamAvResult: string
-  _sAvastAvResult: string
-}
-
-interface AlternateSource {
-  url: string
-  description: string
-}
 
 const props = defineProps({
   modelValue: {
@@ -153,7 +150,7 @@ const props = defineProps({
     default: false,
   },
   files: {
-    type: Array as () => DownloadFile[],
+    type: Array as () => GBFile[],
     default: () => [],
   },
   modName: {
@@ -161,7 +158,7 @@ const props = defineProps({
     default: 'Unknown Mod',
   },
   alternateFileSources: {
-    type: Array as () => AlternateSource[],
+    type: Array as () => GBAltFile[],
     default: () => [],
   },
 })
@@ -169,7 +166,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'select', 'cancel'])
 
 const isOpen = ref(props.modelValue)
-const selectedFile = ref<DownloadFile | null>(null)
+const selectedFile = ref<GBFile | null>(null)
 
 // Set the default selected file to the first file with the most downloads
 watch(
@@ -197,7 +194,7 @@ watch(isOpen, val => {
   emit('update:modelValue', val)
 })
 
-const selectFile = (file: DownloadFile) => {
+const selectFile = (file: GBFile) => {
   selectedFile.value = file
 }
 

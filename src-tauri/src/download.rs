@@ -10,10 +10,12 @@ use crate::gamebanana::{
   extract_contributors,
 };
 use crate::models::{
-  DownloadStarted,
-  DownloadProgress,
-  DownloadFinished,
   DownloadError,
+  DownloadFinished,
+  DownloadProgress,
+  DownloadStarted,
+  GBFile,
+  GBProfilePage,
   ModInfo,
   CURRENT_METADATA_VERSION,
 };
@@ -31,7 +33,7 @@ struct EngineConfig {
   engine_type: String,
   engine_name: String,
   engine_url: String,
-  engine_banner: String,
+  engine_banner: Option<String>,
   engine_logo: String,
   engine_icon: String,
   engine_description: String,
@@ -40,18 +42,22 @@ struct EngineConfig {
 
 // Command to download a mod from GameBanana
 pub async fn download_gamebanana_mod(
-  url: String,
-  name: String,
-  mod_id: i64,
+  file: GBFile,
+  info: GBProfilePage,
   install_location: Option<String>,
-  model_type: Option<String>,
+  folder_name: Option<String>,
   update_existing: Option<bool>,
   app: tauri::AppHandle
-) -> Result<String, String> {
-  info!("Starting download process for mod: {} (ID: {})", name, mod_id);
+) -> Result<ModInfo, String> {
+  info!(
+    "Starting download process for mod: {} (ID: {})",
+    info.name,
+    file.id_row
+  );
 
-  // Default to "Mod" if not specified
-  let model_type = model_type.unwrap_or_else(|| "Mod".to_string());
+  let model_type = info.category.model_name.clone().replace("Category", "");
+  let file_id = file.id_row;
+  let mod_id = info.id_row;
 
   // First, fetch the download page information to get the actual download URL
   info!("Fetching download page information from GameBanana API");
@@ -59,39 +65,15 @@ pub async fn download_gamebanana_mod(
   // Emit download started event
   app
     .emit("download-started", DownloadStarted {
-      mod_id,
-      name: name.clone(),
-      content_length: 0, // We don't know the size yet
-      thumbnail_url: format!("https://gamebanana.com/mods/embeddables/{}", mod_id),
+      mod_id: file_id,
+      name: info.name.clone(),
+      content_length: file.filesize as usize,
+      thumbnail_url: None,
     })
     .unwrap_or_else(|e| error!("Failed to emit download-started event: {}", e));
 
-  // Emit progress event for the download page fetch step
-  app
-    .emit("download-progress", DownloadProgress {
-      mod_id,
-      name: name.clone(),
-      bytes_downloaded: 0,
-      total_bytes: 100,
-      percentage: 5,
-      step: "Fetching download information".to_string(),
-    })
-    .unwrap_or_else(|e|
-      error!("Failed to emit download-progress event: {}", e)
-    );
-  // Fetch mod information for preview images
-  let mod_info_response = match get_mod_info(mod_id, &model_type).await {
-    Ok(info) => Some(info),
-    Err(e) => {
-      warn!("Failed to fetch mod info: {}", e);
-      None
-    }
-  };
-
   // Extract banner URL and fetch banner image
-  let banner_url = mod_info_response
-    .as_ref()
-    .and_then(|info| extract_banner_url(info, mod_id, &model_type));
+  let banner_url = extract_banner_url(info.clone());
 
   debug!("Banner URL: {:?}", banner_url);
 
@@ -111,52 +93,6 @@ pub async fn download_gamebanana_mod(
     None
   };
 
-  // Use the provided URL if it's a direct download URL, otherwise get the default one
-  let actual_download_url = if
-    url.contains("gamebanana.com/dl/") ||
-    !url.contains("gamebanana.com/mods")
-  {
-    info!("Using provided URL: {}", url);
-    url
-  } else {
-    info!("Getting default download URL for mod ID: {}", mod_id);
-    match get_download_url(mod_id, &model_type).await {
-      Ok(url) => url,
-      Err(e) => {
-        error!("Failed to get download URL: {}", e);
-
-        // Emit error event
-        app
-          .emit("download-error", DownloadError {
-            mod_id,
-            name: name.clone(),
-            error: e.clone(),
-          })
-          .unwrap_or_else(|e|
-            error!("Failed to emit download-error event: {}", e)
-          );
-
-        return Err(e);
-      }
-    }
-  };
-
-  info!("Found actual download URL: {}", actual_download_url);
-
-  // Emit progress event for preparing download
-  app
-    .emit("download-progress", DownloadProgress {
-      mod_id,
-      name: name.clone(),
-      bytes_downloaded: 20,
-      total_bytes: 100,
-      percentage: 20,
-      step: "Preparing to download mod file".to_string(),
-    })
-    .unwrap_or_else(|e|
-      error!("Failed to emit download-progress event: {}", e)
-    );
-
   // Get the download folder
   let downloads_dir = match app.path().download_dir() {
     Ok(path) => {
@@ -171,7 +107,7 @@ pub async fn download_gamebanana_mod(
       app
         .emit("download-error", DownloadError {
           mod_id,
-          name: name.clone(),
+          name: info.name.clone(),
           error: error_msg.clone(),
         })
         .unwrap_or_else(|e|
@@ -187,7 +123,7 @@ pub async fn download_gamebanana_mod(
 
   // Use reqwest to perform download with progress tracking
   let client = reqwest::Client::new();
-  let response = match client.get(&actual_download_url).send().await {
+  let response = match client.get(&file.download_url).send().await {
     Ok(resp) => {
       debug!("Received response with status: {}", resp.status());
       if !resp.status().is_success() {
@@ -201,7 +137,7 @@ pub async fn download_gamebanana_mod(
         app
           .emit("download-error", DownloadError {
             mod_id,
-            name: name.clone(),
+            name: info.name.clone(),
             error: err_msg.clone(),
           })
           .unwrap_or_else(|e|
@@ -220,7 +156,7 @@ pub async fn download_gamebanana_mod(
       app
         .emit("download-error", DownloadError {
           mod_id,
-          name: name.clone(),
+          name: info.name.clone(),
           error: error_msg.clone(),
         })
         .unwrap_or_else(|e|
@@ -255,7 +191,7 @@ pub async fn download_gamebanana_mod(
 
   let filename = format!(
     "FNF-{}-{}.{}",
-    name.replace(' ', "-"),
+    info.name.replace(' ', "-"),
     chrono::Utc::now().timestamp(),
     extension
   );
@@ -269,9 +205,9 @@ pub async fn download_gamebanana_mod(
   app
     .emit("download-started", DownloadStarted {
       mod_id,
-      name: name.clone(),
+      name: info.name.clone(),
       content_length: total_size,
-      thumbnail_url: format!("https://gamebanana.com/mods/embeddables/{}", mod_id),
+      thumbnail_url: None,
     })
     .unwrap_or_else(|e|
       error!("Failed to emit updated download-started event: {}", e)
@@ -288,7 +224,7 @@ pub async fn download_gamebanana_mod(
       app
         .emit("download-error", DownloadError {
           mod_id,
-          name: name.clone(),
+          name: info.name.clone(),
           error: error_msg.clone(),
         })
         .unwrap_or_else(|e|
@@ -318,7 +254,7 @@ pub async fn download_gamebanana_mod(
           app
             .emit("download-error", DownloadError {
               mod_id,
-              name: name.clone(),
+              name: info.name.clone(),
               error: error_msg.clone(),
             })
             .unwrap_or_else(|e|
@@ -340,12 +276,12 @@ pub async fn download_gamebanana_mod(
         if percentage != last_percentage {
           app
             .emit("download-progress", DownloadProgress {
-              mod_id,
-              name: name.clone(),
+              mod_id: file_id,
+              name: info.name.clone(),
               bytes_downloaded: downloaded,
               total_bytes: total_size,
               percentage,
-              step: "Downloading mod file".to_string(),
+              step: "Downloading mod...".to_string(),
             })
             .unwrap_or_else(|e|
               error!("Failed to emit download-progress event: {}", e)
@@ -362,7 +298,7 @@ pub async fn download_gamebanana_mod(
         app
           .emit("download-error", DownloadError {
             mod_id,
-            name: name.clone(),
+            name: info.name.clone(),
             error: error_msg.clone(),
           })
           .unwrap_or_else(|e|
@@ -377,8 +313,8 @@ pub async fn download_gamebanana_mod(
   // Emit progress event for extraction
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
-      name: name.clone(),
+      mod_id: file_id,
+      name: info.name.clone(),
       bytes_downloaded: total_size,
       total_bytes: total_size,
       percentage: 80,
@@ -388,23 +324,18 @@ pub async fn download_gamebanana_mod(
       error!("Failed to emit download-progress event: {}", e)
     );
 
-  // Get the install location - use provided location or fall back to default
-  let install_dir = if let Some(location) = install_location {
-    let path = PathBuf::from(&location);
-    info!("Using provided install location: {}", path.display());
-    path
-  } else {
-    let default_path = get_default_install_location(&app);
-    info!("Using default install location: {}", default_path.display());
-    default_path
-  };
+  let install_path = PathBuf::from(
+    install_location.unwrap_or_else(|| {
+      get_default_install_location(&app).to_string_lossy().to_string()
+    })
+  );
 
-  debug!("Using install location: {}", install_dir.display());
+  debug!("Using install location: {}", install_path.display());
 
   // Create the install directory if it doesn't exist
-  if !install_dir.exists() {
-    debug!("Creating install directory: {}", install_dir.display());
-    if let Err(e) = fs::create_dir_all(&install_dir) {
+  if !install_path.exists() {
+    debug!("Creating install directory: {}", install_path.display());
+    if let Err(e) = fs::create_dir_all(&install_path) {
       let error_msg = format!("Failed to create install directory: {}", e);
       error!("{}", error_msg);
 
@@ -412,7 +343,7 @@ pub async fn download_gamebanana_mod(
       app
         .emit("download-error", DownloadError {
           mod_id,
-          name: name.clone(),
+          name: info.name.clone(),
           error: error_msg.clone(),
         })
         .unwrap_or_else(|e|
@@ -424,20 +355,28 @@ pub async fn download_gamebanana_mod(
   }
 
   // Sanitize mod name for folder name
-  let sanitized_name = name
-    .replace(' ', "-")
-    .replace('/', "_")
-    .replace('\\', "_")
-    .replace(':', "")
-    .replace('*', "")
-    .replace('?', "")
-    .replace('"', "")
-    .replace('<', "")
-    .replace('>', "")
-    .replace('|', "");
+  let folder = if folder_name.is_some() {
+    folder_name.clone()
+  } else {
+    Some(
+      info.name
+        .replace(' ', "-")
+        .replace('/', "_")
+        .replace('\\', "_")
+        .replace(':', "")
+        .replace('*', "")
+        .replace('?', "")
+        .replace('"', "")
+        .replace('<', "")
+        .replace('>', "")
+        .replace('|', "")
+    )
+  };
 
   // Create unique folder for this mod
-  let mod_folder = install_dir.join(&sanitized_name);
+  let mod_folder = install_path.join(
+    folder.unwrap_or_else(|| info.name.to_string())
+  );
   if mod_folder.exists() {
     if update_existing.unwrap_or(false) {
       debug!(
@@ -446,27 +385,24 @@ pub async fn download_gamebanana_mod(
       );
       // When updating, we keep the existing folder and just extract over it
     } else {
-      debug!(
-        "Mod folder already exists, removing it: {}",
-        mod_folder.display()
+      app
+        .emit("download-error", DownloadError {
+          mod_id,
+          name: info.name.clone(),
+          error: format!(
+            "Tried to install to an existing mod folder: {}",
+            mod_folder.display()
+          ),
+        })
+        .unwrap_or_else(|e|
+          error!("Failed to emit download-error event: {}", e)
+        );
+      return Err(
+        format!(
+          "Tried to install to an existing mod folder: {}",
+          mod_folder.display()
+        )
       );
-      if let Err(e) = fs::remove_dir_all(&mod_folder) {
-        let error_msg = format!("Failed to remove existing mod folder: {}", e);
-        error!("{}", error_msg);
-
-        // Emit error event
-        app
-          .emit("download-error", DownloadError {
-            mod_id,
-            name: name.clone(),
-            error: error_msg.clone(),
-          })
-          .unwrap_or_else(|e|
-            error!("Failed to emit download-error event: {}", e)
-          );
-
-        return Err(error_msg);
-      }
     }
   }
 
@@ -479,7 +415,7 @@ pub async fn download_gamebanana_mod(
     app
       .emit("download-error", DownloadError {
         mod_id,
-        name: name.clone(),
+        name: info.name.clone(),
         error: error_msg.clone(),
       })
       .unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
@@ -491,7 +427,7 @@ pub async fn download_gamebanana_mod(
   let extraction_result = extract_archive(
     &download_path,
     &mod_folder,
-    &name,
+    &info.name,
     mod_id,
     &app
   );
@@ -508,8 +444,8 @@ pub async fn download_gamebanana_mod(
   // Emit progress event for finalizing
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
-      name: name.clone(),
+      mod_id: file_id,
+      name: info.name.clone(),
       bytes_downloaded: 95,
       total_bytes: 100,
       percentage: 95,
@@ -548,39 +484,24 @@ pub async fn download_gamebanana_mod(
   let id = uuid::Uuid::new_v4().to_string();
   let mod_info = ModInfo {
     id: id.clone(),
-    name: name.clone(),
+    name: info.name.clone(),
     path: mod_folder.to_string_lossy().to_string(),
     executable_path,
     display_order: Some(0),
     icon_data,
-    description: mod_info_response
-      .as_ref()
-      .and_then(|info| info.get("_sDescription"))
-      .and_then(|v| v.as_str())
-      .map(|s| s.to_string()),
+    description: info.description.clone(),
     banner_data: final_banner_data,
     logo_data: final_logo_data,
     logo_position: Some("left_bottom".to_string()),
-    version: mod_info_response
-      .as_ref()
-      .and_then(|info| info.get("_sVersion"))
-      .and_then(|v| v.as_str())
-      .map(|s| s.to_string()),
+    version: info.version.clone(),
     engine: None, // Initialize with None for now
     process_id: None, // Initialize with None since mod is not running yet
-    contributors: mod_info_response
-      .as_ref()
-      .and_then(|info| extract_contributors(info)),
+    contributors: extract_contributors(&info),
     metadata_version: Some(CURRENT_METADATA_VERSION),
     date_added: Some(chrono::Utc::now().timestamp()), // Set current timestamp as date added
     last_played: None, // Initialize with None since mod is not played yet
     gamebanana: Some(crate::models::ModInfoGBData {
-      url: mod_info_response
-        .as_ref()
-        .and_then(|info| info.get("_sProfileUrl"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string(),
+      url: info.profile_url,
       id: mod_id,
       model_type: model_type.clone(),
     }),
@@ -591,7 +512,7 @@ pub async fn download_gamebanana_mod(
     // Create metadata object
     let mut metadata =
       serde_json::json!({
-            "name": name,
+            "name": info.name.clone(),
             "logo_position": "left_bottom",
             "metadata_version": CURRENT_METADATA_VERSION,
         });
@@ -634,13 +555,16 @@ pub async fn download_gamebanana_mod(
   let mut mods = mods_state.0.lock().unwrap();
   mods.insert(id.clone(), mod_info.clone());
 
-  info!("Successfully downloaded, extracted, and added mod '{}' to mods list", name);
+  info!(
+    "Successfully downloaded, extracted, and added mod '{}' to mods list",
+    info.name
+  );
 
   // Emit download finished event
   app
     .emit("download-finished", DownloadFinished {
-      mod_id,
-      name: name.clone(),
+      mod_id: file_id,
+      name: info.name.clone(),
       mod_info: mod_info.clone(),
     })
     .unwrap_or_else(|e|
@@ -650,8 +574,8 @@ pub async fn download_gamebanana_mod(
   // Emit progress event for completion
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
-      name: name.clone(),
+      mod_id: file_id,
+      name: info.name.clone(),
       bytes_downloaded: 100,
       total_bytes: 100,
       percentage: 100,
@@ -661,495 +585,124 @@ pub async fn download_gamebanana_mod(
       error!("Failed to emit download-progress event: {}", e)
     );
 
-  Ok(mod_folder.to_string_lossy().to_string())
+  Ok(mod_info)
 }
 
-// Command to download a mod from a custom URL
-pub async fn download_custom_mod(
-  url: String,
-  name: String,
-  mod_id: i64,
+// Helper function to find out if a mod is going to be installed to a folder which already exists
+pub fn simulate_mod_folder_creation(
+  info: GBProfilePage,
   install_location: Option<String>,
-  thumbnail_url: Option<String>,
-  description: Option<String>,
-  version: Option<String>,
-  update_existing: Option<bool>,
-  app: tauri::AppHandle
-) -> Result<String, String> {
-  info!("Starting download process for custom mod: {} from URL: {}", name, url);
-
-  // Clone thumbnail_url so it can be used multiple times
-  let thumbnail_url_clone = thumbnail_url.clone();
-
-  // Emit download started event
-  app
-    .emit("download-started", DownloadStarted {
-      mod_id,
-      name: name.clone(),
-      content_length: 0, // We don't know the size yet
-      thumbnail_url: thumbnail_url_clone
-        .clone()
-        .unwrap_or_else(|| "".to_string()),
-    })
-    .unwrap_or_else(|e| error!("Failed to emit download-started event: {}", e));
-
-  // Emit progress event for the download initialization
-  app
-    .emit("download-progress", DownloadProgress {
-      mod_id,
-      name: name.clone(),
-      bytes_downloaded: 0,
-      total_bytes: 100,
-      percentage: 5,
-      step: "Preparing download".to_string(),
-    })
-    .unwrap_or_else(|e|
-      error!("Failed to emit download-progress event: {}", e)
-    );
-
-  // Get the download folder
-  let downloads_dir = match app.path().download_dir() {
-    Ok(path) => {
-      debug!("Download directory: {}", path.display());
-      path
-    }
-    Err(e) => {
-      let error_msg = format!("Failed to find downloads directory: {}", e);
-      error!("{}", error_msg);
-
-      // Emit error event
-      app
-        .emit("download-error", DownloadError {
-          mod_id,
-          name: name.clone(),
-          error: error_msg.clone(),
-        })
-        .unwrap_or_else(|e|
-          error!("Failed to emit download-error event: {}", e)
-        );
-
-      return Err(error_msg);
-    }
-  };
-
-  // Download the file with progress tracking
-  debug!("Sending HTTP request to download custom mod");
-
-  // Use reqwest to perform download with progress tracking
-  let client = reqwest::Client::new();
-  let response = match client.get(&url).send().await {
-    Ok(resp) => {
-      debug!("Received response with status: {}", resp.status());
-      if !resp.status().is_success() {
-        let err_msg = format!(
-          "Server returned error status: {}",
-          resp.status()
-        );
-        error!("{}", err_msg);
-
-        // Emit error event
-        app
-          .emit("download-error", DownloadError {
-            mod_id,
-            name: name.clone(),
-            error: err_msg.clone(),
-          })
-          .unwrap_or_else(|e|
-            error!("Failed to emit download-error event: {}", e)
-          );
-
-        return Err(err_msg);
-      }
-      resp
-    }
-    Err(e) => {
-      let error_msg = format!("Failed to download mod: {}", e);
-      error!("{}", error_msg);
-
-      // Emit error event
-      app
-        .emit("download-error", DownloadError {
-          mod_id,
-          name: name.clone(),
-          error: error_msg.clone(),
-        })
-        .unwrap_or_else(|e|
-          error!("Failed to emit download-error event: {}", e)
-        );
-
-      return Err(error_msg);
-    }
-  };
-
-  // Create a unique filename with appropriate extension based on Content-Type header
-  let extension = response
-    .headers()
-    .get(reqwest::header::CONTENT_TYPE)
-    .and_then(|ct| ct.to_str().ok())
-    .and_then(|ct| {
-      if ct.contains("application/zip") || ct.contains("application/x-zip") {
-        Some("zip")
-      } else if ct.contains("application/x-7z-compressed") {
-        Some("7z")
-      } else if
-        ct.contains("application/x-rar-compressed") ||
-        ct.contains("application/vnd.rar")
-      {
-        Some("rar")
-      } else {
-        // Default to zip if unknown
-        Some("zip")
-      }
-    })
-    .unwrap_or("zip");
-
-  let filename = format!(
-    "FNF-{}-{}.{}",
-    name.replace(' ', "-"),
-    chrono::Utc::now().timestamp(),
-    extension
-  );
-  let download_path = downloads_dir.join(&filename);
-
-  debug!("Download path: {}", download_path.display());
-
-  // Get the content length for progress tracking
-  let total_size = response.content_length().unwrap_or(0) as usize;
-
-  // Update the download started event with actual content length
-  app
-    .emit("download-started", DownloadStarted {
-      mod_id,
-      name: name.clone(),
-      content_length: total_size,
-      thumbnail_url: thumbnail_url_clone.unwrap_or_else(|| "".to_string()),
-    })
-    .unwrap_or_else(|e|
-      error!("Failed to emit updated download-started event: {}", e)
-    );
-
-  // Create a file to write to
-  let mut file = match std::fs::File::create(&download_path) {
-    Ok(file) => file,
-    Err(e) => {
-      let error_msg = format!("Failed to create file: {}", e);
-      error!("{}", error_msg);
-
-      // Emit error event
-      app
-        .emit("download-error", DownloadError {
-          mod_id,
-          name: name.clone(),
-          error: error_msg.clone(),
-        })
-        .unwrap_or_else(|e|
-          error!("Failed to emit download-error event: {}", e)
-        );
-
-      return Err(error_msg);
-    }
-  };
-
-  // Stream the response body with progress updates
-  let mut stream = response.bytes_stream();
-  let mut downloaded: usize = 0;
-  let mut last_percentage = 0;
-
-  while let Some(chunk_result) = stream.next().await {
-    match chunk_result {
-      Ok(chunk) => {
-        // chunk is of type reqwest::Bytes here
-        // Write the chunk to the file
-        // &chunk dereferences Bytes to &[u8] for write_all
-        if let Err(e) = std::io::Write::write_all(&mut file, &chunk) {
-          let error_msg = format!("Failed to write to file: {}", e);
-          error!("{}", error_msg);
-
-          // Emit error event
-          app
-            .emit("download-error", DownloadError {
-              mod_id,
-              name: name.clone(),
-              error: error_msg.clone(),
-            })
-            .unwrap_or_else(|e|
-              error!("Failed to emit download-error event: {}", e)
-            );
-
-          return Err(error_msg);
-        }
-
-        // Update progress
-        downloaded += chunk.len();
-        let percentage = if total_size > 0 {
-          ((((downloaded as f64) / (total_size as f64)) * 60.0) as u8) + 20 // 20-80% range for download
-        } else {
-          30 // Default to middle of range if size unknown
-        };
-
-        // Only emit progress events if percentage has changed
-        if percentage != last_percentage {
-          app
-            .emit("download-progress", DownloadProgress {
-              mod_id,
-              name: name.clone(),
-              bytes_downloaded: downloaded,
-              total_bytes: total_size,
-              percentage,
-              step: "Downloading mod file".to_string(),
-            })
-            .unwrap_or_else(|e|
-              error!("Failed to emit download-progress event: {}", e)
-            );
-
-          last_percentage = percentage;
-        }
-      }
-      Err(e) => {
-        let error_msg = format!("Failed to download chunk: {}", e);
-        error!("{}", error_msg);
-
-        // Emit error event
-        app
-          .emit("download-error", DownloadError {
-            mod_id,
-            name: name.clone(),
-            error: error_msg.clone(),
-          })
-          .unwrap_or_else(|e|
-            error!("Failed to emit download-error event: {}", e)
-          );
-
-        return Err(error_msg);
-      }
-    }
-  }
-
-  // Emit progress event for extraction
-  app
-    .emit("download-progress", DownloadProgress {
-      mod_id,
-      name: name.clone(),
-      bytes_downloaded: total_size,
-      total_bytes: total_size,
-      percentage: 80,
-      step: "Preparing to extract mod".to_string(),
-    })
-    .unwrap_or_else(|e|
-      error!("Failed to emit download-progress event: {}", e)
-    );
-
-  // Get the install location - use provided location or fall back to default
-  let install_dir = if let Some(location) = install_location {
-    let path = PathBuf::from(&location);
-    info!("Using provided install location: {}", path.display());
-    path
+  folder_name: Option<String>,
+  app: &tauri::AppHandle
+) -> bool {
+  let folder_path = if folder_name.is_some() {
+    folder_name.clone()
   } else {
-    let default_path = get_default_install_location(&app);
-    info!("Using default install location: {}", default_path.display());
-    default_path
+    Some(
+      info.name
+        .replace(' ', "-")
+        .replace('/', "_")
+        .replace('\\', "_")
+        .replace(':', "")
+        .replace('*', "")
+        .replace('?', "")
+        .replace('"', "")
+        .replace('<', "")
+        .replace('>', "")
+        .replace('|', "")
+    )
   };
 
-  debug!("Using install location: {}", install_dir.display());
-
-  // Create the install directory if it doesn't exist
-  if !install_dir.exists() {
-    debug!("Creating install directory: {}", install_dir.display());
-    if let Err(e) = fs::create_dir_all(&install_dir) {
-      let error_msg = format!("Failed to create install directory: {}", e);
-      error!("{}", error_msg);
-
-      // Emit error event
-      app
-        .emit("download-error", DownloadError {
-          mod_id,
-          name: name.clone(),
-          error: error_msg.clone(),
-        })
-        .unwrap_or_else(|e|
-          error!("Failed to emit download-error event: {}", e)
-        );
-
-      return Err(error_msg);
-    }
+  // Log install location provided
+  if let Some(location) = &install_location {
+    debug!("Install location provided: {}", location);
+  } else {
+    debug!("No install location provided, using default");
   }
-
-  // Sanitize mod name for folder name
-  let sanitized_name = name
-    .replace(' ', "-")
-    .replace('/', "_")
-    .replace('\\', "_")
-    .replace(':', "")
-    .replace('*', "")
-    .replace('?', "")
-    .replace('"', "")
-    .replace('<', "")
-    .replace('>', "")
-    .replace('|', "");
-
-  // Create unique folder for this mod
-  let mod_folder = install_dir.join(&sanitized_name);
-  if mod_folder.exists() {
-    if update_existing.unwrap_or(false) {
-      debug!(
-        "Mod folder already exists, updating in place: {}",
-        mod_folder.display()
-      );
-      // When updating, we keep the existing folder and just extract over it
-    } else {
-      debug!(
-        "Mod folder already exists, removing it: {}",
-        mod_folder.display()
-      );
-      if let Err(e) = fs::remove_dir_all(&mod_folder) {
-        let error_msg = format!("Failed to remove existing mod folder: {}", e);
-        error!("{}", error_msg);
-
-        // Emit error event
-        app
-          .emit("download-error", DownloadError {
-            mod_id,
-            name: name.clone(),
-            error: error_msg.clone(),
-          })
-          .unwrap_or_else(|e|
-            error!("Failed to emit download-error event: {}", e)
-          );
-
-        return Err(error_msg);
-      }
-    }
-  }
-
-  debug!("Creating mod folder: {}", mod_folder.display());
-  if let Err(e) = fs::create_dir_all(&mod_folder) {
-    let error_msg = format!("Failed to create mod folder: {}", e);
-    error!("{}", error_msg);
-
-    // Emit error event
-    app
-      .emit("download-error", DownloadError {
-        mod_id,
-        name: name.clone(),
-        error: error_msg.clone(),
-      })
-      .unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
-
-    return Err(error_msg);
-  }
-
-  // Extract the archive based on its type
-  let extraction_result = extract_archive(
-    &download_path,
-    &mod_folder,
-    &name,
-    mod_id,
-    &app
+  // Get full install path
+  let install_path = PathBuf::from(
+    install_location.unwrap_or_else(|| {
+      get_default_install_location(app).to_string_lossy().to_string()
+    })
   );
-  if let Err(e) = extraction_result {
-    return Err(e);
-  }
-
-  // Reorganize modpack structure if needed (for better user experience)
-  if let Err(e) = reorganize_modpack(&mod_folder) {
-    warn!("Failed to reorganize modpack structure: {}", e);
-    // Continue anyway as this is not critical
-  }
-
-  // Emit progress event for finalizing
-  app
-    .emit("download-progress", DownloadProgress {
-      mod_id,
-      name: name.clone(),
-      bytes_downloaded: 95,
-      total_bytes: 100,
-      percentage: 95,
-      step: "Finalizing mod installation".to_string(),
-    })
-    .unwrap_or_else(|e|
-      error!("Failed to emit download-progress event: {}", e)
-    );
-
-  // Find executable in the extracted files
-  debug!("Searching for executables in mod folder");
-  let executables = find_executables(&mod_folder);
-  let executable_path = executables
-    .first()
-    .map(|p| p.to_string_lossy().to_string());
-
-  // Extract icon if we have an executable
-  let icon_data = match &executable_path {
-    Some(exe_path) => {
-      debug!("Extracting icon from: {}", exe_path);
-      extract_executable_icon(Path::new(exe_path))
-    }
-    None => None,
-  };
-
-  // Check for custom images in fnfml folder
-  let (custom_banner_data, custom_logo_data) = check_for_custom_images(
-    &mod_folder
+  let folder_path = PathBuf::from(
+    folder_path.unwrap_or_else(|| info.name.to_string())
   );
+  let full_install_path = install_path.join(folder_path);
 
-  // Use custom banner/logo if available
-  let final_banner_data = custom_banner_data.or(thumbnail_url);
-  let final_logo_data = custom_logo_data;
+  // Check if the full install path exists
+  if full_install_path.exists() {
+    warn!(
+      "The mod folder '{}' already exists at the specified install location",
+      full_install_path.display()
+    );
+    true // Folder exists, so we cannot safely create it
+  } else {
+    info!(
+      "The mod folder '{}' does not exist, it can be created safely",
+      full_install_path.display()
+    );
+    false // Folder does not exist, safe to create
+  }
+}
 
-  // Create the mod info
-  let id = uuid::Uuid::new_v4().to_string();
-  let mod_info = ModInfo {
-    id: id.clone(),
-    name: name.clone(),
-    path: mod_folder.to_string_lossy().to_string(),
-    executable_path,
-    display_order: Some(0),
-    icon_data,
-    description,
-    banner_data: final_banner_data,
-    logo_position: Some("left_bottom".to_string()),
-    logo_data: final_logo_data,
-    version,
-    engine: None,
-    process_id: None,
-    contributors: None,
-    metadata_version: Some(CURRENT_METADATA_VERSION),
-    date_added: Some(chrono::Utc::now().timestamp()), // Set current timestamp as date added
-    last_played: None, // Initialize with None since mod is not played yet
-    gamebanana: None, // No GameBanana data for custom mods
+// Simulate engine folder creation to check if it can be created safely
+pub fn simulate_engine_folder_creation(
+  engine_type: String,
+  install_location: Option<String>,
+  folder_name: Option<String>,
+  app: &tauri::AppHandle
+) -> bool {
+  let config = match load_engine_config(&engine_type, &app) {
+    Ok(config) => config,
+    Err(e) => {
+      error!("Failed to load engine configuration: {}", e);
+      return false; // Cannot simulate if config loading fails
+    }
   };
 
-  // Add the mod to our state
-  let mods_state = app.state::<crate::models::ModsState>();
-  let mut mods = mods_state.0.lock().unwrap();
-  mods.insert(id.clone(), mod_info.clone());
+  let engine_name = config.engine_name;
+  let install_path = if let Some(location) = install_location {
+    PathBuf::from(location)
+  } else {
+    get_default_install_location(&app)
+  };
+  let folder_path = if folder_name.is_some() {
+    folder_name.clone()
+  } else {
+    Some(
+      engine_name
+        .replace(' ', "-")
+        .replace('/', "_")
+        .replace('\\', "_")
+        .replace(':', "")
+        .replace('*', "")
+        .replace('?', "")
+        .replace('"', "")
+        .replace('<', "")
+        .replace('>', "")
+        .replace('|', "")
+    )
+  };
+  let folder_path = PathBuf::from(
+    folder_path.unwrap_or_else(|| engine_name.to_string())
+  );
+  let full_install_path = install_path.join(folder_path);
 
-  info!("Successfully downloaded, extracted, and added mod '{}' to mods list", name);
-
-  // Emit download finished event
-  app
-    .emit("download-finished", DownloadFinished {
-      mod_id,
-      name: name.clone(),
-      mod_info: mod_info.clone(),
-    })
-    .unwrap_or_else(|e|
-      error!("Failed to emit download-finished event: {}", e)
+  // Check if the full install path exists
+  if full_install_path.exists() {
+    warn!(
+      "The engine folder '{}' already exists at the specified install location",
+      full_install_path.display()
     );
-
-  // Emit progress event for completion
-  app
-    .emit("download-progress", DownloadProgress {
-      mod_id,
-      name: name.clone(),
-      bytes_downloaded: 100,
-      total_bytes: 100,
-      percentage: 100,
-      step: "Mod installation complete".to_string(),
-    })
-    .unwrap_or_else(|e|
-      error!("Failed to emit download-progress event: {}", e)
+    return true; // Folder exists, so it can be updated
+  } else {
+    info!(
+      "The engine folder '{}' does not exist, it can be created safely",
+      full_install_path.display()
     );
-  Ok(mod_folder.to_string_lossy().to_string())
+    return false; // Folder does not exist, safe to create
+  }
 }
 
 // Helper function to load engine configuration from JSON
@@ -1191,8 +744,10 @@ pub async fn download_engine(
   engine_id: String,
   install_location: Option<String>,
   custom_name: Option<String>,
+  update_existing: Option<bool>,
+  download_id: i64,
   app: tauri::AppHandle
-) -> Result<String, String> {
+) -> Result<ModInfo, String> {
   info!("Starting direct engine download for: {}", engine_id);
 
   // Load engine configuration from JSON
@@ -1207,28 +762,24 @@ pub async fn download_engine(
   let engine_description = config.engine_description;
   let engine_version = config.engine_version;
 
-  // Create a unique mod ID for tracking downloads
-  let mod_id = uuid::Uuid::new_v4().as_u128() as i64;
-  info!("Generated mod_id for {} engine: {}", engine_id, mod_id);
-
   // Emit download started event
   app
     .emit("download-started", DownloadStarted {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
       content_length: 0, // We don't know the size yet
-      thumbnail_url: "".to_string(),
+      thumbnail_url: None,
     })
     .unwrap_or_else(|e| error!("Failed to emit download-started event: {}", e));
 
   // Emit progress event for the engine download fetch step
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
-      bytes_downloaded: 0,
-      total_bytes: 100,
       percentage: 5,
+      bytes_downloaded: 0,
+      total_bytes: 100, // Placeholder
       step: "Preparing to download engine...".to_string(),
     })
     .unwrap_or_else(|e|
@@ -1248,7 +799,7 @@ pub async fn download_engine(
       // Emit error event
       app
         .emit("download-error", DownloadError {
-          mod_id,
+          mod_id: download_id,
           name: engine_name.to_string(),
           error: error_msg.clone(),
         })
@@ -1278,7 +829,7 @@ pub async fn download_engine(
         // Emit error event
         app
           .emit("download-error", DownloadError {
-            mod_id,
+            mod_id: download_id,
             name: engine_name.to_string(),
             error: err_msg.clone(),
           })
@@ -1297,7 +848,7 @@ pub async fn download_engine(
       // Emit error event
       app
         .emit("download-error", DownloadError {
-          mod_id,
+          mod_id: download_id,
           name: engine_name.to_string(),
           error: error_msg.clone(),
         })
@@ -1359,10 +910,10 @@ pub async fn download_engine(
   // Update the download started event with actual content length
   app
     .emit("download-started", DownloadStarted {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
       content_length: total_size,
-      thumbnail_url: "".to_string(),
+      thumbnail_url: None,
     })
     .unwrap_or_else(|e|
       error!("Failed to emit updated download-started event: {}", e)
@@ -1378,7 +929,7 @@ pub async fn download_engine(
       // Emit error event
       app
         .emit("download-error", DownloadError {
-          mod_id,
+          mod_id: download_id,
           name: engine_name.to_string(),
           error: error_msg.clone(),
         })
@@ -1406,7 +957,7 @@ pub async fn download_engine(
           // Emit error event
           app
             .emit("download-error", DownloadError {
-              mod_id,
+              mod_id: download_id,
               name: engine_name.to_string(),
               error: error_msg.clone(),
             })
@@ -1429,7 +980,7 @@ pub async fn download_engine(
         if percentage != last_percentage {
           app
             .emit("download-progress", DownloadProgress {
-              mod_id,
+              mod_id: download_id,
               name: engine_name.to_string(),
               bytes_downloaded: downloaded,
               total_bytes: total_size,
@@ -1450,7 +1001,7 @@ pub async fn download_engine(
         // Emit error event
         app
           .emit("download-error", DownloadError {
-            mod_id,
+            mod_id: download_id,
             name: engine_name.to_string(),
             error: error_msg.clone(),
           })
@@ -1466,7 +1017,7 @@ pub async fn download_engine(
   // Emit progress event for extraction
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
       bytes_downloaded: total_size,
       total_bytes: total_size,
@@ -1500,7 +1051,7 @@ pub async fn download_engine(
       // Emit error event
       app
         .emit("download-error", DownloadError {
-          mod_id,
+          mod_id: download_id,
           name: engine_name.to_string(),
           error: error_msg.clone(),
         })
@@ -1530,18 +1081,50 @@ pub async fn download_engine(
   let engine_folder = install_dir.join(&folder_name);
 
   if engine_folder.exists() {
-    debug!(
-      "Engine folder already exists, removing it: {}",
-      engine_folder.display()
-    );
-    if let Err(e) = fs::remove_dir_all(&engine_folder) {
-      let error_msg = format!("Failed to remove existing engine folder: {}", e);
+    if update_existing.unwrap_or(false) {
+      debug!(
+        "Engine folder already exists, updating in place: {}",
+        engine_folder.display()
+      );
+      // When updating, we keep the existing folder and just extract over it
+      // Note: We don't remove the folder when updating to preserve any user data/mods
+    } else {
+      debug!(
+        "Engine folder already exists, removing it: {}",
+        engine_folder.display()
+      );
+      if let Err(e) = fs::remove_dir_all(&engine_folder) {
+        let error_msg =
+          format!("Failed to remove existing engine folder: {}", e);
+        error!("{}", error_msg);
+
+        // Emit error event
+        app
+          .emit("download-error", DownloadError {
+            mod_id: download_id,
+            name: engine_name.to_string(),
+            error: error_msg.clone(),
+          })
+          .unwrap_or_else(|e|
+            error!("Failed to emit download-error event: {}", e)
+          );
+
+        return Err(error_msg);
+      }
+    }
+  }
+
+  // Only create the directory if it doesn't exist (for updates, it should already exist)
+  if !engine_folder.exists() {
+    debug!("Creating engine folder: {}", engine_folder.display());
+    if let Err(e) = fs::create_dir_all(&engine_folder) {
+      let error_msg = format!("Failed to create engine folder: {}", e);
       error!("{}", error_msg);
 
       // Emit error event
       app
         .emit("download-error", DownloadError {
-          mod_id,
+          mod_id: download_id,
           name: engine_name.to_string(),
           error: error_msg.clone(),
         })
@@ -1553,29 +1136,12 @@ pub async fn download_engine(
     }
   }
 
-  debug!("Creating engine folder: {}", engine_folder.display());
-  if let Err(e) = fs::create_dir_all(&engine_folder) {
-    let error_msg = format!("Failed to create engine folder: {}", e);
-    error!("{}", error_msg);
-
-    // Emit error event
-    app
-      .emit("download-error", DownloadError {
-        mod_id,
-        name: engine_name.to_string(),
-        error: error_msg.clone(),
-      })
-      .unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
-
-    return Err(error_msg);
-  }
-
   // Extract the archive
   let extraction_result = extract_archive(
     &download_path,
     &engine_folder,
     &engine_name,
-    mod_id,
+    download_id,
     &app
   );
   if let Err(e) = extraction_result {
@@ -1591,7 +1157,7 @@ pub async fn download_engine(
   // Emit progress event for finalizing
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
       bytes_downloaded: 95,
       total_bytes: 100,
@@ -1629,7 +1195,8 @@ pub async fn download_engine(
   }
 
   // Copy standard banner and logo from resources
-  let banner_path = "resources/".to_string() + &engine_banner;
+  let banner_path =
+    "resources/".to_string() + engine_banner.as_deref().unwrap_or("");
   let logo_path = "resources/".to_string() + &engine_logo;
   let engine_icon_path = "resources/".to_string() + &engine_icon;
 
@@ -1748,7 +1315,7 @@ pub async fn download_engine(
   // Emit download finished event
   app
     .emit("download-finished", DownloadFinished {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
       mod_info: mod_info.clone(),
     })
@@ -1759,7 +1326,7 @@ pub async fn download_engine(
   // Emit progress event for completion
   app
     .emit("download-progress", DownloadProgress {
-      mod_id,
+      mod_id: download_id,
       name: engine_name.to_string(),
       bytes_downloaded: 100,
       total_bytes: 100,
@@ -1770,7 +1337,7 @@ pub async fn download_engine(
       error!("Failed to emit download-progress event: {}", e)
     );
 
-  Ok(engine_folder.to_string_lossy().to_string())
+  Ok(mod_info)
 }
 
 // Helper function to extract archives of different types

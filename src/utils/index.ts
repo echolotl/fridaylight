@@ -107,6 +107,16 @@ export interface EngineTypeInfo {
   data: EngineData
 }
 
+export type EngineType =
+  | 'vanilla'
+  | 'psych'
+  | 'codename'
+  | 'fps-plus'
+  | 'kade'
+  | 'pre-vslice'
+  | 'other'
+  | 'unknown'
+
 /**
  * Function to get all available engine types from the resources directory
  * @returns Promise<EngineTypeInfo[]> Array of engine type information including primary status

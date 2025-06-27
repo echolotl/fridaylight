@@ -23,7 +23,7 @@
         >
           <q-carousel-slide
             v-for="(mod, index) in mods"
-            :key="mod.id"
+            :key="mod._idRow"
             :name="index"
             class="featured-slide"
           >
@@ -32,11 +32,11 @@
               @contextmenu.prevent="showContextMenu($event, mod)"
             >
               <q-img
-                :src="mod.image_url"
+                :src="mod._sImageUrl"
                 class="featured-thumbnail"
                 :img-style="{
                   filter:
-                    mod.initial_visibility == 'warn' ? 'blur(20px)' : 'none',
+                    mod._sInitialVisibility == 'warn' ? 'blur(20px)' : 'none',
                 }"
               >
                 <div class="absolute-full featured-overlay"></div>
@@ -44,29 +44,23 @@
                 <div class="absolute-top-right q-pa-sm row items-center">
                   <div class="category-icon-container">
                     <img
-                      :src="
-                        mod.category_icon_url ||
-                        'https://gamebanana.com/static/img/defaults/icon.png'
-                      "
+                      :src="mod._aRootCategory._sIconUrl"
                       class="category-icon"
                     />
                     <q-tooltip class="phantom-font">
-                      {{ mod.category_name }}
+                      {{ mod._aRootCategory._sName }}
                     </q-tooltip>
                   </div>
                   <div class="author-container">
                     <q-avatar size="40px" square>
-                      <img
-                        :src="
-                          mod.submitter_avatar_url ||
-                          'https://gamebanana.com/static/img/defaults/avatar.gif'
-                        "
-                      />
+                      <img :src="mod._aSubmitter._sAvatarUrl" />
                     </q-avatar>
-                    <span v-if="mod.submitter_u_pic" class="author-upic"
-                      ><img :src="mod.submitter_u_pic"
+                    <span v-if="mod._aSubmitter._sUpicUrl" class="author-upic"
+                      ><img :src="mod._aSubmitter._sUpicUrl"
                     /></span>
-                    <span v-else class="author-name">{{ mod.owner }}</span>
+                    <span v-else class="author-name">{{
+                      mod._aSubmitter._sName
+                    }}</span>
                   </div>
                 </div>
 
@@ -75,16 +69,16 @@
                     color="primary"
                     text-color="white"
                     class="mod-period-badge"
-                    >{{ formatPeriod(mod.period) }}</q-badge
+                    >{{ formatPeriod(mod._sPeriod) }}</q-badge
                   >
                 </div>
 
                 <div class="absolute-bottom featured-info">
                   <div class="featured-title phantom-font-display">
-                    {{ mod.name }}
+                    {{ mod._sName }}
                   </div>
-                  <div class="featured-description">
-                    {{ shortenDescription(mod.description) }}
+                  <div v-if="mod._sDescription" class="featured-description">
+                    {{ shortenDescription(mod._sDescription) }}
                   </div>
 
                   <div class="featured-stats-container">
@@ -92,20 +86,22 @@
                       color="primary"
                       label="View Details"
                       class="featured-btn q-mt-sm"
-                      @click.stop="$emit('showDetails', mod.id, mod.model_name)"
+                      @click.stop="
+                        $emit('showDetails', mod._idRow, mod._sModelName)
+                      "
                     />
                     <div class="featured-stats">
-                      <span v-if="mod.initial_visibility == 'warn'">
+                      <span v-if="mod._sInitialVisibility == 'warn'">
                         <q-icon name="warning" size="sm" color="yellow" />
                         Has sensitive content!
                       </span>
-                      <span>
+                      <span v-if="mod._nPostCount">
                         <q-icon name="message" size="sm" />
-                        {{ formatNumber(mod.post_count) }}
+                        {{ formatNumber(mod._nPostCount) }}
                       </span>
-                      <span>
+                      <span v-if="mod._nLikeCount">
                         <q-icon name="thumb_up" size="sm" />
-                        {{ formatNumber(mod.likes) }}
+                        {{ formatNumber(mod._nLikeCount) }}
                       </span>
                     </div>
                   </div>
@@ -121,12 +117,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { GameBananaMod } from '../../types'
+import type { GBTopSubsItem } from '@custom-types/gamebanana'
 import { openUrl } from '@tauri-apps/plugin-opener'
 
-const props = defineProps({
+defineProps({
   mods: {
-    type: Array as () => GameBananaMod[],
+    type: Array as () => GBTopSubsItem[],
     default: () => [],
   },
   loading: {
@@ -139,10 +135,8 @@ const emit = defineEmits(['download', 'showDetails'])
 
 const currentSlide = ref(0)
 
-console.log('Mods in carousel:', props.mods)
-
 // Context menu handler
-const showContextMenu = (event: MouseEvent, mod: GameBananaMod) => {
+const showContextMenu = (event: MouseEvent, mod: GBTopSubsItem) => {
   event.preventDefault()
   event.stopPropagation()
 
@@ -156,12 +150,12 @@ const showContextMenu = (event: MouseEvent, mod: GameBananaMod) => {
     {
       icon: 'info',
       label: 'Show Details',
-      action: () => emit('showDetails', mod.id),
+      action: () => emit('showDetails', mod._idRow, mod._sModelName),
     },
     {
       icon: 'open_in_new',
       label: 'Open GameBanana Page',
-      action: () => openUrl(mod.profile_url),
+      action: () => openUrl(mod._sProfileUrl),
     },
   ]
 

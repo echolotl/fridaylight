@@ -98,10 +98,10 @@
         <div v-if="!isLoadingFeatured" class="mod-card-container">
           <ModCard
             v-for="mod in featuredMods"
-            :key="mod.id"
+            :key="mod._idRow"
             :mod="mod"
-            @download="downloadMod(mod)"
-            @show-details="openModDetails(mod.id, mod.model_name)"
+            non-downloadable
+            @show-details="openModDetails(mod._idRow, mod._sModelName)"
           />
         </div>
         <div v-else class="mod-card-container">
@@ -167,74 +167,17 @@
       </div>
     </div>
   </q-scroll-area>
-  <!-- Mod Details Modal -->
-  <ModDetailsModal
-    :mod-id="selectedModId"
-    :model-type="currentModelType"
-    :is-open="isModDetailsModalOpen"
-    @update:is-open="isModDetailsModalOpen = $event"
-    @download="downloadMod"
-  />
-
-  <!-- Download File Selector Dialog -->
-  <DownloadFileSelector
-    v-model="showFileSelector"
-    :files="downloadFiles"
-    :mod-name="currentDownloadMod?.name || ''"
-    :alternate-file-sources="alternateFileSources"
-    @select="onFileSelected"
-    @cancel="cancelDownload"
-  />
-
-  <!-- Engine Selection Dialog for Modpacks -->
-  <EngineSelectionDialog
-    v-model="showEngineSelectDialog"
-    :compatible-engines="currentModpackInfo?.compatibleEngines || []"
-    :engine-type="currentModpackInfo?.type || undefined"
-    :mod-name="currentModpackInfo?.mod?.name || ''"
-    @select="onEngineSelected"
-    @cancel="cancelDownload"
-  />
-
-  <!-- Mod Type Selection Modal -->
-  <ModTypeSelectionModal
-    v-model="showModTypeModal"
-    :mod-name="currentDownloadMod?.name"
-    @submit="onModTypeSelected"
-    @back="onModTypeBack"
-    @cancel="cancelDownload"
-  />
-  <!-- Folder Exists Confirmation Dialog -->
-  <FolderExistsDialog
-    v-model="showFolderExistsDialog"
-    :mod-name="folderExistsModName"
-    @update="updateFolderExistsMod"
-    @download-anyway="continueFolderExistsDownload"
-    @cancel="cancelDownload"
-  />
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { GameBananaMod, Mod } from '../../types'
-import {
-  gamebananaService,
-  type ModpackInfo,
-} from '@services/gamebananaService'
+import { Mod } from '@main-types'
+import type { GBTopSubsItem } from '@custom-types/gamebanana'
 import { DatabaseService } from '@services/dbService'
 
 import ModCard from '../common/ModCard.vue'
 import InstalledModCard from '../common/InstalledModCard.vue'
-import ModDetailsModal from '@modals/ModDetailsModal.vue'
-import DownloadFileSelector from '@modals/DownloadFileSelector.vue'
-import EngineSelectionDialog from '@modals/EngineSelectionDialog.vue'
-import ModTypeSelectionModal from '@modals/ModTypeSelectionModal.vue'
-import FolderExistsDialog from '@modals/FolderExistsDialog.vue'
-import {
-  NotificationService,
-  OngoingNotificationResult,
-} from '@services/notificationService'
 import SkeletonModCard from '@components/skeletons/SkeletonModCard.vue'
 import SkeletonInstalledModCard from '@components/skeletons/SkeletonInstalledModCard.vue'
 
@@ -243,9 +186,10 @@ const emit = defineEmits([
   'open-mod-settings',
   'select-mod',
   'gamebanana-browser',
+  'open-gamebanana-mod',
 ])
 // Featured mods state
-const featuredMods = ref<GameBananaMod[]>([])
+const featuredMods = ref<GBTopSubsItem[]>([])
 const isLoadingFeatured = ref(false)
 
 // Installed mods state
@@ -270,34 +214,6 @@ const sortHeaderText = computed(() => {
 
 // Recently played mods state
 const recentlyPlayedMods = ref<Mod[]>([])
-
-// For mod details modal
-const selectedModId = ref<number>(0)
-const currentModelType = ref<string>('')
-const isModDetailsModalOpen = ref<boolean>(false)
-
-// For file selection dialog
-const showFileSelector = ref(false)
-const downloadFiles = ref<any[]>([])
-const alternateFileSources = ref<any[]>([])
-const currentDownloadMod = ref<GameBananaMod | null>(null)
-let pendingDownloadNotification: OngoingNotificationResult | null = null
-
-// For modpack handling
-const showEngineSelectDialog = ref(false)
-const currentModpackInfo = ref<ModpackInfo | null>(null)
-
-const showModTypeModal = ref(false)
-
-// For folder existence confirmation
-const showFolderExistsDialog = ref(false)
-const folderExistsModName = ref('')
-const folderExistsDownloadContinueFunction = ref<(() => Promise<any>) | null>(
-  null
-)
-const folderExistsUpdateFunction = ref<(() => Promise<any>) | null>(null)
-
-const notificationService = NotificationService.getInstance()
 
 // Show sort options dropdown for All Mods
 const showSortMenu = (evt: Event) => {
@@ -416,20 +332,17 @@ const getRecentlyPlayedMods = (count: number = 5): Mod[] => {
 const fetchFeaturedMods = async () => {
   isLoadingFeatured.value = true
   try {
-    const response = await invoke<{ mods: GameBananaMod[]; total: number }>(
-      'fetch_gamebanana_mods_command',
+    const response = await invoke<GBTopSubsItem[]>(
+      'get_featured_mods_command',
       {
         query: 'featured',
         page: 1, // Always get first page for featured
       }
     )
 
-    // Filter mods that weren't featured today
-    const filteredMods = response.mods.filter(mod => {
-      return mod.period === 'today'
-    })
-
-    featuredMods.value = filteredMods
+    console.log('Featured mods response:', response)
+    // Filter out mods not featured today
+    featuredMods.value = response.filter(mod => mod._sPeriod === 'today')
   } catch (error) {
     console.error('Failed to fetch featured mods:', error)
   } finally {
@@ -452,53 +365,18 @@ const fetchInstalledMods = async (): Promise<void> => {
   }
 }
 
-// Download handling
-const downloadMod = async (mod: GameBananaMod) => {
-  try {
-    currentDownloadMod.value = mod
-
-    const result = await gamebananaService.downloadMod(mod)
-
-    // Handle different scenarios based on the result
-    if ('showFileSelector' in result) {
-      // If we need to show file selector
-      downloadFiles.value = result.files
-      alternateFileSources.value = result.alternateFileSources || []
-      showFileSelector.value = true
-      return
-    }
-
-    if ('showEngineSelectDialog' in result) {
-      // If we need to show engine selection dialog
-      currentModpackInfo.value = result.modpackInfo
-      showEngineSelectDialog.value = true
-      return
-    }
-    if ('showModTypeModal' in result) {
-      showModTypeModal.value = true
-      return
-    }
-
-    if ('showFolderExistsDialog' in result) {
-      // If the mod folder already exists, show confirmation dialog
-      folderExistsModName.value = result.modName
-      folderExistsDownloadContinueFunction.value = result.continueDownload
-      folderExistsUpdateFunction.value = result.updateMod || null
-      showFolderExistsDialog.value = true
-      return
-    }
-  } catch (error) {
-    // Show error notification
-
-    console.error('Failed to prepare mod download:', error)
-  }
-}
-
 // Function to open mod details modal
 const openModDetails = (modId: number, modelType: string) => {
-  selectedModId.value = modId
-  currentModelType.value = modelType
-  isModDetailsModalOpen.value = true
+  console.info(
+    'HomePage: Emitting open-gamebanana-mod event with modId:',
+    modId,
+    'and modelType:',
+    modelType
+  )
+  emit('open-gamebanana-mod', {
+    modId,
+    modelType,
+  })
 }
 
 // Function to play an installed mod
@@ -530,281 +408,6 @@ onMounted(() => {
     recentlyPlayedMods.value = getRecentlyPlayedMods(5)
   })
 })
-
-// Function called when an engine is selected from the dialog
-const onEngineSelected = async (engine: any) => {
-  if (!currentModpackInfo.value) return
-
-  try {
-    // Hide the dialog immediately to provide feedback to the user
-    showEngineSelectDialog.value = false // Use the centralized gamebananaService to handle modpack download
-    const result = await gamebananaService.downloadModpackForEngine(
-      currentModpackInfo.value,
-      engine
-    )
-
-    if ('success' in result && !result.success) {
-      notificationService.installationFailed(
-        currentModpackInfo.value.mod?.name || 'Modpack',
-        String('error' in result ? result.error : 'Unknown error')
-      )
-    }
-  } catch (error) {
-    notificationService.installationFailed(
-      currentModpackInfo.value?.mod?.name || 'Modpack',
-      String(error)
-    )
-  } finally {
-    // Reset state
-    currentModpackInfo.value = null
-  }
-}
-
-// Function called when a file is selected from the dialog
-const onFileSelected = async (selectedFile: any) => {
-  if (!currentDownloadMod.value) return
-
-  try {
-    // Hide the file selector dialog immediately to provide user feedback
-    showFileSelector.value = false
-
-    // Use the centralized gamebananaService to handle file download with folder existence check
-    const result = await gamebananaService.downloadModFile(
-      currentDownloadMod.value,
-      selectedFile
-    )
-
-    // Handle different scenarios based on the result
-    if ('showFileSelector' in result) {
-      // If we need to show file selector again (shouldn't happen in this context)
-      downloadFiles.value = result.files
-      alternateFileSources.value = result.alternateFileSources || []
-      showFileSelector.value = true
-      return
-    }
-
-    if ('showEngineSelectDialog' in result) {
-      // If we need to show engine selection dialog
-      currentModpackInfo.value = result.modpackInfo
-      showEngineSelectDialog.value = true
-      return
-    }
-
-    if ('showModTypeModal' in result) {
-      showModTypeModal.value = true
-      return
-    }
-    if ('showFolderExistsDialog' in result) {
-      // If the mod folder already exists, show confirmation dialog
-      folderExistsModName.value = result.modName
-      folderExistsDownloadContinueFunction.value = result.continueDownload
-      folderExistsUpdateFunction.value = result.updateMod || null
-      showFolderExistsDialog.value = true
-      return
-    }
-    if ('success' in result && !result.success) {
-      notificationService.downloadError(
-        currentDownloadMod.value.name,
-        String('error' in result ? result.error : 'Unknown error')
-      )
-    }
-
-    // Trigger the refresh event to update the mod list
-    const refreshEvent = new CustomEvent('refresh-mods')
-    window.dispatchEvent(refreshEvent)
-
-    // Reset current download mod
-    currentDownloadMod.value = null
-  } catch (error) {
-    notificationService.downloadError(
-      currentDownloadMod.value?.name || 'mod',
-      String(error)
-    )
-
-    console.error('Failed to download mod file:', error)
-    currentDownloadMod.value = null
-  }
-}
-
-// Function to cancel the download
-const cancelDownload = () => {
-  // Reset UI state
-  showFileSelector.value = false
-  showEngineSelectDialog.value = false
-  showModTypeModal.value = false
-  showFolderExistsDialog.value = false
-  // Show cancellation notification
-  if (currentDownloadMod.value) {
-    notificationService.downloadCancelled(currentDownloadMod.value.name)
-  }
-  // Reset state variables
-  currentDownloadMod.value = null
-  currentModpackInfo.value = null
-  folderExistsDownloadContinueFunction.value = null
-  folderExistsUpdateFunction.value = null
-}
-
-// Function to continue download when folder exists
-const continueFolderExistsDownload = async () => {
-  showFolderExistsDialog.value = false
-
-  try {
-    if (folderExistsDownloadContinueFunction.value) {
-      const result = await folderExistsDownloadContinueFunction.value()
-
-      if ('success' in result && !result.success) {
-        notificationService.downloadError(
-          folderExistsModName.value,
-          String('error' in result ? result.error : 'Unknown error')
-        )
-      }
-
-      folderExistsDownloadContinueFunction.value = null
-    }
-  } catch (error) {
-    console.error('Failed to download mod:', error)
-    notificationService.downloadError(folderExistsModName.value, String(error))
-  } finally {
-    folderExistsDownloadContinueFunction.value = null
-    folderExistsUpdateFunction.value = null
-  }
-}
-
-// Function to update mod when folder exists
-const updateFolderExistsMod = async () => {
-  showFolderExistsDialog.value = false
-  try {
-    // Show updating notification
-    pendingDownloadNotification = notificationService.updateProgress(
-      folderExistsModName.value
-    )
-
-    // Call the update function that was stored
-    if (folderExistsUpdateFunction.value) {
-      const result = await folderExistsUpdateFunction.value() // Handle the result based on its type
-      if ('success' in result) {
-        // If it's a direct update result
-        pendingDownloadNotification?.dismiss()
-
-        if (result.success) {
-          // Show success notification
-          notificationService.updateSuccess(
-            folderExistsModName.value,
-            'Ready to play from the mods list'
-          )
-
-          // Trigger the refresh event to update the mod list
-          const refreshEvent = new CustomEvent('refresh-mods')
-          window.dispatchEvent(refreshEvent)
-        } else {
-          // Show error notification
-          notificationService.updateError(
-            folderExistsModName.value,
-            result.error || 'Unknown error'
-          )
-        }
-      }
-    } else {
-      // No update function available
-      notificationService.updateNotAvailable(folderExistsModName.value)
-    }
-  } catch (error) {
-    // Show error notification
-    notificationService.updateError(folderExistsModName.value, String(error))
-
-    // Dismiss any pending notification
-    pendingDownloadNotification?.dismiss()
-
-    console.error('Failed to update mod:', error)
-  } finally {
-    // Reset state
-    folderExistsModName.value = ''
-    folderExistsDownloadContinueFunction.value = null
-    folderExistsUpdateFunction.value = null
-  }
-}
-// Function called when mod type is selected from the modal
-const onModTypeSelected = async (selection: {
-  modType: string
-  engineMod: any
-  isAddon?: boolean
-}) => {
-  if (!currentDownloadMod.value) return
-
-  try {
-    // Hide the modal immediately to provide feedback to the user
-    showModTypeModal.value = false
-
-    if (selection.modType === 'executable') {
-      // For executables, just proceed with normal download
-      const result = await gamebananaService.startDownload(
-        currentDownloadMod.value
-      )
-
-      // Handle folder exists dialog if needed
-      if ('showFolderExistsDialog' in result) {
-        folderExistsModName.value = result.modName
-        folderExistsDownloadContinueFunction.value = result.continueDownload
-        folderExistsUpdateFunction.value = result.updateMod || null
-        showFolderExistsDialog.value = true
-        return
-      }
-    } else {
-      // For modpacks, create modpack info and use engine selection
-      const modpackInfo: ModpackInfo = {
-        mod: currentDownloadMod.value,
-        type: selection.modType,
-        compatibleEngines: [selection.engineMod],
-      }
-
-      // For Codename Engine addons, we need to modify the installation path
-      if (selection.modType === 'codename' && selection.isAddon) {
-        // We'll handle this in the downloadModpackForEngine method
-        const result = await gamebananaService.downloadModpackForEngine(
-          modpackInfo,
-          {
-            ...selection.engineMod,
-            isAddon: true,
-          }
-        )
-
-        if (!result.success) {
-          notificationService.installationFailed(
-            currentDownloadMod.value.name,
-            result.error || 'Unknown error'
-          )
-        }
-      } else {
-        // Regular modpack installation
-        const result = await gamebananaService.downloadModpackForEngine(
-          modpackInfo,
-          selection.engineMod
-        )
-
-        if (!result.success) {
-          notificationService.installationFailed(
-            currentDownloadMod.value.name,
-            result.error || 'Unknown error'
-          )
-        }
-      }
-    }
-  } catch (error) {
-    notificationService.installationFailed(
-      currentDownloadMod.value.name,
-      String(error)
-    )
-  } finally {
-    // Reset state
-    currentDownloadMod.value = null
-  }
-}
-
-// Function called when user goes back from mod type selection modal
-const onModTypeBack = () => {
-  // For now, just close the modal since there's no previous step
-  showModTypeModal.value = false
-}
 </script>
 
 <style scoped>

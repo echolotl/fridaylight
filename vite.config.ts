@@ -49,6 +49,7 @@ export default defineConfig(async () => ({
       '@stores': '/src/stores',
       '@services': '/src/services',
       '@main-types': '/src/types',
+      '@custom-types': '/src/types',
       '@utils': '/src/utils',
     },
   },

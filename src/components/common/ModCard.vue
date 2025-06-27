@@ -2,79 +2,113 @@
   <div class="mod-card">
     <div
       class="mod-card-content"
-      @click="$emit('showDetails', mod.id, mod.model_name)"
+      @click="$emit('showDetails', mod._idRow, mod._sModelName)"
       @contextmenu.prevent="showContextMenu"
     >
       <q-img
-        :src="previewImageUrl"
+        :src="'_sThumbnailUrl' in mod ? mod._sThumbnailUrl : previewImageUrl"
         :placeholder-src="'images/placeholder.png'"
         class="mod-thumbnail"
         :img-style="{
-          filter: mod.initial_visibility == 'warn' ? 'blur(5px)' : 'none',
+          filter: mod._sInitialVisibility === 'warn' ? 'blur(5px)' : 'none',
         }"
       >
-        <img :src="mod.category_icon_url" class="mod-category-icon" />
+        <img :src="mod._aRootCategory._sIconUrl" class="mod-category-icon" />
         <img
-          v-if="mod.submitter_avatar_url"
-          :src="mod.submitter_avatar_url"
+          v-if="mod._aSubmitter._sAvatarUrl"
+          :src="mod._aSubmitter._sAvatarUrl"
           class="author-avatar"
         />
       </q-img>
       <div class="mod-info">
-        <div class="mod-title">{{ mod.name }}</div>
+        <div class="mod-title">{{ mod._sName }}</div>
         <div class="mod-author-container">
-          <div v-if="mod.submitter_u_pic" class="author-upic">
-            <span>by</span><img :src="mod.submitter_u_pic" alt="User Picture" />
+          <div v-if="mod._aSubmitter._sUpicUrl" class="author-upic">
+            <span>by</span
+            ><img :src="mod._aSubmitter._sUpicUrl" alt="User Picture" />
           </div>
-          <div v-else class="mod-author">by {{ mod.owner }}</div>
+          <div v-else class="mod-author">by {{ mod._aSubmitter._sName }}</div>
         </div>
 
         <div class="mod-stats">
-          <span v-if="mod.initial_visibility === 'warn'">
+          <span v-if="mod._sInitialVisibility === 'warn'">
             <q-icon name="warning" size="xs" color="yellow" />
             Has sensitive content!
           </span>
           <span>
             <q-icon name="thumb_up" size="xs" />
-            {{ formatNumber(mod.likes) }}
+            {{ formatNumber(mod._nLikeCount || 0) }}
           </span>
-          <span v-if="mod.post_count !== undefined">
+          <span v-if="mod._nPostCount !== undefined">
             <q-icon name="messages" size="xs" />
-            {{ formatNumber(mod.post_count) }}
+            {{ formatNumber(mod._nPostCount || 0) }}
           </span>
         </div>
       </div>
     </div>
     <q-btn
-      v-if="mod.has_files"
+      v-if="'_bHasFiles' in mod && mod._bHasFiles && !nonDownloadable"
       color="primary"
       label="Download"
       class="download-btn"
-      @click.stop="$emit('download', mod)"
+      @click.stop="handleDownload(mod)"
+    />
+    <q-btn
+      v-else
+      color="primary"
+      label="View Details"
+      class="download-btn"
+      @click.stop="$emit('showDetails', mod._idRow, mod._sModelName)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { GameBananaMod } from '@main-types'
+import {
+  GBProfilePage,
+  type GBSubfeedRecord,
+  type GBTopSubsItem,
+} from '@custom-types/gamebanana'
 import { openUrl } from '@tauri-apps/plugin-opener'
+import { invoke } from '@tauri-apps/api/core'
 
 const props = defineProps({
   mod: {
-    type: Object as () => GameBananaMod,
+    type: Object as () => GBSubfeedRecord | GBTopSubsItem,
     required: true,
+  },
+  nonDownloadable: {
+    type: Boolean,
+    default: false,
   },
 })
 
 const emit = defineEmits(['download', 'showDetails'])
 
-const previewImageUrl = computed(() => {
-  console.log(props.mod)
-  return props.mod.image_url || props.mod.thumbnail_url
-})
+console.log('ModCard props:', props.mod)
 
-console.log(props.mod)
+const previewImageUrl = computed(() => {
+  if (
+    '_aPreviewMedia' in props.mod &&
+    props.mod._aPreviewMedia &&
+    !props.mod._aPreviewMedia._aImages
+  ) {
+    return 'images/placeholder.png'
+  } else if (
+    '_aPreviewMedia' in props.mod &&
+    props.mod._aPreviewMedia &&
+    props.mod._aPreviewMedia._aImages
+  ) {
+    return (
+      props.mod._aPreviewMedia._aImages[0]._sBaseUrl +
+      '/' +
+      props.mod._aPreviewMedia._aImages[0]._sFile220
+    )
+  } else {
+    return 'images/placeholder.png'
+  }
+})
 
 // Helper function to format numbers (e.g., 1000 -> 1K)
 const formatNumber = (num: number): string => {
@@ -101,12 +135,12 @@ const showContextMenu = (event: MouseEvent) => {
     {
       icon: 'info',
       label: 'Show Details',
-      action: () => emit('showDetails', props.mod.id),
+      action: () => emit('showDetails', props.mod._idRow),
     },
     {
       icon: 'open_in_new',
       label: 'Open GameBanana Page',
-      action: () => openUrl(props.mod.profile_url),
+      action: () => openUrl(props.mod._sProfileUrl),
     },
   ]
 
@@ -126,6 +160,14 @@ const showContextMenu = (event: MouseEvent) => {
     // Fallback to document if target is null
     document.dispatchEvent(customEvent)
   }
+}
+const handleDownload = async (mod: GBSubfeedRecord | GBTopSubsItem) => {
+  const fullMod = await invoke<GBProfilePage>('get_mod_info_command', {
+    modId: mod._idRow,
+    modelName: mod._sModelName,
+  })
+  console.info('Full mod data:', fullMod)
+  emit('download', fullMod)
 }
 </script>
 
