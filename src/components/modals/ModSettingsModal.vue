@@ -549,6 +549,7 @@ const changeBanner = ref(true)
 const changeVersion = ref(true)
 
 const engineTypes = [
+  { label: 'Not Selected', value: 'unknown' },
   { label: 'Vanilla', value: 'vanilla' },
   { label: 'Psych Engine', value: 'psych' },
   { label: 'Codename Engine', value: 'codename' },
