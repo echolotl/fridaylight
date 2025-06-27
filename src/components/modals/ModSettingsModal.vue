@@ -38,6 +38,9 @@
             <div class="text-subtitle1 q-mb-md">
               {{ $t('app.modals.mod_settings.general.title') }}
             </div>
+            <div class="text-subtitle1 q-mb-md">
+              {{ $t('app.modals.mod_settings.general.title') }}
+            </div>
 
             <q-input
               v-model="form.name"
@@ -75,6 +78,9 @@
                   name="M24,6v10.5h-1.5v3h-1.5v1.5h-1.5v1.5h-3v1.5H6v-1.5h-3v-1.5h-1.5v-1.5H0v-4.5h9v-1.5h4.5v-1.5h1.5v-4.5h1.5V3h-1.5V0h4.5v3h1.5v1.5h1.5v1.5h1.5Z"
                   size="sm"
                   class="q-mr-sm"
+                />{{
+                  $t('app.modals.mod_settings.general.gamebanana_info')
+                }}
                 />{{ $t('app.modals.mod_settings.general.gamebanana_info') }}
               </div>
               <q-input
@@ -139,6 +145,11 @@
                       'app.modals.mod_settings.general.gamebanana_sync_description'
                     )
                   }}
+                  {{
+                    $t(
+                      'app.modals.mod_settings.general.gamebanana_sync_description'
+                    )
+                  }}
                 </div>
               </div>
             </div>
@@ -146,6 +157,9 @@
 
           <!-- Location Section -->
           <q-card-section v-show="activeSection === 'location'">
+            <div class="text-subtitle1 q-mb-md">
+              {{ $t('app.modals.mod_settings.installation.title') }}
+            </div>
             <div class="text-subtitle1 q-mb-md">
               {{ $t('app.modals.mod_settings.installation.title') }}
             </div>
@@ -287,6 +301,9 @@
             <div class="text-subtitle1 q-mb-md">
               {{ $t('app.modals.mod_settings.engine.title') }}
             </div>
+            <div class="text-subtitle1 q-mb-md">
+              {{ $t('app.modals.mod_settings.engine.title') }}
+            </div>
             <q-select
               v-model="form.engine.engine_type"
               :options="engineTypes"
@@ -316,6 +333,9 @@
             />
 
             <div class="q-mb-md">
+              <div class="text-subtitle2 q-mb-sm">
+                {{ $t('app.modals.mod_settings.engine.engine_icon') }}
+              </div>
               <div class="text-subtitle2 q-mb-sm">
                 {{ $t('app.modals.mod_settings.engine.engine_icon') }}
               </div>
@@ -439,7 +459,91 @@
                   />
                 </div>
               </div>
+            </div>
+            <div class="text-subtitle1 q-mb-md">
+              {{ $t('app.modals.mod_settings.appearance.title') }}
+            </div>
+            <ModBanner
+              :mod="form"
+              :banner-preview="bannerPreview ? bannerPreview : ''"
+              :logo-preview="logoPreview ? logoPreview : ''"
+            />
 
+            <div class="row q-col-gutter-md">
+              <div class="col-12 col-md-4">
+                <div class="icon-upload">
+                  <div class="text-subtitle2 q-mb-sm">
+                    {{ $t('app.modals.mod_settings.appearance.icon') }}
+                  </div>
+                  <q-file
+                    v-model="iconFile"
+                    :label="$t('app.modals.mod_settings.set_icon')"
+                    outlined
+                    accept=".jpg, .jpeg, .png, .webp, .ico"
+                    class="q-mt-sm"
+                    @update:model-value="handleIconFileChange"
+                  >
+                    <template #prepend>
+                      <div class="icon">
+                        <q-icon name="image" />
+                      </div>
+                    </template>
+                    <template #append>
+                      <div class="flex items-center justify-center">
+                        <img
+                          v-if="iconPreview || form.icon_data"
+                          :src="iconPreview || form.icon_data"
+                          width="32"
+                          height="32"
+                        />
+                        <div v-else>
+                          <q-icon name="block" size="32px" />
+                        </div>
+                      </div>
+                    </template>
+                  </q-file>
+                  <q-btn
+                    v-if="iconPreview || form.icon_data"
+                    color="negative"
+                    outline
+                    class="q-mt-sm full-width"
+                    :label="$t('app.modals.mod_settings.remove_icon')"
+                    @click="removeIcon"
+                  />
+                </div>
+              </div>
+
+              <div class="col-12 col-md-4">
+                <div class="banner-upload">
+                  <div class="text-subtitle2 q-mb-sm">
+                    {{ $t('app.modals.mod_settings.appearance.banner') }}
+                  </div>
+                  <q-file
+                    v-model="bannerFile"
+                    :label="$t('app.modals.mod_settings.appearance.set_banner')"
+                    outlined
+                    accept=".jpg, .jpeg, .png"
+                    class="q-mt-sm"
+                    @update:model-value="handleBannerFileChange"
+                  >
+                    <template #prepend>
+                      <div class="icon">
+                        <q-icon name="panorama" />
+                      </div>
+                    </template>
+                  </q-file>
+                  <q-btn
+                    v-if="bannerPreview || form.banner_data"
+                    outline
+                    color="negative"
+                    :label="
+                      $t('app.modals.mod_settings.appearance.remove_banner')
+                    "
+                    class="q-mt-sm full-width"
+                    @click="removeBanner"
+                  />
+                </div>
+              </div>
               <div class="col-12 col-md-4">
                 <div class="banner-upload">
                   <div class="text-subtitle2 q-mb-sm">
@@ -501,7 +605,55 @@
                     class="q-mt-sm full-width"
                     @click="removeLogo"
                   />
+                  <div class="col-12 col-md-4">
+                    <div class="logo-upload">
+                      <div class="text-subtitle2 q-mb-sm">
+                        {{ $t('app.modals.mod_settings.appearance.logo') }}
+                      </div>
+                      <q-file
+                        v-model="logoFile"
+                        :label="
+                          $t('app.modals.mod_settings.appearance.set_logo')
+                        "
+                        outlined
+                        accept=".jpg, .jpeg, .png"
+                        class="q-mt-sm"
+                        @update:model-value="handleLogoFileChange"
+                      >
+                        <template #prepend>
+                          <div class="icon">
+                            <q-icon name="image" />
+                          </div>
+                        </template>
+                      </q-file>
+                      <q-btn
+                        v-if="logoPreview || form.logo_data"
+                        outline
+                        color="negative"
+                        :label="
+                          $t('app.modals.mod_settings.appearance.remove_logo')
+                        "
+                        class="q-mt-sm full-width"
+                        @click="removeLogo"
+                      />
 
+                      <q-select
+                        v-if="logoPreview || form.logo_data"
+                        v-model="form.logo_position"
+                        :options="logoPositionOptions"
+                        :label="
+                          $t('app.modals.mod_settings.appearance.logo_position')
+                        "
+                        popup-content-class="phantom-font"
+                        popup-content-style="background-color: var(--theme-solid); color: var(--theme-text);"
+                        outlined
+                        class="q-mt-md phantom-font selector"
+                        emit-value
+                        map-options
+                        hint="Position of the logo in the banner"
+                      />
+                    </div>
+                  </div>
                   <q-select
                     v-if="logoPreview || form.logo_data"
                     v-model="form.logo_position"
@@ -523,7 +675,6 @@
           </q-card-section>
         </q-scroll-area>
       </div>
-
       <q-card-actions align="right">
         <q-btn
           v-close-popup
@@ -557,6 +708,7 @@
     <div class="text-caption">{{ form.path }}</div>
     <p class="text-body2 q-mt-sm">
       {{ $t('ui.actions.conformations.remove_mod') }}
+      {{ $t('ui.actions.conformations.remove_mod') }}
     </p>
   </MessageDialog>
 
@@ -573,6 +725,7 @@
     <div class="text-h6">{{ form.name }}</div>
     <div class="text-caption">{{ form.path }}</div>
     <p class="text-body2 q-mt-sm">
+      {{ $t('ui.actions.conformations.delete_mod') }}
       {{ $t('ui.actions.conformations.delete_mod') }}
     </p>
   </MessageDialog>
@@ -674,6 +827,18 @@ const logoPositionOptions = [
     label: t('app.modals.mod_settings.appearance.logo_position.middle'),
     value: 'middle',
   },
+  {
+    label: t('app.modals.mod_settings.appearance.logo_position.bottom_left'),
+    value: 'left_bottom',
+  },
+  {
+    label: t('app.modals.mod_settings.appearance.logo_position.middle_left'),
+    value: 'left_middle',
+  },
+  {
+    label: t('app.modals.mod_settings.appearance.logo_position.middle'),
+    value: 'middle',
+  },
 ]
 
 const showModal = computed({
@@ -694,6 +859,26 @@ watch(
 )
 
 const modSettingsSections = [
+  {
+    id: 'general',
+    label: t('app.modals.mod_settings.general.label'),
+    icon: 'info',
+  },
+  {
+    id: 'location',
+    label: t('app.modals.mod_settings.installation.title'),
+    icon: 'folder',
+  },
+  {
+    id: 'engine',
+    label: t('app.modals.mod_settings.engine.label'),
+    icon: 'code',
+  },
+  {
+    id: 'visuals',
+    label: t('app.modals.mod_settings.appearance.title'),
+    icon: 'palette',
+  },
   {
     id: 'general',
     label: t('app.modals.mod_settings.general.label'),

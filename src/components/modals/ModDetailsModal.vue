@@ -35,7 +35,7 @@
         </div>
         <div v-else class="text-h6 phantom-font-difficulty header-text">
           <q-spinner size="40px" color="primary" class="mod-details-icon" />
-          {{ $t('ui.loading') }}...
+          {{ $t('ui.loading') }}... {{ $t('ui.loading') }}...
         </div>
         <q-space />
         <q-btn
@@ -145,6 +145,7 @@
               <div v-if="modInfo._nUpdatesCount && modInfo._nUpdatesCount > 0">
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                   <div class="flex">
+                    {{ $t('app.modals.mod_details.updates') }}
                     {{ $t('app.modals.mod_details.updates') }}
                     <q-space />
                     <div
@@ -259,11 +260,17 @@
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                   <div class="flex">
                     {{ $t('app.modals.mod_details.comments') }}
+                    {{ $t('app.modals.mod_details.comments') }}
                     <q-space />
                     <div
                       class="text-subtitle1 phantom-font text-right"
                       style="color: var(--theme-text-secondary)"
                     >
+                      {{
+                        $t('app.modals.mod_details.comments_count', {
+                          count: modComments._aMetadata._nRecordCount,
+                        })
+                      }}
                       {{
                         $t('app.modals.mod_details.comments_count', {
                           count: modComments._aMetadata._nRecordCount,
@@ -369,6 +376,11 @@
                         class="phantom-font text-right"
                         style="color: var(--theme-text-secondary)"
                       >
+                        {{
+                          $t('app.modals.mod_details.replies_count', {
+                            count: comment._nReplyCount,
+                          })
+                        }}
                         {{
                           $t('app.modals.mod_details.replies_count', {
                             count: comment._nReplyCount,
@@ -481,6 +493,7 @@
                   <q-badge v-else label="AVAST" color="negative">
                     <q-icon name="warning" size="xs" class="q-ml-xs" />
                     <q-tooltip class="phantom-font text-center">
+                      {{ $t('app.modals.mod_details.might_have_malware') }}
                       {{ $t('app.modals.mod_details.might_have_malware') }}
                     </q-tooltip>
                   </q-badge>
@@ -790,7 +803,6 @@ async function fetchModInfo() {
     modComments.value = commentsResult
   } catch (err: unknown) {
     error.value = (err as Error).message
-    console.error('Error fetching mod info:', err)
   } finally {
     clearTimeout(slowRequestTimeout)
     loading.value = false

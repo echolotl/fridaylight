@@ -237,7 +237,6 @@ import {
 import { Mod } from '@main-types'
 import { gamebananaService } from '@services/gamebananaService'
 import { formatEngineName } from '@utils/index'
-import { useI18n } from 'vue-i18n'
 // Declare db for TypeScript
 declare global {
   interface Window {
@@ -250,8 +249,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['resetModDetailsOnMount'])
-
-const { t } = useI18n()
 
 const notificationService = NotificationService.getInstance()
 
