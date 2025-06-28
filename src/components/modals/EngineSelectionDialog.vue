@@ -17,7 +17,7 @@
       <q-card-section class="q-mb-sm">
         <i18n-t tag="p" keypath="app.modals.engine_select.description">
           <template #engine>
-            {{ formatEngineName(engineType) }}
+            {{ formatEngineName(engineType || '') }}
           </template>
         </i18n-t>
 

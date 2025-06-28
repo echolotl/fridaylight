@@ -281,7 +281,7 @@ pub async fn download_gamebanana_mod(
               bytes_downloaded: downloaded,
               total_bytes: total_size,
               percentage,
-              step: "Downloading mod...".to_string(),
+              step: "app.notifications.download.downloading_nonspecific".to_string(),
             })
             .unwrap_or_else(|e|
               error!("Failed to emit download-progress event: {}", e)
@@ -318,7 +318,7 @@ pub async fn download_gamebanana_mod(
       bytes_downloaded: total_size,
       total_bytes: total_size,
       percentage: 80,
-      step: "Preparing to extract mod".to_string(),
+      step: "app.notifications.download.extracting_nonspecific".to_string(),
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -449,7 +449,7 @@ pub async fn download_gamebanana_mod(
       bytes_downloaded: 95,
       total_bytes: 100,
       percentage: 95,
-      step: "Finalizing mod installation".to_string(),
+      step: "app.notifications.download.finalizing".to_string(),
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -594,7 +594,7 @@ pub async fn download_gamebanana_mod(
       bytes_downloaded: 100,
       total_bytes: 100,
       percentage: 100,
-      step: "Mod installation complete".to_string(),
+      step: "app.notifications.download.installation_complete".to_string(),
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -795,7 +795,7 @@ pub async fn download_engine(
       percentage: 5,
       bytes_downloaded: 0,
       total_bytes: 100, // Placeholder
-      step: "Preparing to download engine...".to_string(),
+      step: "app.notifications.download.preparing_engine".to_string(),
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -1000,7 +1000,7 @@ pub async fn download_engine(
               bytes_downloaded: downloaded,
               total_bytes: total_size,
               percentage,
-              step: "Downloading engine...".to_string(),
+              step: "app.notifications.download.downloading_engine_nonspecific".to_string(),
             })
             .unwrap_or_else(|e|
               error!("Failed to emit download-progress event: {}", e)
@@ -1037,7 +1037,7 @@ pub async fn download_engine(
       bytes_downloaded: total_size,
       total_bytes: total_size,
       percentage: 80,
-      step: "Preparing to extract engine...".to_string(),
+      step: "app.notifications.download.extracting_engine_nonspecific".to_string(),
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -1177,7 +1177,7 @@ pub async fn download_engine(
       bytes_downloaded: 95,
       total_bytes: 100,
       percentage: 95,
-      step: "Finalizing engine installation...".to_string(),
+      step: "app.notifications.download.finalizing_engine".to_string(),
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -1360,7 +1360,7 @@ pub async fn download_engine(
       bytes_downloaded: 100,
       total_bytes: 100,
       percentage: 100,
-      step: "Engine installation complete".to_string(),
+      step: "app.notifications.download.finalizing_engine".to_string(),
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -1697,7 +1697,7 @@ fn extract_7z_archive(
           bytes_downloaded: 90,
           total_bytes: 100,
           percentage: 90,
-          step: "Extracting 7z archive completed".to_string(),
+          step: "app.notifications.download.extracting_7z_complete".to_string(),
         })
         .unwrap_or_else(|e|
           error!("Failed to emit download-progress event: {}", e)
@@ -1762,7 +1762,7 @@ fn extract_rar_file(
               bytes_downloaded: 90,
               total_bytes: 100,
               percentage: 90,
-              step: "Extracting RAR archive completed".to_string(),
+              step: "app.notifications.download.extracting_rar_complete".to_string(),
             })
             .unwrap_or_else(|e|
               error!("Failed to emit download-progress event: {}", e)

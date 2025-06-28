@@ -61,6 +61,12 @@
         "remove_mod": "Are you sure you want to remove this mod from the list? This will not delete the mod files.",
         "delete_folder": "Are you sure you want to delete this folder? This action cannot be undone."
       }
+    },
+    "download_status": {
+      "starting": "Starting download...",
+      "connecting": "Connecting...",
+      "calculating": "Calculating...",
+      "stalled": "Download stalled"
     }
   },
   "navigation": {
@@ -144,11 +150,25 @@
     "notifications": {
       "download": {
         "downloading": "Downloading \"{modName}\"",
+        "downloading_nonspecific": "Downloading mod...",
         "preparing": "Preparing to download \"{modName}\"",
+        "preparing_engine": "Preparing to download engine...",
+        "downloading_engine": "Downloading {engineName} engine",
+        "downloading_engine_nonspecific": "Downloading engine...",
         "success": "\"{modName}\" downloaded and installed successfully!",
         "success_caption": "Ready to play from the mods list",
         "error": "Failed to download \"{modName}\"",
         "canceled": "Download canceled for \"{modName}\"",
+        "extracting": "Extracting \"{modName}\"",
+        "extracting_nonspecific": "Extracting mod files",
+        "extracting_engine": "Extracting {engineName} engine files",
+        "extracting_engine_nonspecific": "Extracting engine files",
+        "extracting_7z_complete": "7z extraction complete",
+        "extracting_rar_complete": "RAR extraction complete",
+        "finalizing": "Finalizing mod installation",
+        "finalizing_engine": "Finalizing engine installation",
+        "installation_complete": "Mod installation complete",
+        "installation_complete_engine": "Engine installation complete",
         "canceled_generic": "Download canceled",
         "installation_error": "Installation failed for \"{modName}\""
       },

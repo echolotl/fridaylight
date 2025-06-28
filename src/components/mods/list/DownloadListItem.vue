@@ -27,7 +27,7 @@
     <q-item-section v-if="!props.compactMode">
       <q-item-label>{{ props.download.name }}</q-item-label>
       <q-item-label caption style="color: var(--theme-text-secondary)">{{
-        props.download.step
+        $t(props.download.step)
       }}</q-item-label>
 
       <q-linear-progress
@@ -81,6 +81,7 @@
 <script setup lang="ts">
 import { DownloadProgress } from '@stores/downloadState'
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   download: {
@@ -92,7 +93,7 @@ const props = defineProps({
     default: false,
   },
 })
-
+const { t } = useI18n()
 const startTime = ref<number | null>(null)
 const lastUpdateTime = ref<number | null>(null)
 const lastBytesDownloaded = ref(0)
@@ -144,8 +145,9 @@ watch(
 const downloadSpeed = computed(() => {
   // Return early states
   if (props.download.percentage === 0 || startTime.value === null)
-    return 'Starting...'
-  if (props.download.bytesDownloaded === 0) return 'Connecting...'
+    return t('ui.download_status.starting')
+  if (props.download.bytesDownloaded === 0)
+    return t('ui.download_status.connecting')
 
   // Use smoothed speed if we have samples
   if (speedSamples.value.length > 0) {
@@ -158,10 +160,11 @@ const downloadSpeed = computed(() => {
 
   // Fallback to overall average speed
   const elapsedTime = (Date.now() - startTime.value) / 1000
-  if (elapsedTime < 0.5) return 'Calculating...' // Wait at least 500ms
+  if (elapsedTime < 0.5) return t('ui.download_status.calculating')
 
   const overallSpeed = props.download.bytesDownloaded / elapsedTime
-  if (overallSpeed <= 0 || !isFinite(overallSpeed)) return 'Stalled'
+  if (overallSpeed <= 0 || !isFinite(overallSpeed))
+    return t('ui.download_status.stalled')
 
   return formatSpeed(overallSpeed)
 })
