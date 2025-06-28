@@ -13,7 +13,7 @@
         <q-input
           ref="nameInput"
           v-model="folderName"
-          label="{{ $t('app.modals.folders.folder_name') }}"
+          :label="$t('app.modals.folders.folder_name')"
           outlined
           class="q-mb-md"
           :rules="[

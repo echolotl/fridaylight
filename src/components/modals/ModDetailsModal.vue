@@ -35,7 +35,7 @@
         </div>
         <div v-else class="text-h6 phantom-font-difficulty header-text">
           <q-spinner size="40px" color="primary" class="mod-details-icon" />
-          {{ $t('ui.loading') }}... {{ $t('ui.loading') }}...
+          {{ $t('ui.loading') }}...
         </div>
         <q-space />
         <q-btn
@@ -106,10 +106,11 @@
                     modInfo._sDevelopmentState
                   }}</span>
                   <span style="color: var(--theme-text-secondary)"> - </span>
-                  {{ modInfo._iCompletionPercentage }}% complete<span
-                    v-if="modInfo._iCompletionPercentage < 75"
-                    >.</span
-                  >
+                  {{
+                    $t('app.modals.mod_details.percent_complete', {
+                      percent: modInfo._iCompletionPercentage,
+                    })
+                  }}<span v-if="modInfo._iCompletionPercentage < 75">.</span>
                   <span
                     v-else-if="
                       modInfo._iCompletionPercentage > 75 &&
@@ -145,7 +146,6 @@
               <div v-if="modInfo._nUpdatesCount && modInfo._nUpdatesCount > 0">
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                   <div class="flex">
-                    {{ $t('app.modals.mod_details.updates') }}
                     {{ $t('app.modals.mod_details.updates') }}
                     <q-space />
                     <div
@@ -260,17 +260,11 @@
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                   <div class="flex">
                     {{ $t('app.modals.mod_details.comments') }}
-                    {{ $t('app.modals.mod_details.comments') }}
                     <q-space />
                     <div
                       class="text-subtitle1 phantom-font text-right"
                       style="color: var(--theme-text-secondary)"
                     >
-                      {{
-                        $t('app.modals.mod_details.comments_count', {
-                          count: modComments._aMetadata._nRecordCount,
-                        })
-                      }}
                       {{
                         $t('app.modals.mod_details.comments_count', {
                           count: modComments._aMetadata._nRecordCount,
@@ -381,11 +375,6 @@
                             count: comment._nReplyCount,
                           })
                         }}
-                        {{
-                          $t('app.modals.mod_details.replies_count', {
-                            count: comment._nReplyCount,
-                          })
-                        }}
                       </div>
                     </div>
                   </div>
@@ -395,9 +384,10 @@
                 <div v-for="comment in trashedComments" :key="comment._idRow">
                   <div>
                     <span
-                      class="phantom-font"
+                      class="phantom-font flex row items-center"
                       style="color: var(--theme-text-secondary)"
-                      >{{ $t('app.modals.mod_details.comment_trashed') }}</span
+                      ><q-icon name="delete" size="sm" />
+                      {{ $t('app.modals.mod_details.comment_trashed') }}</span
                     >
                   </div>
                   <hr style="border-top-style: dashed" />

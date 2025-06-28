@@ -315,7 +315,8 @@
             "bottom_left": "Bottom Left",
             "middle_left": "Middle Left",
             "middle": "Middle"
-          }
+          },
+          "icon_preview": "Icon Preview"
         }
       },
       "mod_details": {
@@ -335,6 +336,7 @@
         "description": "Description",
         "studio": "Studio",
         "created_by": "Created by",
+        "percent_complete": "{percent}% complete",
         "changelog_category": {
           "bugfix": "Bugfix",
           "overhaul": "Overhaul",

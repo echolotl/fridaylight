@@ -141,7 +141,7 @@
             dense
             icon="sort"
             class="phantom-font"
-            :label="`Sort by ${sortHeaderText}`"
+            :label="sortHeaderText"
             @click="showSortMenu"
           ></q-btn>
         </h6>

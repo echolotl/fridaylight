@@ -1540,7 +1540,7 @@ export class DatabaseService {
       name: 'New Folder',
       color: '#FF0088',
       mods: [],
-      display_order: 9999,
+      display_order: 0,
     }
   }
 

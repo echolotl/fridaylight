@@ -12,7 +12,19 @@
   >
     <q-item-section v-if="mod.icon_data" avatar>
       <q-avatar size="32px" square>
-        <img :src="mod.icon_data" alt="mod icon" />
+        <div v-if="icon">
+          <img
+            :src="icon"
+            alt="mod icon"
+            style="
+              object-fit: cover;
+              border-radius: 4px;
+              width: 32px;
+              height: 32px;
+            "
+          />
+        </div>
+        <div v-else><img :src="mod.icon_data" alt="mod icon" /></div>
       </q-avatar>
     </q-item-section>
     <q-item-section v-else avatar>
@@ -37,6 +49,11 @@ const props = defineProps({
   mod: {
     type: Object as () => Mod,
     required: true,
+  },
+  icon: {
+    type: String,
+    default: '',
+    required: false,
   },
   isActive: {
     type: Boolean,
