@@ -60,6 +60,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   modelValue: {
@@ -68,7 +69,10 @@ const props = defineProps({
   },
   title: {
     type: String,
-    default: 'Confirmation',
+    default: () => {
+      const { t } = useI18n()
+      return t('misc.confirmation')
+    },
   },
   heading: {
     type: String,
@@ -96,11 +100,17 @@ const props = defineProps({
   },
   confirmLabel: {
     type: String,
-    default: 'Confirm',
+    default: () => {
+      const { t } = useI18n()
+      return t('ui.actions.confirm')
+    },
   },
   cancelLabel: {
     type: String,
-    default: 'Cancel',
+    default: () => {
+      const { t } = useI18n()
+      return t('ui.actions.cancel')
+    },
   },
   confirmColor: {
     type: String,

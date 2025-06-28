@@ -494,7 +494,6 @@
                     <q-icon name="warning" size="xs" class="q-ml-xs" />
                     <q-tooltip class="phantom-font text-center">
                       {{ $t('app.modals.mod_details.might_have_malware') }}
-                      {{ $t('app.modals.mod_details.might_have_malware') }}
                     </q-tooltip>
                   </q-badge>
                 </div>
@@ -509,11 +508,11 @@
               </div>
               <div v-if="modInfo._aStudio" class="q-mt-md">
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
-                  Studio
+                  {{ $t('app.modals.mod_details.studio') }}
                   <hr />
                 </h6>
                 <div class="flex justify-center">
-                  <div>Created by</div>
+                  <div>{{ $t('app.modals.mod_details.created_by') }}</div>
                   <div @onclick="openUrl(modInfo._aStudio._sProfileUrl)">
                     <img :src="modInfo._aStudio._sBannerUrl" />
                   </div>

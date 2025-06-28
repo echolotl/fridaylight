@@ -38,6 +38,7 @@ import { computed } from 'vue'
 import type { GBSubfeedRecord } from '@custom-types/gamebanana'
 import ModCard from './ModCard.vue'
 import SkeletonModCard from '@components/skeletons/SkeletonModCard.vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   mods: {
@@ -50,11 +51,17 @@ const props = defineProps({
   },
   loadingMessage: {
     type: String,
-    default: 'Loading mods...',
+    default: () => {
+      const { t } = useI18n()
+      return t('ui.loading_mods')
+    },
   },
   emptyMessage: {
     type: String,
-    default: 'No mods found',
+    default: () => {
+      const { t } = useI18n()
+      return t('ui.no_results')
+    },
   },
   currentPage: {
     type: Number,

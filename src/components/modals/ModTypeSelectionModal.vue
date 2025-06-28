@@ -8,14 +8,18 @@
     <q-card class="mod-type-selection-modal phantom-font">
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6 phantom-font-difficulty">
-          Select Type for "{{ currentModName }}"
+          {{ $t('app.modals.mod_type_selection.title') }}
         </div>
         <q-space />
         <q-btn v-close-popup icon="close" flat round dense @click="cancel" />
       </q-card-section>
 
       <q-card-section>
-        <p>What type of mod are you downloading?</p>
+        <i18n-t tag="p" keypath="app.modals.mod_type_selection.description">
+          <template #modName>
+            {{ currentModName }}
+          </template>
+        </i18n-t>
 
         <div class="mod-types-grid">
           <!-- Standalone Executable Option -->
@@ -26,9 +30,11 @@
           >
             <q-card-section class="text-center">
               <q-icon name="desktop_windows" size="3rem" />
-              <div class="mod-type-name phantom-font-display">Standalone</div>
+              <div class="mod-type-name phantom-font-display">
+                {{ $t('app.modals.mod_type_selection.standalone') }}
+              </div>
               <div class="mod-type-description">
-                A complete game with its own executable
+                {{ $t('app.modals.mod_type_selection.standalone_description') }}
               </div>
             </q-card-section>
           </q-card>
@@ -54,8 +60,8 @@
               <div class="mod-type-description">
                 {{
                   engineAvailability.psychCount
-                    ? `A modpack for the Psych Engine`
-                    : 'No Psych Engine installations found'
+                    ? $t('app.modals.mod_type_selection.psych_description')
+                    : $t('app.modals.mod_type_selection.no_psych_installed')
                 }}
               </div>
             </q-card-section>
@@ -84,8 +90,8 @@
               <div class="mod-type-description">
                 {{
                   engineAvailability.vanillaCount
-                    ? `A modpack for V-Slice`
-                    : 'No V-Slice installations found'
+                    ? $t('app.modals.mod_type_selection.vslice_description')
+                    : $t('app.modals.mod_type_selection.no_vslice_installed')
                 }}
               </div>
             </q-card-section>
@@ -114,8 +120,8 @@
               <div class="mod-type-description">
                 {{
                   engineAvailability.fpsPlusCount
-                    ? `A modpack for FPS Plus`
-                    : 'No FPS Plus installations found'
+                    ? $t('app.modals.mod_type_selection.fpsplus_description')
+                    : $t('app.modals.mod_type_selection.no_fpsplus_installed')
                 }}
               </div>
             </q-card-section>
@@ -144,8 +150,8 @@
               <div class="mod-type-description">
                 {{
                   engineAvailability.codenameCount
-                    ? `A modpack for the Codename Engine`
-                    : 'No Codename Engine installations found'
+                    ? $t('app.modals.mod_type_selection.codename_description')
+                    : $t('app.modals.mod_type_selection.no_codename_installed')
                 }}
               </div>
             </q-card-section>
@@ -158,8 +164,11 @@
           class="q-mt-lg"
         >
           <p>
-            Select which {{ formatEngineType(selectedType) }} installation to
-            install this modpack to:
+            {{
+              $t('app.modals.mod_type_selection.select_where_to_install', {
+                engine: formatEngineName(selectedType),
+              })
+            }}
           </p>
 
           <q-list bordered separator class="rounded-borders">
@@ -201,10 +210,10 @@
             <div v-if="isCodename" class="q-pt-none q-mb-md">
               <q-toggle
                 v-model="isAddon"
-                label="Install as Addon (will run on all mods)"
+                :label="$t('app.modals.engine_select.install_as_addon')"
               />
             </div>
-            <p>The modpack will be installed to:</p>
+            <p>{{ $t('app.modals.engine_select.will_be_installed_to') }}</p>
             <code>{{ getInstallPath() }}</code>
           </div>
         </div>
@@ -228,6 +237,7 @@
 import { ref, computed, watch, onMounted, reactive } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { sep } from '@tauri-apps/api/path'
+import { formatEngineName } from '@utils/index'
 
 const props = defineProps({
   modelValue: {
@@ -415,24 +425,6 @@ const loadCompatibleEngines = async (engineType: string) => {
     console.error('Failed to get compatible engine mods:', error)
     compatibleEngines.value = []
     selectedEngine.value = null
-  }
-}
-
-// Format engine type for display
-const formatEngineType = (engineType: string | null): string => {
-  if (!engineType) return 'Unknown'
-
-  switch (engineType.toLowerCase()) {
-    case 'psych':
-      return 'Psych Engine'
-    case 'vanilla':
-      return 'V-Slice'
-    case 'fps-plus':
-      return 'FPS Plus'
-    case 'codename':
-      return 'Codename Engine'
-    default:
-      return engineType.charAt(0).toUpperCase() + engineType.slice(1)
   }
 }
 

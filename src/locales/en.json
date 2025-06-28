@@ -15,6 +15,7 @@
     "loading_featured_mods": "Loading featured mods",
     "loading_latest_mods": "Loading latest mods",
     "loading_modpacks": "Loading {engineType} modpacks",
+    "loading_mods": "Loading mods...",
     "sensitive_content": "Has sensitive content!"
   },
   "ui": {
@@ -26,22 +27,33 @@
     "search_results": "Search Results",
     "searching": "Searching",
     "no_results": "No results found",
+    "update_available": "There's an update available!",
+    "update_might_be_available": "An update might be available:",
+    "checking_for_updates": "Checking for updates...",
     "actions": {
       "save": "Save",
       "cancel": "Cancel",
       "delete": "Delete",
       "remove": "Remove",
+      "update": "Update",
       "close": "Close",
       "create": "Create",
       "back": "Back",
+      "confirm": "Confirm",
+      "play": "Play",
+      "stop": "Stop",
       "open_in_browser": "Open in Browser",
       "search_mods": "Search mods",
       "create_folder": "Create Folder",
       "edit_folder": "Edit Folder",
+      "expand_folder": "Expand Folder",
+      "collapse_folder": "Collapse Folder",
       "delete_folder": "Delete Folder",
       "view_details": "View Details",
       "download": "Download",
+      "download_anyway": "Download Anyway",
       "download_mod": "Download Mod",
+      "download_and_install": "Download & Install",
       "open_gamebanana": "Open GameBanana",
       "view_on_gamebanana": "View on GameBanana",
       "conformations": {
@@ -88,15 +100,43 @@
       "modpack": "Modpack",
       "modpacks": "Modpacks",
       "executable": "Executable",
-      "executables": "Executables"
+      "executables": "Executables",
+      "profiles": "Profiles"
     },
     "actions": {
       "add_mod": "Add Mod",
       "delete_mod": "Delete Mod",
       "remove_mod": "Remove Mod",
-      "bulk_add_mod": "Bulk Add Mods"
+      "bulk_add_mod": "Bulk Add Mods",
+      "enable_all_mods": "Enable All Mods",
+      "disable_all_mods": "Disable All Mods",
+      "clear_active_profile": "Clear Active Profile",
+      "create_new_profile": "Create New Profile",
+      "reveal_mods_folder": "Reveal Mods Folder"
     },
-    "no_mods_disclaimer": "No mods added. Click the + button to add some!"
+    "no_mods_disclaimer": "No mods added. Click the + button to add some!",
+    "terminal_output": "Terminal Output",
+    "installed_mods": "Installed Mods",
+    "scanning_for_mods": "Scanning for mods...",
+    "no_mods_found": "No mods found for this engine",
+    "cannot_scan_mods": "Fridaylight can't scan for mods with the current engine type. You can disable this section in the mod settings.",
+    "requires_mod": "Requires {modName}!",
+    "engine_mod_details": {
+      "title": "Mod Details",
+      "version": "Version: {version}",
+      "description": "Description",
+      "homepage": "Homepage",
+      "contributors": "Contributors",
+      "license": "License",
+      "dependencies": "Dependencies",
+      "folder_path": "Folder Path"
+    },
+    "recently_played": "Recently Played",
+    "no_recently_played": "No recently played mods",
+    "all_mods": "All Mods",
+    "no_executables_found": "No executables found for this mod",
+    "mod_placeholder_text": "Welcome to Fridaylight!",
+    "mod_placeholder_description": "Select or add a mod from the sidebar to get started"
   },
   "app": {
     "name": "Fridaylight",
@@ -273,6 +313,8 @@
         "developer_notes": "Developer Notes",
         "license": "License",
         "description": "Description",
+        "studio": "Studio",
+        "created_by": "Created by",
         "changelog_category": {
           "bugfix": "Bugfix",
           "overhaul": "Overhaul",
@@ -295,12 +337,56 @@
       "download_file_select": {
         "title": "Select Download File",
         "description": "This mod, \"{ modName }\", has multiple download options. Please select one:",
-        "alternative_download_sources": "Alternative Download Sources (Manual Install)"
+        "alternative_download_sources": "Alternative Download Sources (Manual Install)",
+        "contains_executable_files": "Contains executable files",
+        "contains_nested_archives": "Contains nested archives",
+        "analysis_pending": "Analysis pending"
+      },
+      "engine_select": {
+        "title": "Select Installation Engine",
+        "description": "This modpack requires {engine}. Please select the {engine} installation you want to use:",
+        "will_be_installed_to": "This modpack will be installed to:",
+        "install_as_addon": "Install as Addon",
+        "install_as_addon_description": "This will cause the modpack to run on all other modpacks.",
+        "unknown_path": "Unknown Path"
+      },
+      "folder_exists": {
+        "title": "Folder Already Exists",
+        "description": "This mod already has a folder in your mods directory. You can either update the existing mod (overwriting any existing files!) or download into a separate instance."
+      },
+      "mod_type_selection": {
+        "title": "Select Mod Type",
+        "description": "Please select what mod \"{modName}\" is. This will determine how Fridaylight handles it.",
+        "standalone": "Standalone",
+        "standalone_description": "A mod that runs on its own",
+        "psych_description": "A modpack for the Psych Engine",
+        "no_psych_installed": "No Psych Engine installations found",
+        "vslice_description": "A modpack for V-Slice",
+        "no_vslice_installed": "No V-Slice installations found",
+        "fpsplus_description": "A modpack for FPS Plus",
+        "no_fpsplus_installed": "No FPS Plus installations found",
+        "codename_description": "A modpack for the Codename Engine",
+        "no_codename_installed": "No Codename Engine installations found",
+        "select_where_to_install": "Select which {engine} to install this modpack to:"
+      },
+      "profile_create": {
+        "title": "Create Profile",
+        "title_edit": "Edit Profile",
+        "profile_name": "Profile Name",
+        "icon": "Icon",
+        "custom": "Custom...",
+        "enter_a_ma_link": "Enter a {link} icon name",
+        "select_mods": "Select Mods",
+        "delete_profile": "Delete Profile"
       }
     }
   },
   "misc": {
     "credits": "Credits",
+    "more": "more",
+    "by": "by",
+    "unknown_mod": "Unknown Mod",
+    "confirmation": "Confirmation",
     "colors": {
       "red": "Red",
       "orange": "Orange",

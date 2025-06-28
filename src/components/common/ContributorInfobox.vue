@@ -21,7 +21,7 @@
       "
       class="text-caption update-available-text q-mt-md"
     >
-      There is an update available! <br />
+      {{ $t('ui.update_available') }} <br />
       <div class="text-primary text-center">
         {{ versionStatus.latest_version }}
       </div>
@@ -35,7 +35,7 @@
       "
     >
       <div class="text-caption">
-        There might be an update available: <br />
+        {{ $t('ui.update_might_be_available') }} <br />
         <div class="text-primary text-center">
           {{ versionStatus.latest_version }}
         </div>
@@ -43,11 +43,12 @@
     </div>
     <!-- Show loading while checking version -->
     <div v-else-if="!versionStatus" class="text-caption flex items-center">
-      <q-spinner size="sm" class="q-mr-sm" /> Checking for updates...
+      <q-spinner size="sm" class="q-mr-sm" />
+      {{ $t('ui.checking_for_updates') }}
     </div>
   </div>
   <div v-if="hasContributors" class="contributor-infobox">
-    <h6 class="phantom-font-difficulty">Credits</h6>
+    <h6 class="phantom-font-difficulty">{{ $t('misc.credits') }}</h6>
     <hr />
     <div class="contributor-groups">
       <div

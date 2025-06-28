@@ -4,7 +4,11 @@
       <div class="profile-create">
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6 phantom-font-difficulty">
-            {{ props.isCreate ? 'Create Profile' : 'Edit Profile' }}
+            {{
+              props.isCreate
+                ? $t('app.modals.profile_create.title')
+                : $t('app.modals.profile_create.title_edit')
+            }}
           </div>
           <q-space />
           <q-btn icon="close" flat round dense @click="handleCancel" />
@@ -13,10 +17,12 @@
           <q-card-section>
             <q-input
               v-model="localProfileName"
-              label="Profile Name"
+              :label="$t('app.modals.profile_create.profile_name')"
               class="q-mb-md"
             />
-            <div class="text-subtitle2 q-mb-sm">Icon</div>
+            <div class="text-subtitle2 q-mb-sm">
+              {{ $t('app.modals.profile_create.icon') }}
+            </div>
             <div class="preset-icons-container">
               <div class="preset-icons">
                 <q-btn
@@ -42,7 +48,7 @@
                   ]"
                   @click="toggleCustomInput"
                 >
-                  Custom...
+                  {{ $t('app.modals.profile_create.custom') }}
                 </q-btn>
               </div>
             </div>
@@ -59,17 +65,22 @@
                     class="text-caption"
                     style="color: var(--theme-text-secondary)"
                   >
-                    Enter a
-                    <a
-                      class="link"
-                      @click="
-                        openUrl(
-                          'https://fonts.google.com/icons?icon.set=Material+Icons&icon.style=Filled'
-                        )
-                      "
-                      >Material Icons</a
+                    <i18n-t
+                      keypath="app.modals.profile_create.enter_a_ma_link"
+                      tag="span"
                     >
-                    icon name (e.g., 'star', 'favorite', 'home')
+                      <template #link>
+                        <a
+                          class="link"
+                          @click="
+                            openUrl(
+                              'https://fonts.google.com/icons?icon.set=Material+Icons&icon.style=Filled'
+                            )
+                          "
+                          >Material Icons</a
+                        >
+                      </template>
+                    </i18n-t>
                   </div>
                 </template>
                 <template #prepend>
@@ -83,7 +94,9 @@
               </q-input>
             </div>
 
-            <div class="text-subtitle2 q-mb-sm">Select Mods</div>
+            <div class="text-subtitle2 q-mb-sm">
+              {{ $t('app.modals.profile_create.select_mods') }}
+            </div>
             <div class="mod-states-list">
               <div
                 v-for="(_, folderPath) in localModStates"
@@ -104,7 +117,9 @@
                   </div>
                   <div class="mod-details">
                     <div class="mod-name">
-                      {{ getModByPath(folderPath)?.name || 'Unknown Mod' }}
+                      {{
+                        getModByPath(folderPath)?.name || $t('misc.unknown_mod')
+                      }}
                     </div>
                     <div class="mod-path text-caption">
                       {{ folderPath.split('/').pop() }}
@@ -123,12 +138,22 @@
           <q-btn
             v-if="!props.isCreate"
             flat
-            label="Delete Profile"
+            :label="$t('app.modals.profile_create.delete_profile')"
             color="negative"
             @click="emit('delete', props.profile)"
           />
-          <q-btn flat label="Cancel" color="primary" @click="handleCancel" />
-          <q-btn flat label="Save" color="primary" @click="handleSave" />
+          <q-btn
+            flat
+            :label="$t('ui.actions.cancel')"
+            color="primary"
+            @click="handleCancel"
+          />
+          <q-btn
+            flat
+            :label="$t('ui.actions.save')"
+            color="primary"
+            @click="handleSave"
+          />
         </q-card-actions>
       </div>
     </q-card>

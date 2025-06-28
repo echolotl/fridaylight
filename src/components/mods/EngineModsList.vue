@@ -1,7 +1,7 @@
 <template>
   <div v-if="mods.length >= 0" class="mods-title">
     <div class="header">
-      <h6 class="phantom-font-difficulty">Installed Mods</h6>
+      <h6 class="phantom-font-difficulty">{{ $t('mods.installed_mods') }}</h6>
 
       <div class="scan-actions">
         <q-btn-dropdown
@@ -23,7 +23,7 @@
               />
               {{ currentActiveProfile.name }}
             </div>
-            <span v-else>Profiles</span>
+            <span v-else>{{ $t('mods.labels.profiles') }}</span>
           </template>
           <q-list
             dense
@@ -73,7 +73,9 @@
             >
               <q-item-section>
                 <div class="row items-center">
-                  <q-item-label>Enable All Mods</q-item-label>
+                  <q-item-label>{{
+                    $t('mods.actions.enable_all_mods')
+                  }}</q-item-label>
                 </div>
               </q-item-section>
             </q-item>
@@ -85,7 +87,9 @@
             >
               <q-item-section>
                 <div class="row items-center">
-                  <q-item-label>Disable All Mods</q-item-label>
+                  <q-item-label>{{
+                    $t('mods.actions.disable_all_mods')
+                  }}</q-item-label>
                 </div>
               </q-item-section>
             </q-item>
@@ -101,7 +105,9 @@
               <q-item-section>
                 <div class="row items-center">
                   <q-icon name="clear" size="sm" />
-                  <q-item-label>Clear Active Profile</q-item-label>
+                  <q-item-label>{{
+                    $t('mods.actions.clear_active_profile')
+                  }}</q-item-label>
                 </div>
               </q-item-section>
             </q-item>
@@ -111,7 +117,9 @@
               <q-item-section>
                 <div class="row items-center">
                   <q-icon name="add" size="sm" />
-                  <q-item-label>Create New Profile</q-item-label>
+                  <q-item-label>{{
+                    $t('mods.actions.create_new_profile')
+                  }}</q-item-label>
                 </div>
               </q-item-section>
             </q-item>
@@ -129,7 +137,7 @@
           color="transparent"
           text-color="var(--theme-text-secondary)"
           icon="folder"
-          label="Reveal Mods Folder"
+          :label="$t('mods.actions.reveal_mods_folder')"
           flat
           class="button"
           @click="openModsFolder"
@@ -142,7 +150,7 @@
   <div v-if="!isUnsupportedEngine" class="engine-mods-container phantom-font">
     <div v-if="loading" class="loading">
       <q-spinner color="primary" size="36px" />
-      <span>Scanning for installed mods...</span>
+      <span>{{ $t('mods.scanning_for_mods') }}</span>
     </div>
 
     <div v-else-if="error" class="error-message">
@@ -152,7 +160,7 @@
 
     <div v-else-if="mods.length === 0" class="no-mods">
       <q-icon name="folder_off" size="36px" />
-      <span>No mods found for this engine</span>
+      <span>{{ $t('mods.no_mods_found') }}</span>
     </div>
 
     <div v-else class="mods-list">
@@ -221,10 +229,9 @@
                 class="dependency-error-item"
               >
                 <div class="dependency-info">
-                  <span class="dependency-name" style="color: var(--red)"
-                    >Requires <u>{{ modName }}</u
-                    >!</span
-                  >
+                  <span class="dependency-name" style="color: var(--red)">{{
+                    $t('mods.requires_mod', { modName })
+                  }}</span>
                   <span class="dependency-version" style="color: var(--red)"
                     >({{ version }})</span
                   >
@@ -241,10 +248,7 @@
   </div>
   <div v-else class="engine-mods-container phantom-font">
     <div class="loading">
-      <span
-        >Fridaylight can't scan for mods with the current engine type. You can
-        disable this section in the mod settings.</span
-      >
+      <span>{{ $t('mods.cannot_scan_mods') }}</span>
     </div>
   </div>
 
@@ -252,7 +256,7 @@
   <MessageDialog
     v-if="selectedMod"
     v-model="showModDetailsDialog"
-    title="Mod Details"
+    :title="$t('mods.engine_mod_details.title')"
     confirm-label="Close"
     :persistent="false"
     single-option
@@ -270,7 +274,11 @@
         <div class="mod-title">
           <h5 class="q-my-none">{{ selectedMod.name }}</h5>
           <div v-if="selectedMod.version" class="text-caption">
-            Version: {{ selectedMod.version }}
+            {{
+              $t('mods.engine_mod_details.version', {
+                version: selectedMod.version,
+              })
+            }}
           </div>
         </div>
       </div>
@@ -278,12 +286,16 @@
       <q-separator class="q-my-md" />
 
       <div v-if="selectedMod.description" class="q-mb-md">
-        <div class="text-subtitle2">Description</div>
+        <div class="text-subtitle2">
+          {{ $t('mods.engine_mod_details.description') }}
+        </div>
         <div v-html="selectedMod.description"></div>
       </div>
 
       <div v-if="selectedMod.homepage" class="q-mb-md">
-        <div class="text-subtitle2">Homepage</div>
+        <div class="text-subtitle2">
+          {{ $t('mods.engine_mod_details.homepage') }}
+        </div>
         <a @click="openUrl(selectedMod.homepage)">{{ selectedMod.homepage }}</a>
       </div>
 
@@ -291,7 +303,9 @@
         v-if="selectedMod.contributors && selectedMod.contributors.length > 0"
         class="q-mb-md"
       >
-        <div class="text-subtitle2">Contributors</div>
+        <div class="text-subtitle2">
+          {{ $t('mods.engine_mod_details.contributors') }}
+        </div>
         <ul>
           <li
             v-for="(contributor, index) in selectedMod.contributors"
@@ -310,7 +324,9 @@
       </div>
 
       <div v-if="selectedMod.license" class="q-mb-md">
-        <div class="text-subtitle2">License</div>
+        <div class="text-subtitle2">
+          {{ $t('mods.engine_mod_details.license') }}
+        </div>
         <div>{{ selectedMod.license }}</div>
       </div>
 
@@ -321,7 +337,9 @@
         "
         class="q-mb-md"
       >
-        <div class="text-subtitle2">Dependencies</div>
+        <div class="text-subtitle2">
+          {{ $t('mods.engine_mod_details.dependencies') }}
+        </div>
         <ul>
           <li
             v-for="(version, modName) in selectedMod.dependencies"
@@ -360,7 +378,9 @@
         </ul>
       </div>
 
-      <div class="text-subtitle2">Folder Path</div>
+      <div class="text-subtitle2">
+        {{ $t('mods.engine_mod_details.folder_path') }}
+      </div>
       <div class="text-caption q-mb-md">{{ selectedMod.folder_path }}</div>
     </div>
   </MessageDialog>

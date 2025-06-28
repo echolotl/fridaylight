@@ -1,7 +1,9 @@
 <template>
   <div v-if="isVisible" class="terminal-output-container">
     <div class="terminal-header">
-      <div class="terminal-title phantom-font-difficulty">Terminal Output</div>
+      <div class="terminal-title phantom-font-difficulty">
+        {{ $t('mods.terminal_output') }}
+      </div>
       <div class="terminal-actions">
         <q-btn flat round dense icon="content_copy" @click="copyToClipboard" />
         <q-btn

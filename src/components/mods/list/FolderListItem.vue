@@ -79,6 +79,7 @@ import { ref, computed } from 'vue'
 import ModListItem from '@mods/list/ModListItem.vue'
 import draggable from 'vuedraggable'
 import { Mod, Folder } from '@main-types'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   folder: {
@@ -110,6 +111,7 @@ const emit = defineEmits([
   'launch-mod',
 ])
 
+const { t } = useI18n()
 const isExpanded = ref(false)
 
 // Compute the list of mods that belong to this folder
@@ -149,18 +151,20 @@ const showContextMenu = (event: MouseEvent) => {
   const contextMenuOptions = [
     {
       icon: 'edit',
-      label: 'Edit Folder',
+      label: t('ui.actions.edit_folder'),
       action: () => emit('edit-folder', props.folder),
     },
     {
       icon: isExpanded.value ? 'expand_less' : 'expand_more',
-      label: isExpanded.value ? 'Collapse Folder' : 'Expand Folder',
+      label: isExpanded.value
+        ? t('ui.actions.collapse_folder')
+        : t('ui.actions.expand_folder'),
       action: () => toggleExpanded(),
     },
     { separator: true },
     {
       icon: 'folder_delete',
-      label: 'Remove Folder',
+      label: t('ui.actions.delete_folder'),
       action: () => emit('delete-folder', props.folder),
       danger: true,
     },

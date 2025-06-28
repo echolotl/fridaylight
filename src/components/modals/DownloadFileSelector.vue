@@ -45,7 +45,11 @@
                   size="xs"
                 >
                   <q-tooltip>
-                    <span class="phantom-font">Contains executable files</span>
+                    <span class="phantom-font">{{
+                      $t(
+                        'app.modals.download_file_select.contains_executable_files'
+                      )
+                    }}</span>
                   </q-tooltip>
                 </q-icon>
                 <q-icon
@@ -56,7 +60,11 @@
                   size="xs"
                 >
                   <q-tooltip>
-                    <span class="phantom-font">Contains nested archives</span>
+                    <span class="phantom-font">{{
+                      $t(
+                        'app.modals.download_file_select.contains_nested_archives'
+                      )
+                    }}</span>
                   </q-tooltip>
                 </q-icon>
                 <q-icon
@@ -67,7 +75,9 @@
                   size="xs"
                 >
                   <q-tooltip>
-                    <span class="phantom-font">Analysis pending</span>
+                    <span class="phantom-font">{{
+                      $t('app.modals.download_file_select.analysis_pending')
+                    }}</span>
                   </q-tooltip>
                 </q-icon>
               </q-item-label>

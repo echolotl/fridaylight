@@ -36,16 +36,6 @@
           >
         </div>
 
-        <!-- Contributors if available -->
-        <div v-if="hasContributors" class="contributors">
-          <div class="contributor-list">
-            <span>by {{ primaryContributor }}</span>
-            <span v-if="contributorCount > 1"
-              >+{{ contributorCount - 1 }} more</span
-            >
-          </div>
-        </div>
-
         <div class="mod-stats">
           <span v-if="mod.last_played">
             <q-icon name="schedule" size="xs" />
@@ -161,45 +151,6 @@ const formatDate = (timestamp: number): string => {
     return 'Just now'
   }
 }
-
-// Contributor-related computed properties
-const hasContributors = computed(() => {
-  return (
-    props.mod.contributors &&
-    props.mod.contributors.length > 0 &&
-    props.mod.contributors.some(
-      group => group.members && group.members.length > 0
-    )
-  )
-})
-
-const primaryContributor = computed(() => {
-  if (!hasContributors.value) {
-    return 'Unknown'
-  }
-
-  // Try to find a "Creator" or "Main" group first
-  const mainGroups = ['Creator', 'Main', 'Developer', 'Author']
-  for (const groupName of mainGroups) {
-    const group = props.mod.contributors?.find(
-      g => g.group.toLowerCase() === groupName.toLowerCase()
-    )
-    if (group && group.members.length > 0) {
-      return group.members[0].name
-    }
-  }
-
-  // Fallback to first contributor in the first group
-  return props.mod.contributors?.[0]?.members[0]?.name || 'Unknown'
-})
-
-const contributorCount = computed(() => {
-  if (!props.mod.contributors) return 0
-
-  return props.mod.contributors.reduce((total, group) => {
-    return total + (group.members ? group.members.length : 0)
-  }, 0)
-})
 
 onMounted(() => {
   console.info(

@@ -8,17 +8,18 @@
     <q-card class="engine-selection-dialog phantom-font">
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6 phantom-font-difficulty">
-          Select Installation Location
+          {{ $t('app.modals.engine_select.title') }}
         </div>
         <q-space />
         <q-btn v-close-popup icon="close" flat round dense @click="cancel" />
       </q-card-section>
 
       <q-card-section class="q-mb-sm">
-        <p>
-          Select which {{ formatEngineType(engineType) }} installation to add
-          this modpack to:
-        </p>
+        <i18n-t tag="p" keypath="app.modals.engine_select.description">
+          <template #engine>
+            {{ formatEngineName(engineType) }}
+          </template>
+        </i18n-t>
 
         <q-list bordered separator class="rounded-borders">
           <q-item
@@ -64,11 +65,14 @@
       >
         <q-toggle
           v-model="isAddon"
-          label="Install as Addon (will run on all mods)"
+          :label="$t('app.modals.engine_select.install_as_addon')"
         />
+        <p class="text-caption q-mt-sm">
+          {{ $t('app.modals.engine_select.install_as_addon_description') }}
+        </p>
       </q-card-section>
       <q-card-section v-if="selectedEngineMod" class="text-caption">
-        <p>The modpack will be installed to:</p>
+        <p>{{ $t('app.modals.engine_select.will_be_installed_to') }}</p>
         <code>{{ getInstallPath() }}</code>
       </q-card-section>
 
@@ -76,13 +80,13 @@
         <q-btn
           v-close-popup
           flat
-          label="Cancel"
+          :label="$t('ui.actions.cancel')"
           color="primary"
           @click="cancel"
         />
         <q-btn
           flat
-          label="Download & Install"
+          :label="$t('ui.actions.download_and_install')"
           color="primary"
           :disable="!selectedEngineMod"
           @click="confirm"
@@ -95,6 +99,8 @@
 <script setup lang="ts">
 import { sep } from '@tauri-apps/api/path'
 import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { formatEngineName } from '@utils/index'
 
 interface EngineMod {
   id: string
@@ -125,11 +131,16 @@ const props = defineProps({
   },
   modName: {
     type: String,
-    default: 'Unknown Mod',
+    default: () => {
+      const { t } = useI18n()
+      return t('misc.unknown_mod')
+    },
   },
 })
 
 const emit = defineEmits(['update:modelValue', 'select', 'cancel'])
+
+const { t } = useI18n()
 
 const isOpen = ref(props.modelValue)
 const selectedEngineMod = ref<EngineMod | null>(null)
@@ -178,21 +189,6 @@ const cancel = () => {
   isOpen.value = false
 }
 
-const formatEngineType = (engineType: string | null): string => {
-  if (!engineType) return 'Unknown'
-
-  switch (engineType.toLowerCase()) {
-    case 'psych':
-      return 'Psych Engine'
-    case 'vanilla':
-      return 'V-Slice'
-    case 'codename':
-      return 'Codename Engine'
-    default:
-      return engineType.charAt(0).toUpperCase() + engineType.slice(1)
-  }
-}
-
 // Function to get the mods folder path for an engine mod
 const getModsFolderPath = (engineMod: EngineMod): string => {
   // Get base directory first in all cases
@@ -232,14 +228,15 @@ const getModsFolderPath = (engineMod: EngineMod): string => {
 
 // Get the installation path based on engine type and addon setting
 const getInstallPath = (): string => {
-  if (!selectedEngineMod.value) return 'Unknown path'
+  if (!selectedEngineMod.value)
+    return t('app.modals.engine_select.unknown_path')
 
   // If it's a Codename Engine addon, use addons folder instead of mods
   if (isCodename.value && isAddon.value) {
     const basePath = selectedEngineMod.value.path
     const executablePath = selectedEngineMod.value.executable_path || ''
 
-    if (!basePath) return 'Unknown path'
+    if (!basePath) return t('app.modals.engine_select.unknown_path')
 
     // Get parent directory of executable if it exists
     let baseDir = basePath

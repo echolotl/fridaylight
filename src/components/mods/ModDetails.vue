@@ -19,11 +19,11 @@
               :disabled="!mod.executable_path"
               @click="handleModAction"
             >
-              {{ isModRunning ? 'STOP' : 'PLAY' }}
+              {{ isModRunning ? $t('ui.actions.stop') : $t('ui.actions.play') }}
             </q-btn>
 
             <div v-if="!mod.executable_path" class="error-message">
-              No executable found in this mod folder
+              {{ $t('mods.no_executables_found') }}
             </div>
 
             <div v-if="error" class="error-message">
@@ -50,20 +50,9 @@
           @clear="clearModLogs"
         />
 
-        <div v-if="showDetails" class="mod-path">
-          <p>Location: {{ mod.path }}</p>
-          <p v-if="mod.executable_path">
-            Executable: {{ mod.executable_path }}
-          </p>
-          <p v-if="mod.version">Version: {{ mod.version }}</p>
-          <p v-if="mod.engine && mod.engine.engine_type">
-            Engine: {{ formatEngineType(mod.engine.engine_type) }}
-          </p>
-        </div>
-
         <div v-if="mod.description" class="description">
           <h6 class="phantom-font-difficulty">
-            Description
+            {{ $t('mods.engine_mod_details.description') }}
             <hr />
           </h6>
           <p v-html="mod.description"></p>
@@ -105,8 +94,8 @@
 
   <!-- Show welcome message when no mod is selected -->
   <div v-else class="welcome-message phantom-font">
-    <h2 class="phantom-font-display">Welcome to Fridaylight!</h2>
-    <p>Select or add a mod from the sidebar to get started</p>
+    <h2 class="phantom-font-display">{{ $t('mods.mod_placeholder_text') }}</h2>
+    <p>{{ $t('mods.mod_placeholder_description') }}</p>
   </div>
 </template>
 
@@ -144,7 +133,6 @@ const emit = defineEmits([
 
 const appSettings = StoreService.getInstance()
 
-const showDetails = ref(false)
 const isModRunning = ref(false)
 const showTerminalOutput = ref(false)
 
@@ -214,19 +202,6 @@ const updateTitle = (newTitle: string) => {
     const updatedMod = { ...props.mod, name: newTitle }
     emit('update:mod', updatedMod)
   }
-}
-
-const formatEngineType = (engineType: string) => {
-  const engineTypes: Record<string, string> = {
-    vanilla: 'Vanilla',
-    psych: 'Psych Engine',
-    codename: 'Codename Engine',
-    kade: 'Kade Engine',
-    'pre-vslice': 'Pre-VSlice',
-    other: 'Other',
-  }
-
-  return engineTypes[engineType] || engineType
 }
 
 // Set up mod-terminated event listener

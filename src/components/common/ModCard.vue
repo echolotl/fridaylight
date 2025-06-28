@@ -24,16 +24,18 @@
         <div class="mod-title">{{ mod._sName }}</div>
         <div class="mod-author-container">
           <div v-if="mod._aSubmitter._sUpicUrl" class="author-upic">
-            <span>by</span
+            <span>{{ $t('misc.by') }}</span
             ><img :src="mod._aSubmitter._sUpicUrl" alt="User Picture" />
           </div>
-          <div v-else class="mod-author">by {{ mod._aSubmitter._sName }}</div>
+          <div v-else class="mod-author">
+            {{ $t('misc.by') }} {{ mod._aSubmitter._sName }}
+          </div>
         </div>
 
         <div class="mod-stats">
           <span v-if="mod._sInitialVisibility === 'warn'">
             <q-icon name="warning" size="xs" color="yellow" />
-            Has sensitive content!
+            {{ $t('gamebanana.sensitive_content') }}
           </span>
           <span>
             <q-icon name="thumb_up" size="xs" />
@@ -49,14 +51,14 @@
     <q-btn
       v-if="'_bHasFiles' in mod && mod._bHasFiles && !nonDownloadable"
       color="primary"
-      label="Download"
+      :label="$t('ui.actions.download')"
       class="download-btn"
       @click.stop="handleDownload(mod)"
     />
     <q-btn
       v-else
       color="primary"
-      label="View Details"
+      :label="$t('ui.actions.view_details')"
       class="download-btn"
       @click.stop="$emit('showDetails', mod._idRow, mod._sModelName)"
     />
@@ -72,6 +74,7 @@ import {
 } from '@custom-types/gamebanana'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { invoke } from '@tauri-apps/api/core'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   mod: {
@@ -110,6 +113,8 @@ const previewImageUrl = computed(() => {
   }
 })
 
+const { t } = useI18n()
+
 // Helper function to format numbers (e.g., 1000 -> 1K)
 const formatNumber = (num: number): string => {
   if (num >= 1000000) {
@@ -129,17 +134,17 @@ const showContextMenu = (event: MouseEvent) => {
   const contextMenuOptions = [
     {
       icon: 'download',
-      label: 'Download Mod',
+      label: t('ui.actions.download'),
       action: () => emit('download', props.mod),
     },
     {
       icon: 'info',
-      label: 'Show Details',
+      label: t('ui.actions.view_details'),
       action: () => emit('showDetails', props.mod._idRow),
     },
     {
       icon: 'open_in_new',
-      label: 'Open GameBanana Page',
+      label: t('ui.actions.open_gamebanana'),
       action: () => openUrl(props.mod._sProfileUrl),
     },
   ]

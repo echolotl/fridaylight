@@ -88,8 +88,7 @@
           flat
           icon="M24,6v10.5h-1.5v3h-1.5v1.5h-1.5v1.5h-3v1.5H6v-1.5h-3v-1.5h-1.5v-1.5H0v-4.5h9v-1.5h4.5v-1.5h1.5v-4.5h1.5V3h-1.5V0h4.5v3h1.5v1.5h1.5v1.5h1.5Z"
           style="flex-shrink: 0; border-radius: 0.5rem"
-          label="Open
-          Gamebanana"
+          :label="$t('ui.actions.open_gamebanana')"
           @click="openGamebanana"
         >
         </q-btn>
@@ -112,12 +111,12 @@
     <div class="main-content">
       <div class="hop-back-in">
         <h6 class="phantom-font-difficulty q-mb-md">
-          Recently Played
+          {{ $t('mods.recently_played') }}
           <hr />
         </h6>
         <div v-if="!isLoadingInstalled" class="mod-card-container">
           <p v-if="recentlyPlayedMods.length === 0" class="no-mods">
-            No recently played mods.
+            {{ $t('mods.no_recently_played') }}
           </p>
 
           <InstalledModCard
@@ -136,7 +135,7 @@
       </div>
       <div class="all-mods">
         <h6 class="phantom-font-difficulty all-mods-header">
-          All Mods
+          {{ $t('mods.all_mods') }}
           <q-btn
             flat
             dense
@@ -149,7 +148,7 @@
         <hr class="q-mb-md q-mt-sm" />
         <div v-if="!isLoadingInstalled" class="mod-card-container">
           <p v-if="installedMods.length === 0" class="no-mods">
-            No mods installed yet.
+            {{ $t('mods.no_mods_disclaimer') }}
           </p>
           <InstalledModCard
             v-for="mod in sortedInstalledMods"
@@ -175,6 +174,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { Mod } from '@main-types'
 import type { GBTopSubsItem } from '@custom-types/gamebanana'
 import { DatabaseService } from '@services/dbService'
+import { useI18n } from 'vue-i18n'
 
 import ModCard from '../common/ModCard.vue'
 import InstalledModCard from '../common/InstalledModCard.vue'
@@ -192,6 +192,8 @@ const emit = defineEmits([
 const featuredMods = ref<GBTopSubsItem[]>([])
 const isLoadingFeatured = ref(false)
 
+const { t } = useI18n()
+
 // Installed mods state
 const installedMods = ref<Mod[]>([])
 const isLoadingInstalled = ref(false)
@@ -202,13 +204,13 @@ const sortDirection = ref('asc')
 const sortHeaderText = computed(() => {
   switch (sortBy.value) {
     case 'name':
-      return 'Name'
+      return t('sorting.name.sorted')
     case 'date_added':
-      return 'Date Added'
+      return t('sorting.date_added.sorted')
     case 'last_played':
-      return 'Last Played'
+      return t('sorting.last_played.sorted')
     default:
-      return 'Name'
+      return t('sorting.name.sorted')
   }
 })
 
@@ -228,23 +230,26 @@ const showSortMenu = (evt: Event) => {
   const sortOptions = [
     {
       icon: 'sort_by_alpha',
-      label: 'Sort by Name',
+      label: t('sorting.name.sort'),
       action: () => setSortOption('name'),
     },
     {
       icon: 'date_range',
-      label: 'Sort by Date Added',
+      label: t('sorting.date_added.sort'),
       action: () => setSortOption('date_added'),
     },
     {
       icon: 'play_circle',
-      label: 'Sort by Last Played',
+      label: t('sorting.last_played.sort'),
       action: () => setSortOption('last_played'),
     },
     { separator: true },
     {
       icon: sortDirection.value === 'asc' ? 'arrow_upward' : 'arrow_downward',
-      label: sortDirection.value === 'asc' ? 'Ascending' : 'Descending',
+      label:
+        sortDirection.value === 'asc'
+          ? t('sorting.direction.asc')
+          : t('sorting.direction.desc'),
       action: () => toggleSortDirection(),
     },
   ]

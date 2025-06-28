@@ -19,31 +19,36 @@
           class="q-mr-sm"
         />
         <h6 class="dialog-title phantom-font-difficulty">
-          Folder Already Exists
+          {{ $t('app.modals.folder_exists.title') }}
         </h6>
       </q-card-section>
 
       <q-card-section class="q-pt-none">
         <div class="text-h6">{{ modName }}</div>
         <p class="text-body1 q-mt-sm">
-          The mod folder already exists in your mods directory.
-        </p>
-        <p class="text-body2 q-mt-sm">
-          This mod has already been downloaded with Fridaylight. You can either
-          update the existing mod (overwriting any existing files!) or download
-          into a separate instance.
+          {{ $t('app.modals.folder_exists.description') }}
         </p>
       </q-card-section>
 
       <q-card-actions align="right" class="q-gutter-sm">
-        <q-btn flat label="Cancel" color="grey" @click="onCancel" />
         <q-btn
           flat
-          label="Download Anyway"
+          :label="$t('ui.actions.cancel')"
+          color="grey"
+          @click="onCancel"
+        />
+        <q-btn
+          flat
+          :label="$t('ui.actions.download_anyway')"
           color="primary"
           @click="onDownloadAnyway"
         />
-        <q-btn flat label="Update" color="positive" @click="onUpdate" />
+        <q-btn
+          flat
+          :label="$t('ui.actions.update')"
+          color="positive"
+          @click="onUpdate"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
