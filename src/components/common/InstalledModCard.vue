@@ -30,7 +30,11 @@
 
           <!-- Show engine name -->
           <span
-            v-if="mod.engine && mod.engine.engine_type != 'unknown'"
+            v-if="
+              mod.engine &&
+              mod.engine.engine_type != 'unknown' &&
+              mod.engine.engine_name
+            "
             class="badge"
             >{{ mod.engine.engine_name }}</span
           >
