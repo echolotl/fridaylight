@@ -749,6 +749,14 @@ watch(
       // Clone the mod object to form
       form.value = JSON.parse(JSON.stringify(props.mod))
 
+      // Reset GameBanana data first
+      gameBananaInfo.value = null
+      metadataData.value = null
+      metadataLoaded.value = false
+      gamebananaSyncing.value = false
+      changeBanner.value = true
+      changeVersion.value = true
+
       // Properly handle engine object - parse if it's a string, otherwise use as-is
       if (props.mod.engine) {
         if (typeof props.mod.engine === 'string') {
@@ -1121,6 +1129,14 @@ const cancel = () => {
   engineIconFile.value = null
   iconPreview.value = null
   iconFile.value = null
+
+  // Reset GameBanana data
+  gameBananaInfo.value = null
+  metadataData.value = null
+  metadataLoaded.value = false
+  gamebananaSyncing.value = false
+  changeBanner.value = true
+  changeVersion.value = true
 }
 
 const handleChangeFolderClick = () => {
