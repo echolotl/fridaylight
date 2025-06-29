@@ -24,7 +24,18 @@
             "
           />
         </div>
-        <div v-else><img :src="mod.icon_data" alt="mod icon" /></div>
+        <div v-else>
+          <img
+            :src="mod.icon_data"
+            alt="mod icon"
+            style="
+              object-fit: cover;
+              border-radius: 4px;
+              width: 32px;
+              height: 32px;
+            "
+          />
+        </div>
       </q-avatar>
     </q-item-section>
     <q-item-section v-else avatar>

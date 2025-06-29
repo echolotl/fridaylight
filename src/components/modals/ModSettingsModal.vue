@@ -1091,6 +1091,17 @@ const save = async () => {
     updatedMod.engine = { ...DEFAULT_ENGINE, ...form.value.engine }
   }
 
+  // Handle Engine Icon
+  if (engineIconPreview.value) {
+    updatedMod.engine.engine_icon = engineIconPreview.value
+  } else if (
+    engineIconFile.value === null &&
+    form.value.engine?.engine_icon === ''
+  ) {
+    updatedMod.engine.engine_icon = ''
+  }
+  // Otherwise preserve existing engine_icon
+
   // Save GameBanana metadata separately
   await saveGameBananaMetadata()
 
