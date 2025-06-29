@@ -1786,63 +1786,113 @@ export class DatabaseService {
 
               // Add the engine column if it doesn't exist
               if (!columns.includes('engine')) {
-                await db.execute(`ALTER TABLE mods ADD COLUMN engine TEXT`)
-                dbConsole.log('Added engine column')
+                try {
+                  await db.execute(`ALTER TABLE mods ADD COLUMN engine TEXT`)
+                  dbConsole.log('Added engine column')
+                } catch (error) {
+                  dbConsole.error('Failed to add engine column:', error)
+                  throw error
+                }
               }
 
               // Copy data from engine_data to engine
-              await db.execute(
-                `UPDATE mods SET engine = engine_data WHERE engine_data IS NOT NULL`
-              )
-              dbConsole.log('Copied engine_data to engine')
+              try {
+                await db.execute(
+                  `UPDATE mods SET engine = engine_data WHERE engine_data IS NOT NULL`
+                )
+                dbConsole.log('Copied engine_data to engine')
+              } catch (error) {
+                dbConsole.error('Failed to copy engine_data to engine:', error)
+                throw error
+              }
 
               // Now recreate the table without the old columns
               // SQLite doesn't support DROP COLUMN, so we need to recreate the table
               dbConsole.log('Recreating mods table to remove old columns...')
 
               // Create new table with current schema (without engine_data and engine_type)
-              await db.execute(`
-                CREATE TABLE mods_new (
-                  id TEXT PRIMARY KEY,
-                  name TEXT NOT NULL,
-                  path TEXT NOT NULL,
-                  executable_path TEXT,
-                  icon_data TEXT,
-                  banner_data TEXT,
-                  logo_data TEXT,
-                  logo_position TEXT,
-                  version TEXT,
-                  description TEXT,
-                  engine TEXT,
-                  display_order INTEGER DEFAULT 0,
-                  folder_id TEXT,
-                  display_order_in_folder INTEGER DEFAULT 0,
-                  last_played INTEGER,
-                  date_added INTEGER,
-                  save_terminal_output BOOLEAN DEFAULT 0
-                )
-              `)
-              dbConsole.log('Created new mods table')
+              try {
+                await db.execute(`
+                  CREATE TABLE IF NOT EXISTS mods_new (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    path TEXT NOT NULL,
+                    executable_path TEXT,
+                    icon_data TEXT,
+                    banner_data TEXT,
+                    logo_data TEXT,
+                    logo_position TEXT,
+                    version TEXT,
+                    description TEXT,
+                    engine TEXT,
+                    display_order INTEGER DEFAULT 0,
+                    folder_id TEXT,
+                    display_order_in_folder INTEGER DEFAULT 0,
+                    last_played INTEGER,
+                    date_added INTEGER,
+                    save_terminal_output BOOLEAN DEFAULT 0
+                  )
+                `)
+                dbConsole.log('Created new mods table')
+              } catch (error) {
+                dbConsole.error('Failed to create new mods table:', error)
+                throw error
+              }
 
               // Copy data to new table (excluding engine_data and engine_type)
-              await db.execute(`
-                INSERT INTO mods_new (
-                  id, name, path, executable_path, icon_data, banner_data, logo_data, logo_position,
-                  version, description, engine, display_order, folder_id,
-                  display_order_in_folder, last_played, date_added, save_terminal_output
-                )
-                SELECT 
-                  id, name, path, executable_path, icon_data, banner_data, logo_data, logo_position,
-                  version, description, engine, display_order, folder_id,
-                  display_order_in_folder, last_played, date_added, save_terminal_output
-                FROM mods
-              `)
-              dbConsole.log('Copied data to new table')
+              try {
+                await db.execute(`
+                  INSERT INTO mods_new (
+                    id, name, path, executable_path, icon_data, banner_data, logo_data, logo_position,
+                    version, description, engine, display_order, folder_id,
+                    display_order_in_folder, last_played, date_added, save_terminal_output
+                  )
+                  SELECT 
+                    id, name, path, executable_path, icon_data, banner_data, logo_data, logo_position,
+                    version, description, engine, display_order, folder_id,
+                    display_order_in_folder, last_played, date_added, save_terminal_output
+                  FROM mods
+                `)
+                dbConsole.log('Copied data to new table')
+              } catch (error) {
+                dbConsole.error('Failed to copy data to new table:', error)
+                // Clean up the new table if data copy failed
+                try {
+                  await db.execute(`DROP TABLE IF EXISTS mods_new`)
+                } catch (cleanupError) {
+                  dbConsole.error('Failed to clean up new table:', cleanupError)
+                }
+                throw error
+              }
 
               // Drop old table and rename new one
-              await db.execute(`DROP TABLE mods`)
-              await db.execute(`ALTER TABLE mods_new RENAME TO mods`)
-              dbConsole.log('Replaced old table with new table')
+              try {
+                await db.execute(`DROP TABLE mods`)
+                dbConsole.log('Dropped old mods table')
+              } catch (error) {
+                dbConsole.error('Failed to drop old mods table:', error)
+                throw error
+              }
+
+              try {
+                await db.execute(`ALTER TABLE mods_new RENAME TO mods`)
+                dbConsole.log('Renamed new table to mods')
+              } catch (error) {
+                dbConsole.error('Failed to rename new table:', error)
+                // Try to restore the old table name if possible
+                try {
+                  await db.execute(`ALTER TABLE mods_new RENAME TO mods_backup`)
+                  dbConsole.warn(
+                    'Renamed failed table to mods_backup for manual recovery'
+                  )
+                } catch (restoreError) {
+                  dbConsole.error(
+                    'Failed to create backup table:',
+                    restoreError
+                  )
+                }
+                throw error
+              }
 
               dbConsole.log('Migration completed - old columns removed')
             } else {
