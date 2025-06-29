@@ -323,6 +323,7 @@
           "remove_logo": "Remove Logo",
           "logo_position": {
             "title": "Logo Position",
+            "hint": "Where the logo will be placed on the banner",
             "description": "Position of the logo on the banner",
             "bottom_left": "Bottom Left",
             "middle_left": "Middle Left",

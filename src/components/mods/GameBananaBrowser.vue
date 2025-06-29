@@ -198,6 +198,7 @@
       @submit="handleModTypeSelection"
       @back="handleModTypeSelectionBack"
       @cancel="handleModTypeSelectionCancel"
+      @open-mod-details="handleModTypeSelectionOpenModDetails"
     />
 
     <!-- Mod Details Modal -->
@@ -1106,6 +1107,18 @@ const handleModTypeSelectionCancel = () => {
     modTypeSelectionResolver = null
     modTypeSelectionRejecter = null
   }
+}
+const handleModTypeSelectionOpenModDetails = (
+  modId: string | number | true,
+  modelType: string | number | true
+) => {
+  isModTypeSelectionModalOpen.value = false
+  if (modTypeSelectionRejecter) {
+    modTypeSelectionRejecter(new Error('Mod type selection cancelled'))
+    modTypeSelectionResolver = null
+    modTypeSelectionRejecter = null
+  }
+  openModDetails(modId, modelType)
 }
 </script>
 

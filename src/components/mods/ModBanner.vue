@@ -244,31 +244,32 @@ const formatEngineType = (engineType: string) => {
   position: absolute;
   bottom: 0px;
   left: 0px;
+  top: auto;
+  transform: translate(0, 0) scale(1);
 }
 
 .logo-left-bottom:hover {
-  transform: scale(1.05);
+  transform: translate(0, 0) scale(1.05);
 }
 
 .logo-left-middle {
   position: absolute;
   left: 0px;
   bottom: 0px;
-  transform: translate(0, -25%);
-  align-items: center;
+  top: auto;
+  transform: translate(0, -25%) scale(1);
 }
 
 .logo-left-middle:hover {
-  transform: translateY(-50%) scale(1.05);
+  transform: translate(0, -25%) scale(1.05);
 }
 
 .logo-middle {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 50%;
-  justify-content: center;
+  bottom: auto;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .logo-middle:hover {
@@ -279,10 +280,13 @@ const formatEngineType = (engineType: string) => {
   max-width: 35vw;
   max-height: 200px;
   cursor: pointer;
+  will-change: transform, filter, top, left, bottom;
   transition:
     transform 0.2s ease,
-    filter 0.2s ease;
-  transform-origin: center;
+    filter 0.2s ease,
+    top 0.2s ease,
+    left 0.2s ease,
+    bottom 0.2s ease;
   filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0));
 }
 

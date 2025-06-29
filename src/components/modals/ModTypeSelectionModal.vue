@@ -29,7 +29,7 @@
             @click="selectedType = 'executable'"
           >
             <q-card-section class="text-center">
-              <q-icon name="desktop_windows" size="3rem" />
+              <q-icon name="terminal" size="3rem" />
               <div class="mod-type-name phantom-font-display">
                 {{ $t('app.modals.mod_type_selection.standalone') }}
               </div>
@@ -56,7 +56,7 @@
                 alt="Psych Engine"
                 class="engine-icon"
               />
-              <div class="mod-type-name phantom-font-display">Psych Engine</div>
+              <div class="mod-type-name phantom-font-display">Psych</div>
               <div class="mod-type-description">
                 {{
                   engineAvailability.psychCount
@@ -158,6 +158,21 @@
           </q-card>
         </div>
 
+        <div
+          class="text-caption text-center"
+          style="color: var(--theme-text-secondary)"
+        >
+          If you're unsure what type of mod this is, you should check this mod's
+          description.
+          <q-btn
+            outline
+            class="full-width q-mt-sm"
+            label="Open Mod Details"
+            icon="open_in_new"
+            @click="handleOpenModDetails"
+          />
+        </div>
+
         <!-- Engine list selection (shown when a modpack type is selected) -->
         <div
           v-if="selectedType !== 'executable' && compatibleEngines.length > 0"
@@ -166,7 +181,7 @@
           <p>
             {{
               $t('app.modals.mod_type_selection.select_where_to_install', {
-                engine: formatEngineName(selectedType),
+                engine: formattedEngineName,
               })
             }}
           </p>
@@ -187,9 +202,7 @@
                   <img
                     :src="
                       engine.icon_data ||
-                      `/images/engine_icons/${
-                        engine.engine?.engine_type || engine.engine_type
-                      }.webp`
+                      `/images/engine_icons/${engine.engine?.engine_type}.webp`
                     "
                     onerror="this.src='/images/engine_icons/Psych.webp'"
                   />
@@ -197,7 +210,18 @@
               </q-item-section>
 
               <q-item-section>
-                <q-item-label>{{ engine.name }}</q-item-label>
+                <q-item-label
+                  >{{ engine.name
+                  }}<span
+                    v-if="engine.version"
+                    style="
+                      color: var(--theme-text-secondary);
+                      font-size: 0.75rem;
+                    "
+                    class="q-ml-xs"
+                    >({{ engine.version }})</span
+                  ></q-item-label
+                >
                 <q-item-label caption class="engine-path-caption">{{
                   engine.path
                 }}</q-item-label>
@@ -213,7 +237,9 @@
                 :label="$t('app.modals.engine_select.install_as_addon')"
               />
             </div>
-            <p>{{ $t('app.modals.engine_select.will_be_installed_to') }}</p>
+            <p style="color: var(--theme-text-secondary)" class="q-mb-xs">
+              {{ $t('app.modals.engine_select.will_be_installed_to') }}
+            </p>
             <code>{{ getInstallPath() }}</code>
           </div>
         </div>
@@ -238,6 +264,7 @@ import { ref, computed, watch, onMounted, reactive } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { sep } from '@tauri-apps/api/path'
 import { formatEngineName } from '@utils/index'
+import { Mod } from '@main-types'
 
 const props = defineProps({
   modelValue: {
@@ -250,7 +277,13 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['update:modelValue', 'submit', 'back', 'cancel'])
+const emit = defineEmits([
+  'update:modelValue',
+  'submit',
+  'back',
+  'cancel',
+  'open-mod-details',
+])
 
 // Engine availability tracking
 const engineAvailability = reactive({
@@ -260,29 +293,16 @@ const engineAvailability = reactive({
   codenameCount: 0,
 })
 
-interface EngineMod {
-  id: string
-  name: string
-  path: string
-  icon_data?: string
-  engine?: {
-    engine_type: string
-    mods_folder_path?: string
-    mods_folder?: boolean
-  }
-  engine_type?: string
-  executable_path?: string
-}
-
 // Dialog state
 const isOpen = ref(props.modelValue)
 
 // Selection state
 const selectedType = ref('executable')
-const selectedEngine = ref<EngineMod | null>(null)
-const compatibleEngines = ref<EngineMod[]>([])
-const allEngines = ref<EngineMod[]>([])
+const selectedEngine = ref<Mod | null>(null)
+const compatibleEngines = ref<Mod[]>([])
+const allEngines = ref<Mod[]>([])
 const isAddon = ref(false)
+const formattedEngineName = ref('')
 
 // Computed property to check if selected type is Codename Engine
 const isCodename = computed(() => {
@@ -300,13 +320,17 @@ const isFormValid = computed(() => {
 // Watch for changes in props
 watch(
   () => props.modelValue,
-  val => {
+  async val => {
     isOpen.value = val
 
     // When dialog opens, load all engines to check availability and reset state
     if (val) {
       loadAllEngines()
       isAddon.value = false
+      // Initialize formatted engine name for default selection
+      if (selectedType.value !== 'executable') {
+        formattedEngineName.value = await formatEngineName(selectedType.value)
+      }
     }
   }
 )
@@ -320,10 +344,13 @@ watch(isOpen, val => {
 watch(selectedType, async newType => {
   if (newType !== 'executable') {
     await loadCompatibleEngines(newType)
+    // Update formatted engine name
+    formattedEngineName.value = await formatEngineName(newType)
   } else {
     // Clear selection when switching to executable type
     selectedEngine.value = null
     compatibleEngines.value = []
+    formattedEngineName.value = ''
   }
 
   // Reset addon flag when changing type
@@ -350,7 +377,7 @@ const loadAllEngines = async () => {
     if (window.db && window.db.service) {
       allEngines.value = await window.db.service.getAllMods()
     } else {
-      allEngines.value = await invoke<EngineMod[]>('get_mods')
+      allEngines.value = await invoke<Mod[]>('get_mods')
     }
 
     // Count engines of each type
@@ -380,7 +407,7 @@ const loadAllEngines = async () => {
 }
 
 // Get engine type from mod object
-const getEngineType = (mod: EngineMod): string => {
+const getEngineType = (mod: Mod): string => {
   // Check engine structure
   if (mod.engine && mod.engine.engine_type) {
     return mod.engine.engine_type
@@ -388,6 +415,10 @@ const getEngineType = (mod: EngineMod): string => {
 
   // If no engine type found, return unknown
   return 'unknown'
+}
+
+const handleOpenModDetails = () => {
+  emit('open-mod-details')
 }
 
 // Load compatible engines based on the selected type
@@ -401,11 +432,11 @@ const loadCompatibleEngines = async (engineType: string) => {
       })
     } else {
       // Fetch all mods if not already loaded
-      let mods: EngineMod[] = []
+      let mods: Mod[] = []
       if (window.db && window.db.service) {
         mods = await window.db.service.getAllMods()
       } else {
-        mods = await invoke<EngineMod[]>('get_mods')
+        mods = await invoke<Mod[]>('get_mods')
       }
 
       // Filter mods by engine type
@@ -429,7 +460,7 @@ const loadCompatibleEngines = async (engineType: string) => {
 }
 
 // Function to get the mods folder path for an engine mod
-const getModsFolderPath = (engineMod: EngineMod): string => {
+const getModsFolderPath = (engineMod: Mod): string => {
   // Get base directory first in all cases
   const basePath = engineMod.path
   const executablePath = engineMod.executable_path || ''
@@ -562,7 +593,7 @@ const currentModName = ref<string>('Unknown Mod')
 .mod-type-card {
   cursor: pointer;
   transition: all 0.3s ease;
-  border: 2px solid transparent;
+  border: 2px solid var(--theme-border);
   background-color: var(--theme-card);
 }
 
@@ -573,7 +604,6 @@ const currentModName = ref<string>('Unknown Mod')
 
 .mod-type-card.selected {
   border-color: var(--q-primary);
-  background-color: var(--theme-solid);
 }
 
 .disabled-card {
@@ -601,16 +631,18 @@ const currentModName = ref<string>('Unknown Mod')
 /* Engine list styling */
 .engine-item {
   color: var(--theme-text);
-  border-radius: 1rem;
+  background-color: var(--theme-card);
+  border: 2px solid transparent !important;
 }
 
 .selected-engine {
-  background-color: var(--q-primary);
+  border: 2px solid var(--q-primary) !important;
   color: white;
+  border-radius: 0.25rem;
 }
 
 .engine-path-caption {
-  color: var(--theme-text-secondary);
+  color: var(--theme-text-secondary) !important;
 }
 
 .selected-engine .q-item__label {
@@ -621,6 +653,8 @@ const currentModName = ref<string>('Unknown Mod')
   border: none;
   margin-top: 8px;
   margin-bottom: 16px;
+  border: 1px solid var(--theme-border);
+  background-color: var(--theme-card);
 }
 
 code {

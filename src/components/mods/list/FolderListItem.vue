@@ -64,6 +64,7 @@
               :compact-mode="compactMode"
               @select-mod="$emit('select-mod', element.data)"
               @delete-mod="$emit('delete-mod', element)"
+              @super-delete-mod="$emit('super-delete-mod', element.data)"
               @open-mod-settings="$emit('open-mod-settings', $event)"
               @launch-mod="$emit('launch-mod', $event)"
             />
@@ -103,6 +104,7 @@ const props = defineProps({
 const emit = defineEmits([
   'select-mod',
   'delete-mod',
+  'super-delete-mod',
   'delete-folder',
   'update-folder-mods',
   'reorder-folder-mods',
@@ -320,15 +322,15 @@ const handleModsChange = (event: any) => {
 }
 
 .sortable-ghost {
-  background-color: var(--theme-surface) !important;
-  border-radius: 0 1rem 1rem 0;
-  opacity: 0.5;
+  opacity: 0;
 }
 
 /* Add styles for when an item is being dropped */
 .sortable-chosen {
   background-color: var(--theme-surface) !important;
   box-shadow: 0 0 10px var(--theme-border);
+  border-radius: 0 1rem 1rem 0;
+  font-family: 'PhantomMuffFull';
 }
 
 /* Compact mode styles */

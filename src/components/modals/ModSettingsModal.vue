@@ -521,7 +521,9 @@
                     v-model="form.logo_position"
                     :options="logoPositionOptions"
                     :label="
-                      $t('app.modals.mod_settings.appearance.logo_position')
+                      $t(
+                        'app.modals.mod_settings.appearance.logo_position.title'
+                      )
                     "
                     popup-content-class="phantom-font"
                     popup-content-style="background-color: var(--theme-solid); color: var(--theme-text);"
@@ -529,7 +531,11 @@
                     class="q-mt-md phantom-font selector"
                     emit-value
                     map-options
-                    hint="Position of the logo in the banner"
+                    :hint="
+                      $t(
+                        'app.modals.mod_settings.appearance.logo_position.hint'
+                      )
+                    "
                   />
                 </div>
               </div>
@@ -677,18 +683,6 @@ const engineTypes = [
 ]
 
 const logoPositionOptions = [
-  {
-    label: t('app.modals.mod_settings.appearance.logo_position.bottom_left'),
-    value: 'left_bottom',
-  },
-  {
-    label: t('app.modals.mod_settings.appearance.logo_position.middle_left'),
-    value: 'left_middle',
-  },
-  {
-    label: t('app.modals.mod_settings.appearance.logo_position.middle'),
-    value: 'middle',
-  },
   {
     label: t('app.modals.mod_settings.appearance.logo_position.bottom_left'),
     value: 'left_bottom',

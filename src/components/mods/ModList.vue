@@ -207,11 +207,12 @@
             v-model="displayItems"
             group="mods"
             item-key="id"
-            class="full-width"
+            :animation="200"
             ghost-class="sortable-ghost"
             chosen-class="sortable-chosen"
             drag-class="sortable-drag"
             :force-fallback="true"
+            :fallback-on-body="true"
             :delay="100"
             @end="onDragEnd"
             @start="onDragStart"
@@ -219,37 +220,50 @@
             <template #item="{ element: item }">
               <div>
                 <!-- Show folder if it's a folder type -->
-                <FolderListItem
+                <div
                   v-if="item.type === 'folder'"
-                  :folder="item.data"
-                  :all-mods="mods"
-                  :selected-mod-id="selectedModId"
-                  :compact-mode="compactMode"
-                  @select-mod="$emit('select-mod', $event)"
-                  @delete-mod="confirmDelete($event)"
-                  @delete-folder="confirmDeleteFolder(item.data)"
-                  @update-folder-mods="handleFolderModsUpdate"
-                  @reorder-folder-mods="handleFolderModsReorder"
-                  @open-mod-settings="openModSettings"
-                  @edit-folder="editFolder"
-                  @launch-mod="$emit('launch-mod', $event)"
-                />
+                  :key="`folder-${item.data.id}`"
+                  class="draggable-item cursor-move"
+                >
+                  <FolderListItem
+                    :folder="item.data"
+                    :all-mods="mods"
+                    :selected-mod-id="selectedModId"
+                    :compact-mode="compactMode"
+                    @select-mod="$emit('select-mod', $event)"
+                    @delete-mod="confirmDelete($event)"
+                    @super-delete-mod="confirmSuperDelete($event)"
+                    @delete-folder="confirmDeleteFolder(item.data)"
+                    @update-folder-mods="handleFolderModsUpdate"
+                    @reorder-folder-mods="handleFolderModsReorder"
+                    @open-mod-settings="openModSettings"
+                    @edit-folder="editFolder"
+                    @launch-mod="$emit('launch-mod', $event)"
+                  />
+                </div>
 
                 <!-- Show mod if it's not in any folder and is a mod type -->
-                <ModListItem
+                <div
                   v-else-if="
                     item.type === 'mod' && !isModInFolder(item.data.id)
                   "
-                  :mod="item.data"
-                  :is-active="selectedModId === item.data.id"
-                  :compact-mode="compactMode"
-                  @select-mod="$emit('select-mod', item.data)"
-                  @delete-mod="confirmDelete(item.data)"
-                  @super-delete-mod="confirmSuperDelete(item.data)"
-                  @open-mod-settings="openModSettings"
-                  @launch-mod="$emit('launch-mod', $event)"
-                  @open-mod-folder="$emit('open-mod-folder', item.data as Mod)"
-                />
+                  :key="`mod-${item.data.id}`"
+                  class="draggable-item cursor-move"
+                >
+                  <ModListItem
+                    :mod="item.data"
+                    :is-active="selectedModId === item.data.id"
+                    :compact-mode="compactMode"
+                    @select-mod="$emit('select-mod', item.data)"
+                    @delete-mod="confirmDelete(item.data)"
+                    @super-delete-mod="confirmSuperDelete(item.data)"
+                    @open-mod-settings="openModSettings"
+                    @launch-mod="$emit('launch-mod', $event)"
+                    @open-mod-folder="
+                      $emit('open-mod-folder', item.data as Mod)
+                    "
+                  />
+                </div>
               </div>
             </template>
           </draggable>
@@ -1012,10 +1026,6 @@ const editFolder = (folder: Folder) => {
   position: relative;
 }
 
-.draggable-item:hover {
-  background-color: var(--theme-surface);
-}
-
 .draggable-item * {
   user-select: none;
 }
@@ -1031,15 +1041,15 @@ const editFolder = (folder: Folder) => {
 
 /* Add styles for when an item is being dragged */
 .sortable-ghost {
-  background-color: var(--theme-surface) !important;
-  border-radius: 0 1rem 1rem 0;
-  opacity: 0.5;
+  opacity: 0;
 }
 
 /* Add styles for when an item is being dropped */
 .sortable-chosen {
   background-color: var(--theme-surface) !important;
   box-shadow: 0 0 10px var(--theme-border);
+  border-radius: 0 1rem 1rem 0;
+  font-family: 'PhantomMuffFull';
 }
 
 .delete-btn {

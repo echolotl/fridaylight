@@ -14,10 +14,10 @@
         <q-btn v-close-popup icon="close" flat round dense @click="cancel" />
       </q-card-section>
 
-      <q-card-section class="q-mb-sm">
+      <q-card-section>
         <i18n-t tag="p" keypath="app.modals.engine_select.description">
           <template #engine>
-            {{ formatEngineName(engineType || '') }}
+            {{ formattedEngineName }}
           </template>
         </i18n-t>
 
@@ -37,9 +37,7 @@
                 <img
                   :src="
                     engine.icon_data ||
-                    `/images/engine_icons/${
-                      engine.engine?.engine_type || engine.engine_type
-                    }.webp`
+                    `/images/engine_icons/${engine.engine?.engine_type}.webp`
                   "
                   onerror="this.src='/images/engine_icons/Psych.webp'"
                 />
@@ -47,7 +45,15 @@
             </q-item-section>
 
             <q-item-section>
-              <q-item-label>{{ engine.name }}</q-item-label>
+              <q-item-label
+                >{{ engine.name
+                }}<span
+                  v-if="engine.version"
+                  style="color: var(--theme-text-secondary); font-size: 0.75rem"
+                  class="q-ml-xs"
+                  >({{ engine.version }})</span
+                ></q-item-label
+              >
               <q-item-label
                 caption
                 class="engine-path-caption"
@@ -72,7 +78,9 @@
         </p>
       </q-card-section>
       <q-card-section v-if="selectedEngineMod" class="text-caption">
-        <p>{{ $t('app.modals.engine_select.will_be_installed_to') }}</p>
+        <p class="q-mb-xs" style="color: var(--theme-text-secondary)">
+          {{ $t('app.modals.engine_select.will_be_installed_to') }}
+        </p>
         <code>{{ getInstallPath() }}</code>
       </q-card-section>
 
@@ -101,20 +109,7 @@ import { sep } from '@tauri-apps/api/path'
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatEngineName } from '@utils/index'
-
-interface EngineMod {
-  id: string
-  name: string
-  path: string
-  icon_data?: string
-  engine?: {
-    engine_type: string
-    mods_folder_path?: string
-    mods_folder?: boolean
-  }
-  engine_type?: string
-  executable_path?: string
-}
+import { Mod } from '@main-types'
 
 const props = defineProps({
   modelValue: {
@@ -122,7 +117,7 @@ const props = defineProps({
     default: false,
   },
   compatibleEngines: {
-    type: Array as () => EngineMod[],
+    type: Array as () => Mod[],
     default: () => [],
   },
   engineType: {
@@ -143,8 +138,9 @@ const emit = defineEmits(['update:modelValue', 'select', 'cancel'])
 const { t } = useI18n()
 
 const isOpen = ref(props.modelValue)
-const selectedEngineMod = ref<EngineMod | null>(null)
+const selectedEngineMod = ref<Mod | null>(null)
 const isAddon = ref(false)
+const formattedEngineName = ref('')
 
 // Computed property to check if the selected engine is Codename
 const isCodename = computed(() => {
@@ -164,8 +160,11 @@ watch(
 
 watch(
   () => props.modelValue,
-  val => {
+  async val => {
     isOpen.value = val
+    if (props.engineType !== 'executable') {
+      formattedEngineName.value = await formatEngineName(props.engineType || '')
+    }
   }
 )
 
@@ -190,7 +189,7 @@ const cancel = () => {
 }
 
 // Function to get the mods folder path for an engine mod
-const getModsFolderPath = (engineMod: EngineMod): string => {
+const getModsFolderPath = (engineMod: Mod): string => {
   // Get base directory first in all cases
   const basePath = engineMod.path
   const executablePath = engineMod.executable_path || ''
@@ -273,12 +272,23 @@ const getInstallPath = (): string => {
 }
 
 .engine-item {
-  color: var(--theme-text) !important;
+  color: var(--theme-text);
+  background-color: var(--theme-card);
+  border: 2px solid transparent !important;
 }
 
 .selected-engine {
-  background-color: var(--q-primary) !important;
-  color: white !important;
+  border: 2px solid var(--q-primary) !important;
+  color: white;
+  border-radius: 0.25rem;
+}
+
+.engine-path-caption {
+  color: var(--theme-text-secondary) !important;
+}
+
+.selected-engine .q-item__label {
+  color: white;
 }
 
 .q-list {
@@ -307,9 +317,5 @@ code {
   white-space: pre-wrap;
   word-break: break-all;
   border: var(--theme-border) 1px solid;
-}
-
-p {
-  margin: 8px 0 16px;
 }
 </style>
