@@ -261,6 +261,14 @@ export class DatabaseService {
   private db: any = null
   private initialized = false
   private storeService: StoreService
+  private migrationDowns:
+    | Array<
+        (db: {
+          execute: (arg0: string) => unknown
+          select: (query: string) => Promise<unknown[]>
+        }) => Promise<void>
+      >
+    | undefined
 
   private constructor() {
     this.storeService = StoreService.getInstance()
@@ -317,6 +325,12 @@ export class DatabaseService {
         () => this.createProfilesTable(),
         false,
         'createProfilesTable'
+      )
+
+      await withDatabaseLock(
+        () => this._runMigrations(),
+        false,
+        'runMigrations'
       )
 
       // Set initialized flag
@@ -1501,6 +1515,10 @@ export class DatabaseService {
           await db.execute('DROP TABLE IF EXISTS engine_mod_profiles')
           dbConsole.log('Dropped engine_mod_profiles table')
 
+          // Drop migrations table
+          await db.execute('DROP TABLE IF EXISTS migrations')
+          dbConsole.log('Dropped migrations table')
+
           // Sync empty state to backend
           await invoke('remove_all_mods_command')
           dbConsole.log('Synced empty state to backend')
@@ -1714,6 +1732,173 @@ export class DatabaseService {
       mod_states: {},
       created_at: Math.floor(Date.now() / 1000),
       updated_at: Math.floor(Date.now() / 1000),
+    }
+  }
+
+  private async _runMigrations(): Promise<void> {
+    // Create migrations table if it doesn't exist
+    if (!this.db) {
+      throw new Error('Database not initialized')
+    }
+    try {
+      await this.db.execute(
+        `CREATE TABLE IF NOT EXISTS migrations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT UNIQUE NOT NULL,
+          applied_at INTEGER NOT NULL
+        )`
+      )
+    } catch (error) {
+      dbConsole.error('Failed to create migrations table:', error)
+      throw error
+    }
+    // Define migrations
+    const migrations: Array<{
+      name: string
+      up: (db: {
+        execute: (query: string) => unknown
+        select: (query: string) => Promise<unknown[]>
+      }) => Promise<void>
+      down?: (db: {
+        execute: (query: string) => unknown
+        select: (query: string) => Promise<unknown[]>
+      }) => Promise<void>
+    }> = [
+      {
+        name: 'move_engine_data_to_engine',
+        up: async (db: {
+          execute: (query: string) => unknown
+          select: (query: string) => Promise<unknown[]>
+        }) => {
+          // Moves engine_data to engine column
+          // Also removes the engine_type column
+          try {
+            // First check if engine_data column exists
+            const tableInfo = (await db.select(`PRAGMA table_info(mods)`)) as {
+              name: string
+            }[]
+            const columns = tableInfo.map((col: { name: string }) => col.name)
+
+            if (columns.includes('engine_data')) {
+              dbConsole.log(
+                'Found engine_data column, migrating to engine column'
+              )
+
+              // Add the engine column if it doesn't exist
+              if (!columns.includes('engine')) {
+                await db.execute(`ALTER TABLE mods ADD COLUMN engine TEXT`)
+                dbConsole.log('Added engine column')
+              }
+
+              // Copy data from engine_data to engine
+              await db.execute(
+                `UPDATE mods SET engine = engine_data WHERE engine_data IS NOT NULL`
+              )
+              dbConsole.log('Copied engine_data to engine')
+
+              // Now recreate the table without the old columns
+              // SQLite doesn't support DROP COLUMN, so we need to recreate the table
+              dbConsole.log('Recreating mods table to remove old columns...')
+
+              // Create new table with current schema (without engine_data and engine_type)
+              await db.execute(`
+                CREATE TABLE mods_new (
+                  id TEXT PRIMARY KEY,
+                  name TEXT NOT NULL,
+                  path TEXT NOT NULL,
+                  executable_path TEXT,
+                  icon_data TEXT,
+                  banner_data TEXT,
+                  logo_data TEXT,
+                  logo_position TEXT,
+                  version TEXT,
+                  description TEXT,
+                  engine TEXT,
+                  display_order INTEGER DEFAULT 0,
+                  folder_id TEXT,
+                  display_order_in_folder INTEGER DEFAULT 0,
+                  last_played INTEGER,
+                  date_added INTEGER,
+                  save_terminal_output BOOLEAN DEFAULT 0
+                )
+              `)
+              dbConsole.log('Created new mods table')
+
+              // Copy data to new table (excluding engine_data and engine_type)
+              await db.execute(`
+                INSERT INTO mods_new (
+                  id, name, path, executable_path, icon_data, banner_data, logo_data, logo_position,
+                  version, description, engine, display_order, folder_id,
+                  display_order_in_folder, last_played, date_added, save_terminal_output
+                )
+                SELECT 
+                  id, name, path, executable_path, icon_data, banner_data, logo_data, logo_position,
+                  version, description, engine, display_order, folder_id,
+                  display_order_in_folder, last_played, date_added, save_terminal_output
+                FROM mods
+              `)
+              dbConsole.log('Copied data to new table')
+
+              // Drop old table and rename new one
+              await db.execute(`DROP TABLE mods`)
+              await db.execute(`ALTER TABLE mods_new RENAME TO mods`)
+              dbConsole.log('Replaced old table with new table')
+
+              dbConsole.log('Migration completed - old columns removed')
+            } else {
+              dbConsole.log(
+                'engine_data column not found, migration not needed'
+              )
+            }
+          } catch (error) {
+            dbConsole.error('Error in migration:', error)
+            throw error
+          }
+        },
+      },
+    ]
+    // Run migrations
+    for (const migration of migrations) {
+      dbConsole.log(`Checking migration: ${migration.name}`)
+
+      // Check if migration has already been applied
+      const result = await this.db.select(
+        'SELECT COUNT(*) as count FROM migrations WHERE name = ?',
+        [migration.name]
+      )
+
+      // If the result is empty, count is 0
+      const count = result && result.length > 0 ? result[0].count : 0
+      dbConsole.log(`Migration ${migration.name} count: ${count}`)
+
+      if (count === 0) {
+        // Migration has not been applied, run the "up" function
+        try {
+          dbConsole.log(`Applying migration: ${migration.name}`)
+          await migration.up(this.db)
+
+          // Record the migration in the migrations table
+          await this.db.execute(
+            `INSERT INTO migrations (name, applied_at) VALUES (?, ?)`,
+            [migration.name, Math.floor(Date.now() / 1000)]
+          )
+
+          dbConsole.log(`Migration ${migration.name} applied successfully`)
+        } catch (error) {
+          dbConsole.error(`Failed to apply migration ${migration.name}:`, error)
+          throw error
+        }
+
+        // If the migration has a "down" function, just store it for now
+        if (migration.down) {
+          if (!this.migrationDowns) {
+            this.migrationDowns = []
+          }
+          this.migrationDowns.push(migration.down)
+        }
+      } else {
+        dbConsole.log(`Migration ${migration.name} already applied, skipping`)
+      }
     }
   }
 }

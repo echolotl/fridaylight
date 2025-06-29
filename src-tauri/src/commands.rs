@@ -1248,15 +1248,6 @@ pub fn run() {
   // Create a shared mods state that will be used throughout the application
   let mods_state = ModsState(Mutex::new(HashMap::new()));
 
-  let migrations = vec![Migration {
-    version: 1,
-    description: "move engine_data to engine",
-    sql: "ALTER TABLE mods ADD COLUMN engine TEXT; \
-             UPDATE mods SET engine = engine_data; \
-             ALTER TABLE mods DROP COLUMN engine_data;",
-    kind: MigrationKind::Up,
-  }];
-
   // Store a reference to this state in our global state for background thread access
   {
     let mut global_state = crate::models::GLOBAL_MODS_STATE.lock().unwrap();
@@ -1274,12 +1265,7 @@ pub fn run() {
         // when defining deep link schemes at runtime, you must also check `argv` here
       })
     )
-    .plugin(
-      tauri_plugin_sql::Builder
-        ::new()
-        .add_migrations("sqlite:mods.db", migrations)
-        .build()
-    )
+    .plugin(tauri_plugin_sql::Builder::new().build())
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_deep_link::init())
