@@ -162,7 +162,7 @@ export class NotificationService {
    * This is a convenience method for download-related notifications
    */
   public downloadProgress(modName: string): OngoingNotificationResult {
-    const message = getT()('notifications.downloading_mod', { modName })
+    const message = getT()('app.notifications.downloading_mod', { modName })
 
     return this.ongoing({
       message,
@@ -175,7 +175,7 @@ export class NotificationService {
    * This is a convenience method for update-related notifications
    */
   public updateProgress(modName: string): OngoingNotificationResult {
-    const message = getT()('notifications.updating_mod', { modName })
+    const message = getT()('app.notifications.updating_mod', { modName })
 
     return this.ongoing({
       message,
@@ -188,7 +188,7 @@ export class NotificationService {
    */
   public downloadPreparing(modName: string): OngoingNotificationResult {
     return this.ongoing({
-      message: getT()('notifications.download_preparing', { modName }),
+      message: getT()('app.notifications.download_preparing', { modName }),
       position: 'bottom-right',
     })
   }
@@ -199,7 +199,7 @@ export class NotificationService {
 
   public updatePreparing(modName: string): OngoingNotificationResult {
     return this.ongoing({
-      message: getT()('notifications.update_preparing', { modName }),
+      message: getT()('app.notifications.update_preparing', { modName }),
       position: 'bottom-right',
     })
   }
@@ -209,8 +209,8 @@ export class NotificationService {
    */
   public downloadSuccess(modName: string): void {
     this.success({
-      message: getT()('notifications.download_success', { modName }),
-      caption: getT()('notifications.download_success_caption'),
+      message: getT()('app.notifications.download_success', { modName }),
+      caption: getT()('app.notifications.download_success_caption'),
       timeout: 5000,
       position: 'bottom-right',
     })
@@ -222,8 +222,8 @@ export class NotificationService {
 
   public updateSuccess(modName: string): void {
     this.success({
-      message: getT()('notifications.update_success', { modName }),
-      caption: getT()('notifications.download_success_caption'),
+      message: getT()('app.notifications.update_success', { modName }),
+      caption: getT()('app.notifications.download_success_caption'),
       timeout: 5000,
       position: 'bottom-right',
     })
@@ -234,7 +234,7 @@ export class NotificationService {
    */
   public downloadError(modName: string, error: string): void {
     this.error({
-      message: getT()('notifications.download_error', { modName }),
+      message: getT()('app.notifications.download_error', { modName }),
       caption: error,
       timeout: 5000,
       position: 'bottom-right',
@@ -247,7 +247,7 @@ export class NotificationService {
 
   public updateError(modName: string, error: string): void {
     this.error({
-      message: getT()('notifications.update_error', { modName }),
+      message: getT()('app.notifications.update_error', { modName }),
       caption: error,
       timeout: 5000,
       position: 'bottom-right',
@@ -259,7 +259,7 @@ export class NotificationService {
    */
   public downloadCancelled(modName: string): void {
     this.info({
-      message: getT()('notifications.download_cancelled', { modName }),
+      message: getT()('app.notifications.download_cancelled', { modName }),
       timeout: 3000,
       position: 'bottom-right',
     })
@@ -271,7 +271,7 @@ export class NotificationService {
 
   public updateCancelled(modName: string): void {
     this.info({
-      message: getT()('notifications.update_canceled', { modName }),
+      message: getT()('app.notifications.update_canceled', { modName }),
       timeout: 3000,
       position: 'bottom-right',
     })
@@ -282,8 +282,8 @@ export class NotificationService {
    */
   public updateNotAvailable(modName: string): void {
     this.info({
-      message: getT()('notifications.update_not_available', { modName }),
-      caption: getT()('notifications.update_not_available_caption'),
+      message: getT()('app.notifications.update_not_available', { modName }),
+      caption: getT()('app.notifications.update_not_available_caption'),
       timeout: 3000,
       position: 'bottom-right',
     })
@@ -294,7 +294,7 @@ export class NotificationService {
    */
   public downloadCancelledGeneric(): void {
     this.info({
-      message: getT()('notifications.download_cancelled_generic'),
+      message: getT()('app.notifications.download_cancelled_generic'),
       timeout: 3000,
       position: 'bottom-right',
     })
@@ -305,7 +305,7 @@ export class NotificationService {
    */
   public installationFailed(modName: string, error: string): void {
     this.error({
-      message: getT()('notifications.installation_failed', { modName }),
+      message: getT()('app.notifications.installation_failed', { modName }),
       caption: error,
       timeout: 5000,
       position: 'bottom-right',
@@ -317,7 +317,7 @@ export class NotificationService {
    */
   public modStopped(modName: string): void {
     this.info({
-      message: getT()('notifications.mod_stopped', { modName }),
+      message: getT()('app.notifications.mod_stopped', { modName }),
       timeout: 2000,
       position: 'bottom-right',
     })
@@ -328,7 +328,7 @@ export class NotificationService {
    */
   public modError(modName: string, operation: string, error: string): void {
     this.error({
-      message: getT()('notifications.mod_error', { operation, modName }),
+      message: getT()('app.notifications.mod_error', { operation, modName }),
       caption: error,
       timeout: 3000,
       position: 'bottom-right',
@@ -340,10 +340,10 @@ export class NotificationService {
    */
   public modpackNoEngineError(modpackName: string, engine_name: string): void {
     this.error({
-      message: getT()('notifications.modpack_no_engine_error', {
+      message: getT()('app.notifications.modpack_no_engine_error', {
         engineName: engine_name,
       }),
-      caption: getT()('notifications.modpack_no_engine_error_caption', {
+      caption: getT()('app.notifications.modpack_no_engine_error_caption', {
         modpackName,
         engineName: engine_name,
       }),

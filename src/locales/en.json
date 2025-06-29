@@ -188,6 +188,18 @@
       "modpack": {
         "no_engine_error": "Unable to download this {engineName} modpack",
         "no_engine_error_caption": "\"{modpackName}\" requires a {engineName} instance to be installed."
+      },
+      "initialization": {
+        "starting_up": "Starting up...",
+        "theme_service": "Initializing theme service",
+        "applying_theme": "Applying theme",
+        "deep_linking": "Checking if deep link was used",
+        "loading_mods": "Loading mods",
+        "db_service": "Initializing database service",
+        "loading_settings": "Loading settings",
+        "checking_for_updates": "Checking for updates",
+        "installing_update": "Installing update",
+        "ready": "Ready!"
       }
     },
     "modals": {

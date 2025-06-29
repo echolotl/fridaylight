@@ -192,15 +192,6 @@
     </div>
     <div v-if="!isInitializing">
       <Sidebar v-model="sidebarOpen" @resize="handleSidebarResize" />
-      <!-- Engine selection for modpacks from deep links -->
-      <EngineSelectionDialog
-        v-model="showEngineSelectDialog"
-        :compatible-engines="compatibleEngines"
-        :engine-type="currentModpackType"
-        :mod-name="currentModName"
-        @select="onEngineSelected"
-        @cancel="cancelDownload"
-      />
 
       <!-- Missing mod path dialog -->
       <MessageDialog
@@ -240,15 +231,16 @@ import { check } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import Sidebar from './components/layout/Sidebar.vue'
-import EngineSelectionDialog from './components/modals/EngineSelectionDialog.vue'
 import MessageDialog from './components/modals/MessageDialog.vue'
 import ContextMenu from './components/common/ContextMenu.vue'
 import { DatabaseService } from '@services/dbService'
 import { StoreService, DEFAULT_SETTINGS } from '@services/storeService'
-import { gamebananaService } from '@services/gamebananaService'
 import { themeService } from '@services/themeService'
 import { AppSettings } from './types'
 import { notificationService } from '@services/notificationService'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // Define window.db
 declare global {
@@ -260,48 +252,13 @@ declare global {
 // Initialization state variables
 const isInitializing = ref(true)
 const initProgress = ref(0)
-const initStatusText = ref('Starting up...')
+const initStatusText = ref(t('app.notifications.initialization.starting_up'))
 
 const sidebarOpen = ref(true)
 const sidebarWidth = ref(250)
 
-const showEngineSelectDialog = ref(false)
-const compatibleEngines = ref<any[]>([])
-const currentModpackType = ref<string | null>(null)
-const currentModName = ref<string>('Unknown Mod')
-const currentDownloadUrl = ref<string>('')
-const currentModId = ref<number | null>(null)
-const currentModelType = ref<string>('')
 const handleSidebarResize = (width: number) => {
   sidebarWidth.value = width
-}
-
-const cancelDownload = () => {
-  showEngineSelectDialog.value = false
-
-  // Show cancellation notification
-  notificationService.downloadCancelledGeneric()
-}
-
-const onEngineSelected = async (engine: any) => {
-  try {
-    if (!currentDownloadUrl.value || !currentModId.value) {
-      throw new Error('Missing download information')
-    }
-
-    // Use the gamebananaService to handle modpack download with selected engine
-    // Original downloadWithDeepLink function
-  } catch (error) {
-    console.error('Failed to download modpack:', error)
-
-    notificationService.downloadError(
-      'Failed to download modpack',
-      error instanceof Error ? error.message : 'Unknown error'
-    )
-  } finally {
-    // Close the dialog
-    showEngineSelectDialog.value = false
-  }
 }
 
 // State for missing mod path dialog
@@ -637,34 +594,6 @@ const getThemePreference = async (): Promise<string> => {
   }
 }
 
-// Process deep link mod download
-const processDeepLinkModDownload = async (
-  downloadUrl: string,
-  modId: number,
-  archiveExt: string,
-  modelType: string
-) => {
-  try {
-    console.log('Processing mod download from deep link:', {
-      downloadUrl,
-      modId,
-      archiveExt,
-      modelType,
-    })
-
-    // Use the gamebananaService to handle the deep link download
-    // Original downloadWithDeepLink function
-  } catch (error) {
-    console.error('Failed to download mod from deep link:', error)
-
-    // Show error notification
-    notificationService.downloadError(
-      'Failed to download mod',
-      error instanceof Error ? error.message : 'Unknown error'
-    )
-  }
-}
-
 // Initialize the app
 let cleanupEventListeners: (() => void) | undefined
 
@@ -674,12 +603,12 @@ onMounted(async () => {
     console.log('Current window:', currentWindow)
     currentWindow.show()
     // Update progress bar - Step 1: Initialize theme service
-    initStatusText.value = 'Initializing theme service...'
+    initStatusText.value = t('app.notifications.initialization.theme_service')
     initProgress.value = 0.1
 
     // Initialize the theme service first
     await themeService.initialize() // Update progress bar - Step 2: Apply theme
-    initStatusText.value = 'Applying theme...'
+    initStatusText.value = t('app.notifications.initialization.applying_theme')
     initProgress.value = 0.15
 
     // Apply initial theme based on system or user preference
@@ -702,7 +631,7 @@ onMounted(async () => {
     }
 
     // Update progress bar - Step 3: Initialize deep link handler
-    initStatusText.value = 'Setting up deep link handler...'
+    initStatusText.value = t('app.notifications.initialization.deep_linking')
     initProgress.value = 0.2
 
     // Set up deep link handler
@@ -733,7 +662,7 @@ onMounted(async () => {
               archiveExt,
             })
 
-            processDeepLinkModDownload(downloadUrl, modId, archiveExt, modType)
+            // Temp until I fix this
           } else {
             console.error('Invalid deep link format, missing required parts')
           }
@@ -744,7 +673,7 @@ onMounted(async () => {
     })
 
     // Update progress bar - Step 4: Initialize database
-    initStatusText.value = 'Initializing database...'
+    initStatusText.value = t('app.notifications.initialization.db_service')
     initProgress.value = 0.3
 
     // Initialize the database service
@@ -766,7 +695,7 @@ onMounted(async () => {
     }
 
     // Update progress bar - Step 3: Load mods
-    initStatusText.value = 'Loading mods...'
+    initStatusText.value = t('app.notifications.initialization.loading_mods')
     initProgress.value = 0.4 // Load mods from the database
     const mods = await dbService.getAllMods()
     console.log('Loaded mods from database:', mods)
@@ -779,7 +708,9 @@ onMounted(async () => {
     }
 
     // Update progress bar - Step 5: Load settings
-    initStatusText.value = 'Loading settings...'
+    initStatusText.value = t(
+      'app.notifications.initialization.loading_settings'
+    )
     initProgress.value = 0.6
 
     // Load app settings
@@ -797,7 +728,9 @@ onMounted(async () => {
     mediaQuery.addEventListener('change', handleSystemThemeChange)
 
     // Update progress bar - Step 6: Check for updates
-    initStatusText.value = 'Checking for updates...'
+    initStatusText.value = t(
+      'app.notifications.initialization.checking_for_updates'
+    )
     initProgress.value = 0.8
 
     // Check for updates
@@ -805,7 +738,9 @@ onMounted(async () => {
       const updateResult = await check()
       if (updateResult !== null) {
         // Update progress bar - Updates available
-        initStatusText.value = 'Installing update...'
+        initStatusText.value = t(
+          'app.notifications.initialization.installing_update'
+        )
 
         // Install the update if there is one
         let contentLength = 0
@@ -839,7 +774,7 @@ onMounted(async () => {
     }
 
     // Update progress bar - Step 7: Complete
-    initStatusText.value = 'Ready!'
+    initStatusText.value = t('app.notifications.initialization.ready')
     initProgress.value = 1.0
 
     // Hide the loading overlay after a small delay to ensure transitions are smooth
