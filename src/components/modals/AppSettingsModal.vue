@@ -339,7 +339,7 @@
                 </div>
                 <div class="q-mb-sm">
                   <i18n-t keypath="app.modals.app_settings.about.version">
-                    <template #version> 0.11.2 </template>
+                    <template #version> 0.11.3 </template>
                   </i18n-t>
                   <span class="text-caption">(Windows, 64 bit)</span>
                 </div>
