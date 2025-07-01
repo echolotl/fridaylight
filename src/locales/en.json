@@ -220,7 +220,6 @@
         "title": "App Settings",
         "appearance": {
           "title": "Appearance",
-          "description": "Customize the look and feel of Fridaylight",
           "use_system_theme": "Use System Theme",
           "use_system_theme_description": "Automatically match your OS theme (Light/Dark)",
           "builtin_themes": "Built-in Themes",
@@ -238,7 +237,6 @@
         },
         "installation": {
           "title": "Installation",
-          "description": "Configure how mods are installed and managed",
           "default_install_location": "Default Install Location",
           "default_install_location_description": "Set the default folder where mods will be installed",
           "validate_mods": "Validate Mods",
@@ -248,7 +246,6 @@
         },
         "about": {
           "title": "About",
-          "description": "Learn more about Fridaylight",
           "created_by": "Created by {echolotl}",
           "created_with": "Created with",
           "version": "Version: {version}",
