@@ -538,6 +538,8 @@ const scanForMods = async () => {
       modsFolder: props.customModsFolder,
     })
 
+    console.info('Mods scanned:', response.mods)
+
     mods.value = response.mods
     hasScanned.value = true // Check dependencies for all mods after they are loaded
     if (mods.value.length > 0) {
