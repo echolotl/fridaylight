@@ -142,6 +142,8 @@ export async function getAllEngineTypes(): Promise<EngineTypeInfo[]> {
           const fileContent = await readTextFile(filePath)
           const engineData = JSON.parse(fileContent)
 
+          console.info(`Found engine file: ${entry.name}`)
+
           // Extract engine type from filename (remove .json extension)
           const engineType = entry.name.replace('.json', '')
 
@@ -164,6 +166,8 @@ export async function getAllEngineTypes(): Promise<EngineTypeInfo[]> {
       }
       return a.engineName.localeCompare(b.engineName)
     })
+
+    console.info('Available engine types:', engineTypes)
 
     return engineTypes
   } catch (error) {

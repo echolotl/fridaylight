@@ -197,11 +197,11 @@
       },
       "initialization": {
         "starting_up": "Starting up...",
-        "theme_service": "Initializing theme service",
+        "theme_service": "Checking theme",
         "applying_theme": "Applying theme",
         "deep_linking": "Checking if link was used",
         "loading_mods": "Loading mods",
-        "db_service": "Initializing database service",
+        "db_service": "Initializing database",
         "loading_settings": "Loading settings",
         "checking_for_updates": "Checking for updates",
         "installing_update": "Installing update",

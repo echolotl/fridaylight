@@ -194,7 +194,7 @@
                 :label="
                   $t('app.modals.engine_details.actions.view_full_credits')
                 "
-                flat
+                outline
                 @click="handleUrlClick(currentModalEngine.credits_url)"
               >
               </q-btn>
