@@ -2,7 +2,7 @@
   <div>
     <div v-if="loading" class="loading-content">
       <q-spinner color="primary" size="48px" />
-      <div>{{ $t('gamebanana.loading_featured_mods') }}...</div>
+      <div>{{ $t('gamebanana.loading_featured_mods') }}</div>
     </div>
 
     <div v-else class="featured-carousel">

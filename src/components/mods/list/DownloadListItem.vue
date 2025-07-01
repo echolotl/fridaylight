@@ -27,7 +27,7 @@
     <q-item-section v-if="!props.compactMode">
       <q-item-label>{{ props.download.name }}</q-item-label>
       <q-item-label caption style="color: var(--theme-text-secondary)">{{
-        $t(props.download.step)
+        translatedStep
       }}</q-item-label>
 
       <q-linear-progress
@@ -45,7 +45,7 @@
           !props.download.isError &&
           downloadSpeed &&
           props.download.bytesDownloaded !== 0 &&
-          !props.download.step.includes('Extracting') &&
+          !isExtractingPhase &&
           !compactMode
         "
         caption
@@ -70,7 +70,7 @@
     />
 
     <q-tooltip v-if="compactMode">
-      {{ download.name }} - {{ download.step }}
+      {{ download.name }} - {{ translatedStep }}
       <div v-if="download.isError" class="text-negative">
         {{ download.error }}
       </div>
@@ -141,6 +141,21 @@ watch(
     }
   }
 )
+
+const translatedStep = computed(() => {
+  if (!props.download.stepKey) return ''
+
+  // Use variables if they exist
+  if (props.download.stepVariables) {
+    return t(props.download.stepKey, props.download.stepVariables)
+  }
+
+  return t(props.download.stepKey)
+})
+
+const isExtractingPhase = computed(() => {
+  return props.download.stepKey?.includes('extracting') || false
+})
 
 const downloadSpeed = computed(() => {
   // Return early states

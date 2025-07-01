@@ -39,9 +39,9 @@ export interface GBProfilePage {
   _aContributingStudios: unknown[]
   _sLicense: string
   _aLicenseChecklist: {
-    yes: string[]
-    ask: string[]
-    no: string[]
+    yes?: string[]
+    ask?: string[]
+    no?: string[]
   }
   _aContentRatings?: Record<string, string>
   _aEmbeddedMedia?: string[]

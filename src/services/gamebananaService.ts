@@ -142,7 +142,7 @@ export class GameBananaService {
       fileIdToDownloadId.set(fileToDownload._idRow, downloadId)
       downloadState.updateDownloadProgress({
         id: downloadId,
-        step: `Preparing download...`,
+        stepKey: 'app.notifications.download.preparing_generic',
         isComplete: false,
         isError: false,
       })
@@ -209,7 +209,7 @@ export class GameBananaService {
       fileIdToDownloadId.set(fileToDownload._idRow, downloadId)
       downloadState.updateDownloadProgress({
         id: downloadId,
-        step: `Preparing download...`,
+        stepKey: 'app.notifications.download.preparing_generic',
         isComplete: false,
         isError: false,
       })
@@ -248,7 +248,7 @@ export class GameBananaService {
       fileIdToDownloadId.set(trackingId, downloadId)
       downloadState.updateDownloadProgress({
         id: downloadId,
-        step: `Preparing engine download...`,
+        stepKey: 'app.notifications.download.preparing_engine',
         isComplete: false,
         isError: false,
       })
@@ -335,7 +335,8 @@ listen('download-progress', (event: any) => {
   }
   downloadState.updateDownloadProgress({
     id: downloadId,
-    step: event.payload.step,
+    stepKey: event.payload.step_key,
+    stepVariables: event.payload.step_variables,
     percentage: event.payload.percentage,
     bytesDownloaded: event.payload.bytes_downloaded || 0,
     totalBytes: event.payload.total_bytes || 0,
@@ -373,7 +374,7 @@ listen('download-finished', (event: any) => {
   downloadState.updateDownloadProgress({
     id: downloadId,
     percentage: 100,
-    step: 'Download complete!',
+    stepKey: 'app.notifications.download.complete',
     isComplete: true,
     isError: false,
   })
@@ -415,7 +416,7 @@ listen('download-error', (event: any) => {
   }
   downloadState.updateDownloadProgress({
     id: downloadId,
-    step: 'Download failed',
+    stepKey: 'app.notifications.download.failed',
     isComplete: false,
     isError: true,
     error: event.payload.error || 'Unknown error',

@@ -9,7 +9,8 @@ export interface DownloadProgress {
   bytesDownloaded: number
   totalBytes: number
   percentage: number
-  step: string
+  stepKey: string
+  stepVariables?: Record<string, string>
   thumbnailUrl: string
   isComplete: boolean
   isError: boolean
@@ -50,7 +51,7 @@ class DownloadStateManager {
       bytesDownloaded: 0,
       totalBytes: 0,
       percentage: 0,
-      step: 'Preparing...',
+      stepKey: 'app.notifications.download.preparing',
       thumbnailUrl,
       isComplete: false,
       isError: false,

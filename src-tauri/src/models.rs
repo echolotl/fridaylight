@@ -67,9 +67,9 @@ pub struct GBPreviewMedia {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GBLicenseChecklist {
-  pub yes: Vec<String>,
-  pub ask: Vec<String>,
-  pub no: Vec<String>,
+  pub yes: Option<Vec<String>>,
+  pub ask: Option<Vec<String>>,
+  pub no: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -1013,7 +1013,8 @@ pub struct DownloadProgress {
   pub bytes_downloaded: usize,
   pub total_bytes: usize,
   pub percentage: u8,
-  pub step: String,
+  pub step_key: String,
+  pub step_variables: Option<std::collections::HashMap<String, String>>,
 }
 
 #[derive(Clone, Serialize)]

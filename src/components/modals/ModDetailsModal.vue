@@ -35,7 +35,7 @@
         </div>
         <div v-else class="text-h6 phantom-font-difficulty header-text">
           <q-spinner size="40px" color="primary" class="mod-details-icon" />
-          {{ $t('ui.loading') }}...
+          {{ $t('ui.loading') }}
         </div>
         <q-space />
         <q-btn

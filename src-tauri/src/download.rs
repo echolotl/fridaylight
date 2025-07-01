@@ -281,7 +281,8 @@ pub async fn download_gamebanana_mod(
               bytes_downloaded: downloaded,
               total_bytes: total_size,
               percentage,
-              step: "app.notifications.download.downloading_nonspecific".to_string(),
+              step_key: "app.notifications.download.downloading_nonspecific".to_string(),
+              step_variables: None,
             })
             .unwrap_or_else(|e|
               error!("Failed to emit download-progress event: {}", e)
@@ -318,7 +319,8 @@ pub async fn download_gamebanana_mod(
       bytes_downloaded: total_size,
       total_bytes: total_size,
       percentage: 80,
-      step: "app.notifications.download.extracting_nonspecific".to_string(),
+      step_key: "app.notifications.download.extracting_nonspecific".to_string(),
+      step_variables: None,
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -449,7 +451,8 @@ pub async fn download_gamebanana_mod(
       bytes_downloaded: 95,
       total_bytes: 100,
       percentage: 95,
-      step: "app.notifications.download.finalizing".to_string(),
+      step_key: "app.notifications.download.finalizing".to_string(),
+      step_variables: None,
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -594,7 +597,8 @@ pub async fn download_gamebanana_mod(
       bytes_downloaded: 100,
       total_bytes: 100,
       percentage: 100,
-      step: "app.notifications.download.installation_complete".to_string(),
+      step_key: "app.notifications.download.installation_complete".to_string(),
+      step_variables: None,
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -795,7 +799,8 @@ pub async fn download_engine(
       percentage: 5,
       bytes_downloaded: 0,
       total_bytes: 100, // Placeholder
-      step: "app.notifications.download.preparing_engine".to_string(),
+      step_key: "app.notifications.download.preparing_engine".to_string(),
+      step_variables: None,
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -1000,7 +1005,8 @@ pub async fn download_engine(
               bytes_downloaded: downloaded,
               total_bytes: total_size,
               percentage,
-              step: "app.notifications.download.downloading_engine_nonspecific".to_string(),
+              step_key: "app.notifications.download.downloading_engine_nonspecific".to_string(),
+              step_variables: None,
             })
             .unwrap_or_else(|e|
               error!("Failed to emit download-progress event: {}", e)
@@ -1037,7 +1043,8 @@ pub async fn download_engine(
       bytes_downloaded: total_size,
       total_bytes: total_size,
       percentage: 80,
-      step: "app.notifications.download.extracting_engine_nonspecific".to_string(),
+      step_key: "app.notifications.download.extracting_engine_nonspecific".to_string(),
+      step_variables: None,
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -1177,7 +1184,8 @@ pub async fn download_engine(
       bytes_downloaded: 95,
       total_bytes: 100,
       percentage: 95,
-      step: "app.notifications.download.finalizing_engine".to_string(),
+      step_key: "app.notifications.download.finalizing_engine".to_string(),
+      step_variables: None,
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -1360,7 +1368,8 @@ pub async fn download_engine(
       bytes_downloaded: 100,
       total_bytes: 100,
       percentage: 100,
-      step: "app.notifications.download.finalizing_engine".to_string(),
+      step_key: "app.notifications.download.installation_complete".to_string(),
+      step_variables: None,
     })
     .unwrap_or_else(|e|
       error!("Failed to emit download-progress event: {}", e)
@@ -1621,6 +1630,10 @@ fn extract_zip_archive(
     let extract_percentage =
       ((((i as f64) / (total_files as f64)) * 10.0) as u8) + 85; // 85-95% range for extraction
     if extract_percentage != last_percentage {
+      let mut variables = std::collections::HashMap::new();
+      variables.insert("current".to_string(), (i + 1).to_string());
+      variables.insert("total".to_string(), total_files.to_string());
+
       app
         .emit("download-progress", DownloadProgress {
           mod_id,
@@ -1628,7 +1641,8 @@ fn extract_zip_archive(
           bytes_downloaded: i,
           total_bytes: total_files,
           percentage: extract_percentage,
-          step: format!("Extracting file {}/{}", i + 1, total_files),
+          step_key: "app.notifications.download.extracting_file_progress".to_string(),
+          step_variables: Some(variables),
         })
         .unwrap_or_else(|e|
           error!("Failed to emit download-progress event: {}", e)
@@ -1684,6 +1698,15 @@ fn extract_7z_archive(
   app: &tauri::AppHandle
 ) -> Result<(), String> {
   debug!("Extracting 7z archive: {}", download_path.display());
+  app.emit("download-progress", DownloadProgress {
+    mod_id,
+    name: name.to_string(),
+    bytes_downloaded: 80,
+    total_bytes: 100,
+    percentage: 80,
+    step_key: "app.notifications.download.extracting_7z".to_string(),
+    step_variables: None,
+  });
 
   match sevenz_rust::decompress_file(download_path, mod_folder) {
     Ok(_) => {
@@ -1697,7 +1720,8 @@ fn extract_7z_archive(
           bytes_downloaded: 90,
           total_bytes: 100,
           percentage: 90,
-          step: "app.notifications.download.extracting_7z_complete".to_string(),
+          step_key: "app.notifications.download.extracting_7z_complete".to_string(),
+          step_variables: None,
         })
         .unwrap_or_else(|e|
           error!("Failed to emit download-progress event: {}", e)
@@ -1734,6 +1758,15 @@ fn extract_rar_file(
   app: &tauri::AppHandle
 ) -> Result<(), String> {
   debug!("Extracting RAR archive: {}", download_path.display());
+  app.emit("download-progress", DownloadProgress {
+    mod_id,
+    name: name.to_string(),
+    bytes_downloaded: 80,
+    total_bytes: 100,
+    percentage: 80,
+    step_key: "app.notifications.download.extracting_rar".to_string(),
+    step_variables: None,
+  });
 
   // Convert path to string for the unrar crate
   let archive_path = download_path.to_string_lossy().to_string();
@@ -1762,7 +1795,8 @@ fn extract_rar_file(
               bytes_downloaded: 90,
               total_bytes: 100,
               percentage: 90,
-              step: "app.notifications.download.extracting_rar_complete".to_string(),
+              step_key: "app.notifications.download.extracting_rar_complete".to_string(),
+              step_variables: None,
             })
             .unwrap_or_else(|e|
               error!("Failed to emit download-progress event: {}", e)
