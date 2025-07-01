@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Fridaylight",
-  "version": "0.11.4",
+  "version": "0.11.5",
   "identifier": "com.echolotl.fridaylight",
   "mainBinaryName": "Fridaylight",
   "build": {
@@ -23,7 +23,7 @@
           "effects": ["mica"]
         },
         "transparent": true,
-        "userAgent": "Fridaylight/0.11.4"
+        "userAgent": "Fridaylight/0.11.5"
       }
     ],
     "security": {
@@ -52,7 +52,7 @@
       },
       "wix": {
         "upgradeCode": "{B2E0F1A4-5D3C-4D7F-8A6C-9E5B1F7A2E3D}",
-        "version": "0.11.4"
+        "version": "0.11.5"
       }
     }
   },
