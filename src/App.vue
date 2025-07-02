@@ -217,6 +217,40 @@
         :options="contextMenuOptions"
         @close="closeContextMenu"
       />
+      <DownloadFileSelector
+        v-model="isFileSelectionModalOpen"
+        :files="currentModalFiles"
+        :mod-name="currentModalModName"
+        :alternate-file-sources="currentModalAlternateFiles"
+        @select="handleFileSelection"
+        @cancel="handleFileSelectionCancel"
+      />
+
+      <EngineSelectionDialog
+        v-model="isEngineSelectionModalOpen"
+        :compatible-engines="currentModalCompatibleEngines"
+        :engine-type="currentModalEngineType"
+        :mod-name="currentModalModName"
+        @select="handleEngineSelection"
+        @cancel="handleEngineSelectionCancel"
+      />
+
+      <FolderExistsDialog
+        v-model="isFolderExistsModalOpen"
+        :mod-name="currentModalModName"
+        @update="handleFolderExistsUpdate"
+        @download-anyway="handleFolderExistsDownloadAnyway"
+        @cancel="handleFolderExistsCancel"
+      />
+
+      <ModTypeSelectionModal
+        v-model="isModTypeSelectionModalOpen"
+        :mod-name="currentModalModName"
+        @submit="handleModTypeSelection"
+        @back="handleModTypeSelectionBack"
+        @cancel="handleModTypeSelectionCancel"
+        @open-mod-details="handleModTypeSelectionOpenModDetails"
+      />
     </div>
   </q-layout>
 </template>
@@ -239,6 +273,41 @@ import { themeService } from '@services/themeService'
 import { AppSettings } from './types'
 import { notificationService } from '@services/notificationService'
 import { useI18n } from 'vue-i18n'
+
+import { useModDownload } from './composables/useModDownload'
+import DownloadFileSelector from '@modals/DownloadFileSelector.vue'
+import EngineSelectionDialog from '@modals/EngineSelectionDialog.vue'
+import FolderExistsDialog from '@modals/FolderExistsDialog.vue'
+import ModTypeSelectionModal from '@modals/ModTypeSelectionModal.vue'
+import { GBProfilePage } from '@custom-types/gamebanana'
+
+const openModDetails = () => {
+  // temp
+}
+
+const {
+  downloadModFromUrl,
+  isFileSelectionModalOpen,
+  isEngineSelectionModalOpen,
+  isFolderExistsModalOpen,
+  isModTypeSelectionModalOpen,
+  currentModalFiles,
+  currentModalAlternateFiles,
+  currentModalModName,
+  currentModalCompatibleEngines,
+  currentModalEngineType,
+  handleFileSelection,
+  handleFileSelectionCancel,
+  handleEngineSelection,
+  handleEngineSelectionCancel,
+  handleFolderExistsUpdate,
+  handleFolderExistsDownloadAnyway,
+  handleFolderExistsCancel,
+  handleModTypeSelection,
+  handleModTypeSelectionBack,
+  handleModTypeSelectionCancel,
+  handleModTypeSelectionOpenModDetails,
+} = useModDownload(openModDetails)
 
 const { t } = useI18n()
 
@@ -662,7 +731,15 @@ onMounted(async () => {
               archiveExt,
             })
 
-            // Temp until I fix this
+            const modInfo = await invoke<GBProfilePage>(
+              'get_mod_info_command',
+              {
+                modId,
+                modType,
+              }
+            )
+
+            downloadModFromUrl(modInfo, downloadUrl, archiveExt)
           } else {
             console.error('Invalid deep link format, missing required parts')
           }

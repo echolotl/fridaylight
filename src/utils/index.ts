@@ -205,6 +205,27 @@ export function formatBytes(bytes: number): string {
 }
 
 /**
+ * Sanitize a file name by removing or replacing invalid characters
+ * @param fileName The file name to sanitize
+ * @param replacement The character to replace invalid characters with (default: '-')
+ * @returns The sanitized file name
+ */
+export function sanitizeFileName(
+  fileName: string,
+  replacement: string = '-'
+): string {
+  if (!fileName) return ''
+
+  return fileName
+    .replace(/[<>:"|?*\\/]/g, replacement)
+    .replace(/^\.+/, '')
+    .replace(/\.+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, 255)
+}
+
+/**
  * Process HTML content to replace anchor tag href attributes with click events
  * @param htmlContent The HTML content to process
  * @returns The processed HTML content with href attributes replaced by click events

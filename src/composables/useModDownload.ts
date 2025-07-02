@@ -2,7 +2,7 @@ import { notificationService } from '@services/notificationService'
 import { GBAltFile, GBFile, GBProfilePage } from '@custom-types/gamebanana'
 import { Mod } from '@main-types'
 import { gamebananaService } from '@services/gamebananaService'
-import { formatEngineName } from '@utils/index'
+import { formatEngineName, sanitizeFileName } from '@utils/index'
 import { ref } from 'vue'
 
 export function useModDownload(
@@ -213,9 +213,10 @@ export function useModDownload(
           case 'update':
             downloadItem.update = true
             break
-          case 'download-anyway':
-            // This will create a separate folder for the download
-            downloadItem.folderName = `${mod._sName}-${new Date().toISOString().slice(11, 19).replace(/:/g, '-')}`
+          case 'download-anyway': // This will create a separate folder for the download
+          {
+            const folderName = `${mod._sName}-${new Date().toISOString().slice(11, 19).replace(/:/g, '-')}`
+            downloadItem.folderName = sanitizeFileName(folderName, '-')
             if ('engineInstallation' in downloadItem) {
               // For modpacks, check in the engine's mods folder
               if (
@@ -246,6 +247,7 @@ export function useModDownload(
               }
             }
             break
+          }
         }
       }
 
@@ -300,10 +302,11 @@ export function useModDownload(
           update = true
         } else if (action === 'download-anyway') {
           // Create a new folder for the download
-          folderName = `${formatEngineName(engineType)}-${new Date()
+          const folderNameBefore = `${formatEngineName(engineType)}-${new Date()
             .toISOString()
             .slice(11, 19)
             .replace(/:/g, '-')}`
+          folderName = sanitizeFileName(folderNameBefore, '-')
         }
       }
 
@@ -319,6 +322,214 @@ export function useModDownload(
         String(error)
       )
       throw new Error('Failed to download engine')
+    }
+  }
+
+  // Download handling for deep links (direct URL)
+  const downloadModFromUrl = async (
+    mod: GBProfilePage,
+    downloadUrl: string,
+    archiveExt?: string
+  ) => {
+    const downloadItem: DownloadItem = {
+      file: {
+        _sDownloadUrl: downloadUrl,
+        _idRow: Math.floor(Math.random() * 1000000), // Generate a unique ID for tracking
+        _nFilesize: 0,
+        _sFile: `${mod._sName}${archiveExt || '.zip'}`,
+        // We just fakin it
+        _tsDateAdded: Date.now(),
+        _nDownloadCount: 0,
+        _sMd5Checksum: '',
+        _sAnalysisState: 'complete',
+        _sAnalysisResult: 'clean',
+        _sAnalysisResultVerbose: '',
+        _sAvastAvState: 'complete',
+        _sAvastAvResult: 'clean',
+        _bHasContents: true,
+      } as GBFile,
+      info: mod,
+    }
+
+    try {
+      // Skip Step 1: File selection - we already have the URL
+
+      // Step 2: Check if mod is labeled for a specific engine (modpack categories)
+      let engineType = 'unknown'
+
+      switch (mod._aCategory._idRow) {
+        case 28367: // Psych Engine Modpack
+          engineType = 'psych'
+          break
+        case 29202: // V-Slice Modpack
+          engineType = 'vanilla'
+          break
+        case 34764: // Codename Engine Modpack
+          engineType = 'codename'
+          break
+        default: // Not in a specific category
+          engineType = 'generic'
+          break
+      }
+
+      if (engineType !== 'unknown') {
+        if (engineType === 'generic') {
+          // Generic modpack - show mod type selection modal
+          const modTypeResult = await showModTypeSelectionModal(mod._sName)
+          console.info(
+            `Mod "${mod._sName}"'s' user selected type:`,
+            modTypeResult
+          )
+          if (
+            (modTypeResult.modType === 'psych' ||
+              modTypeResult.modType === 'codename' ||
+              modTypeResult.modType === 'vanilla' ||
+              modTypeResult.modType === 'fps-plus') &&
+            modTypeResult.engineMod
+          ) {
+            ;(downloadItem as ModpackDownload).engineInstallation =
+              modTypeResult.engineMod
+          } else {
+            // If the user picks "standalone", then we treat it as a regular mod download
+            console.info(
+              `Mod ${mod._sName} is a standalone modpack (picked by user), proceeding as regular mod download`
+            )
+          }
+        } else {
+          const compatibleEngines =
+            await gamebananaService.getCompatibleEngines(engineType)
+
+          if (compatibleEngines.length === 0) {
+            throw new Error(
+              `No compatible engines found for ${engineType} modpack`
+            )
+          }
+
+          const selectedEngine = await showEngineSelectionModal(
+            compatibleEngines,
+            engineType,
+            mod._sName
+          )
+          ;(downloadItem as ModpackDownload).engineInstallation = selectedEngine
+        }
+      } else {
+        // If not a specific engine modpack, show mod type selection modal
+        const modTypeResult = await showModTypeSelectionModal(mod._sName)
+
+        if (modTypeResult.modType === 'modpack') {
+          // User selected modpack - check if they provided an engine
+          if (modTypeResult.engineMod) {
+            ;(downloadItem as ModpackDownload).engineInstallation =
+              modTypeResult.engineMod
+          } else {
+            // Need to show engine selection
+            const compatibleEngines =
+              await gamebananaService.getCompatibleEngines('unknown')
+            const selectedEngine = await showEngineSelectionModal(
+              compatibleEngines,
+              'unknown',
+              mod._sName
+            )
+            ;(downloadItem as ModpackDownload).engineInstallation =
+              selectedEngine
+          }
+        }
+        // If type is 'standalone', continue as regular mod download
+      }
+
+      // Step 3: Check if folder already exists
+      let folderExists = false
+      if ('engineInstallation' in downloadItem) {
+        // For modpacks, check in the engine's mods folder
+        folderExists = await gamebananaService.checkModpackFolderExists(
+          mod,
+          (downloadItem as ModpackDownload).engineInstallation
+        )
+      } else {
+        // For standalone mods, check in the main install location
+        folderExists = await gamebananaService.checkModFolderExists(
+          mod,
+          await gamebananaService.getInstallLocation()
+        )
+      }
+      console.info(`Folder exists for mod ${mod._sName}: ${folderExists}`)
+
+      if (folderExists === true) {
+        const folderAction = await showFolderExistsModal(mod._sName)
+
+        switch (folderAction) {
+          case 'cancel':
+            return // User cancelled
+          case 'update':
+            downloadItem.update = true
+            break
+          case 'download-anyway': // This will create a separate folder for the download
+          {
+            const folderName = `${mod._sName}-${new Date().toISOString().slice(11, 19).replace(/:/g, '-')}`
+            downloadItem.folderName = sanitizeFileName(folderName, '-')
+            if ('engineInstallation' in downloadItem) {
+              // For modpacks, check in the engine's mods folder
+              if (
+                await gamebananaService.checkModpackFolderExists(
+                  mod,
+                  (downloadItem as ModpackDownload).engineInstallation,
+                  downloadItem.folderName
+                )
+              ) {
+                // Handle folder already exists case
+                throw new Error(
+                  `Folder ${downloadItem.folderName} already exists. Trying again should generate a different one.`
+                )
+              }
+            } else {
+              // For standalone mods, check in the main install location
+              if (
+                await gamebananaService.checkModFolderExists(
+                  mod,
+                  await gamebananaService.getInstallLocation(),
+                  downloadItem.folderName
+                )
+              ) {
+                // Handle folder already exists case
+                throw new Error(
+                  `Folder ${downloadItem.folderName} already exists. Trying again should generate a different one.`
+                )
+              }
+            }
+            break
+          }
+        }
+      }
+
+      // At this point, downloadItem is fully configured for download
+      console.info('Download configured from URL:', downloadItem)
+
+      // Step 4: Perform the download
+      // If downloadItem is a ModpackDownload, handle it differently
+      if ('engineInstallation' in downloadItem) {
+        // Handle modpack download
+        await gamebananaService.downloadModpack(
+          downloadItem.file,
+          downloadItem.info,
+          (downloadItem as ModpackDownload).engineInstallation,
+          downloadItem.folderName,
+          downloadItem.update
+        )
+      } else {
+        // Handle regular mod download
+        await gamebananaService.downloadMod(
+          downloadItem.file,
+          downloadItem.info,
+          downloadItem.folderName,
+          downloadItem.update
+        )
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('cancelled')) {
+        // User cancelled, don't show error notification
+        return
+      }
+      notificationService.downloadError(mod._sName, String(error))
     }
   }
 
@@ -492,6 +703,7 @@ export function useModDownload(
     // Functions for the component to use
     downloadMod,
     downloadEngine,
+    downloadModFromUrl, // Export the deep-link download function
 
     // Modal state for template binding
     isFileSelectionModalOpen,
