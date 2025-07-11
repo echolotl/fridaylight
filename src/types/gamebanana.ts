@@ -209,7 +209,7 @@ export interface GBModPosts {
 // Represents a post on a mod
 export interface GBModPost {
   _idRow: number
-  _nStatus: number
+  _nStatus: object
   _tsDateAdded: number
   _tsDateModified: number
   _nReplyCount: number

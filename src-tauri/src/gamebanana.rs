@@ -20,16 +20,16 @@ pub async fn fetch_gamebanana_mods(
 
   // Base URL for GameBanana's API
   let url = if query == "latest" {
-    format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=15&_aFilters[Generic_Category]=3827&_nPage={}", page)
+    format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=30&_aFilters[Generic_Category]=3827&_nPage={}", page)
   } else if query == "_psychmodpack" {
     // Psych Engine modpack (mods folder) endpoint
-    format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=15&_aFilters[Generic_Category]=28367&_nPage={}", page)
+    format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=30&_aFilters[Generic_Category]=28367&_nPage={}", page)
   } else if query == "_codenamemodpack" {
     // Codename Engine modpack (mods folder) endpoint
-    format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=15&_aFilters%5BGeneric_Category%5D=34764&_nPage={}", page)
+    format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=30&_aFilters%5BGeneric_Category%5D=34764&_nPage={}", page)
   } else if query == "_vslicemodpack" {
     // V-Slice modpack (mods folder) endpoint
-    format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=15&_aFilters%5BGeneric_Category%5D=29202&_nPage={}", page)
+    format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=30&_aFilters%5BGeneric_Category%5D=29202&_nPage={}", page)
   } else {
     // Search endpoint
     format!(

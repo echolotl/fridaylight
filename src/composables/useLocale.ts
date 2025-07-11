@@ -10,6 +10,8 @@ export interface LocaleInfo {
 
 export const AVAILABLE_LOCALES: LocaleInfo[] = [
   { code: 'en', name: 'English', key: 'english' },
+  { code: 'tr', name: 'Türkçe', key: 'turkish' },
+  { code: 'ua', name: 'Ukraynaca', key: 'ukrainian' },
 ]
 
 const storeService = StoreService.getInstance()

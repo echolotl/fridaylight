@@ -424,7 +424,7 @@ pub struct GBModPost {
   #[serde(rename = "_idRow")]
   pub id_row: i64,
   #[serde(rename = "_nStatus")]
-  pub status: String,
+  pub status: serde_json::Value,
   #[serde(rename = "_tsDateAdded")]
   pub date_added: i64,
   #[serde(rename = "_tsDateModified")]

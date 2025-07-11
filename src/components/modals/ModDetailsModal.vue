@@ -501,12 +501,14 @@
                   {{ $t('app.modals.mod_details.studio') }}
                   <hr />
                 </h6>
-                <div class="flex justify-center">
+                <div class="flex column items-center">
                   <div>{{ $t('app.modals.mod_details.created_by') }}</div>
                   <div @onclick="openUrl(modInfo._aStudio._sProfileUrl)">
                     <img :src="modInfo._aStudio._sBannerUrl" />
                   </div>
                 </div>
+              </div>
+              <div>
                 <h6 class="text-h6 phantom-font-difficulty q-mb-md q-mt-md">
                   {{ $t('app.modals.mod_details.submitter') }}
                   <hr />

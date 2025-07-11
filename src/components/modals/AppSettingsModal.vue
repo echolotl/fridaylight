@@ -388,18 +388,43 @@
                   />
                 </div>
                 <div class="text-subtitle2 q-mt-md">
-                  {{ $t('app.modals.app_settings.about.special_thanks.title') }}
+                  {{ $t('app.modals.app_settings.about.main_contributors') }}
+                </div>
+                <q-scroll-area class="acknowledgements">
+                  <ul style="list-style-type: none; padding-left: 0">
+                    <li>
+                      <a @click="openUrl('https://baranmuzu.netlify.app/')"
+                        >BaranMuzu</a
+                      >
+                      <div class="text-caption">Turkish translation</div>
+                    </li>
+                    <li>
+                      <div>CatLemons</div>
+                      <div class="text-caption">Ukrainian translation</div>
+                    </li>
+                    <li>
+                      <a @click="openUrl('https://github.com/toperri')"
+                        >toperri</a
+                      >
+                      <div class="text-caption">Italian translation</div>
+                    </li>
+                    <li>
+                      <a @click="openUrl('https://github.com/MAZ12211')">
+                        MAZ12211
+                      </a>
+                      <div class="text-caption">Arabic translation</div>
+                    </li>
+                  </ul>
+                </q-scroll-area>
+                <div class="text-subtitle2 q-mt-md">
+                  {{ $t('app.modals.app_settings.about.special_thanks') }}
                 </div>
                 <q-scroll-area class="acknowledgements">
                   <ul style="list-style-type: none; padding-left: 0">
                     <li>
                       <div>Gamebanana</div>
                       <div class="text-caption">
-                        {{
-                          $t(
-                            'app.modals.app_settings.about.special_thanks.gamebanana'
-                          )
-                        }}
+                        For providing a platform for Friday Night Funkin' mods
                       </div>
                     </li>
                     <li>
@@ -411,11 +436,7 @@
                         Cracsthor
                       </a>
                       <div class="text-caption">
-                        {{
-                          $t(
-                            'app.modals.app_settings.about.special_thanks.cracsthor'
-                          )
-                        }}
+                        Made the original PhantomMuff font files used in app
                       </div>
                     </li>
                     <li>
@@ -427,35 +448,20 @@
                         NoizDynamic
                       </a>
                       <div class="text-caption">
-                        {{
-                          $t(
-                            'app.modals.app_settings.about.special_thanks.noizdynamic'
-                          )
-                        }}
+                        Made the Tardling font files used in app
                       </div>
                     </li>
                     <li>
-                      <span>{{
-                        $t(
-                          'app.modals.app_settings.about.special_thanks.name_flmoddevteam'
-                        )
-                      }}</span>
+                      <span>Funkin' Launcher Dev Team</span>
                       <div class="text-caption">
-                        {{
-                          $t(
-                            'app.modals.app_settings.about.special_thanks.flmoddevteam'
-                          )
-                        }}
+                        For giving inspiration and ideas for this app
                       </div>
                     </li>
                     <li>
                       <span> SteamGridDB </span>
                       <div class="text-caption">
-                        {{
-                          $t(
-                            'app.modals.app_settings.about.special_thanks.steamgriddb'
-                          )
-                        }}
+                        Provided many of the banners, icons, and logos for
+                        engines used in app
                       </div>
                     </li>
                   </ul>
@@ -568,7 +574,7 @@ const storeService = StoreService.getInstance()
 const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS })
 // Sidebar navigation sections
 const { t } = useI18n()
-const settingsSections = [
+const settingsSections = computed(() => [
   {
     id: 'appearance',
     label: t('app.modals.app_settings.appearance.title'),
@@ -584,7 +590,7 @@ const settingsSections = [
     label: t('app.modals.app_settings.about.title'),
     icon: 'info',
   },
-]
+])
 
 // Track the active section
 const activeSection = ref('appearance')
@@ -609,7 +615,7 @@ const customThemes = computed(() => {
   return themeOptions.value.filter(theme => theme.isCustom)
 })
 
-const accentColorOptions = [
+const accentColorOptions = computed(() => [
   { label: t('misc.colors.pink'), value: '#DB2955' },
   { label: t('misc.colors.blue'), value: '#235789' },
   { label: t('misc.colors.green'), value: '#35CE8D' },
@@ -618,7 +624,7 @@ const accentColorOptions = [
   { label: t('misc.colors.yellow'), value: '#f7c548' },
   { label: t('misc.colors.red'), value: '#C03221' },
   { label: t('misc.colors.cyan'), value: '#39dbce' },
-]
+])
 
 // Locale functionality
 const { currentLocale, changeLocale, isLoading: localeLoading } = useLocale()
@@ -700,7 +706,7 @@ const loadSettings = async () => {
 
     // Initialize custom accent color state
     const currentAccentColor = getAccentColor()
-    const isPresetColor = accentColorOptions.some(
+    const isPresetColor = accentColorOptions.value.some(
       option => option.value === currentAccentColor
     )
 

@@ -55,7 +55,7 @@
     <div class="action-buttons flex row justify-end">
       <q-btn
         color="primary"
-        label="Play"
+        :label="$t('ui.actions.play')"
         class="play-btn"
         text-color="white"
         flat
@@ -77,6 +77,7 @@
 import { computed, onMounted } from 'vue'
 import type { Mod } from '@main-types'
 import { revealItemInDir } from '@tauri-apps/plugin-opener'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   mod: {
@@ -86,6 +87,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['play', 'configure', 'showDetails'])
+
+const { t } = useI18n()
 
 // Create banner style based on available data
 const bannerStyle = computed(() => {
@@ -148,11 +151,11 @@ const formatDate = (timestamp: number): string => {
   if (days > 30) {
     return new Date(normalizedTimestamp).toLocaleDateString()
   } else if (days > 0) {
-    return `${days}d ago`
+    return t('ui.time.days_ago', { days })
   } else if (hours > 0) {
-    return `${hours}h ago`
+    return t('ui.time.hours_ago', { hours })
   } else {
-    return 'Just now'
+    return t('ui.time.just_now')
   }
 }
 
@@ -171,24 +174,24 @@ const showContextMenu = (event: MouseEvent) => {
   const contextMenuOptions = [
     {
       icon: 'play_arrow',
-      label: 'Launch Mod',
+      label: t('ui.actions.launch_mod'),
       action: () => emit('play', props.mod.id),
     },
     {
       icon: 'settings',
-      label: 'Edit Settings',
+      label: t('ui.actions.edit_settings'),
       action: () => emit('configure', props.mod.id),
     },
     {
       icon: 'folder_open',
-      label: 'Open Mod Folder',
+      label: t('ui.actions.reveal_folder_location'),
       action: () => {
         revealItemInDir(props.mod.path)
       },
     },
     {
       icon: 'info',
-      label: 'Show Details',
+      label: t('ui.actions.view_details'),
       action: () => emit('showDetails', props.mod.id),
     },
   ]

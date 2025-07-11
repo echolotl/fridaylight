@@ -42,6 +42,7 @@
       "confirm": "Confirm",
       "play": "Play",
       "stop": "Stop",
+      "launch_mod": "Launch Mod",
       "open_in_browser": "Open in Browser",
       "search_mods": "Search mods",
       "create_folder": "Create Folder",
@@ -50,12 +51,14 @@
       "collapse_folder": "Collapse Folder",
       "delete_folder": "Delete Folder",
       "view_details": "View Details",
+      "edit_settings": "Edit Settings",
       "download": "Download",
       "download_anyway": "Download Anyway",
       "download_mod": "Download Mod",
       "download_and_install": "Download & Install",
       "open_gamebanana": "Open GameBanana",
       "view_on_gamebanana": "View on GameBanana",
+      "reveal_folder_location": "Reveal Folder Location",
       "conformations": {
         "delete_mod": "Are you sure you want to COMPLETELY DELETE this mod? This action cannot be undone.",
         "remove_mod": "Are you sure you want to remove this mod from the list? This will not delete the mod files.",
@@ -67,6 +70,17 @@
       "connecting": "Connecting...",
       "calculating": "Calculating...",
       "stalled": "Download stalled"
+    },
+    "time": {
+      "days_ago": "{days} days ago",
+      "days_ago_short": "{days}d ago",
+      "hours_ago": "{hours} hours ago",
+      "hours_ago_short": "{hours}h ago",
+      "minutes_ago": "{minutes} minutes ago",
+      "minutes_ago_short": "{minutes}m ago",
+      "seconds_ago": "{seconds} seconds ago",
+      "seconds_ago_short": "{seconds}s ago",
+      "just_now": "Just now"
     }
   },
   "navigation": {
@@ -251,15 +265,8 @@
           "version": "Version: {version}",
           "bug_disclaimer": "Found a bug, or have a suggestion? Report it on GitHub!",
           "beta_disclaimer": "This is a pre-release version of Fridaylight. It may contain bugs or incomplete features, and you should expect to lose data.",
-          "special_thanks": {
-            "title": "Acknowledgements and Special Thanks",
-            "gamebanana": "For providing a stable platform for Friday Night Funkin' mods!",
-            "cracsthor": "Created the original PhantomMuff font family files",
-            "noizdynamic": "Created the Tardling font file used in-app",
-            "name_flmoddevteam": "Funkin Launcher Dev Team",
-            "flmoddevteam": "For providing inspiration and ideas for this app",
-            "steamgriddb": "For providing a variety of banners and icons for engines"
-          }
+          "special_thanks": "Acknowledgements and Special Thanks",
+          "main_contributors": "Main Contributors"
         },
         "reset_settings": {
           "title": "Reset Settings",
@@ -298,7 +305,8 @@
           "executable_path": "Executable Path",
           "remove_mod_description": "Removing a mod will not delete the mod files, but will remove it from the list.",
           "delete_mod_description": "Deleting a mod will remove it from the list and {permanentlyDelete} the mod files. This action cannot be undone.",
-          "permanently_delete": "permanently delete"
+          "permanently_delete": "permanently delete",
+          "save_console_output": "Save Console Output"
         },
         "engine": {
           "title": "Engine Configuration",
@@ -424,7 +432,9 @@
     "more": "more",
     "by": "by",
     "unknown_mod": "Unknown Mod",
-    "confirmation": "Confirmation",
+    "confirmation": "Conformation",
+    "not_selected": "Not Selected",
+    "other": "Other",
     "colors": {
       "red": "Red",
       "orange": "Orange",

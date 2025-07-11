@@ -261,7 +261,9 @@
             <div class="flex justify-between q-mb-md q-mt-md">
               <q-checkbox
                 v-model="form.save_terminal_output"
-                label="Save Terminal Output"
+                :label="
+                  $t('app.modals.mod_settings.installation.save_console_output')
+                "
                 color="primary"
               />
               <div v-if="form.save_terminal_output">
@@ -671,18 +673,18 @@ const gamebananaSyncing = ref(false)
 const changeBanner = ref(true)
 const changeVersion = ref(true)
 
-const engineTypes = [
-  { label: 'Not Selected', value: 'unknown' },
+const engineTypes = computed(() => [
+  { label: t('misc.not_selected'), value: 'unknown' },
   { label: 'Vanilla', value: 'vanilla' },
   { label: 'Psych Engine', value: 'psych' },
   { label: 'Codename Engine', value: 'codename' },
   { label: 'FPS Plus', value: 'fps-plus' },
   { label: 'Kade Engine', value: 'kade' },
   { label: 'Pre-VSlice', value: 'pre-vslice' },
-  { label: 'Other', value: 'other' },
-]
+  { label: t('misc.other'), value: 'other' },
+])
 
-const logoPositionOptions = [
+const logoPositionOptions = computed(() => [
   {
     label: t('app.modals.mod_settings.appearance.logo_position.bottom_left'),
     value: 'left_bottom',
@@ -695,7 +697,7 @@ const logoPositionOptions = [
     label: t('app.modals.mod_settings.appearance.logo_position.middle'),
     value: 'middle',
   },
-]
+])
 
 const showModal = computed({
   get: () => props.modelValue,
@@ -714,7 +716,7 @@ watch(
   }
 )
 
-const modSettingsSections = [
+const modSettingsSections = computed(() => [
   {
     id: 'general',
     label: t('app.modals.mod_settings.general.label'),
@@ -735,7 +737,7 @@ const modSettingsSections = [
     label: t('app.modals.mod_settings.appearance.title'),
     icon: 'palette',
   },
-]
+])
 
 const activeSection = ref('general')
 const showRemoveDialog = ref(false)
