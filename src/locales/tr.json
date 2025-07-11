@@ -1,0 +1,431 @@
+{
+  "gamebanana": {
+    "best_of_today": "Günün En İyileri",
+    "best_of_this_week": "Haftanın En İyileri",
+    "best_of_this_month": "Ayın En İyileri",
+    "best_of_3_months": "Son 3 Ayın En İyileri",
+    "best_of_6_months": "Son 6 Ayın En İyileri",
+    "best_of_this_year": "Bu Yılın En İyileri",
+    "best_of_all_time": "Tüm Zamanların En İyileri",
+    "best_of_unknown": "{period} İçin En İyiler",
+    "latest_mods": "En Yeni Modlar",
+    "engine_downloads": "Motor İndirmeleri",
+    "more_engines": "Daha Fazla Motor",
+    "have_a_suggestion_engine": "Bir motor önerin mi var? {githubLink} üzerinden öner!",
+    "loading_featured_mods": "Öne çıkan modlar yükleniyor...",
+    "loading_latest_mods": "En yeni modlar yükleniyor...",
+    "loading_modpacks": "{engineType} mod paketleri yükleniyor...",
+    "loading_mods": "Modlar yükleniyor...",
+    "sensitive_content": "Hassas içerik içeriyor!"
+  },
+  "ui": {
+    "loading": "Yükleniyor...",
+    "error": "Bir hata oluştu: {error}",
+    "unknown_error": "Bilinmeyen bir hata oluştu",
+    "danger_zone": "Tehlikeli Bölge",
+    "downloading": "İndiriliyor",
+    "search_results": "Arama Sonuçları",
+    "searching": "Aranıyor",
+    "no_results": "Sonuç bulunamadı",
+    "update_available": "Bir güncelleme mevcut!",
+    "update_might_be_available": "Bir güncelleme olabilir:",
+    "checking_for_updates": "Güncellemeler kontrol ediliyor...",
+    "actions": {
+      "save": "Kaydet",
+      "cancel": "İptal",
+      "delete": "Sil",
+      "remove": "Kaldır",
+      "update": "Güncelle",
+      "close": "Kapat",
+      "create": "Oluştur",
+      "back": "Geri",
+      "confirm": "Onayla",
+      "play": "Oynat",
+      "stop": "Durdur",
+      "open_in_browser": "Tarayıcıda Aç",
+      "search_mods": "Modları Ara",
+      "create_folder": "Klasör Oluştur",
+      "edit_folder": "Klasörü Düzenle",
+      "expand_folder": "Klasörü Genişlet",
+      "collapse_folder": "Klasörü Daralt",
+      "delete_folder": "Klasörü Sil",
+      "view_details": "Detayları Görüntüle",
+      "download": "İndir",
+      "download_anyway": "Yine de İndir",
+      "download_mod": "Modu İndir",
+      "download_and_install": "İndir & Kur",
+      "open_gamebanana": "GameBanana'yı Aç",
+      "view_on_gamebanana": "GameBanana'da Görüntüle",
+      "conformations": {
+        "delete_mod": "Bu modu TAMAMEN SİLMEK istediğinize emin misiniz? Bu işlem geri alınamaz.",
+        "remove_mod": "Bu modu listeden kaldırmak istediğinize emin misiniz? Bu işlem mod dosyalarını silmez.",
+        "delete_folder": "Bu klasörü silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+      }
+    },
+    "download_status": {
+      "starting": "İndirme başlatılıyor...",
+      "connecting": "Bağlanılıyor...",
+      "calculating": "Hesaplanıyor...",
+      "stalled": "İndirme durdu"
+    }
+  },
+  "navigation": {
+    "home": "Ana Sayfa",
+    "settings": "Ayarlar"
+  },
+  "sorting": {
+    "default_order": "Varsayılan Sıra",
+    "installed": "Yüklü",
+    "name": {
+      "asc": "İsim (A-Z)",
+      "desc": "İsim (Z-A)",
+      "sort": "İsme Göre Sırala",
+      "sorted": "İsme Göre Sıralandı"
+    },
+    "date_added": {
+      "asc": "Eklenme Tarihi (Eski İlk)",
+      "desc": "Eklenme Tarihi (Yeni İlk)",
+      "sort": "Eklenme Tarihine Göre Sırala",
+      "sorted": "Eklenme Tarihine Göre Sıralandı"
+    },
+    "last_played": {
+      "asc": "Son Oynanma (Eski İlk)",
+      "desc": "Son Oynanma (Yeni İlk)",
+      "sort": "Son Oynanma Tarihine Göre Sırala",
+      "sorted": "Son Oynanma Tarihine Göre Sıralandı"
+    },
+    "direction": {
+      "asc": "Artan",
+      "desc": "Azalan"
+    }
+  },
+  "mods": {
+    "labels": {
+      "mod": "Mod",
+      "mods": "Modlar",
+      "modpack": "Mod Paketi",
+      "modpacks": "Mod Paketleri",
+      "executable": "Çalıştırılabilir Dosya",
+      "executables": "Çalıştırılabilir Dosyalar",
+      "profiles": "Profiller"
+    },
+    "actions": {
+      "add_mod": "Mod Ekle",
+      "delete_mod": "Modu Sil",
+      "remove_mod": "Modu Kaldır",
+      "bulk_add_mod": "Toplu Mod Ekle",
+      "enable_all_mods": "Tüm Modları Etkinleştir",
+      "disable_all_mods": "Tüm Modları Devre Dışı Bırak",
+      "clear_active_profile": "Aktif Profili Temizle",
+      "create_new_profile": "Yeni Profil Oluştur",
+      "reveal_mods_folder": "Modlar Klasörünü Göster"
+    },
+    "no_mods_disclaimer": "Hiç mod eklenmedi. Mod eklemek için + butonuna tıklayın!",
+    "terminal_output": "Terminal Çıktısı",
+    "installed_mods": "Yüklenen Modlar",
+    "scanning_for_mods": "Modlar taranıyor...",
+    "no_mods_found": "Bu motor için mod bulunamadı",
+    "cannot_scan_mods": "Fridaylight mevcut motor türüyle modları tarayamaz. Bu bölümü mod ayarlarında devre dışı bırakabilirsiniz.",
+    "requires_mod": "{modName} gerekli!",
+    "engine_mod_details": {
+      "title": "Mod Detayları",
+      "version": "Sürüm: {version}",
+      "description": "Açıklama",
+      "homepage": "Ana Sayfa",
+      "contributors": "Katkıda Bulunanlar",
+      "license": "Lisans",
+      "dependencies": "Bağımlılıklar",
+      "folder_path": "Klasör Yolu"
+    },
+    "recently_played": "Son Oynananlar",
+    "no_recently_played": "Son zamanlarda oynanan mod yok",
+    "all_mods": "Tüm Modlar",
+    "no_executables_found": "Bu mod için çalıştırılabilir dosya bulunamadı",
+    "mod_placeholder_text": "Fridaylight'a hoş geldiniz!",
+    "mod_placeholder_description": "Başlamak için yan panelden bir mod seçin veya ekleyin"
+  },
+  "app": {
+    "name": "Fridaylight",
+    "notifications": {
+      "download": {
+        "downloading": "\"{modName}\" indiriliyor",
+        "downloading_nonspecific": "Mod indiriliyor...",
+        "preparing": "\"{modName}\" indirmeye hazırlanıyor",
+        "preparing_engine": "Motor indirmeye hazırlanıyor...",
+        "preparing_generic": "İndirmeye hazırlanıyor...",
+        "downloading_engine": "{engineName} motoru indiriliyor",
+        "downloading_engine_nonspecific": "Motor indiriliyor...",
+        "success": "\"{modName}\" başarıyla indirildi ve kuruldu!",
+        "success_caption": "Modlar listesinden oynatmaya hazır",
+        "success_modpack_caption": "{parentMod} üzerinden oynatmaya hazır",
+        "error": "\"{modName}\" indirilemedi",
+        "canceled": "\"{modName}\" için indirme iptal edildi",
+        "extracting": "\"{modName}\" açılıyor",
+        "extracting_nonspecific": "Mod dosyaları açılıyor",
+        "extracting_engine": "{engineName} motor dosyaları açılıyor",
+        "extracting_engine_nonspecific": "Motor dosyaları açılıyor",
+        "extracting_file_progress": "{current}/{total} dosya açılıyor",
+        "extracting_7z": "7z dosyası açılıyor",
+        "extracting_rar": "RAR dosyası açılıyor",
+        "extracting_7z_complete": "7z açma işlemi tamamlandı",
+        "extracting_rar_complete": "RAR açma işlemi tamamlandı",
+        "finalizing": "Mod kurulumu tamamlanıyor",
+        "finalizing_engine": "Motor kurulumu tamamlanıyor",
+        "installation_complete": "Mod kurulumu tamamlandı",
+        "installation_complete_engine": "Motor kurulumu tamamlandı",
+        "complete": "İndirme tamamlandı!",
+        "failed": "İndirme başarısız oldu",
+        "canceled_generic": "İndirme iptal edildi",
+        "installation_error": "\"{modName}\" kurulumu başarısız oldu"
+      },
+      "update": {
+        "updating": "\"{modName}\" güncelleniyor",
+        "preparing": "\"{modName}\" güncellemeye hazırlanıyor",
+        "success": "\"{modName}\" başarıyla güncellendi!",
+        "error": "\"{modName}\" güncellenemedi",
+        "canceled": "\"{modName}\" güncellemesi iptal edildi",
+        "not_available": "\"{modName}\" güncellenemiyor",
+        "not_available_caption": "Bu mod Fridaylight üzerinden güncellenemez."
+      },
+      "mod": {
+        "stopped": "\"{modName}\" durduruldu",
+        "error": "\"{modName}\" için {operation} yapılamadı"
+      },
+      "modpack": {
+        "no_engine_error": "Bu {engineName} mod paketi indirilemiyor",
+        "no_engine_error_caption": "\"{modpackName}\" için {engineName} motorunun kurulmuş olması gerekir."
+      },
+      "initialization": {
+        "starting_up": "Başlatılıyor...",
+        "theme_service": "Tema kontrol ediliyor",
+        "applying_theme": "Tema uygulanıyor",
+        "deep_linking": "Link kullanımı kontrol ediliyor",
+        "loading_mods": "Modlar yükleniyor",
+        "db_service": "Veritabanı başlatılıyor",
+        "loading_settings": "Ayarlar yükleniyor",
+        "checking_for_updates": "Güncellemeler kontrol ediliyor",
+        "installing_update": "Güncelleme kuruluyor",
+        "ready": "Hazır!"
+      }
+    },
+    "modals": {
+      "engine_details": {
+        "title": "Motor Detayları",
+        "suggested_by": "{username} tarafından önerildi",
+        "actions": {
+          "view_full_credits": "Tam Katkıda Bululanları Görüntüle"
+        }
+      },
+      "app_settings": {
+        "title": "Uygulama Ayarları",
+        "appearance": {
+          "title": "Görünüm",
+          "use_system_theme": "Sistem Temasını Kullan",
+          "use_system_theme_description": "İşletim sisteminizin temasına (Açık/Koyu) otomatik olarak uyum sağlar",
+          "builtin_themes": "Dahili Temalar",
+          "custom_themes": "Özel Temalar",
+          "custom_themes_description": "Özel tema eklemek ister misiniz? Temaları {themesLink} klasörüne koyun, sonra yüklemek için yenile butonuna tıklayın.",
+          "accent_color": "Vurgu Rengi",
+          "compact_mode": "Kompakt Mod",
+          "compact_mode_description": "Yan panel genişliğini küçültür ve sadece ikonları gösterir",
+          "theme_preview": "Tema Önizlemesi",
+          "actions": {
+            "refresh_themes": "Temaları Yenile",
+            "reveal_themes_folder": "Tema Klasörünü Göster"
+          },
+          "language": "Dil"
+        },
+        "installation": {
+          "title": "Kurulum",
+          "default_install_location": "Varsayılan Kurulum Yeri",
+          "default_install_location_description": "Modların yükleneceği varsayılan klasörü belirleyin",
+          "validate_mods": "Modları Doğrula",
+          "validate_mods_description": "Mod eklemeden önce klasör yapısını doğrular (bazı modlarda sorun çıkarabilir)",
+          "show_terminal_output": "Terminal Çıktısını Göster",
+          "show_terminal_output_description": "Modlar çalıştırılırken terminal çıktısını gösterir"
+        },
+        "about": {
+          "title": "Hakkında",
+          "created_by": "{echolotl} tarafından oluşturuldu",
+          "created_with": "İle oluşturuldu",
+          "version": "Sürüm: {version}",
+          "bug_disclaimer": "Bir hata bulduysanız veya öneriniz varsa GitHub üzerinden bildirin!",
+          "beta_disclaimer": "Bu, Fridaylight'ın ön sürümüdür. Hatalar veya eksik özellikler içerebilir ve veri kaybı yaşayabilirsiniz.",
+          "special_thanks": "Teşekkürler ve Özel Teşekkür"
+        },
+        "reset_settings": {
+          "title": "Ayarları Sıfırla",
+          "description": "Tüm ayarları varsayılan değerlere sıfırlar. Değişikliklerin uygulanması için kaydetmeniz gerekir.",
+          "confirmation": "Tüm ayarları sıfırlamak istediğinizden emin misiniz? Bu işlem ayarları varsayılan değerlere döndürecektir."
+        },
+        "reset_data": {
+          "title": "Uygulama Verilerini Sıfırla",
+          "description": "Yüklü modlar ve ayarlar dahil tüm uygulama verilerini sıfırlar. Mod dosyalarınız silinmez.",
+          "confirmation": "Tüm uygulama verilerini sıfırlamak istediğinizden emin misiniz? Bu işlem yüklü tüm modları listeden ve ayarları kaldıracaktır.",
+          "failed": "Uygulama verileri sıfırlanamadı: {error}"
+        }
+      },
+      "mod_settings": {
+        "title": "Mod Ayarları",
+        "set_icon": "Simge Ayarla",
+        "remove_icon": "Simgeyi Kaldır",
+        "general": {
+          "title": "Genel Bilgiler",
+          "label": "Genel",
+          "mod_name": "Mod Adı",
+          "mod_description": "Mod Açıklaması",
+          "mod_description_placeholder": "Mod hakkında kısa açıklama",
+          "mod_version": "Mod Sürümü",
+          "mod_version_placeholder": "Modun sürümü, örn. 1.0.0",
+          "gamebanana_info": "GameBanana Bilgisi",
+          "gamebanana_profile_url": "GameBanana Profil URL'si",
+          "sync_with_gamebanana": "GameBanana ile Senkronize Et",
+          "change_version": "Sürümü Değiştir",
+          "change_banner": "Afişi Değiştir",
+          "gamebanana_sync_description": "GameBanana ile senkronizasyon en güncel meta verileri çeker ve mevcut meta verileri üzerine yazar. Değişikliklerin uygulanması için mod ayarlarını kaydetmeniz gerekir."
+        },
+        "installation": {
+          "title": "Kurulum",
+          "folder_location": "Klasör Konumu",
+          "executable_path": "Çalıştırılabilir Dosya Yolu",
+          "remove_mod_description": "Modu kaldırmak mod dosyalarını silmez, sadece listeden kaldırır.",
+          "delete_mod_description": "Modu silmek, mod dosyalarını {permanentlyDelete} kalıcı olarak siler ve listeden kaldırır. Bu işlem geri alınamaz.",
+          "permanently_delete": "kalıcı olarak sil"
+        },
+        "engine": {
+          "title": "Motor Yapılandırması",
+          "label": "Motor",
+          "engine_type": "Motor Türü",
+          "engine_type_description": "Fridaylight bu modu nasıl yöneteceğini belirler",
+          "engine_name": "Motor Adı",
+          "engine_name_placeholder": "örn. My Custom Psych Fork",
+          "engine_name_description": "Bu modun kullandığı motorun adı (isteğe bağlı)",
+          "engine_icon": "Motor Simgesi",
+          "set_engine_icon": "Motor Simgesini Ayarla",
+          "has_mods_folder": "Modlar Klasörü Var",
+          "mods_folder_path": "Modlar Klasörü Yolu",
+          "mods_folder_path_placeholder": "mods",
+          "mods_folder_path_description": "Çalıştırılabilir dosyaya göre modlar klasörünün göreli yolu. Varsayılan 'mods'dur."
+        },
+        "appearance": {
+          "title": "Görünüm",
+          "icon": "Simge",
+          "banner": "Afiş",
+          "set_banner": "Afişi Ayarla",
+          "remove_banner": "Afişi Kaldır",
+          "logo": "Logo",
+          "set_logo": "Logoyu Ayarla",
+          "remove_logo": "Logoyu Kaldır",
+          "logo_position": {
+            "title": "Logo Konumu",
+            "hint": "Logonun afiş üzerindeki konumu",
+            "description": "Logonun afiş üzerindeki pozisyonu",
+            "bottom_left": "Alt Sol",
+            "middle_left": "Orta Sol",
+            "middle": "Ortada"
+          },
+          "icon_preview": "Simge Önizlemesi"
+        }
+      },
+      "mod_details": {
+        "slow_request": "Bu modun yüklenmesi uzun sürüyor.",
+        "slow_request_description": "Bizden ya da GameBanana’dan bir sorun olabilir. Belki daha sonra tekrar deneyin?",
+        "updates": "Güncellemeler",
+        "updates_count": "Toplam {count} güncelleme",
+        "comments": "Yorumlar",
+        "comments_count": "Toplam {count} yorum",
+        "replies_count": "+{count} yanıt",
+        "comment_trashed": "Bu yorum silinmiş",
+        "thanked_by": "{count} kullanıcı tarafından teşekkür edildi!",
+        "might_have_malware": "Bu mod zararlı yazılım içerebilir!",
+        "submitter": "Gönderen",
+        "developer_notes": "Geliştirici Notları",
+        "license": "Lisans",
+        "description": "Açıklama",
+        "studio": "Stüdyo",
+        "created_by": "Tarafından oluşturuldu",
+        "percent_complete": "%{percent} tamamlandı",
+        "changelog_category": {
+          "bugfix": "Hata Düzeltme",
+          "overhaul": "Yeniden Yapılanma",
+          "adjustment": "Ayarlama",
+          "amendment": "Değişiklik",
+          "tweak": "İnce Ayar",
+          "addition": "Ekleme",
+          "suggestion": "Öneri",
+          "feature": "Özellik",
+          "improvement": "İyileştirme",
+          "removal": "Kaldırma",
+          "refactor": "Yeniden Düzenleme"
+        }
+      },
+      "folders": {
+        "folder_name": "Klasör Adı",
+        "folder_name_required": "Klasör adı gerekli",
+        "folder_color": "Klasör Rengi"
+      },
+      "download_file_select": {
+        "title": "İndirme Dosyası Seç",
+        "description": "Bu mod \"{modName}\" birden fazla indirme seçeneğine sahip. Lütfen birini seçin:",
+        "alternative_download_sources": "Alternatif İndirme Kaynakları (Manuel Kurulum)",
+        "contains_executable_files": "Çalıştırılabilir dosyalar içerir",
+        "contains_nested_archives": "İç içe arşivler içerir",
+        "analysis_pending": "Analiz bekleniyor"
+      },
+      "engine_select": {
+        "title": "Kurulum Motoru Seç",
+        "description": "Bu mod paketi {engine} gerektiriyor. Kullanmak istediğiniz {engine} kurulumunu seçin:",
+        "will_be_installed_to": "Bu mod paketi şu konuma kurulacak:",
+        "install_as_addon": "Eklenti olarak kur",
+        "install_as_addon_description": "Bu, mod paketinin tüm diğer mod paketlerinde çalışmasını sağlar.",
+        "unknown_path": "Bilinmeyen Yol"
+      },
+      "folder_exists": {
+        "title": "Klasör Zaten Var",
+        "description": "Bu modun mod klasörünüzde zaten bir klasörü var. Mevcut modu güncelleyebilir (var olan dosyaların üzerine yazılır!) veya ayrı bir kurulum olarak indirebilirsiniz."
+      },
+      "mod_type_selection": {
+        "title": "Mod Türü Seç",
+        "description": "Lütfen \"{modName}\" modunun türünü seçin. Bu, Fridaylight'ın modu nasıl yöneteceğini belirleyecektir.",
+        "standalone": "Bağımsız",
+        "standalone_description": "Kendi başına çalışan bir mod",
+        "psych_description": "Psych Engine için mod paketi",
+        "no_psych_installed": "Psych Engine kurulumu bulunamadı",
+        "vslice_description": "V-Slice için mod paketi",
+        "no_vslice_installed": "V-Slice kurulumu bulunamadı",
+        "fpsplus_description": "FPS Plus için mod paketi",
+        "no_fpsplus_installed": "FPS Plus kurulumu bulunamadı",
+        "codename_description": "Codename Engine için mod paketi",
+        "no_codename_installed": "Codename Engine kurulumu bulunamadı",
+        "select_where_to_install": "Bu mod paketini kurmak için hangi {engine}’i seçmek istiyorsunuz:"
+      },
+      "profile_create": {
+        "title": "Profil Oluştur",
+        "title_edit": "Profili Düzenle",
+        "profile_name": "Profil Adı",
+        "icon": "Simge",
+        "custom": "Özel...",
+        "enter_a_ma_link": "{link} simge adını girin",
+        "select_mods": "Modları Seç",
+        "delete_profile": "Profili Sil"
+      }
+    }
+  },
+  "misc": {
+    "credits": "Katkıda Bulunanlar",
+    "more": "daha fazlası",
+    "by": "tarafından",
+    "unknown_mod": "Bilinmeyen Mod",
+    "confirmation": "Onay",
+    "colors": {
+      "red": "Kırmızı",
+      "orange": "Turuncu",
+      "yellow": "Sarı",
+      "green": "Yeşil",
+      "cyan": "Cam Göbeği",
+      "blue": "Mavi",
+      "purple": "Mor",
+      "pink": "Pembe"
+    }
+  }
+}

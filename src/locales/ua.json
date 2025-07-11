@@ -1,0 +1,431 @@
+{
+  "gamebanana": {
+    "best_of_today": "Найкраще Сьогодні",
+    "best_of_this_week": "Найкраще за Тиждень",
+    "best_of_this_month": "Найкраще за Місяць",
+    "best_of_3_months": "Найкраще за 3 Місяці",
+    "best_of_6_months": "Найкраще за 6 Місяців",
+    "best_of_this_year": "Найкраще за Рік",
+    "best_of_all_time": "Найкраще за Весь Час",
+    "best_of_unknown": "Найкраще за {period}",
+    "latest_mods": "Недавні Моди",
+    "engine_downloads": "Завантаження Движка",
+    "more_engines": "Більше Движків",
+    "have_a_suggestion_engine": "Є Ідея щодо Движка? Напиши на {githubLink}!",
+    "loading_featured_mods": "Завантаження Обраних Модів...",
+    "loading_latest_mods": "Завантаження Останніх Модів...",
+    "loading_modpacks": "Завантаження Модпаків для {engineType}...",
+    "loading_mods": "Завантаження Модів...",
+    "sensitive_content": "Містить Чутливий Контент!"
+  },
+  "ui": {
+    "loading": "Завантаження...",
+    "error": "Сталася Помилка: {error}",
+    "unknown_error": "Сталася Невідома Помилка",
+    "danger_zone": "Небезпечна Зона",
+    "downloading": "Завантаження",
+    "search_results": "Пошук Результатів",
+    "searching": "Пошук",
+    "no_results": "Нічого Не Знайдено",
+    "update_available": "Доступне Оновлення!",
+    "update_might_be_available": "Можливо, Доступне Оновлення:",
+    "checking_for_updates": "Перевірка Оновлень...",
+      "actions": {
+        "save": "Зберегти",
+        "cancel": "Скасувати",
+        "delete": "Видалити",
+        "remove": "Прибрати",
+        "update": "Оновити",
+        "close": "Закрити",
+        "create": "Створити",
+        "back": "Назад",
+        "confirm": "Підтвердити",
+        "play": "Запустити",
+        "stop": "Зупинити",
+        "open_in_browser": "Запустити в Браузері",
+        "search_mods": "Пошук Модів",
+        "create_folder": "Створити Теку",
+        "edit_folder": "Редагувати Теку",
+        "expand_folder": "Розгорнути Теку",
+        "collapse_folder": "Згорнути Теку",
+        "delete_folder": "Видалити Теку",
+        "view_details": "Відомості",
+        "download": "Завантажити",
+        "download_anyway": "Завантажити все Одно",
+        "download_mod": "Завантаження мода",
+        "download_and_install": "Завантажити та Встановити",
+        "open_gamebanana": "Відкрити GameBanana",
+        "view_on_gamebanana": "Переглянути на GameBanana",
+      "conformations": {
+        "delete_mod": "Ви Впевнені, що Хочете ПОВНІСТЮ ВИДАЛИТИ цей Мод? Цю Дію Неможливо Скасувати.",
+        "remove_mod": "Ви Впевнені, що Хочете Видалити цей Мод зі Списку? Файли Мода при Цьому не Будуть Видалені.",
+        "delete_folder": "Ви Впевнені, що Хочете Видалити цю Теку? Цю дію Неможливо Скасувати."
+      }
+    },
+    "download_status": {
+      "starting": "Починаємо Завантаження...",
+      "connecting": "Підключення...",
+      "calculating": "Обчислення...",
+      "stalled": "Завантаження Призупинено"
+    }
+  },
+  "navigation": {
+    "home": "Головна",
+    "settings": "Налаштування"
+  },
+  "sorting": {
+    "default_order": "Стандартне Сортування",
+    "installed": "Встановлені",
+    "name": {
+      "asc": "Ім’я (А-Я)",
+      "desc": "Ім’я (Я-А)",
+      "sort": "Сортувати за Ім’ям",
+      "sorted": "Відсортовано за Ім’ям"
+    },
+    "date_added": {
+      "asc": "Дата Додавання (Старіші Спочатку)",
+      "desc": "Дата Додавання (Новіші Спочатку)",
+      "sort": "Сортувати за Датою Додавання",
+      "sorted": "Відсортовано за Датою Додавання"
+    },
+    "last_played": {
+      "asc": "Остання Гра (Старіші Спочатку)",
+      "desc": "Остання Гра (Новіші Спочатку)",
+      "sort": "Сортувати за Останньою Грою",
+      "sorted": "Відсортовано за Останньою Грою"
+    },
+    "direction": {
+      "asc": "За Зростанням",
+      "desc": "За Спаданням"
+    }
+  },
+  "mods": {
+    "labels": {
+      "mod": "Мод",
+      "mods": "Моди",
+      "modpack": "Модпак",
+      "modpacks": "Модпаки",
+      "executable": "Виконуваний Файл",
+      "executables": "Виконувані Файли",
+      "profiles": "Профілі"
+    },
+    "actions": {
+      "add_mod": "Додати Мод",
+      "delete_mod": "Видалити Мод",
+      "remove_mod": "Прибрати Мод",
+      "bulk_add_mod": "Додати Моди Масово",
+      "enable_all_mods": "Увімкнути всі Моди",
+      "disable_all_mods": "Вимкнути всі Моди",
+      "clear_active_profile": "Очистити Активний Профіль",
+      "create_new_profile": "Створити Новий Профіль",
+      "reveal_mods_folder": "Відкрити Теку з Модами"
+    },
+      "no_mods_disclaimer": "Моди не Додано. Натисни +, щоб Додати!",
+      "terminal_output": "Вивід Терміналу",
+      "installed_mods": "Встановлені Моди",
+      "scanning_for_mods": "Сканування Модів...",
+      "no_mods_found": "Модів для Цього Движка не Знайдено",
+      "cannot_scan_mods": "Fridaylight не Підтримує Сканування Модів для Цього Типу Движка. Цей Розділ Можна Вимкнути в Налаштуваннях Мода.",
+      "requires_mod": "Потрібен Мод {modName}!",
+    "engine_mod_details": {
+      "title": "Деталі Мода",
+      "version": "Версія: {version}",
+      "description": "Опис",
+      "homepage": "Домашня Сторінка",
+      "contributors": "Співавтори",
+      "license": "Ліцензія",
+      "dependencies": "Залежності",
+      "folder_path": "Шлях до Теки"
+    },
+      "recently_played": "Нещодавно Зіграно",
+      "no_recently_played": "Немає Нещодавно Зіграних Модів",
+      "all_mods": "Всі Моди",
+      "no_executables_found": "Не Знайдено Виконуваних Файлів для Цього Мода",
+      "mod_placeholder_text": "Ласкаво Просимо До Fridaylight!",
+      "mod_placeholder_description": "Виберіть або Додайте Мод із Бокової Панелі, щоб Почати"
+  },
+  "app": {
+    "name": "Fridaylight",
+    "notifications": {
+      "download": {
+        "downloading": "Завантаження «{modName}»",
+        "downloading_nonspecific": "Завантаження Мода...",
+        "preparing": "Підготовка Завантаження «{modName}»",
+        "preparing_engine": "Підготовка Завантаження Движка...",
+        "preparing_generic": "Підготовка Завантаження...",
+        "downloading_engine": "Завантаження {engineName} Движка",
+        "downloading_engine_nonspecific": "Завантаження Движка...",
+        "success": "«{modName}» Успішно Завантажено та Встановлено!",
+        "success_caption": "Готово до Гри зі Списку Модів",
+        "success_modpack_caption": "Готово до Гри з {parentMod}",
+        "error": "Не Вдалося Завантажити «{modName}»",
+        "canceled": "Завантаження «{modName}» Скасовано",
+        "extracting": "Розпаковка «{modName}»",
+        "extracting_nonspecific": "Розпаковка Файлів Мода",
+        "extracting_engine": "Розпаковка Файлів движка {engineName}",
+        "extracting_engine_nonspecific": "Розпаковка Файлів Движка",
+        "extracting_file_progress": "Розпаковка Файлу {current}/{total}",
+        "extracting_7z": "Розпаковка 7z Файлу",
+        "extracting_rar": "Розпаковка RAR Файлу",
+        "extracting_7z_complete": "Розпаковка 7z Завершена",
+        "extracting_rar_complete": "Розпаковка RAR Завершена",
+        "finalizing": "Завершення Встановлення Мода",
+        "finalizing_engine": "Завершення Встановлення Движка",
+        "installation_complete": "Встановлення Мода Завершено",
+        "installation_complete_engine": "Встановлення Движка Завершено",
+        "complete": "Завантаження Завершено!",
+        "failed": "Завантаження не Вдалося",
+        "canceled_generic": "Завантаження Скасовано",
+        "installation_error": "Не Вдалося Встановити «{modName}»"
+      },
+      "update": {
+        "updating": "Оновлення «{modName}»",
+        "preparing": "Підготовка до Оновлення «{modName}»",
+        "success": "«{modName}» Успішно Оновлено!",
+        "error": "Не Вдалося Оновити «{modName}»",
+        "canceled": "Оновлення «{modName}» Скасовано",
+        "not_available": "Неможливо Оновити «{modName}»",
+        "not_available_caption": "Цей Мод Неможливо Оновити Через Fridaylight."
+      },
+      "mod": {
+        "stopped": "«{modName}» Було Зупинено",
+        "error": "Не Вдалося {operation} «{modName}»"
+      },
+      "modpack": {
+        "no_engine_error": "Неможливо Завантажити цей {engineName} Модпак",
+        "no_engine_error_caption": "«{modpackName}» Потребує Встановленого Движка {engineName}"
+      },
+      "initialization": {
+        "starting_up": "Запуск...",
+        "theme_service": "Перевірка Теми",
+        "applying_theme": "Застосування Теми",
+        "deep_linking": "Перевірка, чи Використано Посилання",
+        "loading_mods": "Завантаження Модів",
+        "db_service": "Ініціалізація Бази Даних",
+        "loading_settings": "Завантаження Налаштувань",
+        "checking_for_updates": "Перевірка Оновлень",
+        "installing_update": "Встановлення Оновлення",
+        "ready": "Готово!"
+      }
+    },
+    "modals": {
+      "engine_details": {
+        "title": "Деталі Движка",
+        "suggested_by": "Запропоновано {username}",
+        "actions": {
+          "view_full_credits": "Переглянути Повний Список Авторів"
+        }
+      },
+      "app_settings": {
+        "title": "Налаштування Додатку",
+        "appearance": {
+          "title": "Зовнішній Вигляд",
+          "use_system_theme": "Використовувати Системну Тему",
+          "use_system_theme_description": "Автоматично Підлаштовуватися Під Тему ОС (Світла/Темна)",
+          "builtin_themes": "Вбудовані Теми",
+          "custom_themes": "Користувацькі Теми",
+          "custom_themes_description": "Хочеш Додати Користувацькі Теми? Поклади Їх у Теку {themesLink}, Потім Натисни Кнопку Оновлення, Щоб Завантажити Їх.",
+          "accent_color": "Акцентний Колір",
+          "compact_mode": "Компактний Режим",
+          "compact_mode_description": "Зменшити Ширину Бічної Панелі та Показувати Лише Іконки",
+          "theme_preview": "Попередній Перегляд Теми",
+          "actions": {
+            "refresh_themes": "Оновити Теми",
+            "reveal_themes_folder": "Відкрити Теку Тем"
+          },
+          "language": "Мова"
+        },
+        "installation": {
+          "title": "Встановлення",
+          "default_install_location": "Папка Встановлення за Замовчуванням",
+          "default_install_location_description": "Встанови Папку, Куди за Замовчуванням Встановлюватимуться Моди",
+          "validate_mods": "Перевіряти Моди",
+          "validate_mods_description": "Перевіряє Структуру Папок Перед Встановленням/Додаванням Модів (Може Викликати Проблеми з Деякими Модами)",
+          "show_terminal_output": "Показувати Вивід Терминалу",
+          "show_terminal_output_description": "Відображати Вивід Терминалу Модів під Час Запуску"
+        },
+        "about": {
+          "title": "Про Додаток",
+          "created_by": "Створено {echolotl}",
+          "created_with": "Створено за Допомогою",
+          "version": "Версія: {version}",
+          "bug_disclaimer": "Знайшов Помилку чи Маєш Пропозицію? Повідом на GitHub!",
+          "beta_disclaimer": "Це Пре-Релізна Версія Fridaylight. Вона Може Містити Помилки або Неповні Функції, Тож Можлива Втрата Даних.",
+          "special_thanks": "Подяки та Вдячність"
+        },
+        "reset_settings": {
+          "title": "Скинути Налаштування",
+          "description": "Скинути всі Налаштування до Значень за Замовчуванням. Потрібно Зберегти Для Застосування Змін.",
+          "confirmation": "Впевнений, Що Хочеш Скинути всі Налаштування? Це Поверне Їх до Значень за Замовчуванням."
+        },
+        "reset_data": {
+          "title": "Скинути Дані Додатку",
+          "description": "Скинути всі Дані Додатку, Включно з Встановленими Модами та Налаштуваннями. Файли Модів не Будуть Видалені.",
+          "confirmation": "Впевнений, Що Хочеш Скинути всі Дані Додатку? Це Прибере всі Встановлені Моди зі Списку та Налаштувань.",
+          "failed": "Не Вдалося Скинути Дані Додатку: {error}"
+        }
+      },
+      "mod_settings": {
+        "title": "Налаштування Мода",
+        "set_icon": "Встановити Іконку",
+        "remove_icon": "Видалити Іконку",
+        "general": {
+          "title": "Загальна Інформація",
+          "label": "Загальне",
+          "mod_name": "Назва Мода",
+          "mod_description": "Опис Мода",
+          "mod_description_placeholder": "Короткий Опис Мода",
+          "mod_version": "Версія Мода",
+          "mod_version_placeholder": "Версія мода, Наприклад 1.0.0",
+          "gamebanana_info": "Інформація GameBanana",
+          "gamebanana_profile_url": "URL Профілю GameBanana",
+          "sync_with_gamebanana": "Синхронізувати з GameBanana",
+          "change_version": "Змінити Версію",
+          "change_banner": "Змінити Банер",
+          "gamebanana_sync_description": "Синхронізація з GameBanana Отримає Останні Метадані і Перезапише Існуючі. Для Застосування Змін Потрібно Зберегти Налаштування Мода."
+        },
+        "installation": {
+          "title": "Встановлення",
+          "folder_location": "Розташування Теки",
+          "executable_path": "Шлях до Виконуваного Файлу",
+          "remove_mod_description": "Видалення Мода не Видалить Файли Мода, але Прибере Його зі Списку.",
+          "delete_mod_description": "Видалення Мода Прибере Його зі Списку та {permanentlyDelete} Файли Мода. Цю Дію НЕ Можна Скасувати.",
+          "permanently_delete": "Назавжди Видалити"
+        },
+        "engine": {
+          "title": "Налаштування Движка",
+          "label": "Движок",
+          "engine_type": "Тип Движка",
+          "engine_type_description": "Визначає, як Fridaylight Оброблятиме цей Мод",
+          "engine_name": "Назва Движка",
+          "engine_name_placeholder": "наприклад, Мій Кастомний Форк Psych",
+          "engine_name_description": "Назва движка, який Використовує цей Мод (необов’язково)",
+          "engine_icon": "Іконка Движка",
+          "set_engine_icon": "Встановити Іконку Движка",
+          "has_mods_folder": "Має Теку з Модами",
+          "mods_folder_path": "Шлях до Теки з Модами",
+          "mods_folder_path_placeholder": "mods",
+          "mods_folder_path_description": "Відносний Шлях до Теки з Модами від Виконавчого Файлу. За Замовчуванням 'mods'."
+        },
+        "appearance": {
+          "title": "Зовнішній Вигляд",
+          "icon": "Іконка",
+          "banner": "Банер",
+          "set_banner": "Встановити Банер",
+          "remove_banner": "Видалити Банер",
+          "logo": "Логотип",
+          "set_logo": "Встановити Логотип",
+          "remove_logo": "Видалити Логотип",
+          "logo_position": {
+            "title": "Позиція Логотипу",
+            "hint": "Де Розміщуватиметься Логотип на Банері",
+            "description": "Позиція Логотипу на Банері",
+            "bottom_left": "Ліворуч Внизу",
+            "middle_left": "Ліворуч Посередині",
+            "middle": "Посередині"
+          },
+          "icon_preview": "Попередній Перегляд Іконки"
+        }
+      },
+      "mod_details": {
+        "slow_request": "Цей Мод Завантажується Довго.",
+        "slow_request_description": "Можливо, Сталася Помилка у Нас або на GameBanana. Спробуй Пізніше.",
+        "updates": "Оновлення",
+        "updates_count": "Всього {count} Оновлень",
+        "comments": "Коментарі",
+        "comments_count": "Всього {count} Коментарів",
+        "replies_count": "+{count} Відповідей",
+        "comment_trashed": "Цей Коментар Видалено",
+        "thanked_by": "Подякували {count} Користувачі!",
+        "might_have_malware": "Цей Мод може Містити Шкідливе ПЗ!",
+        "submitter": "Автор",
+        "developer_notes": "Нотатки Розробника",
+        "license": "Ліцензія",
+        "description": "Опис",
+        "studio": "Студія",
+        "created_by": "Створено",
+        "percent_complete": "Виконано на {percent}%",
+        "changelog_category": {
+          "bugfix": "Виправлення",
+          "overhaul": "Переробка",
+          "adjustment": "Коригування",
+          "amendment": "Зміна",
+          "tweak": "Твік",
+          "addition": "Додавання",
+          "suggestion": "Пропозиція",
+          "feature": "Функція",
+          "improvement": "Покращення",
+          "removal": "Видалення",
+          "refactor": "Рефакторинг"
+        }
+      },
+      "folders": {
+        "folder_name": "Назва Теки",
+        "folder_name_required": "Потрібна Назва Теки",
+        "folder_color": "Колір Теки"
+      },
+      "download_file_select": {
+        "title": "Вибір Файлу Завантаження",
+        "description": "Цей Мод, «{modName}», має Декілька Варіантів Завантаження. Будь ласка, Вибери Один:",
+        "alternative_download_sources": "Альтернативні Джерела Завантаження (Ручне Встановлення)",
+        "contains_executable_files": "Містить Виконувані Файли",
+        "contains_nested_archives": "Містить Вкладені Архіви",
+        "analysis_pending": "Аналіз Очікується"
+      },
+      "engine_select": {
+        "title": "Вибір Движка Встановлення",
+        "description": "Цей Модпак Потребує {engine}. Будь ласка, Вибери Інсталяцію {engine}, яку Хочеш Використати:",
+        "will_be_installed_to": "Цей Модпак Буде Встановлено до:",
+        "install_as_addon": "Встановити як Аддон",
+        "install_as_addon_description": "Це Спричинить Запуск Модпака на Всіх Інших Модпаках.",
+        "unknown_path": "Невідомий Шлях"
+      },
+      "folder_exists": {
+        "title": "Тека Вже Існує",
+        "description": "Цей Мод Вже Має Теку в Твоїй Тека Модів. Ти Можеш або Оновити Існуючий Мод (перезаписавши усі Існуючі Файли!), або Завантажити в Окремий Екземпляр."
+      },
+      "mod_type_selection": {
+        "title": "Вибір Типу Мода",
+        "description": "Будь ласка, вибери, яким є Мод «{modName}». Це Визначить, Як Fridaylight Оброблятиме Його.",
+        "standalone": "Окремий Мод",
+        "standalone_description": "Мод, який Запускається Самостійно",
+        "psych_description": "Модпак для Psych Engine",
+        "no_psych_installed": "Інсталяцій Psych Engine не Знайдено",
+        "vslice_description": "Модпак для V-Slice",
+        "no_vslice_installed": "Інсталяцій V-Slice не Знайдено",
+        "fpsplus_description": "Модпак для FPS Plus",
+        "no_fpsplus_installed": "Інсталяцій FPS Plus не Знайдено",
+        "codename_description": "Модпак для Codename Engine",
+        "no_codename_installed": "Інсталяцій Codename Engine не Знайдено",
+        "select_where_to_install": "Вибери, на Який {engine} Встановити Цей Модпак:"
+      },
+      "profile_create": {
+        "title": "Створити профіль",
+        "title_edit": "Редагувати профіль",
+        "profile_name": "Ім'я профілю",
+        "icon": "Іконка",
+        "custom": "Власна...",
+        "enter_a_ma_link": "Введіть назву іконки {link}",
+        "select_mods": "Вибрати моди",
+        "delete_profile": "Видалити профіль"
+      }
+    }
+  },
+  "misc": {
+    "credits": "Автори",
+    "more": "більше",
+    "by": "від",
+    "unknown_mod": "Невідомий мод",
+    "confirmation": "Підтвердження",
+    "colors": {
+      "red": "Червоний",
+      "orange": "Помаранчевий",
+      "yellow": "Жовтий",
+      "green": "Зелений",
+      "cyan": "Бірюзовий",
+      "blue": "Синій",
+      "purple": "Фіолетовий",
+      "pink": "Рожевий"
+    }
+  }
+}
