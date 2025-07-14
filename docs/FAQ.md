@@ -18,7 +18,35 @@ Tauri can be multiplatform, but there's just a couple of things that I do that a
 
 Most of the time, it's not the app's fault. Gamebanana is notorious for its slow downloading speeds, and its the main reason why most creators attach a Mediafire or Google Drive link on their mod pages. Sometimes, it might just be better to download the mods manually from those links, and then import them into Fridaylight.
 
-## Where can I download this from?
+## How do I create a custom theme?
+
+You can theme the app using css by placing a css file in the %APPDATA%/themes directory, and you can basically put anything you want. For a simple color theme, you can use this template:
+```css
+:root {
+/* Used for the main app background */
+--theme-bg: #000000;
+
+/* Used for the mod cards */
+--theme-card: #111111;
+
+/* Used for other app backgrounds */
+--theme-surface: #222222;
+
+/* Used for text */
+--theme-text: #ffffff;
+
+/* Used for captions, etc */
+--theme-text-secondary: #eeeeee;
+
+/* Used for borders around the app */
+--theme-border: #999999;
+
+/* Background of modals */
+--theme-solid: #111111;
+}
+```
+
+## Where should I download this from?
 
 The only places you should download this from are the [GitHub releases page](https://github.com/echolotl/fridaylight/releases), the Gamebanana page (when it releases), or eventually from [echolotl.lol/fridaylight](https://www.echolotl.lol/fridaylight) (also when it releases).
 
