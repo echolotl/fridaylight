@@ -66,6 +66,29 @@ export interface Mod {
   save_terminal_output: boolean // Whether to save terminal output from running the mod
 }
 
+/**
+ * Represents an engine mod with additional metadata
+ */
+export interface EngineMod {
+  id: string
+  parent_mod_id: string // ID of the parent mod this engine mod belongs to
+  name: string
+  path: string
+  icon_data?: string
+  banner_data?: string
+  logo_data?: string | null
+  logo_position?: string
+  version?: string
+  description?: string
+  display_order: number
+  folder_id?: string | null
+  display_order_in_folder?: number
+  contributors?: ContributorGroup[]
+  last_played?: number
+  date_added?: number
+  gamebanana?: ModInfoGBData
+}
+
 export interface ModInfoGBData {
   id: number
   url: string
@@ -130,8 +153,8 @@ export interface ModInfoGBData {
  */
 export interface DisplayItem {
   id: string
-  type: 'mod' | 'folder'
-  data: Mod | Folder
+  type: 'mod' | 'folder' | 'engine_mod'
+  data: Mod | Folder | EngineMod
   display_order: number
 }
 

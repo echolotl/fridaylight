@@ -11,6 +11,7 @@
       <ModList
         :mods="mods"
         :folders="folders"
+        :engine-mods="engineMods"
         :selected-mod-id="selectedMod?.id"
         :compact-mode="isCompactMode"
         :active-page="activePage"
@@ -163,6 +164,7 @@
             @gamebanana-browser="openGamebananaBrowser"
             @open-gamebanana-mod="openGamebananaMod"
             @reset-mod-details-on-mount="resetOpenModDetailsOnMount"
+            @add-engine-mod-to-list="addEngineModToList"
           />
         </div>
       </Transition>
@@ -194,7 +196,13 @@ import ModSettingsModal from '@modals/ModSettingsModal.vue'
 import AppSettingsModal from '@modals/AppSettingsModal.vue'
 import GameBananaBrowser from '@mods/GameBananaBrowser.vue'
 import HomePage from '@mods/HomePage.vue'
-import { Mod, Folder, DisplayItem } from '@main-types'
+import {
+  Mod,
+  Folder,
+  DisplayItem,
+  EngineMod,
+  ModMetadataFile,
+} from '@main-types'
 import { StoreService } from '../../services/storeService'
 import { DatabaseService } from '@services/dbService'
 import { revealItemInDir } from '@tauri-apps/plugin-opener'
@@ -265,7 +273,8 @@ const stopResize = () => {
 // Mod list and selection
 const mods = ref<Mod[]>([])
 const folders = ref<Folder[]>([])
-const selectedMod = ref<Mod | null>(null)
+const engineMods = ref<EngineMod[]>([])
+const selectedMod = ref<Mod | EngineMod | null>(null)
 const launchError = ref<string | null>(null)
 const showSettingsModal = ref(false)
 const activePage = ref('home') // Default to showing home page
@@ -290,6 +299,7 @@ onMounted(async () => {
     window.db = { service: dbService }
     await loadModsFromDatabase()
     await loadFoldersFromDatabase() // Load folders after mods
+    await loadEngineModsFromDatabase() // Load engine mods after folders
 
     // Load and apply app settings
     await loadAppSettings()
@@ -368,6 +378,35 @@ const loadFoldersFromDatabase = async () => {
   }
 }
 
+// Load engine mods from the database
+const loadEngineModsFromDatabase = async () => {
+  try {
+    console.log('Loading engine mods from database')
+
+    // Use the DatabaseService to get all engine mods
+    const loadedEngineMods = await dbService.getAllEngineMods()
+
+    if (loadedEngineMods && loadedEngineMods.length > 0) {
+      console.log(`Found ${loadedEngineMods.length} engine mods in database`)
+
+      // Update the reactive engineMods ref
+      engineMods.value = loadedEngineMods
+      console.log('Engine mods loaded successfully:', engineMods.value)
+    } else {
+      console.log('No engine mods found in database')
+      engineMods.value = []
+    }
+  } catch (error) {
+    console.error('Failed to load engine mods from database:', error)
+    engineMods.value = []
+  }
+}
+
+const addEngineModToList = (mod: ModMetadataFile) => {
+  console.log('Adding engine mod to list:', mod)
+  // urg
+}
+
 // Load all mods from backend memory, if any
 // This is a fallback if no mods are found in the database
 const loadModsFromMemory = async () => {
@@ -420,6 +459,7 @@ const saveModToDatabase = async (mod: Mod) => {
     console.log('Mod saved successfully:', mod.name)
     await loadModsFromDatabase() // Reload mods from DB
     await loadFoldersFromDatabase() // Reload folders from DB
+    await loadEngineModsFromDatabase() // Reload engine mods from DB
   } catch (error) {
     console.error('Failed to save mod:', error)
     notificationService.modError(
@@ -581,7 +621,7 @@ const setActivePage = (page: string) => {
 }
 
 // Function to handle saving changes to an existing mod (
-const handleSaveMod = async (updatedMod: Mod) => {
+const handleSaveMod = async (updatedMod: Mod | EngineMod) => {
   if (!updatedMod || !updatedMod.id) {
     console.error('handleSaveMod called with invalid mod data')
     return
@@ -593,11 +633,26 @@ const handleSaveMod = async (updatedMod: Mod) => {
     JSON.stringify(updatedMod)
   ) // Log incoming data
   try {
-    console.log(
-      'SIDEBAR: Calling dbService.saveMod with:',
-      JSON.stringify(updatedMod)
-    ) // Log data being sent to dbService
-    await dbService.saveMod(updatedMod) // Use the main saveMod function
+    if ('parent_mod_id' in updatedMod) {
+      // Handle saving EngineMod specific data
+      console.log(
+        'SIDEBAR: Calling dbService.saveEngineMod with:',
+        JSON.stringify(updatedMod)
+      )
+      await dbService.saveEngineMod(updatedMod)
+      console.log(
+        'Engine mod details updated successfully in DB:',
+        updatedMod.name
+      )
+      return
+    } else {
+      console.log(
+        'SIDEBAR: Calling dbService.saveMod with:',
+        JSON.stringify(updatedMod)
+      ) // Log data being sent to dbService
+      await dbService.saveMod(updatedMod) // Use the main saveMod function
+    }
+
     console.log('Mod details updated successfully in DB:', updatedMod.name)
 
     // Update the local state

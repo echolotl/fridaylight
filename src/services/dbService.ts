@@ -8,6 +8,7 @@ import {
   AppSettings,
   EngineModProfile,
   Engine,
+  EngineMod,
 } from '../types'
 import { StoreService } from './storeService'
 
@@ -326,6 +327,11 @@ export class DatabaseService {
         false,
         'createProfilesTable'
       )
+      await withDatabaseLock(
+        () => this.createEngineModsTable(),
+        false,
+        'createEngineModsTable'
+      )
 
       await withDatabaseLock(
         () => this._runMigrations(),
@@ -552,6 +558,79 @@ export class DatabaseService {
   }
 
   /**
+   * Create or update the engine_mods table
+   */
+  private async createEngineModsTable(): Promise<void> {
+    try {
+      const engineModsTableInfo: any[] = await this.db.select(
+        `PRAGMA table_info(engine_mods)`
+      )
+
+      if (engineModsTableInfo.length === 0) {
+        // Table doesn't exist, create it
+        await this.db.execute(`
+          CREATE TABLE IF NOT EXISTS engine_mods (
+            id TEXT PRIMARY KEY,
+            parent_mod_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            path TEXT NOT NULL,
+            icon_data TEXT,
+            banner_data TEXT,
+            logo_data TEXT,
+            logo_position TEXT,
+            version TEXT,
+            description TEXT,
+            display_order INTEGER DEFAULT 0,
+            folder_id TEXT,
+            display_order_in_folder INTEGER DEFAULT 0,
+            contributors TEXT,
+            last_played INTEGER,
+            date_added INTEGER,
+            gamebanana TEXT,
+            FOREIGN KEY (parent_mod_id) REFERENCES mods(id) ON DELETE CASCADE
+          )
+        `)
+        dbConsole.log('Created engine_mods table')
+      } else {
+        // Table exists, check for missing columns
+        const columns = engineModsTableInfo.map((col: any) => col.name)
+
+        // Add missing columns if they don't exist
+        const columnsToAdd = [
+          { name: 'parent_mod_id', type: 'TEXT NOT NULL' },
+          { name: 'name', type: 'TEXT NOT NULL' },
+          { name: 'path', type: 'TEXT NOT NULL' },
+          { name: 'icon_data', type: 'TEXT' },
+          { name: 'banner_data', type: 'TEXT' },
+          { name: 'logo_data', type: 'TEXT' },
+          { name: 'logo_position', type: 'TEXT' },
+          { name: 'version', type: 'TEXT' },
+          { name: 'description', type: 'TEXT' },
+          { name: 'display_order', type: 'INTEGER DEFAULT 0' },
+          { name: 'folder_id', type: 'TEXT' },
+          { name: 'display_order_in_folder', type: 'INTEGER DEFAULT 0' },
+          { name: 'contributors', type: 'TEXT' },
+          { name: 'last_played', type: 'INTEGER' },
+          { name: 'date_added', type: 'INTEGER' },
+          { name: 'gamebanana', type: 'TEXT' },
+        ]
+
+        for (const column of columnsToAdd) {
+          if (!columns.includes(column.name)) {
+            await this.db.execute(
+              `ALTER TABLE engine_mods ADD COLUMN ${column.name} ${column.type}`
+            )
+            dbConsole.log(`Added ${column.name} column to engine_mods table`)
+          }
+        }
+      }
+    } catch (error) {
+      dbConsole.error('Failed to initialize engine_mods table:', error)
+      throw error
+    }
+  }
+
+  /**
    * Get all mods from the database
    */
   public async getAllMods(): Promise<Mod[]> {
@@ -627,6 +706,75 @@ export class DatabaseService {
     ).catch(error => {
       dbConsole.error('Failed to get folders:', error)
       throw error
+    })
+  }
+
+  /**
+   * Get all engine mods from the database
+   */
+  public async getAllEngineMods(): Promise<EngineMod[]> {
+    if (!this.db) {
+      throw new Error('Database not initialized')
+    }
+
+    return withDatabaseLock(
+      async db => {
+        const engineMods = await db.select(
+          'SELECT * FROM engine_mods ORDER BY display_order ASC'
+        )
+        return engineMods.map((engineMod: EngineMod) => ({
+          ...engineMod,
+          contributors:
+            typeof engineMod.contributors === 'string'
+              ? JSON.parse(engineMod.contributors)
+              : engineMod.contributors,
+          gamebanana:
+            typeof engineMod.gamebanana === 'string'
+              ? JSON.parse(engineMod.gamebanana)
+              : engineMod.gamebanana,
+        }))
+      },
+      false,
+      'getAllEngineMods'
+    ).catch(error => {
+      dbConsole.error('Failed to get engine mods:', error)
+      return []
+    })
+  }
+
+  /**
+   * Get all engine mods for a specific parent mod
+   */
+  public async getEngineModsByParentId(
+    parentModId: string
+  ): Promise<EngineMod[]> {
+    if (!this.db) {
+      throw new Error('Database not initialized')
+    }
+
+    return withDatabaseLock(
+      async db => {
+        const engineMods = await db.select(
+          'SELECT * FROM engine_mods WHERE parent_mod_id = ? ORDER BY display_order ASC',
+          [parentModId]
+        )
+        return engineMods.map((engineMod: EngineMod) => ({
+          ...engineMod,
+          contributors:
+            typeof engineMod.contributors === 'string'
+              ? JSON.parse(engineMod.contributors)
+              : engineMod.contributors,
+          gamebanana:
+            typeof engineMod.gamebanana === 'string'
+              ? JSON.parse(engineMod.gamebanana)
+              : engineMod.gamebanana,
+        }))
+      },
+      false,
+      'getEngineModsByParentId'
+    ).catch(error => {
+      dbConsole.error('Failed to get engine mods by parent ID:', error)
+      return []
     })
   }
 
@@ -1014,6 +1162,30 @@ export class DatabaseService {
       throw error
     })
   }
+  /**
+   * Save an engine mod to the database
+   */
+  public async saveEngineMod(mod: EngineMod): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database not initialized')
+    }
+
+    return withDatabaseLock(
+      async db => {
+        await db.execute(
+          'INSERT INTO engine_mods (id, parent_mod_id, name, version) VALUES (?, ?, ?, ?)',
+          [mod.id, mod.parent_mod_id, mod.name, mod.version]
+        )
+        dbConsole.log(`Saved engine mod ${mod.name} to database`)
+      },
+      true,
+      'saveEngineMod'
+    ).catch(error => {
+      dbConsole.error('Failed to save engine mod:', error)
+      throw error
+    })
+  }
+
   /**
    * Delete a mod from the database
    */
@@ -1558,6 +1730,19 @@ export class DatabaseService {
       name: 'New Folder',
       color: '#FF0088',
       mods: [],
+      display_order: 0,
+    }
+  }
+
+  /**
+   * Helper method to create an empty engine mod
+   */
+  public createEmptyEngineMod(parentModId: string): EngineMod {
+    return {
+      id: uuidv4(),
+      parent_mod_id: parentModId,
+      name: '',
+      path: '',
       display_order: 0,
     }
   }

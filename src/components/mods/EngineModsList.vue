@@ -253,137 +253,13 @@
   </div>
 
   <!-- Mod Details Dialog -->
-  <MessageDialog
+  <EngineModDetailsModal
     v-if="selectedMod"
     v-model="showModDetailsDialog"
-    :title="$t('mods.engine_mod_details.title')"
-    confirm-label="Close"
-    :persistent="false"
-    single-option
-    disable-icon
-  >
-    <div class="mod-details">
-      <div class="mod-header">
-        <div v-if="selectedMod.icon_data" class="mod-icon-large">
-          <q-img
-            :src="selectedMod.icon_data"
-            spinner-color="primary"
-            style="height: 64px; width: 64px"
-          />
-        </div>
-        <div class="mod-title">
-          <h5 class="q-my-none">{{ selectedMod.name }}</h5>
-          <div v-if="selectedMod.version" class="text-caption">
-            {{
-              $t('mods.engine_mod_details.version', {
-                version: selectedMod.version,
-              })
-            }}
-          </div>
-        </div>
-      </div>
-
-      <q-separator class="q-my-md" />
-
-      <div v-if="selectedMod.description" class="q-mb-md">
-        <div class="text-subtitle2">
-          {{ $t('mods.engine_mod_details.description') }}
-        </div>
-        <div v-html="selectedMod.description"></div>
-      </div>
-
-      <div v-if="selectedMod.homepage" class="q-mb-md">
-        <div class="text-subtitle2">
-          {{ $t('mods.engine_mod_details.homepage') }}
-        </div>
-        <a @click="openUrl(selectedMod.homepage)">{{ selectedMod.homepage }}</a>
-      </div>
-
-      <div
-        v-if="selectedMod.contributors && selectedMod.contributors.length > 0"
-        class="q-mb-md"
-      >
-        <div class="text-subtitle2">
-          {{ $t('mods.engine_mod_details.contributors') }}
-        </div>
-        <ul>
-          <li
-            v-for="(contributor, index) in selectedMod.contributors"
-            :key="index"
-          >
-            <div class="text-caption">
-              {{ contributor.name }} - {{ contributor.role }}
-              <span v-if="contributor.email"> ({{ contributor.email }})</span>
-              <span v-if="contributor.url">
-                (<a @click="openUrl(contributor.url)">{{ contributor.url }}</a
-                >)
-              </span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <div v-if="selectedMod.license" class="q-mb-md">
-        <div class="text-subtitle2">
-          {{ $t('mods.engine_mod_details.license') }}
-        </div>
-        <div>{{ selectedMod.license }}</div>
-      </div>
-
-      <div
-        v-if="
-          selectedMod.dependencies &&
-          Object.keys(selectedMod.dependencies).length > 0
-        "
-        class="q-mb-md"
-      >
-        <div class="text-subtitle2">
-          {{ $t('mods.engine_mod_details.dependencies') }}
-        </div>
-        <ul>
-          <li
-            v-for="(version, modName) in selectedMod.dependencies"
-            :key="modName"
-            class="dependency-item"
-          >
-            <div class="dependency-info">
-              <span class="dependency-name">{{ modName }}</span>
-              <span class="dependency-version">({{ version }})</span>
-              <q-spinner
-                v-if="dependencyStates[modName]?.checking"
-                color="primary"
-                size="1em"
-              />
-              <q-icon
-                v-else-if="dependencyStates[modName]?.installed"
-                name="check_circle"
-                color="positive"
-                size="1.2em"
-              />
-              <q-icon
-                v-else-if="dependencyStates[modName]?.installed === false"
-                name="error"
-                color="negative"
-                size="1.2em"
-              />
-              <q-icon v-else name="help" color="warning" size="1.2em" />
-            </div>
-            <div
-              v-if="dependencyStates[modName]?.error"
-              class="text-caption text-negative"
-            >
-              {{ dependencyStates[modName]?.error }}
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <div class="text-subtitle2">
-        {{ $t('mods.engine_mod_details.folder_path') }}
-      </div>
-      <div class="text-caption q-mb-md">{{ selectedMod.folder_path }}</div>
-    </div>
-  </MessageDialog>
+    :mod="selectedMod"
+    :dependency-states="dependencyStates"
+    @add-to-list="emit('add-to-list', $event)"
+  />
   <!-- Profile Create Dialog -->
   <ProfileCreateDialog
     v-if="selectedProfile"
@@ -400,9 +276,9 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { openUrl, revealItemInDir } from '@tauri-apps/plugin-opener'
+import { revealItemInDir } from '@tauri-apps/plugin-opener'
 import { getEngineModsFolderPath } from '@utils/index'
-import MessageDialog from '@components/modals/MessageDialog.vue'
+import EngineModDetailsModal from '@components/modals/EngineModDetailsModal.vue'
 import ProfileCreateDialog from '@components/modals/ProfileCreateDialog.vue'
 import { DatabaseService } from '@services/dbService'
 import type {
@@ -429,6 +305,10 @@ const props = defineProps({
     default: null,
   },
 })
+
+const emit = defineEmits<{
+  (e: 'add-to-list', value: ModMetadataFile): void
+}>()
 
 const mods = ref<ModMetadataFile[]>([])
 const loading = ref(false)
@@ -1020,58 +900,5 @@ h6 {
   gap: 0.5rem;
   margin-left: auto;
   margin-top: 1.5rem;
-}
-
-/* Mod Details Dialog Styles */
-.mod-details {
-  max-width: 500px;
-}
-
-.mod-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.mod-icon-large {
-  margin-right: 16px;
-}
-
-.mod-title {
-  flex: 1;
-}
-
-.text-subtitle2 {
-  font-weight: 500;
-  color: var(--theme-text);
-  margin-bottom: 4px;
-}
-
-.text-caption {
-  font-size: 14px;
-  color: var(--theme-text-secondary);
-}
-
-a {
-  cursor: pointer;
-}
-
-.dependency-item {
-  margin-bottom: 8px;
-}
-
-.dependency-info {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.dependency-name {
-  font-weight: 500;
-}
-
-.dependency-version {
-  color: var(--theme-text-secondary);
-  font-size: 0.9em;
 }
 </style>

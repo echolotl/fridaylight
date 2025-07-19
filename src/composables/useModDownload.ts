@@ -109,7 +109,8 @@ export function useModDownload(
           case 28367: // Psych Engine Modpack
             engineType = 'psych'
             break
-          case 29202: // V-Slice Modpack
+          case 29202:
+          case 38080: // V-Slice Modpack
             engineType = 'vanilla'
             break
           case 34764: // Codename Engine Modpack
@@ -213,8 +214,7 @@ export function useModDownload(
           case 'update':
             downloadItem.update = true
             break
-          case 'download-anyway': // This will create a separate folder for the download
-          {
+          case 'download-anyway': { // This will create a separate folder for the download
             const folderName = `${mod._sName}-${new Date().toISOString().slice(11, 19).replace(/:/g, '-')}`
             downloadItem.folderName = sanitizeFileName(folderName, '-')
             if ('engineInstallation' in downloadItem) {
@@ -463,8 +463,7 @@ export function useModDownload(
           case 'update':
             downloadItem.update = true
             break
-          case 'download-anyway': // This will create a separate folder for the download
-          {
+          case 'download-anyway': { // This will create a separate folder for the download
             const folderName = `${mod._sName}-${new Date().toISOString().slice(11, 19).replace(/:/g, '-')}`
             downloadItem.folderName = sanitizeFileName(folderName, '-')
             if ('engineInstallation' in downloadItem) {

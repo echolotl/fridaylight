@@ -14,7 +14,7 @@
         <div class="settings-sidebar">
           <q-list padding>
             <q-item
-              v-for="section in modSettingsSections"
+              v-for="section in filteredModSettingsSections"
               :key="section.id"
               clickable
               :active="activeSection === section.id"
@@ -602,7 +602,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { Mod, ModInfoGBData } from '@main-types'
+import { EngineMod, Mod, ModInfoGBData } from '@main-types'
 import MessageDialog from './MessageDialog.vue'
 import { revealItemInDir, openUrl } from '@tauri-apps/plugin-opener'
 import { invoke } from '@tauri-apps/api/core'
@@ -619,7 +619,7 @@ const props = defineProps({
     default: false,
   },
   mod: {
-    type: Object as () => Mod | null,
+    type: Object as () => Mod | EngineMod | null,
     default: null,
   },
 })
@@ -729,7 +729,7 @@ const modSettingsSections = computed(() => [
   },
   {
     id: 'engine',
-    label: t('app.modals.mod_settings.engine.label'),
+    label: t('app.modals.mod_settings.engine.title'),
     icon: 'code',
   },
   {
@@ -738,6 +738,15 @@ const modSettingsSections = computed(() => [
     icon: 'palette',
   },
 ])
+
+const filteredModSettingsSections = computed(() => {
+  return modSettingsSections.value.filter(
+    section => !isEngineMod.value || section.id !== 'engine'
+  )
+})
+const isEngineMod = computed(() => {
+  return props.mod ? 'parent_mod_id' in props.mod : false
+})
 
 const activeSection = ref('general')
 const showRemoveDialog = ref(false)
@@ -760,15 +769,15 @@ watch(
       changeVersion.value = true
 
       // Properly handle engine object - parse if it's a string, otherwise use as-is
-      if (props.mod.engine) {
-        if (typeof props.mod.engine === 'string') {
+      if (('engine' in props.mod && props.mod.engine) || !isEngineMod.value) {
+        if ('engine' in props.mod && typeof props.mod.engine === 'string') {
           try {
             form.value.engine = JSON.parse(props.mod.engine)
           } catch (e) {
             console.warn('Failed to parse engine string:', e)
             form.value.engine = DEFAULT_ENGINE
           }
-        } else {
+        } else if ('engine' in props.mod) {
           form.value.engine = { ...props.mod.engine }
         }
       } else {

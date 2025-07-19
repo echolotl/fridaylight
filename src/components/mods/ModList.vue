@@ -357,7 +357,7 @@ import DownloadListItem from '@mods/list/DownloadListItem.vue'
 import CreateFolderModal from '@modals/CreateFolderModal.vue'
 import EditFolderModal from '@modals/EditFolderModal.vue'
 import MessageDialog from '@modals/MessageDialog.vue'
-import { Mod, Folder, DisplayItem } from '@main-types'
+import { Mod, Folder, DisplayItem, EngineMod } from '@main-types'
 import { v4 as uuidv4 } from 'uuid'
 import { useI18n } from 'vue-i18n'
 
@@ -368,6 +368,10 @@ const props = defineProps({
   },
   folders: {
     type: Array as () => Folder[],
+    default: () => [],
+  },
+  engineMods: {
+    type: Array as () => EngineMod[],
     default: () => [],
   },
   selectedModId: {
@@ -406,6 +410,7 @@ const { t } = useI18n()
 // Create a local reactive copy of the mods array for reordering
 const modsList = ref<Mod[]>([])
 const foldersList = ref<Folder[]>([])
+const engineModsList = ref<EngineMod[]>([])
 const displayItems = ref<DisplayItem[]>([])
 const searchQuery = ref('')
 
@@ -661,6 +666,12 @@ const updateDisplayItems = () => {
         data: mod,
         display_order: mod.display_order || 0, // Ensure display_order is not undefined
       })),
+    ...engineModsList.value.map(engineMod => ({
+      id: engineMod.id,
+      type: 'engine_mod' as const,
+      data: engineMod,
+      display_order: engineMod.display_order || 0, // Ensure display_order is not undefined
+    })),
   ]
 
   // Sort items by display_order

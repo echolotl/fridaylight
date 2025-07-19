@@ -77,6 +77,7 @@
                 ? mod.engine.mods_folder_path
                 : DEFAULT_ENGINE.mods_folder_path
             "
+            @add-to-list="emit('add-engine-mod-to-list', $event, mod.id)"
           />
         </div>
       </div>
@@ -129,6 +130,7 @@ const emit = defineEmits([
   'open-settings',
   'stop-mod',
   'open-gamebanana-mod',
+  'add-engine-mod-to-list',
 ])
 
 const appSettings = StoreService.getInstance()
