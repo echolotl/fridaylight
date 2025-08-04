@@ -60,6 +60,10 @@
                 </template>
               </q-select>
             </div>
+            <q-item-label caption class="q-mb-xs"
+              >Languages are currently WIP! Some glyphs may not display or may
+              be inconsistent.</q-item-label
+            >
 
             <div class="theme-toggle-container row q-mb-md">
               <q-item tag="label" class="full-width">
@@ -399,20 +403,27 @@
                       <div class="text-caption">Turkish translation</div>
                     </li>
                     <li>
-                      <div>CatLemons</div>
-                      <div class="text-caption">Ukrainian translation</div>
+                      <a
+                        @click="
+                          openUrl('https://gamebanana.com/members/1928353')
+                        "
+                        >CatLemons</a
+                      >
+                      <div class="text-caption">
+                        Ukrainian & Russian translation
+                      </div>
                     </li>
                     <li>
                       <a @click="openUrl('https://github.com/toperri')"
                         >toperri</a
                       >
-                      <div class="text-caption">Italian translation</div>
+                      <div class="text-caption">Italian translation (WIP)</div>
                     </li>
                     <li>
                       <a @click="openUrl('https://github.com/MAZ12211')">
                         MAZ12211
                       </a>
-                      <div class="text-caption">Arabic translation</div>
+                      <div class="text-caption">Arabic translation (WIP)</div>
                     </li>
                   </ul>
                 </q-scroll-area>

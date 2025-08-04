@@ -762,9 +762,11 @@ pub struct GBFile {
   #[serde(rename = "_sAnalysisResultVerbose")]
   pub analysis_result_verbose: String,
   #[serde(rename = "_sAvastAvState")]
-  pub avast_av_state: String,
+  pub avast_av_state: Option<String>,
   #[serde(rename = "_sAvastAvResult")]
-  pub avast_av_result: String,
+  pub avast_av_result: Option<String>,
+  #[serde(rename = "_sVersion")]
+  pub version: Option<String>,
   #[serde(rename = "_bHasContents")]
   pub has_contents: bool,
   #[serde(rename = "_sDescription")]

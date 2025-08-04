@@ -1,12 +1,12 @@
 {
   "engine_type": "fps-plus",
   "engine_name": "FPS Plus",
-  "engine_url": "https://github.com/ThatRozebudDude/FPS-Plus-Public/releases/download/v7.1.1/fpsplus_v7_1_1.zip",
+  "engine_url": "https://github.com/ThatRozebudDude/FPS-Plus-Public/releases/download/v8.0.0/fpsplus_v8_0_0.zip",
   "engine_banner": "banner_fpsplus.png",
   "engine_logo": "logo_fpsplus.png",
   "engine_icon": "Fps-plus.webp",
   "engine_description": "Friday Night Funkin' FPS Plus is an engine mod of Friday Night Funkin' that aims to improve gameplay and add quality of life features.",
-  "engine_version": "7.1.1",
+  "engine_version": "8.0.0",
   "primary": true,
   "credits": [
     {

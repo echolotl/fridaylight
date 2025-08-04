@@ -12,6 +12,7 @@ export const AVAILABLE_LOCALES: LocaleInfo[] = [
   { code: 'en', name: 'English', key: 'english' },
   { code: 'tr', name: 'Türkçe', key: 'turkish' },
   { code: 'ua', name: 'Ukraynaca', key: 'ukrainian' },
+  { code: 'ru', name: 'Русский', key: 'russian' },
 ]
 
 const storeService = StoreService.getInstance()

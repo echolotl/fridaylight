@@ -1,0 +1,449 @@
+{
+  "gamebanana": {
+    "best_of_today": "Лучшее за Сегодня",
+    "best_of_this_week": "Лучшее за Неделю",
+    "best_of_this_month": "Лучшее за Месяц",
+    "best_of_3_months": "Лучшее за 3 Месяца",
+    "best_of_6_months": "Лучшее за 6 Месяцев",
+    "best_of_this_year": "Лучшее за Год",
+    "best_of_all_time": "Лучшее за Всё Время",
+    "best_of_unknown": "Лучшее за {period}",
+    "latest_mods": "Последние Моды",
+    "engine_downloads": "Загрузки Движков",
+    "more_engines": "Ещё Движки",
+    "have_a_suggestion_engine": "Есть идея для движка? Пиши на {githubLink}!",
+    "loading_featured_mods": "Загружаю топовые моды...",
+    "loading_latest_mods": "Загружаю свежие моды...",
+    "loading_modpacks": "Загружаю модпаки для {engineType}...",
+    "loading_mods": "Загружаю моды...",
+    "sensitive_content": "Содержит деликатный контент!"
+  },
+  "ui": {
+    "loading": "Загрузка...",
+    "error": "Произошла ошибка: {error}",
+    "unknown_error": "Неизвестная Ошибка",
+    "danger_zone": "Зона Опасности",
+    "downloading": "Загрузка",
+    "search_results": "Результаты Поиска",
+    "searching": "Поиск...",
+    "no_results": "Ничего не найдено",
+    "update_available": "Доступно Обновление!",
+    "update_might_be_available": "Возможно, есть обновление:",
+    "checking_for_updates": "Проверяю обновления...",
+    "actions": {
+      "save": "Сохранить",
+      "cancel": "Отмена",
+      "delete": "Удалить",
+      "remove": "Убрать",
+      "update": "Обновить",
+      "close": "Закрыть",
+      "create": "Создать",
+      "back": "Назад",
+      "confirm": "Подтвердить",
+      "play": "Играть",
+      "stop": "Стоп",
+      "launch_mod": "Запустить Мод",
+      "open_in_browser": "Открыть в Браузере",
+      "search_mods": "Искать Моды",
+      "create_folder": "Создать Папку",
+      "edit_folder": "Редактировать Папку",
+      "expand_folder": "Развернуть Папку",
+      "collapse_folder": "Свернуть Папку",
+      "delete_folder": "Удалить Папку",
+      "view_details": "Посмотреть Детали",
+      "edit_settings": "Редактировать Настройки",
+      "download": "Загрузить",
+      "download_anyway": "Загрузить Всё Равно",
+      "download_mod": "Загрузить Мод",
+      "download_and_install": "Загрузить и Установить",
+      "open_gamebanana": "Открыть GameBanana",
+      "view_on_gamebanana": "Посмотреть на GameBanana",
+      "reveal_folder_location": "Показать Расположение Папки",
+      "conformations": {
+        "delete_mod": "Точно хочешь ПОЛНОСТЬЮ УДАЛИТЬ этот мод? Это действие нельзя отменить.",
+        "remove_mod": "Точно хочешь убрать этот мод из списка? Файлы мода не удалятся.",
+        "delete_folder": "Точно хочешь удалить эту папку? Это действие нельзя отменить."
+      }
+    },
+    "download_status": {
+      "starting": "Начинаю загрузку...",
+      "connecting": "Подключаюсь...",
+      "calculating": "Рассчитываю...",
+      "stalled": "Загрузка застопорилась"
+    },
+    "time": {
+      "days_ago": "{days} дней назад",
+      "days_ago_short": "{days}д назад",
+      "hours_ago": "{hours} часов назад",
+      "hours_ago_short": "{hours}ч назад",
+      "minutes_ago": "{minutes} минут назад",
+      "minutes_ago_short": "{minutes}мин назад",
+      "seconds_ago": "{seconds} секунд назад",
+      "seconds_ago_short": "{seconds}с назад",
+      "just_now": "Только что"
+    }
+  },
+  "navigation": {
+    "home": "Главная",
+    "settings": "Настройки"
+  },
+  "sorting": {
+    "default_order": "По Умолчанию",
+    "installed": "Установленные",
+    "name": {
+      "asc": "Название (А-Я)",
+      "desc": "Название (Я-А)",
+      "sort": "Сортировать по Названию",
+      "sorted": "Отсортировано по Названию"
+    },
+    "date_added": {
+      "asc": "Дата Добавления (Сначала Старые)",
+      "desc": "Дата Добавления (Сначала Новые)",
+      "sort": "Сортировать по Дате Добавления",
+      "sorted": "Отсортировано по Дате Добавления"
+    },
+    "last_played": {
+      "asc": "Последняя Игра (Сначала Старые)",
+      "desc": "Последняя Игра (Сначала Новые)",
+      "sort": "Сортировать по Последней Игре",
+      "sorted": "Отсортировано по Последней Игре"
+    },
+    "direction": {
+      "asc": "По Возрастанию",
+      "desc": "По Убыванию"
+    }
+  },
+  "mods": {
+    "labels": {
+      "mod": "Мод",
+      "mods": "Моды",
+      "modpack": "Модпак",
+      "modpacks": "Модпаки",
+      "executable": "Исполняемый Файл",
+      "executables": "Исполняемые Файлы",
+      "profiles": "Профили"
+    },
+    "actions": {
+      "add_mod": "Добавить Мод",
+      "delete_mod": "Удалить Мод",
+      "remove_mod": "Убрать Мод",
+      "bulk_add_mod": "Добавить Моды Массово",
+      "enable_all_mods": "Включить Все Моды",
+      "disable_all_mods": "Отключить Все Моды",
+      "clear_active_profile": "Очистить Активный Профиль",
+      "create_new_profile": "Создать Новый Профиль",
+      "reveal_mods_folder": "Показать Папку Модов"
+    },
+    "no_mods_disclaimer": "Моды не Добавлены. Кликни на + чтобы Добавить!",
+    "terminal_output": "Вывод Терминала",
+    "installed_mods": "Установленные Моды",
+    "scanning_for_mods": "Сканирую моды...",
+    "no_mods_found": "Моды для этого Движка не Найдены",
+    "cannot_scan_mods": "Fridaylight не может сканировать моды для этого типа движка. Этот раздел можно отключить в настройках модов.",
+    "requires_mod": "Требуется {modName}!",
+    "engine_mod_details": {
+      "title": "Детали Мода",
+      "version": "Версия: {version}",
+      "description": "Описание",
+      "homepage": "Домашняя Страница",
+      "contributors": "Авторы",
+      "license": "Лицензия",
+      "dependencies": "Зависимости",
+      "folder_path": "Путь к Папке"
+    },
+    "recently_played": "Недавно Сыгранные",
+    "no_recently_played": "Нет недавно сыгранных модов",
+    "all_mods": "Все Моды",
+    "no_executables_found": "Исполняемые файлы для этого мода не найдены",
+    "mod_placeholder_text": "Добро пожаловать в Fridaylight!",
+    "mod_placeholder_description": "Выбери или добавь мод из боковой панели, чтобы начать"
+  },
+  "app": {
+    "name": "Fridaylight",
+    "notifications": {
+      "download": {
+        "downloading": "Загружаю \"{modName}\"",
+        "downloading_nonspecific": "Загружаю мод...",
+        "preparing": "Готовлюсь к загрузке \"{modName}\"",
+        "preparing_engine": "Готовлюсь к загрузке движка...",
+        "preparing_generic": "Готовлюсь к загрузке...",
+        "downloading_engine": "Загружаю движок {engineName}",
+        "downloading_engine_nonspecific": "Загружаю движок...",
+        "success": "\"{modName}\" успешно загружен и установлен!",
+        "success_caption": "Готов к игре из списка модов",
+        "success_modpack_caption": "Готов к игре из {parentMod}",
+        "error": "Не удалось загрузить \"{modName}\"",
+        "canceled": "Загрузка \"{modName}\" отменена",
+        "extracting": "Распаковываю \"{modName}\"",
+        "extracting_nonspecific": "Распаковываю файлы мода",
+        "extracting_engine": "Распаковываю файлы движка {engineName}",
+        "extracting_engine_nonspecific": "Распаковываю файлы движка",
+        "extracting_file_progress": "Распаковываю файл {current}/{total}",
+        "extracting_7z": "Распаковываю 7z файл",
+        "extracting_rar": "Распаковываю RAR файл",
+        "extracting_7z_complete": "Распаковка 7z завершена",
+        "extracting_rar_complete": "Распаковка RAR завершена",
+        "finalizing": "Завершаю установку мода",
+        "finalizing_engine": "Завершаю установку движка",
+        "installation_complete": "Установка мода завершена",
+        "installation_complete_engine": "Установка движка завершена",
+        "complete": "Загрузка завершена!",
+        "failed": "Загрузка не удалась",
+        "canceled_generic": "Загрузка отменена",
+        "installation_error": "Установка \"{modName}\" не удалась"
+      },
+      "update": {
+        "updating": "Обновляю \"{modName}\"",
+        "preparing": "Готовлюсь к обновлению \"{modName}\"",
+        "success": "\"{modName}\" успешно обновлён!",
+        "error": "Не удалось обновить \"{modName}\"",
+        "canceled": "Обновление \"{modName}\" отменено",
+        "not_available": "Невозможно обновить \"{modName}\"",
+        "not_available_caption": "Этот мод нельзя обновить через Fridaylight."
+      },
+      "mod": {
+        "stopped": "\"{modName}\" остановлен",
+        "error": "Не удалось {operation} \"{modName}\""
+      },
+      "modpack": {
+        "no_engine_error": "Не удалось загрузить модпак {engineName}",
+        "no_engine_error_caption": "\"{modpackName}\" требует установленного экземпляра {engineName}."
+      },
+      "initialization": {
+        "starting_up": "Запускаюсь...",
+        "theme_service": "Проверяю тему",
+        "applying_theme": "Применяю тему",
+        "deep_linking": "Проверяю, использовано ли ссылка",
+        "loading_mods": "Загружаю моды",
+        "db_service": "Инициализирую базу данных",
+        "loading_settings": "Загружаю настройки",
+        "checking_for_updates": "Проверяю обновления",
+        "installing_update": "Устанавливаю обновление",
+        "ready": "Готово!"
+      }
+    },
+    "modals": {
+      "engine_details": {
+        "title": "Детали Движка",
+        "suggested_by": "Предложено {username}",
+        "actions": {
+          "view_full_credits": "Посмотреть Полные Подяки"
+        }
+      },
+      "app_settings": {
+        "title": "Настройки Программы",
+        "appearance": {
+          "title": "Внешний Вид",
+          "use_system_theme": "Использовать Системную Тему",
+          "use_system_theme_description": "Автоматически подстраиваться под тему ОС (Светлая/Тёмная)",
+          "builtin_themes": "Встроенные Темы",
+          "custom_themes": "Пользовательские Темы",
+          "custom_themes_description": "Хочешь добавить свои темы? Положи их в папку {themesLink}, затем кликни кнопку обновления, чтобы загрузить.",
+          "accent_color": "Акцентный Цвет",
+          "compact_mode": "Компактный Режим",
+          "compact_mode_description": "Уменьшить ширину боковой панели и показывать только иконки",
+          "theme_preview": "Предпросмотр Темы",
+          "actions": {
+            "refresh_themes": "Обновить Темы",
+            "reveal_themes_folder": "Показать Папку Тем"
+          },
+          "language": "Язык"
+        },
+        "installation": {
+          "title": "Установка",
+          "default_install_location": "Место Установки по Умолчанию",
+          "default_install_location_description": "Укажи папку по умолчанию для установки модов",
+          "validate_mods": "Проверять Моды",
+          "validate_mods_description": "Проверяет структуру папок перед установкой/добавлением модов (может вызвать проблемы с некоторыми модами)",
+          "show_terminal_output": "Показывать Вывод Терминала",
+          "show_terminal_output_description": "Отображать вывод терминала модов при запуске"
+        },
+        "about": {
+          "title": "О Программе",
+          "created_by": "Создано {echolotl}",
+          "created_with": "Создано с Помощью",
+          "version": "Версия: {version}",
+          "bug_disclaimer": "Нашёл баг или есть предложение? Сообщи на GitHub!",
+          "beta_disclaimer": "Это предварительная версия Fridaylight. Может содержать баги или незавершённые функции, возможна потеря данных.",
+          "special_thanks": "Благодарности и Особые Упоминания",
+          "main_contributors": "Главные Авторы"
+        },
+        "reset_settings": {
+          "title": "Сбросить Настройки",
+          "description": "Сбросить все настройки до стандартных значений. Нужно сохранить, чтобы изменения вступили в силу.",
+          "confirmation": "Точно хочешь сбросить все настройки? Это вернёт все настройки к стандартным значениям."
+        },
+        "reset_data": {
+          "title": "Сбросить Данные Программы",
+          "description": "Сбросить все данные программы, включая установленные моды и настройки. Это не удалит файлы модов.",
+          "confirmation": "Точно хочешь сбросить все данные программы? Это удалит все установленные моды из списка и настройки.",
+          "failed": "Не удалось сбросить данные программы: {error}"
+        }
+      },
+      "mod_settings": {
+        "title": "Настройки Мода",
+        "set_icon": "Установить Иконку",
+        "remove_icon": "Удалить Иконку",
+        "general": {
+          "title": "Общая Информация",
+          "label": "Общее",
+          "mod_name": "Название Мода",
+          "mod_description": "Описание Мода",
+          "mod_description_placeholder": "Краткое описание мода",
+          "mod_version": "Версия Мода",
+          "mod_version_placeholder": "Версия мода, например, 1.0.0",
+          "gamebanana_info": "Информация GameBanana",
+          "gamebanana_profile_url": "URL Профиля GameBanana",
+          "sync_with_gamebanana": "Синхронизировать с GameBanana",
+          "change_version": "Изменить Версию",
+          "change_banner": "Изменить Баннер",
+          "gamebanana_sync_description": "Синхронизация с GameBanana получит последние метаданные и перезапишет существующие. Нужно сохранить настройки мода, чтобы применить изменения."
+        },
+        "installation": {
+          "title": "Установка",
+          "folder_location": "Расположение Папки",
+          "executable_path": "Путь к Исполняемому Файлу",
+          "remove_mod_description": "Удаление мода не удалит файлы мода, но уберёт его из списка.",
+          "delete_mod_description": "Удаление мода уберёт его из списка и {permanentlyDelete} файлы мода. Это действие нельзя отменить.",
+          "permanently_delete": "навсегда удалит",
+          "save_console_output": "Сохранить Вывод Консоли"
+        },
+        "engine": {
+          "title": "Конфигурация Движка",
+          "label": "Движок",
+          "engine_type": "Тип Движка",
+          "engine_type_description": "Определяет, как Fridaylight будет обрабатывать этот мод",
+          "engine_name": "Название Движка",
+          "engine_name_placeholder": "например, Мой кастомный форк Psych",
+          "engine_name_description": "Название движка, который использует этот мод (необязательно)",
+          "engine_icon": "Иконка Движка",
+          "set_engine_icon": "Установить Иконку Движка",
+          "has_mods_folder": "Имеет Папку Модов",
+          "mods_folder_path": "Путь к Папке Модов",
+          "mods_folder_path_placeholder": "mods",
+          "mods_folder_path_description": "Относительный путь к папке модов от исполняемого файла. По умолчанию 'mods'."
+        },
+        "appearance": {
+          "title": "Внешний Вид",
+          "icon": "Иконка",
+          "banner": "Баннер",
+          "set_banner": "Установить Баннер",
+          "remove_banner": "Удалить Баннер",
+          "logo": "Логотип",
+          "set_logo": "Установить Логотип",
+          "remove_logo": "Удалить Логотип",
+          "logo_position": {
+            "title": "Позиция Логотипа",
+            "hint": "Где будет размещён логотип на баннере",
+            "description": "Позиция логотипа на баннере",
+            "bottom_left": "Снизу Слева",
+            "middle_left": "Посередине Слева",
+            "middle": "Посередине"
+          },
+          "icon_preview": "Предпросмотр Иконки"
+        }
+      },
+      "mod_details": {
+        "slow_request": "Этот мод долго загружается.",
+        "slow_request_description": "Что-то пошло не так у нас или на GameBanana. Может, попробовать ещё раз позже?",
+        "updates": "Обновления",
+        "updates_count": "Всего {count} обновлений",
+        "comments": "Комментарии",
+        "comments_count": "Всего {count} комментариев",
+        "replies_count": "+{count} ответов",
+        "comment_trashed": "Этот комментарий удалён",
+        "thanked_by": "Поблагодарили {count} пользователей!",
+        "might_have_malware": "Этот мод может содержать вредоносное ПО!",
+        "submitter": "Автор",
+        "developer_notes": "Заметки Разработчика",
+        "license": "Лицензия",
+        "description": "Описание",
+        "studio": "Студия",
+        "created_by": "Создано",
+        "percent_complete": "{percent}% завершено",
+        "changelog_category": {
+          "bugfix": "Исправление Багов",
+          "overhaul": "Капитальный Ремонт",
+          "adjustment": "Корректировка",
+          "amendment": "Поправка",
+          "tweak": "Настройка",
+          "addition": "Добавление",
+          "suggestion": "Предложение",
+          "feature": "Функция",
+          "improvement": "Улучшение",
+          "removal": "Удаление",
+          "refactor": "Рефакторинг"
+        }
+      },
+      "folders": {
+        "folder_name": "Название Папки",
+        "folder_name_required": "Название папки обязательно",
+        "folder_color": "Цвет Папки"
+      },
+      "download_file_select": {
+        "title": "Выбор Файла для Загрузки",
+        "description": "Этот мод, \"{modName}\", имеет несколько вариантов загрузки. Выбери один:",
+        "alternative_download_sources": "Альтернативные Источники Загрузки (Ручная Установка)",
+        "contains_executable_files": "Содержит исполняемые файлы",
+        "contains_nested_archives": "Содержит вложенные архивы",
+        "analysis_pending": "Анализ в процессе"
+      },
+      "engine_select": {
+        "title": "Выбор Движка для Установки",
+        "description": "Этот модпак требует {engine}. Выбери установку {engine}, которую хочешь использовать:",
+        "will_be_installed_to": "Этот модпак будет установлен в:",
+        "install_as_addon": "Установить как Аддон",
+        "install_as_addon_description": "Это заставит модпак работать на всех других модпаках.",
+        "unknown_path": "Неизвестный Путь"
+      },
+      "folder_exists": {
+        "title": "Папка Уже Существует",
+        "description": "Этот мод уже имеет папку в твоей директории модов. Ты можешь обновить существующий мод (перезаписав все файлы!) или загрузить в отдельный экземпляр."
+      },
+      "mod_type_selection": {
+        "title": "Выбор Типа Мода",
+        "description": "Выбери, что за мод \"{modName}\". Это определит, как Fridaylight его обработает.",
+        "standalone": "Автономный",
+        "standalone_description": "Мод, который работает сам по себе",
+        "psych_description": "Модпак для Psych Engine",
+        "no_psych_installed": "Установки Psych Engine не найдены",
+        "vslice_description": "Модпак для V-Slice",
+        "no_vslice_installed": "Установки V-Slice не найдены",
+        "fpsplus_description": "Модпак для FPS Plus",
+        "no_fpsplus_installed": "Установки FPS Plus не найдены",
+        "codename_description": "Модпак для Codename Engine",
+        "no_codename_installed": "Установки Codename Engine не найдены",
+        "select_where_to_install": "Выбери, в какой {engine} установить этот модпак:"
+      },
+      "profile_create": {
+        "title": "Создать Профиль",
+        "title_edit": "Редактировать Профиль",
+        "profile_name": "Название Профиля",
+        "icon": "Иконка",
+        "custom": "Пользовательская...",
+        "enter_a_ma_link": "Введи название иконки {link}",
+        "select_mods": "Выбрать Моды",
+        "delete_profile": "Удалить Профиль"
+      }
+    }
+  },
+  "misc": {
+    "credits": "Благодарности",
+    "more": "ещё",
+    "by": "от",
+    "unknown_mod": "Неизвестный Мод",
+    "confirmation": "Подтверждение",
+    "not_selected": "Не Выбрано",
+    "other": "Другое",
+    "colors": {
+      "red": "Красный",
+      "orange": "Оранжевый",
+      "yellow": "Жёлтый",
+      "green": "Зелёный",
+      "cyan": "Бирюзовый",
+      "blue": "Синий",
+      "purple": "Фиолетовый",
+      "pink": "Розовый"
+    }
+  }
+}

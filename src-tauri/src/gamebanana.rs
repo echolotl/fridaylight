@@ -6,6 +6,7 @@ use crate::models::{
   GBSubfeed,
   GBTopSubs,
 };
+use futures_util::future;
 use log::{ debug, error, info, warn };
 use reqwest;
 use serde_json;
@@ -18,6 +19,11 @@ pub async fn fetch_gamebanana_mods(
   info!("Fetching GameBanana mods. Query: '{}', Page: {}", query, page);
   let client = reqwest::Client::new();
 
+  // Special handling for V-Slice modpacks - fetch from both categories and combine
+  if query == "_vslicemodpack" {
+    return fetch_vslice_mods_combined(client, page).await;
+  }
+
   // Base URL for GameBanana's API
   let url = if query == "latest" {
     format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=30&_aFilters[Generic_Category]=3827&_nPage={}", page)
@@ -27,9 +33,6 @@ pub async fn fetch_gamebanana_mods(
   } else if query == "_codenamemodpack" {
     // Codename Engine modpack (mods folder) endpoint
     format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=30&_aFilters%5BGeneric_Category%5D=34764&_nPage={}", page)
-  } else if query == "_vslicemodpack" {
-    // V-Slice modpack (mods folder) endpoint
-    format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=30&_aFilters%5BGeneric_Category%5D=29202&_nPage={}", page)
   } else {
     // Search endpoint
     format!(
@@ -41,10 +44,102 @@ pub async fn fetch_gamebanana_mods(
 
   debug!("Requesting URL: {}", url);
 
-  // Make the API request
-  let response = match client.get(&url).send().await {
+  // Fetch the mods
+  fetch_single_category(&client, &url, &query).await
+}
+
+// Helper function to fetch V-Slice mods from both categories and combine results
+async fn fetch_vslice_mods_combined(
+  client: reqwest::Client,
+  page: i64
+) -> Result<GBSubfeed, String> {
+  info!("Fetching V-Slice mods from both categories 29202 and 38080, Page: {}", page);
+
+  // URLs for both V-Slice categories
+  let url1 =
+    format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=15&_aFilters[Generic_Category]=29202&_nPage={}", page);
+  let url2 =
+    format!("https://gamebanana.com/apiv11/Mod/Index?_nPerpage=15&_aFilters[Generic_Category]=38080&_nPage={}", page);
+
+  debug!("Requesting V-Slice category 1 URL: {}", url1);
+  debug!("Requesting V-Slice category 2 URL: {}", url2);
+
+  // Fetch from both categories at the same time
+  let (response1, response2) = future::join(
+    fetch_single_category(&client, &url1, "29202"),
+    fetch_single_category(&client, &url2, "38080")
+  ).await;
+
+  // Handle responses
+  let subfeed1 = match response1 {
+    Ok(subfeed) => subfeed,
+    Err(e) => {
+      warn!("Failed to fetch from V-Slice category 29202: {}", e);
+      // Create empty subfeed structure for failed request
+      GBSubfeed {
+        records: Vec::new(),
+        metadata: crate::models::GBListMetadata {
+          record_count: 0,
+          perpage: 0,
+          is_complete: true,
+        },
+      }
+    }
+  };
+
+  let subfeed2 = match response2 {
+    Ok(subfeed) => subfeed,
+    Err(e) => {
+      warn!("Failed to fetch from V-Slice category 38080: {}", e);
+      // Create empty subfeed structure for failed request
+      GBSubfeed {
+        records: Vec::new(),
+        metadata: crate::models::GBListMetadata {
+          record_count: 0,
+          perpage: 0,
+          is_complete: true,
+        },
+      }
+    }
+  };
+
+  // Combine the results
+  let mut combined_records = subfeed1.records;
+  combined_records.extend(subfeed2.records);
+
+  // Create combined metadata
+  let combined_metadata = crate::models::GBListMetadata {
+    record_count: subfeed1.metadata.record_count +
+    subfeed2.metadata.record_count,
+    perpage: combined_records.len() as i64,
+    is_complete: subfeed1.metadata.is_complete && subfeed2.metadata.is_complete,
+  };
+
+  let combined_subfeed = GBSubfeed {
+    records: combined_records,
+    metadata: combined_metadata,
+  };
+
+  info!(
+    "Successfully combined V-Slice mods: {} total records",
+    combined_subfeed.records.len()
+  );
+  Ok(combined_subfeed)
+}
+
+// Helper function to fetch from a single category
+async fn fetch_single_category(
+  client: &reqwest::Client,
+  url: &str,
+  category: &str
+) -> Result<GBSubfeed, String> {
+  let response = match client.get(url).send().await {
     Ok(resp) => {
-      debug!("Received response with status: {}", resp.status());
+      debug!(
+        "Received response for category {} with status: {}",
+        category,
+        resp.status()
+      );
       if !resp.status().is_success() {
         let status = resp.status();
         let error_text = match resp.text().await {
@@ -56,32 +151,41 @@ pub async fn fetch_gamebanana_mods(
             ),
           Err(_) => format!("Server returned error status: {}", status),
         };
-        error!("{}", error_text);
+        error!("Error fetching category {}: {}", category, error_text);
         return Err(error_text);
       }
       resp
     }
     Err(e) => {
-      error!("Failed to fetch mods: {}", e);
-      return Err(format!("Failed to fetch mods: {}", e));
+      error!("Failed to fetch category {}: {}", category, e);
+      return Err(format!("Failed to fetch category {}: {}", category, e));
     }
   };
+
   // Parse the JSON response
   let json: serde_json::Value = match response.json().await {
     Ok(data) => data,
     Err(e) => {
-      error!("Failed to parse JSON response: {}", e);
-      return Err(format!("Failed to parse JSON response: {}", e));
+      error!("Failed to parse JSON response for category {}: {}", category, e);
+      return Err(
+        format!(
+          "Failed to parse JSON response for category {}: {}",
+          category,
+          e
+        )
+      );
     }
   };
-  debug!("Successfully fetched and parsed mods from GameBanana: {}", json);
+
+  debug!("Successfully fetched and parsed mods from category {}", category);
 
   // Convert JSON response to GBSubfeed
   match serde_json::from_value::<GBSubfeed>(json.clone()) {
     Ok(subfeed) => Ok(subfeed),
     Err(e) => {
       error!(
-        "Failed to convert JSON to GBSubfeed: {} | JSON response: {}",
+        "Failed to convert JSON to GBSubfeed for category {}: {} | JSON response: {}",
+        category,
         e,
         json
       );

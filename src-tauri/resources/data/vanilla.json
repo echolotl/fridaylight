@@ -1,12 +1,12 @@
 {
   "engine_type": "vanilla",
   "engine_name": "V-Slice",
-  "engine_url": "https://github.com/FunkinCrew/Funkin/releases/latest/download/funkin-windows-64bit.zip",
+  "engine_url": "https://github.com/FunkinCrew/Funkin/releases/download/v0.7.3/funkin-windows-64bit.zip",
   "engine_banner": "banner_vslice.png",
   "engine_logo": "logo_vslice.png",
   "engine_icon": "Vanilla.webp",
   "engine_description": "Friday Night Funkin' is a rhythm game. Built using HaxeFlixel for Ludum Dare 47.",
-  "engine_version": "0.6.3",
+  "engine_version": "0.7.3",
   "primary": true,
   "credits": [
     {

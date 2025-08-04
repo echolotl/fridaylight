@@ -1,12 +1,12 @@
 {
   "engine_type": "psych",
   "engine_name": "P-Slice",
-  "engine_url": "https://github.com/Psych-Slice/P-Slice/releases/download/3.1.1/P-Slice.1.0.windows.zip",
+  "engine_url": "https://github.com/Psych-Slice/P-Slice/releases/download/3.2.1/P-Slice.1.0.windows.zip",
   "engine_banner": "banner_pslice.png",
   "engine_logo": "logo_pslice.png",
   "engine_icon": "P-Slice.png",
   "engine_description": "P-Slice engine is a crossover between Psych Engine and the newest version of Friday Night Funkin. <br/> It's meant to bring new visuals and features from newer versions of FNF and make changes to the existing ones to make them feel closer to the ones in the V-Slice.",
-  "engine_version": "3.1.1",
+  "engine_version": "3.2.1 [1.0]",
   "credits": [
     {
       "name": "mikolka9144",

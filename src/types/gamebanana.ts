@@ -435,8 +435,9 @@ export interface GBFile {
   _sAnalysisState: string
   _sAnalysisResult: string
   _sAnalysisResultVerbose: string
-  _sAvastAvState: string
-  _sAvastAvResult: string
+  _sAvastAvState?: string
+  _sAvastAvResult?: string
+  _sVersion?: string
   _bHasContents: boolean
   _sDescription?: string
   _aAnalysisWarnings?: {

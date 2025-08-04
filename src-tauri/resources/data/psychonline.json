@@ -1,11 +1,11 @@
 {
   "engine_type": "psych",
   "engine_name": "Psych Engine Online",
-  "engine_url": "https://github.com/Snirozu/Funkin-Psych-Online/releases/latest/download/windowsBuild.zip",
+  "engine_url": "https://github.com/Snirozu/Funkin-Psych-Online/releases/download/0.12.2/windowsBuild.zip",
   "engine_logo": "logo_psychonline.png",
   "engine_icon": "Psych.webp",
   "engine_description": "Psych Online is a Friday Night Funkin' Multiplayer mod based on Psych Engine. It also has a dedicated network, allowing for score submissions and leaderboards at <a href=\"https://funkin.sniro.boo/\">funkin.sniro.boo</a>.",
-  "engine_version": "0.11.9",
+  "engine_version": "0.12.2",
   "credits": [
     {
       "name": "Snirozu",

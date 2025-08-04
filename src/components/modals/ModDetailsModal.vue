@@ -480,7 +480,11 @@
                   >
                     <q-icon name="check" size="xs" class="q-ml-xs" />
                   </q-badge>
-                  <q-badge v-else label="AVAST" color="negative">
+                  <q-badge
+                    v-else-if="modInfo._aFiles[0]._sAvastAvResult"
+                    label="AVAST"
+                    color="negative"
+                  >
                     <q-icon name="warning" size="xs" class="q-ml-xs" />
                     <q-tooltip class="phantom-font text-center">
                       {{ $t('app.modals.mod_details.might_have_malware') }}
