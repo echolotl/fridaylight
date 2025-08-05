@@ -398,7 +398,7 @@
       },
       "folder_exists": {
         "title": "Folder Already Exists",
-        "description": "This mod already has a folder in your mods directory. You can either update the existing mod (overwriting any existing files!) or download into a separate instance."
+        "description": "This mod already has a folder in your mods directory. You can either update the existing mod (which will overwrite any existing files and metadata!) or download into a separate instance."
       },
       "mod_type_selection": {
         "title": "Select Mod Type",

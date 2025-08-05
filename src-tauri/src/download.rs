@@ -559,26 +559,43 @@ pub async fn download_gamebanana_mod(
   // Add the mod to our state
   let mods_state = app.state::<crate::models::ModsState>();
   let mut mods = mods_state.0.lock().unwrap();
-  if mods.values().any(|existing_mod| existing_mod.path == mod_info.path) {
-    let err_msg = format!("Mod with path '{}' already exists", mod_info.path);
-    warn!("{}", err_msg);
-    // Emit error event
-    app
-      .emit("download-error", DownloadError {
-        mod_id: file_id,
-        name: info.name.clone(),
-        error: err_msg.clone(),
-      })
-      .unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
-    return Err(err_msg);
+
+  // Check if a mod with this path already exists
+  if
+    let Some(existing_mod) = mods
+      .values()
+      .find(|existing_mod| existing_mod.path == mod_info.path)
+  {
+    if update_existing.unwrap_or(false) {
+      // Update existing mod - preserve the existing ID and update the mod
+      let existing_id = existing_mod.id.clone();
+      let mut updated_mod_info = mod_info.clone();
+      updated_mod_info.id = existing_id.clone();
+      mods.insert(existing_id, updated_mod_info);
+      info!("Successfully updated existing mod '{}' in mods list", info.name);
+    } else {
+      let err_msg = format!("Mod with path '{}' already exists", mod_info.path);
+      warn!("{}", err_msg);
+      // Emit error event
+      app
+        .emit("download-error", DownloadError {
+          mod_id: file_id,
+          name: info.name.clone(),
+          error: err_msg.clone(),
+        })
+        .unwrap_or_else(|e|
+          error!("Failed to emit download-error event: {}", e)
+        );
+      return Err(err_msg);
+    }
+  } else {
+    // No existing mod found, insert new one
+    mods.insert(id.clone(), mod_info.clone());
+    info!(
+      "Successfully downloaded, extracted, and added mod '{}' to mods list",
+      info.name
+    );
   }
-
-  mods.insert(id.clone(), mod_info.clone());
-
-  info!(
-    "Successfully downloaded, extracted, and added mod '{}' to mods list",
-    info.name
-  );
 
   // Emit download finished event
   app
@@ -1336,22 +1353,40 @@ pub async fn download_engine(
   // Add the mod to our state
   let mods_state = app.state::<crate::models::ModsState>();
   let mut mods = mods_state.0.lock().unwrap();
-  if mods.values().any(|existing_mod| existing_mod.path == mod_info.path) {
-    let err_msg = format!("Mod with path '{}' already exists", mod_info.path);
-    warn!("{}", err_msg);
-    // Emit error event
-    app
-      .emit("download-error", DownloadError {
-        mod_id: download_id,
-        name: engine_name.to_string(),
-        error: err_msg.clone(),
-      })
-      .unwrap_or_else(|e| error!("Failed to emit download-error event: {}", e));
-    return Err(err_msg);
-  }
-  mods.insert(id.clone(), mod_info.clone());
 
-  info!("Successfully downloaded and installed {} engine", engine_name);
+  // Check if a mod with this path already exists
+  if
+    let Some(existing_mod) = mods
+      .values()
+      .find(|existing_mod| existing_mod.path == mod_info.path)
+  {
+    if update_existing.unwrap_or(false) {
+      // Update existing mod - preserve the existing ID and update the mod
+      let existing_id = existing_mod.id.clone();
+      let mut updated_mod_info = mod_info.clone();
+      updated_mod_info.id = existing_id.clone();
+      mods.insert(existing_id, updated_mod_info);
+      info!("Successfully updated existing engine '{}' in mods list", engine_name);
+    } else {
+      let err_msg = format!("Mod with path '{}' already exists", mod_info.path);
+      warn!("{}", err_msg);
+      // Emit error event
+      app
+        .emit("download-error", DownloadError {
+          mod_id: download_id,
+          name: engine_name.to_string(),
+          error: err_msg.clone(),
+        })
+        .unwrap_or_else(|e|
+          error!("Failed to emit download-error event: {}", e)
+        );
+      return Err(err_msg);
+    }
+  } else {
+    // No existing mod found, insert new one
+    mods.insert(id.clone(), mod_info.clone());
+    info!("Successfully downloaded and installed {} engine", engine_name);
+  }
 
   // Emit download finished event
   app

@@ -1488,7 +1488,6 @@ pub fn run() {
         clear_mod_logs,
         clear_session_logs,
         clear_all_mod_logs,
-        get_mod_logs_folder_path,
         super_delete_mod,
         check_mod_folder_exists,
         check_engine_folder_exists,
