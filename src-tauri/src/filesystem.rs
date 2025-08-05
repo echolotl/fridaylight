@@ -847,6 +847,8 @@ pub fn create_mod_info(path: &str) -> Result<ModInfo, String> {
     date_added: Some(current_time), // Set the current timestamp
     gamebanana: None,
     save_terminal_output: false, // Default to false, can be changed later
+    current_session_id: None, // Initialize with None since mod is not running yet
+    session_start_time: None, // Initialize with None since mod is not running yet
   };
 
   Ok(mod_info)

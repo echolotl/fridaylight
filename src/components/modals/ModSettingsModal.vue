@@ -710,8 +710,16 @@ watch(
   () => props.modelValue,
   async newVal => {
     if (newVal && props.mod) {
-      logsFolderPath.value =
-        (await appDataDir()) + sep() + 'mod_logs' + sep() + form.value.id
+      try {
+        logsFolderPath.value = await invoke('get_mod_logs_folder_path', {
+          id: props.mod.id,
+        })
+      } catch (error) {
+        console.warn('Failed to get logs folder path:', error)
+        // Fallback to the old method
+        logsFolderPath.value =
+          (await appDataDir()) + sep() + 'mod_logs' + sep() + props.mod.name
+      }
     }
   }
 )

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-scroll-area style="height: 100%">
+    <q-scroll-area style="height: 100%" :thumb-style="{ zIndex: '2' }">
       <q-list padding class="phantom-font" style="color: var(--theme-text)">
         <q-item-label
           header
@@ -119,23 +119,33 @@
 
         <!-- Downloading mods section -->
         <template v-if="Object.keys(downloadingMods).length > 0">
-          <q-item-label
-            v-if="!compactMode"
-            header
-            style="color: var(--theme-text-secondary)"
+          <div
+            style="
+              position: sticky;
+              top: 0;
+              z-index: 1;
+              background: var(--theme-bg);
+            "
+            class="downloading-mods-section"
           >
-            {{ $t('ui.downloading') }}
-          </q-item-label>
-          <q-separator v-else spaced />
+            <q-item-label
+              v-if="!compactMode"
+              header
+              style="color: var(--theme-text-secondary)"
+            >
+              {{ $t('ui.downloading') }}
+            </q-item-label>
+            <q-separator v-else spaced />
 
-          <DownloadListItem
-            v-for="[id, download] in Object.entries(downloadingMods)"
-            :key="id"
-            :download="download"
-            :compact-mode="compactMode"
-          />
+            <DownloadListItem
+              v-for="[id, download] in Object.entries(downloadingMods)"
+              :key="id"
+              :download="download"
+              :compact-mode="compactMode"
+            />
 
-          <q-separator v-if="!compactMode" spaced />
+            <q-separator v-if="!compactMode" spaced />
+          </div>
         </template>
 
         <!-- Search results when search is active -->
@@ -1043,7 +1053,13 @@ const editFolder = (folder: Folder) => {
 .sortable-ghost {
   opacity: 0;
 }
-
+.downloading-mods-section {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--theme-card);
+  padding-bottom: 4px;
+}
 /* Add styles for when an item is being dropped */
 .sortable-chosen {
   background-color: var(--theme-surface) !important;

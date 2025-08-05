@@ -929,6 +929,8 @@ pub struct ModInfo {
   pub date_added: Option<i64>, // Unix timestamp when mod was added
   pub gamebanana: Option<ModInfoGBData>, // GameBanana mod data
   pub save_terminal_output: bool, // Whether to save terminal output
+  pub current_session_id: Option<String>, // UUID for current session
+  pub session_start_time: Option<i64>, // Unix timestamp when session started
 }
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ModInfoGBData {
@@ -986,6 +988,17 @@ pub struct ModDisableResult {
   pub success: bool,
   pub enabled: bool,
   pub message: String,
+}
+
+// Session information structure for terminal output tracking
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SessionInfo {
+  pub session_id: String,
+  pub mod_id: String,
+  pub mod_name: String,
+  pub start_time: i64,
+  pub end_time: Option<i64>,
+  pub exit_code: Option<i32>,
 }
 
 // Structure for the engine mods response

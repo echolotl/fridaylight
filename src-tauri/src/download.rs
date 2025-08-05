@@ -509,6 +509,8 @@ pub async fn download_gamebanana_mod(
       model_type: model_type.clone(),
     }),
     save_terminal_output: false, // Default to false
+    current_session_id: None, // Initialize with None since mod is not running yet
+    session_start_time: None, // Initialize with None since mod is not running yet
   };
 
   // Create metadata.json file in the .flight folder
@@ -1327,6 +1329,8 @@ pub async fn download_engine(
     last_played: None, // Initialize with None since mod is not played yet
     gamebanana: None, // No GameBanana data for engines
     save_terminal_output: false, // Default to false
+    current_session_id: None, // Initialize with None since mod is not running yet
+    session_start_time: None, // Initialize with None since mod is not running yet
   };
 
   // Add the mod to our state

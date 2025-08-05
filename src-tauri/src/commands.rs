@@ -27,6 +27,7 @@ use crate::models::{
   ModsState,
 };
 use log::{ debug, error, info, warn };
+use serde_json;
 use tauri::window::{ Effect, EffectsBuilder };
 use tauri_plugin_sql::{ Migration, MigrationKind };
 use std::collections::HashMap;
@@ -304,6 +305,10 @@ pub fn launch_mod(
 
   debug!("Using working directory: {}", working_dir.display());
 
+  // Start a new session for this mod
+  let session_id = crate::terminaloutput::start_session(&id, &mod_name);
+  info!("Started session {} for mod {}", session_id, mod_name);
+
   // Add initial log entry showing the startup
   crate::terminaloutput::add_log(
     &id,
@@ -313,6 +318,7 @@ pub fn launch_mod(
     &id,
     &format!("Working directory: {}", working_dir.display())
   );
+  crate::terminaloutput::add_log(&id, &format!("Session ID: {}", session_id));
 
   // Launch the executable with output capture
   match
@@ -325,9 +331,11 @@ pub fn launch_mod(
     Ok(mut child) => {
       let pid = child.id();
       info!("Successfully launched: {} with PID: {}", executable_path, pid);
-      // Store the process ID in the ModInfo and update last_played timestamp
+      // Store the process ID and session info in the ModInfo and update last_played timestamp
       if let Some(mod_info) = mods.get_mut(&id) {
         mod_info.process_id = Some(pid);
+        mod_info.current_session_id = Some(session_id.clone());
+        mod_info.session_start_time = Some(chrono::Utc::now().timestamp());
 
         // Update last_played timestamp
         let current_time = std::time::SystemTime
@@ -348,11 +356,16 @@ pub fn launch_mod(
           Ok(mut global_mods) => {
             if let Some(global_mod_info) = global_mods.get_mut(&id) {
               global_mod_info.process_id = Some(pid);
+              global_mod_info.current_session_id = Some(session_id.clone());
+              global_mod_info.session_start_time = Some(
+                chrono::Utc::now().timestamp()
+              );
               global_mod_info.last_played = Some(current_time);
               info!(
-                "Updated global state for mod {}: pid={}, last_played={}",
+                "Updated global state for mod {}: pid={}, session_id={}, last_played={}",
                 mod_info.name,
                 pid,
+                session_id,
                 current_time
               );
             } else {
@@ -404,13 +417,22 @@ pub fn launch_mod(
 
       // Monitor the process in a background thread to update state when it exits
       let id_for_thread = id.to_string();
+      let session_id_for_thread = session_id.clone();
       std::thread::spawn(move || {
         match child.wait() {
           Ok(status) => {
+            let exit_code = status.code();
             let exit_message =
               format!("Process exited with status: {}", status);
             info!("{}", exit_message);
             crate::terminaloutput::add_log(&id_for_thread, &exit_message);
+
+            // End the session with the exit code
+            crate::terminaloutput::end_session(
+              &id_for_thread,
+              &session_id_for_thread,
+              exit_code
+            );
 
             // The process has exited, so we need to update the mod's running state
             // We do this by directly invoking the set_mod_not_running function
@@ -423,6 +445,13 @@ pub fn launch_mod(
             crate::terminaloutput::add_log(
               &id_for_thread,
               &format!("[ERROR] {}", error_msg)
+            );
+
+            // End the session even on error
+            crate::terminaloutput::end_session(
+              &id_for_thread,
+              &session_id_for_thread,
+              None
             );
           }
         }
@@ -1038,26 +1067,156 @@ pub fn save_mod_metadata(
   Ok(())
 }
 
-// Command to get terminal logs for a specific mod
+// Command to get terminal logs for a specific mod's current session
 #[tauri::command]
 pub fn get_mod_logs(id: String) -> Vec<String> {
   crate::terminaloutput::get_logs(&id)
 }
 
-// Command to clear in-memory terminal logs for a specific mod, while saving them to a file
+// Command to get terminal logs for a specific mod session
+#[tauri::command]
+pub fn get_mod_session_logs(id: String, session_id: String) -> Vec<String> {
+  crate::terminaloutput::get_session_logs(&id, &session_id)
+}
+
+// Command to get current session logs for a mod
+#[tauri::command]
+pub fn get_mod_current_session_logs(id: String) -> Vec<String> {
+  crate::terminaloutput::get_logs(&id)
+}
+
+// Command to list all sessions for a specific mod
+#[tauri::command]
+pub fn list_mod_sessions(
+  id: String
+) -> Result<Vec<crate::models::SessionInfo>, String> {
+  // This will search through all session directories to find sessions for this mod
+  let logs_dir = match crate::terminaloutput::LOGS_DIR.as_ref() {
+    Ok(path_buf) => path_buf,
+    Err(e) => {
+      return Err(format!("Failed to resolve logs directory: {}", e));
+    }
+  };
+
+  let mut sessions = Vec::new();
+
+  if let Ok(entries) = std::fs::read_dir(logs_dir) {
+    for entry in entries.filter_map(|e| e.ok()) {
+      if entry.path().is_dir() {
+        // Check each session directory for this mod
+        if let Ok(session_entries) = std::fs::read_dir(entry.path()) {
+          for session_entry in session_entries.filter_map(|e| e.ok()) {
+            if session_entry.path().is_dir() {
+              let session_info_path = session_entry
+                .path()
+                .join("session_info.json");
+              if session_info_path.exists() {
+                if let Ok(file) = std::fs::File::open(&session_info_path) {
+                  if
+                    let Ok(session_info) = serde_json::from_reader::<
+                      _,
+                      crate::models::SessionInfo
+                    >(file)
+                  {
+                    if session_info.mod_id == id {
+                      sessions.push(session_info);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Sort sessions by start time (newest first)
+  sessions.sort_by(|a, b| b.start_time.cmp(&a.start_time));
+
+  Ok(sessions)
+}
+
+// Command to clear in-memory terminal logs for a specific mod's current session, while saving them to a file
 #[tauri::command]
 pub fn clear_mod_logs(id: String) -> Result<(), String> {
-  info!("Clearing terminal logs for mod with ID: {}", id);
+  info!("Clearing current session terminal logs for mod with ID: {}", id);
   crate::terminaloutput::clear_memory_logs(&id);
   Ok(())
 }
 
-// Command to clear all logs for a specific mod, including the file
+// Command to clear a specific session's logs
+#[tauri::command]
+pub fn clear_session_logs(
+  id: String,
+  session_id: String
+) -> Result<(), String> {
+  info!("Clearing logs for mod {} session {}", id, session_id);
+
+  // Remove from memory if it's there
+  {
+    let mut logs = crate::terminaloutput::SESSION_LOGS.lock().unwrap();
+    if let Some(mod_sessions) = logs.get_mut(&id) {
+      mod_sessions.remove(&session_id);
+    }
+  }
+
+  // Remove from disk
+  let logs_dir = match crate::terminaloutput::LOGS_DIR.as_ref() {
+    Ok(path_buf) => path_buf,
+    Err(e) => {
+      return Err(format!("Failed to resolve logs directory: {}", e));
+    }
+  };
+
+  if let Ok(entries) = std::fs::read_dir(logs_dir) {
+    for entry in entries.filter_map(|e| e.ok()) {
+      if entry.path().is_dir() {
+        let session_dir = entry.path().join(&session_id);
+        if session_dir.exists() {
+          // Check if this session belongs to our mod
+          let session_info_path = session_dir.join("session_info.json");
+          if session_info_path.exists() {
+            if let Ok(file) = std::fs::File::open(&session_info_path) {
+              if
+                let Ok(session_info) = serde_json::from_reader::<
+                  _,
+                  crate::models::SessionInfo
+                >(file)
+              {
+                if session_info.mod_id == id {
+                  // This is our session, delete it
+                  if let Err(e) = std::fs::remove_dir_all(&session_dir) {
+                    return Err(
+                      format!("Failed to delete session directory: {}", e)
+                    );
+                  }
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Ok(())
+}
+
+// Command to clear all logs for a specific mod, including all sessions
 #[tauri::command]
 pub fn clear_all_mod_logs(id: String) -> Result<(), String> {
-  info!("Clearing all logs for mod with ID: {}", id);
+  info!("Clearing all sessions for mod with ID: {}", id);
   crate::terminaloutput::clear_logs(&id);
   Ok(())
+}
+
+// Command to get the logs folder path for a specific mod
+#[tauri::command]
+pub fn get_mod_logs_folder_path(id: String) -> Result<String, String> {
+  debug!("Getting logs folder path for mod with ID: {}", id);
+  crate::terminaloutput::get_mod_logs_folder_path(&id)
 }
 
 #[tauri::command]
@@ -1323,8 +1482,13 @@ pub fn run() {
         is_mod_running,
         stop_mod,
         get_mod_logs,
+        get_mod_session_logs,
+        get_mod_current_session_logs,
+        list_mod_sessions,
         clear_mod_logs,
+        clear_session_logs,
         clear_all_mod_logs,
+        get_mod_logs_folder_path,
         super_delete_mod,
         check_mod_folder_exists,
         check_engine_folder_exists,

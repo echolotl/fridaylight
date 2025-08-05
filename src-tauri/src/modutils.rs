@@ -22,6 +22,8 @@ pub fn set_mod_not_running(mod_id: &str) {
   if let Ok(mut mods) = GLOBAL_MODS_STATE.lock() {
     if let Some(mod_info) = mods.get_mut(mod_id) {
       mod_info.process_id = None;
+      mod_info.current_session_id = None;
+      mod_info.session_start_time = None;
       log::info!(
         "Updated mod {} to not running status in global state",
         mod_id
@@ -38,6 +40,8 @@ pub fn set_mod_not_running(mod_id: &str) {
       if let Ok(mut mods) = mods_state.0.lock() {
         if let Some(mod_info) = mods.get_mut(mod_id) {
           mod_info.process_id = None;
+          mod_info.current_session_id = None;
+          mod_info.session_start_time = None;
           log::info!(
             "Updated mod {} to not running status in ModsState",
             mod_id
