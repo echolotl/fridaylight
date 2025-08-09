@@ -59,7 +59,7 @@
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": ["flmod"]
+        "schemes": ["flmod", "frlight"]
       }
     },
     "updater": {
