@@ -1,8 +1,5 @@
 <template>
   <q-scroll-area class="home-page phantom-font">
-    <div class="header">
-      <div class="fridaylight-logo"></div>
-    </div>
     <div class="best-of-today">
       <div class="bot-header">
         <h6 class="phantom-font-difficulty bot-title">
@@ -110,7 +107,7 @@
     </div>
     <div class="main-content">
       <div class="hop-back-in">
-        <h6 class="phantom-font-difficulty q-mb-md">
+        <h6 class="phantom-font-difficulty q-mb-md q-mt-lg">
           {{ $t('mods.recently_played') }}
           <hr />
         </h6>
@@ -421,7 +418,7 @@ onMounted(() => {
   height: 100%;
 }
 .best-of-today {
-  border-radius: 1rem;
+  border-radius: 0.75rem;
   background: radial-gradient(
     circle at top left,
     var(--theme-border) 0%,
@@ -510,6 +507,6 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin: 0;
-  margin-top: 3rem;
+  margin-top: 2rem;
 }
 </style>
