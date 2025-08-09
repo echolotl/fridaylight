@@ -18,6 +18,10 @@ Tauri can be multiplatform, but there's just a couple of things that I do that a
 
 Most of the time, it's not the app's fault. Gamebanana is notorious for its slow downloading speeds, and its the main reason why most creators attach a Mediafire or Google Drive link on their mod pages. Sometimes, it might just be better to download the mods manually from those links, and then import them into Fridaylight.
 
+## I just downloaded a modpack for an engine through Fridaylight, but it's not showing up in the list or in-game. Why?
+
+This is most likely an issue with how the modpack creator packaged their mod. If they included a README or installation instructions outside of the base folder, Fridaylight will not automatically move it up a level. You can manually navigate to the folder and move it out to make it show up, though.
+
 ## How do I create a custom theme?
 
 You can theme the app using css by placing a css file in the %APPDATA%/themes directory, and you can basically put anything you want. For a simple color theme, you can use this template:
@@ -52,11 +56,7 @@ The only places you should download this from are the [GitHub releases page](htt
 
 ## Speaking of which, when is this releasing?
 
-Sometime in September 2025, hopefully. There's still a few things I want to add or improve on before I feel okay with releasing a full version. You can help test right now, though, by downloading the latest pre-release version from the [GitHub releases page](https://github.com/echolotl/fridaylight/releases)!
-
-## Who made this?
-
-Mostly just me (echolotl), and any contributors that have helped out, whether that be with actual code or just submitting issues/suggestions. I did use a few fonts and images from other places, and you can view the full list in-app under the "About" section.
+Sometime in September 2025, hopefully. There's still a few things I want to add or improve on before I feel okay with releasing a full version or beta or whatever. You can help test right now, though, by downloading the latest pre-release version from the [GitHub releases page](https://github.com/echolotl/fridaylight/releases)!
 
 ## Who is this guy???? <img align="right" src="https://i.imgur.com/DcEYLmb.png" alt="Light the Lamp" width="128" height="173" />
 
